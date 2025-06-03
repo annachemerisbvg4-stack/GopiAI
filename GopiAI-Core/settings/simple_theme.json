@@ -1,0 +1,13 @@
+{
+  "main_color": "#151312",
+  "header_color": "#930004",
+  "control_color": "#ffb4a9",
+  "accent_color": "#ffb867",
+  "titlebar_background": "#930004",
+  "button_color": "#ffb4a9",
+  "button_hover_color": "#6c3831",
+  "button_active_color": "#690002",
+  "text_color": "#e8e1e0",
+  "border_color": "#9c8d8b",
+  "titlebar_text": "#ffdad5"
+}
