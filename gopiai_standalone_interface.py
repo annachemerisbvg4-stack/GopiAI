@@ -1087,23 +1087,28 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         
     def add_dock_widget(self, name, widget, area='left'):
         """Добавление нового dock-виджета"""
-        # STUB: Заглушка для добавления новых панелей через расширения
-        # TODO: Реализовать динамическое добавление панелей через систему расширений GopiAI
+        # Если виджет уже зарегистрирован, просто показываем его
+        if name in self.dock_widgets:
+            existing = self.dock_widgets[name]
+            existing.show()
+            return existing
+
         self.dock_widgets[name] = widget
-        
+
         # Добавляем виджет в соответствующую область интерфейса
         if area == 'left':
-            # Добавляем в левую панель под проводником
             self._add_to_left_panel(widget)
         elif area == 'right':
-            # Добавляем в правую панель под чатом
             self._add_to_right_panel(widget)
         elif area == 'bottom':
-            # Добавляем в нижнюю панель как новую вкладку терминала
             self._add_to_bottom_panel(widget)
-            
-        print(f"✓ Добавлен dock-виджет: {name} в область {area}")
+        else:
+            # Если область не распознана, добавляем в правую по умолчанию
+            self._add_to_right_panel(widget)
 
+        widget.show()
+        print(f"✓ Добавлен dock-виджет: {name} в область {area}")
+        
     def _add_to_left_panel(self, widget):
         """Добавление виджета в левую панель"""
         # Находим левую панель и добавляем виджет
@@ -1387,9 +1392,27 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
     def _toggle_ai_tools_extension(self):
         """Переключение ИИ инструментов"""
-        # STUB: Заглушка для будущих ИИ расширений
-        # TODO: Интегрировать полноценные ИИ инструменты из GopiAI-Extensions
-        QMessageBox.information(self, "ИИ инструменты", "ИИ инструменты будут добавлены в следующих версиях")
+        widget_name = "ai_tools"
+
+        # Если панель уже загружена, просто переключаем видимость
+        if widget_name in self.dock_widgets:
+            widget = self.dock_widgets[widget_name]
+            widget.setVisible(not widget.isVisible())
+            return
+
+        # Пытаемся динамически загрузить расширение через систему gopiai.extensions
+        try:
+            from gopiai.extensions import _safely_import
+            module = _safely_import("gopiai.extensions.ai_tools_extension")
+            if module and hasattr(module, "init_extension"):
+                module.init_extension(self)
+                # После инициализации панель должна быть зарегистрирована
+                if widget_name in self.dock_widgets:
+                    self.dock_widgets[widget_name].show()
+                    return
+            QMessageBox.warning(self, "ИИ инструменты", "Расширение ai_tools_extension не найдено")
+        except Exception as e:
+            QMessageBox.warning(self, "Ошибка", f"Не удалось загрузить ИИ инструменты: {e}")
 
     def resizeEvent(self, event: QResizeEvent):
         """Обработка изменения размера окна"""
@@ -1687,4 +1710,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-.
