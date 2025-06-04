@@ -5,12 +5,13 @@ GopiAI Theme Manager - Система управления темами
 Модульная система тем для GopiAI интерфейса.
 Поддерживает несколько встроенных тем и загрузку пользовательских.
 
-Автор: Crazy Coder  
+Автор: Crazy Coder
 Версия: 1.0.0
 """
 
 from PySide6.QtWidgets import QApplication
 from typing import Optional, cast
+
 
 def apply_simple_theme(app: Optional[QApplication] = None):
     """Применить простую современную тему"""
@@ -18,10 +19,10 @@ def apply_simple_theme(app: Optional[QApplication] = None):
         app = cast(Optional[QApplication], QApplication.instance())
         if not isinstance(app, QApplication):
             return False
-    
+
     if app is None:
         return False
-    
+
     simple_theme = """
     /* Главное окно */
     QMainWindow {
@@ -205,7 +206,7 @@ def apply_simple_theme(app: Optional[QApplication] = None):
         background-color: #4a4a4a;
     }
     """
-    
+
     try:
         app.setStyleSheet(simple_theme)
         print("✓ Простая тема применена")
@@ -213,6 +214,7 @@ def apply_simple_theme(app: Optional[QApplication] = None):
     except Exception as e:
         print(f"⚠ Ошибка применения темы: {e}")
         return False
+
 
 # Попытка импорта расширенной системы тем GopiAI
 import sys
@@ -235,14 +237,23 @@ if str(core_path) not in sys.path:
 
 if str(widgets_path) not in sys.path:
     sys.path.insert(0, str(widgets_path))
-    
+
 print(f"Путь к теме: {theme_manager_path}, существует: {theme_manager_path.exists()}")
 print(f"Путь к виджетам тем: {widget_theme_path}, существует: {widget_theme_path.exists()}")
 
+
 # Сначала объявим заглушки на случай, если импорт не получится
-def load_theme(*args, **kwargs): return None
-def apply_theme(*args, **kwargs): return False  
-def save_theme(*args, **kwargs): return False
+def load_theme(*args, **kwargs):
+    return None
+
+
+def apply_theme(*args, **kwargs):
+    return False
+
+
+def save_theme(*args, **kwargs):
+    return False
+
 
 # Заглушки для тем
 MATERIAL_SKY_THEME = {"name": "Material Sky"}
@@ -250,18 +261,20 @@ EMERALD_GARDEN_THEME = {"name": "Emerald Garden"}
 CRIMSON_RELIC_THEME = {"name": "Crimson Relic"}
 GOLDEN_EMBER_THEME = {"name": "Golden Ember"}
 
+
 # Заглушка для ThemeManager
 class ThemeManager:
-    def __init__(self): 
+    def __init__(self):
         self.current_theme = None
-    
-    def apply_theme(self, app): 
+
+    def apply_theme(self, app):
         print("⚠ Используется заглушка ThemeManager.apply_theme")
         return apply_simple_theme(app)
-    
+
     def load_theme(self, theme_name):
         print(f"⚠ Используется заглушка ThemeManager.load_theme: {theme_name}")
         return None
+
 
 THEMES_AVAILABLE = False
 
@@ -270,14 +283,15 @@ if theme_manager_path.exists():
     try:
         # Используем специальный импорт для загрузки модуля вручную
         import importlib.util
+
         spec = importlib.util.spec_from_file_location(
             "simple_theme_manager", str(theme_manager_path)
         )
-        
+
         if spec and spec.loader:
             theme_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(theme_module)
-            
+
             # Извлекаем нужные функции и константы из модуля
             load_theme = theme_module.load_theme
             apply_theme = theme_module.apply_theme
@@ -286,21 +300,21 @@ if theme_manager_path.exists():
             EMERALD_GARDEN_THEME = theme_module.EMERALD_GARDEN_THEME
             CRIMSON_RELIC_THEME = theme_module.CRIMSON_RELIC_THEME
             GOLDEN_EMBER_THEME = theme_module.GOLDEN_EMBER_THEME
-            
+
             THEMES_AVAILABLE = True
             print(f"✓ Расширенная система тем GopiAI загружена из {theme_manager_path}")
-            
+
             # Пробуем импортировать ThemeManager если файл существует
             if widget_theme_path.exists():
                 try:
                     widget_spec = importlib.util.spec_from_file_location(
                         "widget_theme_manager", str(widget_theme_path)
                     )
-                    
+
                     if widget_spec and widget_spec.loader:
                         widget_theme_module = importlib.util.module_from_spec(widget_spec)
                         widget_spec.loader.exec_module(widget_theme_module)
-                        
+
                         # Переопределяем класс ThemeManager
                         WidgetThemeManager = widget_theme_module.ThemeManager
                         ThemeManager = WidgetThemeManager  # Переименовываем для совместимости
@@ -311,33 +325,52 @@ if theme_manager_path.exists():
                     print(f"⚠ ThemeManager недоступен, используется заглушка: {e}")
         else:
             print(f"⚠ Не удалось создать спецификацию для simple_theme_manager")
-          except Exception as e:
+    except Exception as e:
         THEMES_AVAILABLE = False
         print(f"⚠ Расширенная система тем недоступна: {e}")
         print(f"⚠ sys.path: {sys.path}")
-        
+
+else:
+    print(f"⚠ Файл {theme_manager_path} не существует")
+    THEMES_AVAILABLE = False
+
+    # Заглушки функций для поддержки совместимости
+    def load_theme(*args, **kwargs):
+        print("⚠ Используется заглушка load_theme")
+        return None
+
+    def apply_theme(*args, **kwargs):
+        print("⚠ Используется заглушка apply_theme")
+        return False
+
+    def save_theme(*args, **kwargs):
+        print("⚠ Используется заглушка save_theme")
+        return False
+
+
 def initialize_theme_system(app=None):
     """Инициализирует и применяет систему тем
-    
+
     Args:
         app: QApplication инстанс для применения темы. По умолчанию None (будет использован QApplication.instance()).
-        
+
     Returns:
         bool: True если тема была успешно применена, False в противном случае.
     """
     if app is None:
         from PySide6.QtWidgets import QApplication
+
         app = QApplication.instance()
-        
+
     if not app:
         print("⚠ Не удалось получить экземпляр QApplication")
         return False
-    
+
     if THEMES_AVAILABLE:
         try:
             theme_manager = ThemeManager()
             current_theme = load_theme()
-            
+
             if current_theme:
                 print(f"✓ Загружена тема: {current_theme.get('name', 'Без названия')}")
                 success = apply_theme(current_theme, app)
@@ -356,19 +389,3 @@ def initialize_theme_system(app=None):
     else:
         print("⚠ Расширенная система тем недоступна, использую простую тему")
         return apply_simple_theme(app)
-else:
-    print(f"⚠ Файл {theme_manager_path} не существует")
-    THEMES_AVAILABLE = False
-    
-    # Заглушки функций для поддержки совместимости
-    def load_theme(*args, **kwargs):
-        print("⚠ Используется заглушка load_theme")
-        return None
-    
-    def apply_theme(*args, **kwargs):
-        print("⚠ Используется заглушка apply_theme")
-        return False
-    
-    def save_theme(*args, **kwargs):
-        print("⚠ Используется заглушка save_theme")
-        return False
