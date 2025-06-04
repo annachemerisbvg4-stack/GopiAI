@@ -179,28 +179,25 @@ class ThemeSelectorDialog(QDialog):
         self.apply_btn.clicked.connect(self._apply_theme)
         self.preview_btn.clicked.connect(self._preview_theme)
         cancel_btn.clicked.connect(self.reject)
-        
-        # По умолчанию светлая тема
+          # По умолчанию светлая тема
         self.light_radio.setChecked(True)
-      def _load_themes(self):
+        
+    def _load_themes(self):
         """Загрузка доступных тем"""
         # Попробуем импортировать все темы из GopiAI-Core
+        themes = []
         try:
-            from gopiai.core.simple_theme_manager import THEME_COLLECTION
-            
-            # Используем полную коллекцию тем
-            themes = []
-            for theme in THEME_COLLECTION:
-                theme_name = theme.get("name", "Неизвестная тема")
-                themes.append((theme_name, theme))
-            
-            print(f"✅ Загружено {len(themes)} тем из THEME_COLLECTION")
-            
-        except ImportError:
-            print("⚠️ Не удалось импортировать THEME_COLLECTION, используем fallback темы")
-            # Fallback темы (оставляем только некоторые для совместимости)
-            themes = [
-                ("Material Sky", {
+            # Прямой импорт через sys.path (так как в путях есть дефисы)
+            import sys
+            import os
+            theme_path = os.path.join(os.path.dirname(__file__), '..', 'GopiAI-Core', 'gopiai', 'core')
+            if theme_path not in sys.path:
+                sys.path.append(theme_path)
+            from simple_theme_manager import THEME_COLLECTION
+        except ImportError as e:
+            print(f"⚠️ Не удалось импортировать THEME_COLLECTION ({e}), используем fallback темы")
+            THEME_COLLECTION = [
+                {
                     "name": "Material Sky",
                     "description": "Тема, основанная на Material Design",
                     "light": {
@@ -219,8 +216,8 @@ class ThemeSelectorDialog(QDialog):
                         "border_color": "#8f9195",
                         "titlebar_text": "#cde5ff"
                     }
-                }),
-                ("Emerald Garden", {
+                },
+                {
                     "name": "Emerald Garden",
                     "description": "Зелёная природная тема",
                     "light": {
@@ -239,9 +236,16 @@ class ThemeSelectorDialog(QDialog):
                         "border_color": "#2e7d32",
                         "titlebar_text": "#a5d6a7"
                     }
-                })
+                }
             ]
-          # Добавляем темы в комбобокс
+
+        # Используем полную коллекцию тем
+        for theme in THEME_COLLECTION:
+            theme_name = theme.get("name", "Неизвестная тема")
+            themes.append((theme_name, theme))
+
+        print(f"✅ Загружено {len(themes)} тем из THEME_COLLECTION")
+        # Добавляем темы в комбобокс
         for name, theme_data in themes:
             emoji = self._get_theme_emoji(theme_data)
             self.theme_combo.addItem(f"{emoji} {name}", theme_data)
@@ -280,7 +284,7 @@ class ThemeSelectorDialog(QDialog):
         self.selected_theme = self.theme_combo.currentData()
         self._update_preview()
         self._update_theme_info()
-      def _on_mode_changed(self):
+    def _on_mode_changed(self):
         """Обработка изменения режима"""
         self.selected_mode = "light" if self.light_radio.isChecked() else "dark"
         self._update_preview()

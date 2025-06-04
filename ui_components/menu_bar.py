@@ -39,9 +39,8 @@ class StandaloneMenuBar(QMenuBar):
     toggleProductivityExtension = Signal()
     toggleVoiceExtension = Signal()
     toggleAiToolsExtension = Signal()
-    
-    # Сигналы темы
-    changeThemeRequested = Signal()
+      # Сигналы темы
+    changeThemeRequested = Signal(str)  # Передаем название темы
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -145,12 +144,25 @@ class StandaloneMenuBar(QMenuBar):
         self.productivity_action = extensions_menu.addAction("📝 Инструменты продуктивности")
         self.voice_action = extensions_menu.addAction("🎤 Голосовое управление")
         self.ai_tools_action = extensions_menu.addAction("🤖 ИИ инструменты")
-        
-        # Подменю настроек темы
+          # Подменю настроек темы
         view_menu.addSeparator()
         theme_menu = view_menu.addMenu("🎨 Тема")
-        change_theme_action = theme_menu.addAction("Изменить тему...")
-        change_theme_action.triggered.connect(self.changeThemeRequested.emit)
+        
+        # Отдельные действия для каждой темы
+        material_sky_action = theme_menu.addAction("🌊 Material Sky")
+        emerald_garden_action = theme_menu.addAction("🌿 Emerald Garden")
+        crimson_relic_action = theme_menu.addAction("🔥 Crimson Relic")
+        golden_ember_action = theme_menu.addAction("⭐ Golden Ember")
+        
+        theme_menu.addSeparator()
+        change_theme_action = theme_menu.addAction("🎨 Настроить тему...")
+        
+        # Подключение сигналов тем
+        material_sky_action.triggered.connect(lambda: self.changeThemeRequested.emit("Material Sky"))
+        emerald_garden_action.triggered.connect(lambda: self.changeThemeRequested.emit("Emerald Garden"))
+        crimson_relic_action.triggered.connect(lambda: self.changeThemeRequested.emit("Crimson Relic"))
+        golden_ember_action.triggered.connect(lambda: self.changeThemeRequested.emit("Golden Ember"))
+        change_theme_action.triggered.connect(lambda: self.changeThemeRequested.emit("dialog"))
         
         # Делаем действия расширений checkable
         self.productivity_action.setCheckable(True)

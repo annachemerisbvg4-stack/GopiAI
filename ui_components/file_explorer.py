@@ -3,10 +3,22 @@ File Explorer Component для GopiAI Standalone Interface
 ====================================================
 
 Проводник файлов с деревом папок и поддержкой иконок для разных типов файлов.
+
+ВАЖНО: Этот компонент настроен для предотвращения автоматического изменения 
+размеров при выборе файлов с длинными именами. Ширина зафиксирована, 
+пользователь может изменять размер панели только через сплиттер.
+
+Основные защитные механизмы:
+- Фиксированные минимальная и максимальная ширина (250-400px)
+- QSizePolicy с фиксированной шириной 
+- QTreeView с фиксированной шириной (240px)
+- Отключенный горизонтальный скроллбар
+- Переопределенные sizeHint и resizeEvent
+- setStretchFactor(0, 0) для панели в главном сплиттере
 """
 
 import os
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTreeView, QHBoxLayout, QPushButton, QLineEdit
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTreeView, QHBoxLayout, QPushButton, QLineEdit, QHeaderView
 from PySide6.QtCore import QDir, Signal, Qt
 from .icon_file_system_model import IconFileSystemModel
 from .file_type_detector import FileTypeDetector
@@ -14,8 +26,7 @@ from .file_type_detector import FileTypeDetector
 
 class FileExplorerWidget(QWidget):
     """Проводник файлов с деревом папок и поддержкой иконок"""
-    
-    # Сигналы
+      # Сигналы
     file_selected = Signal(str)  # Файл выбран
     file_double_clicked = Signal(str)  # Файл открыт двойным кликом
     
@@ -24,6 +35,18 @@ class FileExplorerWidget(QWidget):
         self.setObjectName("fileExplorer")
         self.icon_manager = icon_manager
         self._current_path = os.path.expanduser("~")
+        self._ignore_resize = False  # Флаг для предотвращения циклов resizeEvent
+        
+        # Настройка фиксированного размера для предотвращения "прыгания"
+        from PySide6.QtWidgets import QSizePolicy
+        self.setMinimumWidth(250)
+        self.setMaximumWidth(400)
+        
+        # Устанавливаем политику размера: фиксированная ширина, расширяемая высота
+        size_policy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        size_policy.setHorizontalStretch(0)
+        self.setSizePolicy(size_policy)
+        
         self._setup_ui()
         self._connect_signals()
 
@@ -85,8 +108,7 @@ class FileExplorerWidget(QWidget):
         path_layout.addWidget(go_btn)
         
         layout.addLayout(path_layout)
-        
-        # Дерево файлов с кастомной моделью
+          # Дерево файлов с кастомной моделью
         self.tree_view = QTreeView()
         self.file_model = IconFileSystemModel(self.icon_manager, self)
         self.file_model.setRootPath("")
@@ -96,11 +118,31 @@ class FileExplorerWidget(QWidget):
         self.tree_view.setRootIndex(self.file_model.index(self._current_path))
         self.tree_view.hideColumn(1)  # Размер
         self.tree_view.hideColumn(2)  # Тип
-        self.tree_view.hideColumn(3)  # Дата изменения
-          # Настройка поведения
+        self.tree_view.hideColumn(3)  # Дата изменения        # Настройка поведения
         self.tree_view.setAlternatingRowColors(False)  # Отключаем полосы для тестирования
         self.tree_view.setSortingEnabled(True)
-        self.tree_view.sortByColumn(0, Qt.SortOrder.AscendingOrder)  # Сортировка по имени
+        # self.tree_view.sortByColumn(0, Qt.SortOrder.AscendingOrder)  # Сортировка по имени
+          # ВАЖНО: Предотвращаем автоматическое изменение размеров
+        header = self.tree_view.header()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Столбец имени растягивается
+        header.setStretchLastSection(False)  # Отключаем автоматическое растягивание
+        
+        # Устанавливаем фиксированную ширину для QTreeView
+        self.tree_view.setFixedWidth(240)  # Фиксированная ширина для содержимого
+        
+        # Отключаем горизонтальный скроллбар (чтобы текст обрезался, а не растягивал виджет)
+        self.tree_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
+        # Дополнительная защита: переопределяем sizeHint для QTreeView
+        def tree_view_sizeHint():
+            from PySide6.QtCore import QSize
+            return QSize(240, 400)  # Фиксированная ширина
+        
+        self.tree_view.sizeHint = tree_view_sizeHint
+        
+        # Отключаем изменение размеров столбцов пользователем
+        self.tree_view.header().setSectionsMovable(False)
+        self.tree_view.header().setSectionsClickable(False)
         
         layout.addWidget(self.tree_view)
         
@@ -237,6 +279,29 @@ class FileExplorerWidget(QWidget):
                         header.setText("Проводник")
             except Exception as e:
                 print(f"⚠️ Ошибка обновления иконки заголовка: {e}")
+                
+    def resizeEvent(self, event):
+        """Переопределяем событие изменения размера для предотвращения автоматических изменений"""
+        # Блокируем изменение ширины, но позволяем изменение высоты
+        current_width = self.width()
+        super().resizeEvent(event)
+        
+        # Восстанавливаем ширину, если она изменилась
+        if self.width() != current_width and hasattr(self, '_ignore_resize'):
+            if not self._ignore_resize:
+                self._ignore_resize = True
+                self.setFixedWidth(current_width)
+                self._ignore_resize = False
+    
+    def sizeHint(self):
+        """Возвращаем предпочтительный размер"""
+        from PySide6.QtCore import QSize
+        return QSize(300, 600)  # Фиксированная ширина, адаптивная высота
+        
+    def minimumSizeHint(self):
+        """Возвращаем минимальный размер"""
+        from PySide6.QtCore import QSize
+        return QSize(250, 200)  # Минимальные размеры
 
     def refresh(self):
         """Обновление содержимого проводника"""

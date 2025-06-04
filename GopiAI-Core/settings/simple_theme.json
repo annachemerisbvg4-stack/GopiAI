@@ -1,13 +1,15 @@
 {
-  "main_color": "#151312",
-  "header_color": "#930004",
-  "control_color": "#ffb4a9",
-  "accent_color": "#ffb867",
-  "titlebar_background": "#930004",
-  "button_color": "#ffb4a9",
-  "button_hover_color": "#6c3831",
-  "button_active_color": "#690002",
-  "text_color": "#e8e1e0",
-  "border_color": "#9c8d8b",
-  "titlebar_text": "#ffdad5"
+  "main_color": "#fcf8f8",
+  "header_color": "#cde5ff",
+  "control_color": "#006398",
+  "accent_color": "#7a4c8f",
+  "titlebar_background": "#cde5ff",
+  "button_color": "#3d6281",
+  "button_hover_color": "#93ccff",
+  "button_active_color": "#006398",
+  "text_color": "#1c1b1c",
+  "border_color": "#75777b",
+  "titlebar_text": "#001d31",
+  "name": "Material Sky",
+  "variant": "light"
 }

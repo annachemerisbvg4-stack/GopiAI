@@ -61,12 +61,13 @@ try:
     except ImportError:
         AutoIconSystem = None
         print("⚠️ Система иконок недоступна")
-        
-    # try:
-    #     from ui_components import ThemeManager
-    # except ImportError:
-    #     ThemeManager = None
-    ThemeManager = None
+          # Импорт локальной системы тем
+    try:
+        from ui_components import ThemeManager
+        print("✅ Локальная система тем загружена")
+    except ImportError:
+        ThemeManager = None
+        print("⚠️ Локальная система тем недоступна")
         
     print("✅ Все основные модули UI загружены успешно")
     MODULES_LOADED = True
@@ -108,24 +109,23 @@ except ImportError as e:
     ThemeManager = None
     AutoIconSystem = None
 
-# Импорт системы тем (пока недоступны в данной версии)
-# try:
-#     from gopiai.core.simple_theme_manager import (
-#         load_theme, apply_theme, save_theme,
-#         MATERIAL_SKY_THEME, EMERALD_GARDEN_THEME,
-#         CRIMSON_RELIC_THEME, GOLDEN_EMBER_THEME
-#     )
-#     from gopiai.widgets.managers.theme_manager import ThemeManager as GopiAIThemeManager
-#     print("✅ Системы тем загружены")
-# except ImportError as e:
-#     print(f"⚠️ Системы тем недоступны: {e}")
-
-# Fallback темы
-MATERIAL_SKY_THEME = {"name": "Material Sky", "primary": "#2196F3"}
-load_theme = lambda name: MATERIAL_SKY_THEME
-apply_theme = lambda widget, theme: None
-save_theme = lambda theme: None
-GopiAIThemeManager = None
+# Импорт системы тем
+try:
+    from gopiai.core.simple_theme_manager import (
+        load_theme, apply_theme, save_theme,
+        MATERIAL_SKY_THEME, EMERALD_GARDEN_THEME,
+        CRIMSON_RELIC_THEME, GOLDEN_EMBER_THEME
+    )
+    from gopiai.widgets.managers.theme_manager import ThemeManager as GopiAIThemeManager
+    print("✅ Системы тем загружены")
+except ImportError as e:
+    print(f"⚠️ Системы тем недоступны: {e}")
+    # Fallback темы
+    MATERIAL_SKY_THEME = {"name": "Material Sky", "primary": "#2196F3"}
+    load_theme = lambda: MATERIAL_SKY_THEME
+    apply_theme = lambda app: None
+    save_theme = lambda theme: None
+    GopiAIThemeManager = None
 
 
 class FramelessGopiAIStandaloneWindow(QMainWindow):
@@ -178,9 +178,19 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         
         # Основной сплиттер (горизонтальный)
         main_splitter = QSplitter(Qt.Orientation.Horizontal)
-        main_layout.addWidget(main_splitter, 1)
-          # Левая панель - файловый проводник (модульный)
+        main_layout.addWidget(main_splitter, 1)        # Левая панель - файловый проводник (модульный)
         self.file_explorer = FileExplorerWidget(icon_manager=self.icon_manager)
+        
+        # Зафиксировать размер проводника
+        from PySide6.QtWidgets import QSizePolicy
+        self.file_explorer.setMinimumWidth(250)
+        self.file_explorer.setMaximumWidth(400)
+        self.file_explorer.resize(300, 600)
+        
+        # Установить политику размера - фиксированная ширина, растягиваемая высота
+        size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        self.file_explorer.setSizePolicy(size_policy)
+        
         main_splitter.addWidget(self.file_explorer)
         
         # Правый сплиттер (вертикальный)
@@ -201,12 +211,18 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         
         # Нижняя панель - терминал (модульный)
         self.terminal_widget = TerminalWidget()
-        right_splitter.addWidget(self.terminal_widget)
-        
-        # Настройка пропорций сплиттеров
-        main_splitter.setSizes([250, 1150])   # Левая панель : Остальное
+        right_splitter.addWidget(self.terminal_widget)        # Настройка пропорций сплиттеров
+        main_splitter.setSizes([300, 1100])   # Левая панель : Остальное
         center_splitter.setSizes([800, 350])  # Документы : Чат  
         right_splitter.setSizes([700, 200])   # Верх : Терминал
+        
+        # Разрешаем складывание панелей, но устанавливаем стабильные размеры
+        main_splitter.setChildrenCollapsible(True)
+        
+        # ВАЖНО: Устанавливаем стретч-факторы для предотвращения автоматического изменения размеров
+        # Панель проводника (индекс 0) не растягивается, основная область (индекс 1) растягивается
+        main_splitter.setStretchFactor(0, 0)  # Проводник не растягивается
+        main_splitter.setStretchFactor(1, 1)  # Основная область растягивается
         
         print("✅ Модульный UI настроен")
 
@@ -244,10 +260,13 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         try:
             if GopiAIThemeManager:
                 self.theme_manager = GopiAIThemeManager()
-                print("✅ Система тем GopiAI инициализирована")
+                print("✅ Расширенная система тем GopiAI инициализирована")
+            elif ThemeManager:
+                self.theme_manager = ThemeManager()
+                print("✅ Локальная система тем инициализирована")
             else:
                 self.theme_manager = None
-                print("⚠️ Система тем недоступна")
+                print("⚠️ Система тем недоступна - используем встроенные темы")
         except Exception as e:
             print(f"⚠️ Ошибка инициализации тем: {e}")
             self.theme_manager = None
@@ -266,17 +285,35 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
     def _apply_default_styles(self):
         """Применение стилей по умолчанию"""
-        # Загружаем тему Material Sky
+        # Пытаемся применить расширенную систему тем
         try:
-            theme = load_theme("Material Sky")
-            if theme and self.theme_manager:
-                apply_theme(self, theme)
-            else:
-                self._apply_fallback_styles()
-            print("✅ Тема применена")
+            if apply_theme:
+                # Загружаем сохранённую тему или тему по умолчанию
+                from PySide6.QtWidgets import QApplication
+                app = QApplication.instance()
+                if app:
+                    apply_theme(app)
+                    print("✅ Расширенная система тем применена")
+                    return
         except Exception as e:
-            print(f"⚠️ Ошибка применения темы, используем fallback: {e}")
-            self._apply_fallback_styles()
+            print(f"⚠️ Ошибка применения расширенной темы: {e}")
+        
+        # Fallback - применяем простую тему из ui_components
+        try:
+            if self.theme_manager:
+                # Пытаемся применить простую тему
+                from ui_components.theme_manager import apply_simple_theme
+                from PySide6.QtWidgets import QApplication
+                app = QApplication.instance()
+                if isinstance(app, QApplication) and apply_simple_theme(app):
+                    print("✅ Простая тема применена")
+                    return
+        except Exception as e:
+            print(f"⚠️ Ошибка применения простой темы: {e}")
+            
+        # Последний fallback - встроенные стили
+        print("⚠️ Используем встроенные стили fallback")
+        self._apply_fallback_styles()
 
     def _apply_fallback_styles(self):
         """Применение запасных стилей"""
@@ -331,10 +368,12 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 menu_bar.newFileRequested.connect(self._on_new_file)
                 menu_bar.openFileRequested.connect(self._on_open_file)
                 menu_bar.saveRequested.connect(self._on_save_file)
-                menu_bar.exitRequested.connect(self.close)
-                  # Подключаем сигналы вида
+                menu_bar.exitRequested.connect(self.close)                # Подключаем сигналы вида
                 menu_bar.openChatRequested.connect(self._toggle_chat)
                 menu_bar.openTerminalRequested.connect(self._toggle_terminal)
+                
+                # Подключаем сигнал смены темы
+                menu_bar.changeThemeRequested.connect(self._on_change_theme)
                 print("✅ Сигналы меню подключены")
         except Exception as e:
             print(f"⚠️ Ошибка подключения сигналов меню: {e}")
@@ -381,6 +420,66 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
     def _toggle_terminal(self):
         """Переключение видимости терминала"""
         self.terminal_widget.setVisible(not self.terminal_widget.isVisible())
+
+    def _on_change_theme(self, theme_name):
+        """Обработчик смены темы"""
+        try:
+            print(f"🎨 Запрос смены темы: {theme_name}")
+            
+            if theme_name == "dialog":
+                # Показываем диалог выбора темы
+                from gopiai.core.simple_theme_manager import choose_theme_dialog
+                from PySide6.QtWidgets import QApplication
+                app = QApplication.instance()
+                if app:
+                    choose_theme_dialog(app)
+                    print("✅ Диалог выбора темы открыт")
+                return
+            
+            # Применяем конкретную тему
+            from gopiai.core.simple_theme_manager import (
+                MATERIAL_SKY_THEME, EMERALD_GARDEN_THEME,
+                CRIMSON_RELIC_THEME, GOLDEN_EMBER_THEME,
+                apply_theme
+            )
+            
+            # Загружаем тему по названию
+            themes = {
+                "Material Sky": MATERIAL_SKY_THEME,
+                "Emerald Garden": EMERALD_GARDEN_THEME,
+                "Crimson Relic": CRIMSON_RELIC_THEME,
+                "Golden Ember": GOLDEN_EMBER_THEME
+            }
+            
+            if theme_name in themes:
+                theme = themes[theme_name]
+                # Сохраняем выбранную тему для apply_theme()
+                from gopiai.core.simple_theme_manager import save_theme
+                
+                # Извлекаем цвета темы для сохранения
+                # Используем тёмный вариант по умолчанию
+                theme_colors = theme.get('dark', theme.get('light', {}))
+                save_theme(theme_colors)
+                  # Применяем тему
+                from PySide6.QtWidgets import QApplication
+                app = QApplication.instance()
+                if app:
+                    apply_theme(app)
+                    print(f"✅ Тема '{theme_name}' применена")
+            else:
+                print(f"⚠️ Неизвестная тема: {theme_name}")
+                
+        except Exception as e:
+            print(f"⚠️ Ошибка смены темы: {e}")            # Fallback - применяем простую тему
+            try:
+                from ui_components.theme_manager import apply_simple_theme
+                from PySide6.QtWidgets import QApplication
+                app = QApplication.instance()
+                if isinstance(app, QApplication):
+                    apply_simple_theme(app)
+                    print("✅ Применена простая fallback тема")
+            except Exception as fallback_error:
+                print(f"⚠️ Ошибка fallback темы: {fallback_error}")
 
     def resizeEvent(self, event):
         """Обработка изменения размера окна"""
