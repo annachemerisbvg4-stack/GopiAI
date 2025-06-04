@@ -187,3 +187,9 @@ __pycache__/
 *.tar.gz
 venv/
 Lib/
+
+# Node modules
+node_modules/
+
+# Lucide icons
+assets/icons/lucide/
