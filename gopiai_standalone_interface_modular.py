@@ -54,19 +54,19 @@ try:
         TabDocumentWidget,
         ChatWidget,
         TerminalWidget,
-    )
-      # Попробуем импортировать дополнительные системы (пока недоступны)
+    )      # Попробуем импортировать дополнительные системы
+    try:
+        from ui_components import AutoIconSystem
+        print("✅ Система иконок AutoIconSystem загружена")
+    except ImportError:
+        AutoIconSystem = None
+        print("⚠️ Система иконок недоступна")
+        
     # try:
     #     from ui_components import ThemeManager
     # except ImportError:
     #     ThemeManager = None
     ThemeManager = None
-        
-    # try:
-    #     from ui_components import AutoIconSystem
-    # except ImportError:
-    #     AutoIconSystem = None
-    AutoIconSystem = None
         
     print("✅ Все основные модули UI загружены успешно")
     MODULES_LOADED = True
@@ -101,7 +101,7 @@ except ImportError as e:
     StandaloneTitlebar = lambda parent=None: SimpleWidget("Titlebar")
     StandaloneTitlebarWithMenu = lambda parent=None: SimpleWidget("TitlebarWithMenu")
     CustomGrip = lambda parent, direction: QWidget()
-    FileExplorerWidget = lambda parent=None: SimpleWidget("FileExplorer") 
+    FileExplorerWidget = lambda parent=None, icon_manager=None: SimpleWidget("FileExplorer") 
     TabDocumentWidget = lambda parent=None: SimpleWidget("TabDocument")
     ChatWidget = lambda parent=None: SimpleWidget("Chat")
     TerminalWidget = lambda parent=None: SimpleWidget("Terminal")
@@ -147,11 +147,10 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         # Константы
         self.TITLEBAR_HEIGHT = 40
         self.GRIP_SIZE = 10
-        
-        # Инициализация
+          # Инициализация
+        self._init_theme_system()
         self._setup_ui()
         self._init_grips()
-        self._init_theme_system()
         self._apply_default_styles()
         self._connect_menu_signals()
         
@@ -180,9 +179,8 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         # Основной сплиттер (горизонтальный)
         main_splitter = QSplitter(Qt.Orientation.Horizontal)
         main_layout.addWidget(main_splitter, 1)
-        
-        # Левая панель - файловый проводник (модульный)
-        self.file_explorer = FileExplorerWidget()
+          # Левая панель - файловый проводник (модульный)
+        self.file_explorer = FileExplorerWidget(icon_manager=self.icon_manager)
         main_splitter.addWidget(self.file_explorer)
         
         # Правый сплиттер (вертикальный)
@@ -241,7 +239,8 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self.grips['right'].setGeometry(rect.width() - grip_size, grip_size, grip_size, rect.height() - 2*grip_size)
 
     def _init_theme_system(self):
-        """Инициализация системы тем"""
+        """Инициализация системы тем и иконок"""
+        # Инициализация системы тем
         try:
             if GopiAIThemeManager:
                 self.theme_manager = GopiAIThemeManager()
@@ -252,6 +251,18 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         except Exception as e:
             print(f"⚠️ Ошибка инициализации тем: {e}")
             self.theme_manager = None
+            
+        # Инициализация системы иконок
+        try:
+            if AutoIconSystem:
+                self.icon_manager = AutoIconSystem()
+                print("✅ Система иконок AutoIconSystem инициализирована")
+            else:
+                self.icon_manager = None
+                print("⚠️ Система иконок недоступна")
+        except Exception as e:
+            print(f"⚠️ Ошибка инициализации иконок: {e}")
+            self.icon_manager = None
 
     def _apply_default_styles(self):
         """Применение стилей по умолчанию"""

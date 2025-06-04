@@ -46,10 +46,13 @@ class AutoIconMapper:
         'exit_action': 'log-out',
         'quit': 'log-out',
         'quit_action': 'log-out',
-        
-        # Редактирование
+          # Редактирование
         'edit': 'edit',
         'edit_action': 'edit',
+        'undo': 'undo',
+        'undo_action': 'undo',
+        'redo': 'redo',
+        'redo_action': 'redo',
         'cut': 'scissors',
         'cut_action': 'scissors',
         'copy': 'copy',
@@ -58,17 +61,21 @@ class AutoIconMapper:
         'paste_action': 'clipboard',
         'delete': 'trash-2',
         'delete_action': 'trash-2',
-        'select_all': 'check-square',
-        'selectAll': 'check-square',
-        'select_all_action': 'check-square',
+        'select_all': 'text-select',
+        'selectAll': 'text-select',
+        'select_all_action': 'text-select',
         'find': 'search',
         'find_action': 'search',
         'replace': 'replace',
         'replace_action': 'replace',
-        
-        # Вид
+          # Вид
         'view': 'eye',
         'view_action': 'eye',
+        'project_explorer_action': 'folder-open',
+        'chat_action': 'message-circle',
+        'browser_action': 'globe',
+        'terminal_action': 'terminal',
+        'text_editor_action': 'file-text',
         'zoom_in': 'zoom-in',
         'zoom_in_action': 'zoom-in',
         'zoom_out': 'zoom-out',
@@ -292,22 +299,3 @@ class AutoIconSystem:
             return QIcon()
         
         return self.icon_manager.get_icon(icon_name)
-
-
-# Синглтон для AutoIconSystem
-_auto_icon_system = None
-
-def get_auto_icon_system() -> AutoIconSystem:
-    """Получить единственный экземпляр AutoIconSystem"""
-    global _auto_icon_system
-    if _auto_icon_system is None:
-        _auto_icon_system = AutoIconSystem()
-    return _auto_icon_system
-
-def apply_icons_to_menu(menu_bar: QMenuBar, icon_size: Optional[QSize] = None) -> int:
-    """Вспомогательная функция для применения иконок к меню"""
-    return get_auto_icon_system().apply_icons_to_menu(menu_bar, icon_size)
-
-def apply_icons_to_widget(widget: QWidget, icon_size: Optional[QSize] = None) -> int:
-    """Вспомогательная функция для применения иконок к виджету"""
-    return get_auto_icon_system().apply_icons_to_widget(widget, icon_size)

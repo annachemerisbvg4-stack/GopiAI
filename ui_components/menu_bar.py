@@ -131,13 +131,12 @@ class StandaloneMenuBar(QMenuBar):
         self.select_all_action = edit_menu.addAction("Выделить всё")
 
     def _setup_view_menu(self, view_menu):
-        """Настройка меню вида"""
-        # Основные панели
-        project_explorer_action = view_menu.addAction("Файловый проводник")
-        chat_action = view_menu.addAction("ИИ чат")
-        browser_action = view_menu.addAction("Браузер")
-        terminal_action = view_menu.addAction("Терминал")
-        text_editor_action = view_menu.addAction("Редактор")
+        """Настройка меню вида"""        # Основные панели
+        self.project_explorer_action = view_menu.addAction("Файловый проводник")
+        self.chat_action = view_menu.addAction("ИИ чат")
+        self.browser_action = view_menu.addAction("Браузер")
+        self.terminal_action = view_menu.addAction("Терминал")
+        self.text_editor_action = view_menu.addAction("Редактор")
         
         view_menu.addSeparator()
         
@@ -160,13 +159,12 @@ class StandaloneMenuBar(QMenuBar):
         
         # По умолчанию продуктивность включена
         self.productivity_action.setChecked(True)
-        
-        # Подключение сигналов вида
-        project_explorer_action.triggered.connect(self.openProjectExplorerRequested.emit)
-        chat_action.triggered.connect(self.openChatRequested.emit)
-        browser_action.triggered.connect(self.openBrowserRequested.emit)
-        terminal_action.triggered.connect(self.openTerminalRequested.emit)
-        text_editor_action.triggered.connect(self.openTextEditorRequested.emit)
+          # Подключение сигналов вида
+        self.project_explorer_action.triggered.connect(self.openProjectExplorerRequested.emit)
+        self.chat_action.triggered.connect(self.openChatRequested.emit)
+        self.browser_action.triggered.connect(self.openBrowserRequested.emit)
+        self.terminal_action.triggered.connect(self.openTerminalRequested.emit)
+        self.text_editor_action.triggered.connect(self.openTextEditorRequested.emit)
         
         # Подключение сигналов расширений
         self.productivity_action.triggered.connect(self.toggleProductivityExtension.emit)
@@ -183,25 +181,42 @@ class StandaloneMenuBar(QMenuBar):
             'open_folder_action': 'folder-open',
             'save_action': 'save',
             'save_as_action': 'save-as',
-            'exit_action': 'x',
-            
-            # Меню правки
+            'exit_action': 'x',            # Меню правки
             'undo_action': 'undo',
             'redo_action': 'redo',
             'cut_action': 'scissors',
             'copy_action': 'copy',
             'paste_action': 'clipboard',
             'delete_action': 'trash-2',
-            'select_all_action': 'select-all',
-        }
-        
-        # Применяем иконки
+            'select_all_action': 'text-select',
+            
+            # Меню вида
+            'project_explorer_action': 'folder-open',
+            'chat_action': 'message-circle',
+            'browser_action': 'globe',
+            'terminal_action': 'terminal',
+            'text_editor_action': 'file-text',
+        }        # Применяем иконки
         for action_name, icon_name in icon_mapping.items():
             if hasattr(self, action_name):
                 action = getattr(self, action_name)
-                icon = self.icon_system.get_icon(icon_name)
-                if not icon.isNull():
-                    action.setIcon(icon)
+                
+                # Проверяем тип icon_system и используем соответствующий метод
+                try:
+                    if hasattr(self.icon_system, 'get_icon_for_action_name'):
+                        # AutoIconSystem
+                        icon = self.icon_system.get_icon_for_action_name(action_name)
+                    elif hasattr(self.icon_system, 'get_icon'):
+                        # SimpleIconManager
+                        icon = self.icon_system.get_icon(icon_name)
+                    else:
+                        print(f"⚠️ Неизвестный тип icon_system: {type(self.icon_system)}")
+                        continue
+                        
+                    if not icon.isNull():
+                        action.setIcon(icon)
+                except Exception as e:
+                    print(f"⚠️ Ошибка получения иконки для {action_name}: {e}")
 
     def refresh_icons(self):
         """Принудительное обновление всех иконок в меню"""

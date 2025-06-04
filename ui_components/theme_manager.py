@@ -303,15 +303,14 @@ if theme_manager_path.exists():
                         
                         # Переопределяем класс ThemeManager
                         WidgetThemeManager = widget_theme_module.ThemeManager
-                        ThemeManager = WidgetThemeManager  # Переименовываем для совместимости
-                        print(f"✓ ThemeManager загружен из {widget_theme_path}")
+                        ThemeManager = WidgetThemeManager  # Переименовываем для совместимости                        print(f"✓ ThemeManager загружен из {widget_theme_path}")
                     else:
                         print(f"⚠ Не удалось создать спецификацию для ThemeManager")
                 except Exception as e:
                     print(f"⚠ ThemeManager недоступен, используется заглушка: {e}")
         else:
             print(f"⚠ Не удалось создать спецификацию для simple_theme_manager")
-          except Exception as e:
+    except Exception as e:
         THEMES_AVAILABLE = False
         print(f"⚠ Расширенная система тем недоступна: {e}")
         print(f"⚠ sys.path: {sys.path}")
@@ -356,9 +355,10 @@ def initialize_theme_system(app=None):
     else:
         print("⚠ Расширенная система тем недоступна, использую простую тему")
         return apply_simple_theme(app)
-else:
+
+# Заглушки функций для случая, когда файл не существует
+if not THEMES_AVAILABLE:
     print(f"⚠ Файл {theme_manager_path} не существует")
-    THEMES_AVAILABLE = False
     
     # Заглушки функций для поддержки совместимости
     def load_theme(*args, **kwargs):
