@@ -19,6 +19,7 @@ from .file_explorer import FileExplorerWidget
 from .tab_widget import TabDocumentWidget
 from .chat_widget import ChatWidget
 from .terminal_widget import TerminalWidget
+from .theme_selector_dialog import ThemeSelectorDialog, show_theme_selector
 
 # Импорт систем тем и иконок (могут быть недоступны)
 try:
@@ -40,6 +41,8 @@ __all__ = [
     "TabDocumentWidget",
     "ChatWidget",
     "TerminalWidget",
+    "ThemeSelectorDialog",
+    "show_theme_selector",
 ]
 
 # Добавляем в экспорт только доступные модули
