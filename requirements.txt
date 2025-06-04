@@ -1,0 +1,7 @@
+PySide6>=6.5.0
+PyQt5
+QStyler
+qt-style-sheet-inspector
+PyYAML
+requests
+pytest
