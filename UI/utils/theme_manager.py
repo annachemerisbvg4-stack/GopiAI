@@ -39,11 +39,9 @@ def apply_simple_theme(app: Optional[QApplication] = None):
         border: none;
         padding: 4px;
     }
-    
-    QMenuBar::item {
+      QMenuBar::item {
         background-color: transparent;
         padding: 6px 12px;
-        border-radius: 4px;
         margin: 2px;
     }
     
@@ -54,18 +52,14 @@ def apply_simple_theme(app: Optional[QApplication] = None):
     QMenuBar::item:pressed {
         background-color: #028795;
     }
-    
-    QMenu {
+      QMenu {
         background-color: #404040;
         color: #ffffff;
         border: 1px solid #555555;
-        border-radius: 6px;
         padding: 4px;
     }
-    
-    QMenu::item {
+      QMenu::item {
         padding: 8px 32px 8px 32px;
-        border-radius: 4px;
         margin: 1px;
     }
     
@@ -112,22 +106,18 @@ def apply_simple_theme(app: Optional[QApplication] = None):
         selection-background-color: #028795;
     }
     
-    /* Текстовые поля */
-    QTextEdit, QPlainTextEdit {
+    /* Текстовые поля */    QTextEdit, QPlainTextEdit {
         background-color: #1e1e1e;
         color: #ffffff;
         border: 1px solid #555555;
-        border-radius: 4px;
         padding: 8px;
         font-family: 'Consolas', 'Courier New', monospace;
         font-size: 10pt;
     }
-    
-    QLineEdit {
+      QLineEdit {
         background-color: #1e1e1e;
         color: #ffffff;
         border: 1px solid #555555;
-        border-radius: 4px;
         padding: 6px;
     }
     
@@ -135,12 +125,10 @@ def apply_simple_theme(app: Optional[QApplication] = None):
         border-color: #028795;
     }
     
-    /* Кнопки */
-    QPushButton {
+    /* Кнопки */    QPushButton {
         background-color: #404040;
         color: #ffffff;
         border: 1px solid #555555;
-        border-radius: 6px;
         padding: 8px 16px;
         font-weight: bold;
     }
@@ -154,32 +142,24 @@ def apply_simple_theme(app: Optional[QApplication] = None):
         background-color: #028795;
     }
     
-    /* Скроллбары */
-    QScrollBar:vertical {
+    /* Скроллбары */    QScrollBar:vertical {
         background-color: #2b2b2b;
         width: 12px;
-        border-radius: 6px;
     }
-    
-    QScrollBar::handle:vertical {
+      QScrollBar::handle:vertical {
         background-color: #555555;
-        border-radius: 6px;
         min-height: 20px;
     }
     
     QScrollBar::handle:vertical:hover {
         background-color: #666666;
     }
-    
-    QScrollBar:horizontal {
+      QScrollBar:horizontal {
         background-color: #2b2b2b;
         height: 12px;
-        border-radius: 6px;
     }
-    
-    QScrollBar::handle:horizontal {
+      QScrollBar::handle:horizontal {
         background-color: #555555;
-        border-radius: 6px;
         min-width: 20px;
     }
     
@@ -188,14 +168,11 @@ def apply_simple_theme(app: Optional[QApplication] = None):
         border: 1px solid #555555;
         background-color: #2b2b2b;
     }
-    
-    QTabBar::tab {
+      QTabBar::tab {
         background-color: #404040;
         color: #ffffff;
         padding: 8px 16px;
         margin: 2px;
-        border-top-left-radius: 6px;
-        border-top-right-radius: 6px;
     }
     
     QTabBar::tab:selected {
@@ -267,6 +244,11 @@ GOLDEN_EMBER_THEME = {"name": "Golden Ember"}
 class ThemeManager:
     def __init__(self):
         self.current_theme = None
+        self.themes = {}
+        self.apply_theme_func = None
+        self.load_theme_func = None
+        self.save_theme_func = None
+        
         # Импортируем темы из simple_theme_manager
         try:
             from .simple_theme_manager import (
@@ -283,172 +265,147 @@ class ThemeManager:
             self.apply_theme_func = apply_theme
             self.load_theme_func = load_theme
             self.save_theme_func = save_theme
-            print("✅ ThemeManager инициализирован с реальными темами")
+            print("✅ ThemeManager: реальные темы загружены")
         except ImportError as e:
-            print(f"⚠️ Ошибка импорта тем: {e}")
-            self.themes = {}
-            self.apply_theme_func = None
-            self.load_theme_func = None
-            self.save_theme_func = None
+            print(f"⚠️ ThemeManager: ошибка импорта тем: {e}")
 
-    def apply_theme(self, app):
+    def apply_theme(self, app=None):
         """Применение текущей темы"""
+        from PySide6.QtWidgets import QApplication
+        
+        if app is None:
+            app = QApplication.instance()
+            
+        if not app or not isinstance(app, QApplication):
+            print("⚠️ ThemeManager: QApplication недоступен")
+            return False
+            
         if self.apply_theme_func:
             try:
-                self.apply_theme_func(app)
-                print("✅ Реальная тема применена через ThemeManager")
-                return True
-            except Exception as e:
-                print(f"⚠️ Ошибка применения реальной темы: {e}")
-        
-        # Fallback
-        print("⚠️ Fallback к простой теме")
-        return apply_simple_theme(app)
-
-    def apply_theme_by_name(self, theme_name):
-        """Применение темы по имени"""
-        if theme_name in self.themes and self.save_theme_func and self.apply_theme_func:
-            try:
-                theme = self.themes[theme_name]
-                # Используем тёмный вариант по умолчанию
-                theme_colors = theme.get('dark', theme.get('light', {}))
-                self.save_theme_func(theme_colors)
-                
-                from PySide6.QtWidgets import QApplication
-                app = QApplication.instance()
-                if app:
-                    self.apply_theme_func(app)
-                    self.current_theme = theme_name
-                    print(f"✅ Тема '{theme_name}' применена")
+                result = self.apply_theme_func(app)
+                if result:
+                    print("✅ ThemeManager: реальная тема применена")
                     return True
+                else:
+                    print("⚠️ ThemeManager: apply_theme вернул False")
             except Exception as e:
-                print(f"⚠️ Ошибка применения темы '{theme_name}': {e}")
+                print(f"⚠️ ThemeManager: ошибка применения реальной темы: {e}")
         
-        print(f"⚠️ Тема '{theme_name}' недоступна")
+        # Fallback к простой теме
+        print("⚠️ ThemeManager: fallback к простой теме")
+        return apply_simple_theme(cast(Optional[QApplication], app) if isinstance(app, QApplication) else None)
+
+    def apply_theme_by_name(self, theme_name, is_dark=True):
+        """Применение темы по имени"""
+        if not theme_name in self.themes:
+            print(f"⚠️ ThemeManager: тема '{theme_name}' недоступна")
+            return False
+            
+        if not (self.save_theme_func and self.apply_theme_func):
+            print("⚠️ ThemeManager: функции тем недоступны")
+            return False
+            
+        try:
+            theme = self.themes[theme_name]
+            # Выбираем тёмный или светлый вариант
+            variant = 'dark' if is_dark else 'light'
+            theme_colors = theme.get(variant, theme.get('dark', theme.get('light', {})))
+            
+            if not theme_colors:
+                print(f"⚠️ ThemeManager: нет данных для темы '{theme_name}' вариант {variant}")
+                return False
+                
+            # Сохраняем цвета темы
+            save_result = self.save_theme_func(theme_colors)
+            if not save_result:
+                print(f"⚠️ ThemeManager: не удалось сохранить тему '{theme_name}'")
+                return False
+            
+            # Применяем тему
+            from PySide6.QtWidgets import QApplication
+            app = QApplication.instance()
+            if app and isinstance(app, QApplication):
+                apply_result = self.apply_theme_func(app)
+                if apply_result:
+                    self.current_theme = theme_name
+                    print(f"✅ ThemeManager: тема '{theme_name}' ({variant}) применена")
+                    return True
+                else:
+                    print(f"⚠️ ThemeManager: не удалось применить тему '{theme_name}'")
+            else:
+                print("⚠️ ThemeManager: QApplication недоступен")
+        except Exception as e:
+            print(f"⚠️ ThemeManager: ошибка применения темы '{theme_name}': {e}")
+        
         return False
 
-    def load_theme(self, theme_name):
-        """Загрузка темы"""
+    def load_current_theme(self):
+        """Загрузка текущей сохранённой темы"""
         if self.load_theme_func:
-            return self.load_theme_func()
-        print(f"⚠️ Используется заглушка ThemeManager.load_theme: {theme_name}")
-        return None
+            try:
+                return self.load_theme_func()
+            except Exception as e:
+                print(f"⚠️ ThemeManager: ошибка загрузки темы: {e}")        
+                return None
 
     def get_available_themes(self):
         """Получить список доступных тем"""
         return list(self.themes.keys())
+        
+    def get_theme_variants(self, theme_name):
+        """Получить варианты темы (light/dark)"""
+        if theme_name in self.themes:
+            theme = self.themes[theme_name]
+            variants = []
+            if 'light' in theme:
+                variants.append('light')
+            if 'dark' in theme:
+                variants.append('dark')
+            return variants
+        return []
 
 
-THEMES_AVAILABLE = False
-
-# Проверяем файлы и пытаемся импортировать
-if theme_manager_path.exists():
-    try:
-        # Используем специальный импорт для загрузки модуля вручную
-        import importlib.util
-
-        spec = importlib.util.spec_from_file_location(
-            "simple_theme_manager", str(theme_manager_path)
-        )
-
-        if spec and spec.loader:
-            theme_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(theme_module)
-
-            # Извлекаем нужные функции и константы из модуля
-            load_theme = theme_module.load_theme
-            apply_theme = theme_module.apply_theme
-            save_theme = theme_module.save_theme
-            MATERIAL_SKY_THEME = theme_module.MATERIAL_SKY_THEME
-            EMERALD_GARDEN_THEME = theme_module.EMERALD_GARDEN_THEME
-            CRIMSON_RELIC_THEME = theme_module.CRIMSON_RELIC_THEME
-            GOLDEN_EMBER_THEME = theme_module.GOLDEN_EMBER_THEME
-
-            THEMES_AVAILABLE = True
-            print(f"✓ Расширенная система тем GopiAI загружена из {theme_manager_path}")
-
-            # Пробуем импортировать ThemeManager если файл существует
-            if widget_theme_path.exists():
-                try:
-                    widget_spec = importlib.util.spec_from_file_location(
-                        "widget_theme_manager", str(widget_theme_path)
-                    )
-
-                    if widget_spec and widget_spec.loader:
-                        widget_theme_module = importlib.util.module_from_spec(widget_spec)
-                        widget_spec.loader.exec_module(widget_theme_module)
-
-                        # Переопределяем класс ThemeManager
-                        WidgetThemeManager = widget_theme_module.ThemeManager
-                        ThemeManager = WidgetThemeManager  # Переименовываем для совместимости
-                        print(f"✓ ThemeManager загружен из {widget_theme_path}")
-                    else:
-                        print(f"⚠ Не удалось создать спецификацию для ThemeManager")
-                except Exception as e:
-                    print(f"⚠ ThemeManager недоступен, используется заглушка: {e}")
-        else:
-            print(f"⚠ Не удалось создать спецификацию для simple_theme_manager")
-    except Exception as e:
-        THEMES_AVAILABLE = False
-        print(f"⚠ Расширенная система тем недоступна: {e}")
-        print(f"⚠ sys.path: {sys.path}")
-
-else:
-    # print(f"⚠ Файл {theme_manager_path} не существует")  # Отладка отключена
-    THEMES_AVAILABLE = False
-
-    # Заглушки функций для поддержки совместимости
-    def load_theme(*args, **kwargs):
-        print("⚠ Используется заглушка load_theme")
-        return None
-
-    def apply_theme(*args, **kwargs):
-        print("⚠ Используется заглушка apply_theme")
-        return False
-
-    def save_theme(*args, **kwargs):
-        print("⚠ Используется заглушка save_theme")
-        return False
+# Создаём глобальный экземпляр менеджера тем
+theme_manager_instance = ThemeManager()
 
 
 def initialize_theme_system(app=None):
     """Инициализирует и применяет систему тем
 
     Args:
-        app: QApplication инстанс для применения темы. По умолчанию None (будет использован QApplication.instance()).
-
-    Returns:
+        app: QApplication инстанс для применения темы. По умолчанию None (будет использован QApplication.instance()).    Returns:
         bool: True если тема была успешно применена, False в противном случае.
     """
     if app is None:
         from PySide6.QtWidgets import QApplication
-
         app = QApplication.instance()
 
-    if not app:
-        print("⚠ Не удалось получить экземпляр QApplication")
+    if not app or not isinstance(app, QApplication):
+        print("⚠ initialize_theme_system: Не удалось получить экземпляр QApplication")
         return False
 
-    if THEMES_AVAILABLE:
-        try:
-            theme_manager = ThemeManager()
-            current_theme = load_theme()
-
-            if current_theme:
-                print(f"✓ Загружена тема: {current_theme.get('name', 'Без названия')}")
-                success = apply_theme(current_theme, app)
-                if success:
-                    print(f"✓ Применена тема: {current_theme.get('name', 'Без названия')}")
-                    return True
-                else:
-                    print(f"⚠ Не удалось применить тему, использую простую тему")
-                    return apply_simple_theme(cast(QApplication, app))
-            else:
-                print(f"⚠ Не удалось загрузить тему, использую Material Sky")
-                return apply_theme(MATERIAL_SKY_THEME, app)
-        except Exception as e:
-            print(f"⚠ Ошибка при инициализации системы тем: {e}")
-            return apply_simple_theme(cast(QApplication, app))
-    else:
-        print("⚠ Расширенная система тем недоступна, использую простую тему")
-        return apply_simple_theme(cast(QApplication, app))
+    # Инициализируем новый ThemeManager
+    try:
+        theme_manager = ThemeManager()
+        
+        # Попробуем применить сохранённую тему
+        current_theme = theme_manager.load_current_theme()
+        if current_theme:
+            print(f"✓ Загружена сохранённая тема: {current_theme.get('name', 'Без названия')}")
+            success = theme_manager.apply_theme(app)
+            if success:
+                return True
+        
+        # Если сохранённой темы нет, применим Material Sky по умолчанию
+        if len(theme_manager.get_available_themes()) > 0:
+            default_theme = "Material Sky"
+            print(f"✓ Применяем тему по умолчанию: {default_theme}")
+            success = theme_manager.apply_theme_by_name(default_theme, is_dark=True)
+            if success:
+                return True        # Если ничего не получилось, применим простую тему
+        print("⚠ Fallback к простой встроенной теме")
+        return apply_simple_theme(cast(Optional[QApplication], app) if isinstance(app, QApplication) else None)
+        
+    except Exception as e:
+        print(f"⚠ Ошибка при инициализации системы тем: {e}")
+        return apply_simple_theme(cast(Optional[QApplication], app) if isinstance(app, QApplication) else None)

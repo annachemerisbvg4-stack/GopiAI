@@ -34,6 +34,7 @@ module_paths = [
     gopiai_modules_root,  # Для корневых модулей
 ]
 
+
 for path in module_paths:
     if path not in sys.path:
         sys.path.insert(0, path)
@@ -275,18 +276,27 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             self.theme_manager = None
 
     def _apply_default_styles(self):
-        """Применение стилей по умолчанию"""
-        # Пытаемся применить систему тем через theme_manager
+        """Применение стилей по умолчанию"""        # Пытаемся применить систему тем через theme_manager
         try:
             if self.theme_manager and hasattr(self.theme_manager, 'apply_theme'):
                 from PySide6.QtWidgets import QApplication
                 app = QApplication.instance()
+                print(f"🔍 main.py: QApplication.instance() = {app}")
                 if app:
-                    self.theme_manager.apply_theme(app)
-                    print("✅ Система тем применена через theme_manager")
-                    return
+                    print(f"🔍 main.py: Вызываем self.theme_manager.apply_theme({app})")
+                    result = self.theme_manager.apply_theme(app)
+                    print(f"🔍 main.py: Результат apply_theme = {result}")
+                    if result:
+                        print("✅ Система тем применена через theme_manager")
+                        return
+                    else:
+                        print("⚠️ apply_theme вернул False")
+                else:
+                    print("⚠️ QApplication.instance() вернул None")
         except Exception as e:
             print(f"⚠️ Ошибка применения темы через theme_manager: {e}")
+            import traceback
+            traceback.print_exc()
             
         # Последний fallback - встроенные стили
         print("⚠️ Используем встроенные стили fallback")

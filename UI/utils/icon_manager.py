@@ -18,9 +18,7 @@ from typing import Dict, Optional, Union, List
 import logging
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QPen, QFont
-from PySide6.QtGui import QPainter
 
 # Константы
 RenderHints = {
@@ -147,10 +145,10 @@ class UniversalIconManager:
         """Создает универсальную fallback иконку с первой буквой имени"""
         icon = QIcon()
         pixmap = QPixmap(size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Рисуем рамку
         painter.setPen(QColor("#888888"))
@@ -163,7 +161,7 @@ class UniversalIconManager:
             painter.setFont(font)
             painter.drawText(
                 0, 0, size.width(), size.height(), 
-                Qt.AlignCenter, 
+                Qt.AlignmentFlag.AlignCenter, 
                 icon_name[0].upper()
             )
         
@@ -177,10 +175,10 @@ class UniversalIconManager:
         """Создает иконку 'Новый файл'"""
         icon = QIcon()
         pixmap = QPixmap(size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Рисуем документ
         painter.setPen(QColor("#444444"))
@@ -202,10 +200,10 @@ class UniversalIconManager:
         """Создает иконку 'Открыть папку'"""
         icon = QIcon()
         pixmap = QPixmap(size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Рисуем папку
         painter.setPen(QColor("#444444"))
@@ -227,10 +225,10 @@ class UniversalIconManager:
         """Создает иконку 'Сохранить'"""
         icon = QIcon()
         pixmap = QPixmap(size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Рисуем дискету
         painter.setPen(QColor("#444444"))
@@ -250,10 +248,10 @@ class UniversalIconManager:
         """Создает иконку 'Настройки'"""
         icon = QIcon()
         pixmap = QPixmap(size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Рисуем шестеренку
         painter.setPen(QColor("#444444"))
@@ -291,10 +289,10 @@ class UniversalIconManager:
         """Создает иконку 'Закрыть' (X)"""
         icon = QIcon()
         pixmap = QPixmap(size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Рисуем X
         painter.setPen(QColor("#444444"))
@@ -313,10 +311,10 @@ class UniversalIconManager:
         """Создает иконку 'Плюс'"""
         icon = QIcon()
         pixmap = QPixmap(size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Рисуем +
         painter.setPen(QColor("#444444"))
@@ -335,10 +333,10 @@ class UniversalIconManager:
         """Создает иконку 'Минус'"""
         icon = QIcon()
         pixmap = QPixmap(size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Рисуем -
         painter.setPen(QColor("#444444"))
@@ -355,10 +353,10 @@ class UniversalIconManager:
         """Создает иконку 'Меню'"""
         icon = QIcon()
         pixmap = QPixmap(size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Рисуем три линии
         painter.setPen(QColor("#444444"))
@@ -381,10 +379,10 @@ class UniversalIconManager:
         """Создает иконку 'Развернуть'"""
         icon = QIcon()
         pixmap = QPixmap(size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Рисуем прямоугольник
         painter.setPen(QColor("#444444"))
@@ -403,10 +401,10 @@ class UniversalIconManager:
         """Создает иконку 'Свернуть'"""
         icon = QIcon()
         pixmap = QPixmap(size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Рисуем линию внизу
         painter.setPen(QColor("#444444"))

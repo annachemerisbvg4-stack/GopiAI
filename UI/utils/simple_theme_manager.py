@@ -10,6 +10,7 @@ import logging
 import math
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QColor, QPalette
+from PySide6.QtCore import Qt
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
