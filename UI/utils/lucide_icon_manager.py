@@ -38,14 +38,14 @@ class LucideIconManager:
         try:
             from gopiai.core.logging import get_logger
             self.logger = get_logger().logger
-        except ImportError:
-            class SimpleLogger:
+        except ImportError:            class SimpleLogger:
                 def info(self, message): print(f"[INFO] {message}")
                 def warning(self, message): print(f"[WARNING] {message}")
                 def error(self, message): print(f"[ERROR] {message}")
                 def debug(self, message): print(f"[DEBUG] {message}")
             self.logger = SimpleLogger()
-              # Проверяем наличие оригинального менеджера в GopiAI-Widgets
+            
+        # Проверяем наличие оригинального менеджера в GopiAI-Widgets
         self.original_manager = None
         try:
             original_path = Path(__file__).parent.parent.parent / "GopiAI-Widgets" / "gopiai" / "widgets" / "managers" / "lucide_icon_manager.py"
@@ -61,7 +61,8 @@ class LucideIconManager:
                 if hasattr(original_module, "LucideIconManager"):
                     self.original_manager = original_module.LucideIconManager.instance()
                     print(f"✅ Инициализировано из {original_path}")
-              except Exception as e:
+                    
+        except Exception as e:
             # print(f"❌ Ошибка при инициализации оригинального менеджера: {e}")  # Отладка отключена
             pass
             
