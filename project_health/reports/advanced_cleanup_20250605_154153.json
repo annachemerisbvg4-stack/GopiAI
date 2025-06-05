@@ -1,0 +1,29 @@
+{
+  "timestamp": "2025-06-05T15:41:53.285901",
+  "project_root": "c:\\Users\\crazy\\GOPI_AI_MODULES",
+  "removed_files": [
+    "GopiAI-App\\gopiai\\app\\utils\\start_mcp_server.js",
+    "rag_memory_system\\project_sync\\GopiAI-Core\\gopiai\\__init__.py",
+    "rag_memory_system\\project_sync\\GopiAI-Extensions\\gopiai\\__init__.py",
+    "rag_memory_system\\project_sync\\UI\\components\\file_explorer_old.py",
+    "rag_memory_system\\project_sync\\UI\\components\\file_type_detector.py",
+    "rag_memory_system\\project_sync\\UI\\components\\icon_file_system_model.py",
+    "rag_memory_system\\project_sync\\UI\\components\\menu_bar.py",
+    "rag_memory_system\\project_sync\\UI\\components\\tab_widget.py",
+    "rag_memory_system\\project_sync\\UI\\components\\terminal_widget.py",
+    "rag_memory_system\\project_sync\\UI\\components\\titlebar.py",
+    "rag_memory_system\\project_sync\\UI\\utils\\icon_mapping.py"
+  ],
+  "removed_dirs": [
+    "GopiAI-UI\\gopiai\\ui\\windows",
+    "rag_memory_system\\project_sync\\GopiAI-Core\\gopiai",
+    "rag_memory_system\\project_sync\\GopiAI-Core"
+  ],
+  "summary": {
+    "removed_duplicates": 11,
+    "removed_unsafe": 0,
+    "removed_empty_dirs": 3,
+    "total_files": 22,
+    "total_dirs": 6
+  }
+}

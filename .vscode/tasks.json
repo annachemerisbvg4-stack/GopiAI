@@ -21,7 +21,7 @@
             "type": "shell",
             "command": "python",
             "args": [
-                "UI/main.py"
+                "GopiAI-UI/gopiai/ui/main.py"
             ],
             "group": {
                 "kind": "build",

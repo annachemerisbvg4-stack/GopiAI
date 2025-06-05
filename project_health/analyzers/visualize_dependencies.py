@@ -162,13 +162,14 @@ def analyze_graph(G: nx.DiGraph) -> dict:
     # 6. Самый длинный путь
     try:
         longest_path = nx.dag_longest_path(G)
-        results["longest_path"] = longest_path
-        results["longest_path_length"] = len(longest_path)
+        # Convert to list to ensure it's a sized sequence
+        path_list = list(longest_path) if longest_path is not None else []
+        results["longest_path"] = path_list
+        results["longest_path_length"] = len(path_list)
     except Exception:
         # Граф может быть не направленным ациклическим (DAG)
         results["longest_path"] = []
-        results["longest_path_length"] = 0
-
+        results["longest_path_length"] = 0 
     # 7. Анализ по директориям
     dir_stats = defaultdict(lambda: {"count": 0, "in_degree": 0, "out_degree": 0})
     for node in G.nodes():

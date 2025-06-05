@@ -1,4 +1,4 @@
-# GopiAI UI Module
+# GopiAI UI Module 
 
 Модуль пользовательского интерфейса для GopiAI.
 

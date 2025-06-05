@@ -1,0 +1,15 @@
+{
+  "main_color": "#fcf8f9",
+  "header_color": "#e1e0ff",
+  "control_color": "#4b50c6",
+  "accent_color": "#8b428d",
+  "titlebar_background": "#e1e0ff",
+  "button_color": "#585a89",
+  "button_hover_color": "#c0c1ff",
+  "button_active_color": "#4b50c6",
+  "text_color": "#1c1b1c",
+  "border_color": "#78767c",
+  "titlebar_text": "#04006d",
+  "name": "Indigo Candy",
+  "variant": "light"
+}

@@ -19,45 +19,48 @@ from datetime import datetime
 def sync_project_to_rag():
     """Синхронизация проекта с RAG системой"""
     
-    base_path = Path(__file__).parent
+    # Получаем базовый путь к проекту (GOPI_AI_MODULES)
+    base_path = Path(__file__).parent.parent.parent.parent
+    reports_path = base_path / "project_health" / "reports"
     rag_path = base_path / "rag_memory_system" / "project_sync"
     
     # Создаем папку для синхронизации, если её нет
-    rag_path.mkdir(exist_ok=True)
+    rag_path.mkdir(parents=True, exist_ok=True)
     
     print("🔄 Синхронизация проекта с RAG системой...")
     print("=" * 50)
     
-    # Файлы для синхронизации
+    # Файлы для синхронизации (обновленные пути)
     files_to_sync = [
-        "project_map.json",
-        "gopiai_standalone_interface.py",
-        "CLEAN_MODULAR.md",
-        "CLEANUP_REPORT.md"
+        ("project_health/reports/project_map.json", "project_map.json"),
+        ("UI/main.py", "main_ui.py"),
+        ("gopiai_standalone_interface.py", "standalone_interface.py"),
+        ("README.md", "README.md")
     ]
     
-    # Папки для синхронизации (только ключевые файлы)
+    # Ключевые папки для синхронизации
     folders_to_sync = {
-        "GopiAI-Extensions/gopiai/extensions": ["*.py"],
+        "UI/utils": ["*.py"],
+        "UI/components": ["*.py"],
         "GopiAI-Core/gopiai": ["*.py"],
-        "GopiAI-Widgets/gopiai": ["*.py"]
+        "GopiAI-Extensions/gopiai": ["*.py"]
     }
     
     synced_files = []
     
     # Синхронизируем основные файлы
-    for file_name in files_to_sync:
-        source_file = base_path / file_name
+    for source_path, target_name in files_to_sync:
+        source_file = base_path / source_path
         if source_file.exists():
-            target_file = rag_path / file_name
+            target_file = rag_path / target_name
             try:
                 shutil.copy2(source_file, target_file)
-                synced_files.append(file_name)
-                print(f"📄 Синхронизирован: {file_name}")
+                synced_files.append(target_name)
+                print(f"📄 Синхронизирован: {source_path} -> {target_name}")
             except Exception as e:
-                print(f"⚠️  Ошибка при синхронизации {file_name}: {e}")
+                print(f"⚠️  Ошибка при синхронизации {source_path}: {e}")
         else:
-            print(f"❌ Файл не найден: {file_name}")
+            print(f"❌ Файл не найден: {source_path}")
     
     # Синхронизируем папки
     for folder_path, patterns in folders_to_sync.items():
@@ -101,40 +104,52 @@ def sync_project_to_rag():
 def create_rag_index():
     """Создание индекса RAG для быстрого поиска"""
     try:
-        import sys
-        sys.path.append(str(Path(__file__).parent))
-        from rag_memory_system.memory_manager import MemoryManager
+        # Проверяем наличие project_map.json в reports
+        base_path = Path(__file__).parent.parent.parent.parent
+        project_map_path = base_path / "project_health" / "reports" / "project_map.json"
         
-        print("\\n🧠 Создание RAG индекса...")
+        print("\n🧠 Создание RAG индекса...")
         
-        # Инициализируем менеджер памяти
-        memory = MemoryManager()
-        
-        # Добавляем project_map.json в индекс
-        project_map_path = Path(__file__).parent / "project_map.json"
         if project_map_path.exists():
             with open(project_map_path, 'r', encoding='utf-8') as f:
                 project_data = json.load(f)
             
-            # Создаем запись для project_map
-            memory.save_conversation({
-                "type": "project_structure",
-                "content": json.dumps(project_data, indent=2, ensure_ascii=False),
-                "metadata": {
-                    "file_type": "project_map",
-                    "total_files": project_data.get("total_files", 0),
+            # Создаем упрощённый индекс для поиска
+            index_data = {
+                "project_overview": {
+                    "name": project_data.get("project_name", "GopiAI"),
+                    "total_files": project_data.get("summary", {}).get("total_files", 0),
+                    "total_modules": project_data.get("summary", {}).get("total_modules", 0),
                     "modules": list(project_data.get("modules", {}).keys())
+                },
+                "modules_detail": project_data.get("modules", {}),
+                "generated_at": project_data.get("generated_at"),
+                "quick_access": {
+                    "ui_files": [f for f in project_data.get("modules", {}).get("UI", {}).get("files", [])],
+                    "core_files": [f for f in project_data.get("modules", {}).get("GopiAI-Core", {}).get("files", [])],
+                    "extension_files": [f for f in project_data.get("modules", {}).get("GopiAI-Extensions", {}).get("files", [])]
                 }
-            })
+            }
             
-            print("📊 Project map добавлен в RAG индекс")
+            # Сохраняем упрощённый индекс
+            rag_path = base_path / "rag_memory_system" / "project_sync"
+            rag_path.mkdir(parents=True, exist_ok=True)
+            
+            index_file = rag_path / "project_index.json"
+            with open(index_file, 'w', encoding='utf-8') as f:
+                json.dump(index_data, f, indent=2, ensure_ascii=False)
+            
+            print("📊 Project index создан для RAG системы")
+            print(f"📁 Сохранён в: {index_file}")
+        else:
+            print(f"⚠️  Project map не найден: {project_map_path}")
         
-        print("✅ RAG индекс создан!")
+        print("✅ RAG индекс готов!")
         
-    except ImportError:
-        print("⚠️  RAG система недоступна, пропускаем индексацию")
     except Exception as e:
         print(f"⚠️  Ошибка создания RAG индекса: {e}")
+        import traceback
+        print(traceback.format_exc())
 
 if __name__ == "__main__":
     # Синхронизируем файлы
