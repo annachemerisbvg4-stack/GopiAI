@@ -1,0 +1,42 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Qt: Build UI Files",
+            "type": "shell",
+            "command": "pyside6-uic",
+            "args": [
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}_ui.py"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent"
+            }
+        },
+        {
+            "label": "🚀 Run GopiAI UI",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "UI/main.py"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "📝 Generate Docstrings",
+            "type": "shell",
+            "command": "${command:autoDocstring.generateDocstring}",
+            "problemMatcher": []
+        }
+    ]
+}

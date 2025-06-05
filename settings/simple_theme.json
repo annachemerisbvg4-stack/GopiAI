@@ -1,0 +1,15 @@
+{
+  "main_color": "#fdf8f8",
+  "header_color": "#e0e1f2",
+  "control_color": "#5b5e6b",
+  "accent_color": "#6a5a64",
+  "titlebar_background": "#e0e1f2",
+  "button_color": "#5e5e63",
+  "button_hover_color": "#c4c6d5",
+  "button_active_color": "#5b5e6b",
+  "text_color": "#1c1b1b",
+  "border_color": "#78767b",
+  "titlebar_text": "#181b26",
+  "name": "Lavender Mist",
+  "variant": "light"
+}

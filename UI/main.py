@@ -54,21 +54,7 @@ try:
         TabDocumentWidget,
         ChatWidget,
         TerminalWidget,
-    )      # Попробуем импортировать дополнительные системы
-    try:
-        from utils import AutoIconSystem
-        print("✅ Система иконок AutoIconSystem загружена")
-    except ImportError:
-        AutoIconSystem = None
-        print("⚠️ Система иконок недоступна")
-          # Импорт локальной системы тем
-    try:
-        from utils import ThemeManager
-        print("✅ Локальная система тем загружена")
-    except ImportError:
-        ThemeManager = None
-        print("⚠️ Локальная система тем недоступна")
-        
+    )
     print("✅ Все основные модули UI загружены успешно")
     MODULES_LOADED = True
     
@@ -109,23 +95,14 @@ except ImportError as e:
     ThemeManager = None
     AutoIconSystem = None
 
-# Импорт системы тем
-try:
-    from gopiai.core.simple_theme_manager import (
-        load_theme, apply_theme, save_theme,
-        MATERIAL_SKY_THEME, EMERALD_GARDEN_THEME,
-        CRIMSON_RELIC_THEME, GOLDEN_EMBER_THEME    )
-    from gopiai.widgets.managers.theme_manager import ThemeManager as GopiAIThemeManager
-    print("✅ Системы тем загружены")
-except ImportError as e:
-    # Используем локальную систему тем (это нормально)
-    pass
-    # Fallback темы
-    MATERIAL_SKY_THEME = {"name": "Material Sky", "primary": "#2196F3"}
-    load_theme = lambda: MATERIAL_SKY_THEME
-    apply_theme = lambda app: None
-    save_theme = lambda theme: None
-    GopiAIThemeManager = None
+# Глобальные переменные для систем
+AutoIconSystem = None
+ThemeManager = None
+GopiAIThemeManager = None
+apply_theme = None
+load_theme = None
+save_theme = None
+MATERIAL_SKY_THEME = {"name": "Material Sky", "primary": "#2196F3"}
 
 
 class FramelessGopiAIStandaloneWindow(QMainWindow):
@@ -256,60 +233,60 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
     def _init_theme_system(self):
         """Инициализация системы тем и иконок"""
-        # Инициализация системы тем
+        global AutoIconSystem, ThemeManager, GopiAIThemeManager, apply_theme, load_theme, save_theme
+        
+        # Импорт системы иконок после создания QApplication
         try:
-            if GopiAIThemeManager:
-                self.theme_manager = GopiAIThemeManager()
-                print("✅ Расширенная система тем GopiAI инициализирована")
-            elif ThemeManager:
-                self.theme_manager = ThemeManager()
-                print("✅ Локальная система тем инициализирована")
-            else:
-                self.theme_manager = None
-                print("⚠️ Система тем недоступна - используем встроенные темы")
-        except Exception as e:
-            print(f"⚠️ Ошибка инициализации тем: {e}")
-            self.theme_manager = None
-            
-        # Инициализация системы иконок
-        try:
-            if AutoIconSystem:
+            from utils.icon_manager import UniversalIconManager as AutoIconSystem
+            self.icon_manager = AutoIconSystem()
+            print("✅ Система иконок UniversalIconManager инициализирована")
+        except ImportError:
+            try:
+                from utils import AutoIconSystem
                 self.icon_manager = AutoIconSystem()
                 print("✅ Система иконок AutoIconSystem инициализирована")
-            else:
+            except ImportError:
                 self.icon_manager = None
                 print("⚠️ Система иконок недоступна")
         except Exception as e:
             print(f"⚠️ Ошибка инициализации иконок: {e}")
             self.icon_manager = None
+            
+        # Импорт системы тем после создания QApplication
+        try:
+            from utils.simple_theme_manager import (
+                load_theme, apply_theme, save_theme,
+                MATERIAL_SKY_THEME, EMERALD_GARDEN_THEME,
+                CRIMSON_RELIC_THEME, GOLDEN_EMBER_THEME
+            )
+            from utils.theme_manager import ThemeManager as GopiAIThemeManager
+            self.theme_manager = GopiAIThemeManager()
+            print("✅ Расширенная система тем GopiAI инициализирована")
+        except ImportError:
+            try:
+                from utils import ThemeManager
+                self.theme_manager = ThemeManager()
+                print("✅ Локальная система тем инициализирована")
+            except ImportError:
+                self.theme_manager = None
+                print("⚠️ Система тем недоступна - используем встроенные темы")
+        except Exception as e:
+            print(f"⚠️ Ошибка инициализации тем: {e}")
+            self.theme_manager = None
 
     def _apply_default_styles(self):
         """Применение стилей по умолчанию"""
-        # Пытаемся применить расширенную систему тем
+        # Пытаемся применить систему тем через theme_manager
         try:
-            if apply_theme:
-                # Загружаем сохранённую тему или тему по умолчанию
+            if self.theme_manager and hasattr(self.theme_manager, 'apply_theme'):
                 from PySide6.QtWidgets import QApplication
                 app = QApplication.instance()
                 if app:
-                    apply_theme(app)
-                    print("✅ Расширенная система тем применена")
+                    self.theme_manager.apply_theme(app)
+                    print("✅ Система тем применена через theme_manager")
                     return
         except Exception as e:
-            print(f"⚠️ Ошибка применения расширенной темы: {e}")
-        
-        # Fallback - применяем простую тему из utils
-        try:
-            if self.theme_manager:
-                # Пытаемся применить простую тему
-                from utils.theme_manager import apply_simple_theme
-                from PySide6.QtWidgets import QApplication
-                app = QApplication.instance()
-                if isinstance(app, QApplication) and apply_simple_theme(app):
-                    print("✅ Простая тема применена")
-                    return
-        except Exception as e:
-            print(f"⚠️ Ошибка применения простой темы: {e}")
+            print(f"⚠️ Ошибка применения темы через theme_manager: {e}")
             
         # Последний fallback - встроенные стили
         print("⚠️ Используем встроенные стили fallback")
@@ -428,49 +405,30 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             
             if theme_name == "dialog":
                 # Показываем диалог выбора темы
-                from gopiai.core.simple_theme_manager import choose_theme_dialog
-                from PySide6.QtWidgets import QApplication
-                app = QApplication.instance()
-                if app:
-                    choose_theme_dialog(app)
-                    print("✅ Диалог выбора темы открыт")
+                try:
+                    from utils.simple_theme_manager import choose_theme_dialog
+                    from PySide6.QtWidgets import QApplication
+                    app = QApplication.instance()
+                    if app:
+                        choose_theme_dialog(app)
+                        print("✅ Диалог выбора темы открыт")
+                except ImportError:
+                    print("⚠️ Диалог выбора темы недоступен")
                 return
             
-            # Применяем конкретную тему
-            from gopiai.core.simple_theme_manager import (
-                MATERIAL_SKY_THEME, EMERALD_GARDEN_THEME,
-                CRIMSON_RELIC_THEME, GOLDEN_EMBER_THEME,
-                apply_theme
-            )
+            # Пытаемся применить тему через theme_manager
+            if self.theme_manager and hasattr(self.theme_manager, 'apply_theme_by_name'):
+                try:
+                    self.theme_manager.apply_theme_by_name(theme_name)
+                    print(f"✅ Тема '{theme_name}' применена через theme_manager")
+                    return
+                except Exception as e:
+                    print(f"⚠️ Ошибка применения темы через theme_manager: {e}")
             
-            # Загружаем тему по названию
-            themes = {
-                "Material Sky": MATERIAL_SKY_THEME,
-                "Emerald Garden": EMERALD_GARDEN_THEME,
-                "Crimson Relic": CRIMSON_RELIC_THEME,
-                "Golden Ember": GOLDEN_EMBER_THEME
-            }
-            
-            if theme_name in themes:
-                theme = themes[theme_name]
-                # Сохраняем выбранную тему для apply_theme()
-                from gopiai.core.simple_theme_manager import save_theme
-                
-                # Извлекаем цвета темы для сохранения
-                # Используем тёмный вариант по умолчанию
-                theme_colors = theme.get('dark', theme.get('light', {}))
-                save_theme(theme_colors)
-                  # Применяем тему
-                from PySide6.QtWidgets import QApplication
-                app = QApplication.instance()
-                if app:
-                    apply_theme(app)
-                    print(f"✅ Тема '{theme_name}' применена")
-            else:
-                print(f"⚠️ Неизвестная тема: {theme_name}")
+            print(f"⚠️ Не удалось применить тему: {theme_name}")
                 
         except Exception as e:
-            print(f"⚠️ Ошибка смены темы: {e}")            # Fallback - применяем простую тему
+            print(f"⚠️ Ошибка смены темы: {e}")# Fallback - применяем простую тему
             try:
                 from utils.theme_manager import apply_simple_theme
                 from PySide6.QtWidgets import QApplication
@@ -532,3 +490,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+

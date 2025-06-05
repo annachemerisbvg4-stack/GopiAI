@@ -4,7 +4,7 @@ import chardet
 from PySide6.QtCore import Qt, QSettings, QRect, QSize, QPoint, Signal
 from PySide6.QtGui import QPainter, QColor, QTextFormat
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QFileDialog, QMessageBox, QPlainTextEdit, QInputDialog, QTabWidget
-from gopiai.core.simple_theme_manager import load_theme
+from UI.utils.simple_theme_manager import load_theme
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):

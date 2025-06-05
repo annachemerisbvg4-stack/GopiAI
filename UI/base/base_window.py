@@ -4,10 +4,10 @@
 
 from PySide6.QtWidgets import QMainWindow, QWidget
 from PySide6.QtCore import Signal, QSize
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 
-class BaseWindow(QMainWindow, ABC):
+class BaseWindow(QMainWindow):
     """
     Базовый класс для всех окон GopiAI
     
@@ -60,7 +60,7 @@ class BaseWindow(QMainWindow, ABC):
         super().closeEvent(event)
 
 
-class BaseWidget(QWidget, ABC):
+class BaseWidget(QWidget):
     """
     Базовый класс для переиспользуемых UI компонентов
     """
@@ -70,7 +70,6 @@ class BaseWidget(QWidget, ABC):
         self.setup_ui()
         self.connect_signals()
         
-    @abstractmethod
     def setup_ui(self):
         """Настройка интерфейса"""
         pass

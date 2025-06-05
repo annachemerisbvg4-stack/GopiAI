@@ -1,0 +1,31 @@
+{
+    "wolf.disableHotModeWarning": true,
+    
+    // Python settings
+    "python.defaultInterpreterPath": "./rag_memory_env/Scripts/python.exe",
+    "python.analysis.extraPaths": [
+        "./GopiAI-UI",
+        "./GopiAI-Core",
+        "./GopiAI-Widgets", 
+        "./GopiAI-App",
+        "./GopiAI-Extensions",
+        "./rag_memory_system",
+        "./UI"
+    ],
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.typeCheckingMode": "basic",
+    
+    // PySide6/Qt settings
+    "python.analysis.stubPath": "./rag_memory_env/Lib/site-packages/PySide6/typesystem",
+    
+    // UI settings
+    "files.associations": {
+        "*.ui": "xml"
+    },
+      // Workspace settings
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    }
+}

@@ -1,0 +1,50 @@
+{
+    "Qt Widget Class": {
+        "prefix": "qwidget",
+        "body": [
+            "from PySide6.QtWidgets import QWidget",
+            "",
+            "class ${1:MyWidget}(QWidget):",
+            "    def __init__(self, parent=None):",
+            "        super().__init__(parent)",
+            "        self.setup_ui()",
+            "",
+            "    def setup_ui(self):",
+            "        ${0:pass}"
+        ],
+        "description": "Create a new Qt Widget class"
+    },
+    "Qt MainWindow Class": {
+        "prefix": "qmainwindow",
+        "body": [
+            "from PySide6.QtWidgets import QMainWindow",
+            "",
+            "class ${1:MainWindow}(QMainWindow):",
+            "    def __init__(self):",
+            "        super().__init__()",
+            "        self.setup_ui()",
+            "",
+            "    def setup_ui(self):",
+            "        self.setWindowTitle('${2:Window Title}')",
+            "        ${0:pass}"
+        ],
+        "description": "Create a new Qt MainWindow class"
+    },
+    "Qt Signal": {
+        "prefix": "qsignal",
+        "body": [
+            "from PySide6.QtCore import Signal",
+            "",
+            "${1:signal_name} = Signal(${2:type})"
+        ],
+        "description": "Create a new Qt Signal"
+    },
+    "Qt Slot": {
+        "prefix": "qslot",
+        "body": [
+            "def ${1:slot_name}(self, ${2:params}):",
+            "    ${0:pass}"
+        ],
+        "description": "Create a new Qt Slot method"
+    }
+}

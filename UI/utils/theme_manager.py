@@ -263,18 +263,80 @@ CRIMSON_RELIC_THEME = {"name": "Crimson Relic"}
 GOLDEN_EMBER_THEME = {"name": "Golden Ember"}
 
 
-# Заглушка для ThemeManager
+# Реальный ThemeManager с поддержкой тем
 class ThemeManager:
     def __init__(self):
         self.current_theme = None
+        # Импортируем темы из simple_theme_manager
+        try:
+            from .simple_theme_manager import (
+                MATERIAL_SKY_THEME, EMERALD_GARDEN_THEME,
+                CRIMSON_RELIC_THEME, GOLDEN_EMBER_THEME,
+                apply_theme, load_theme, save_theme
+            )
+            self.themes = {
+                "Material Sky": MATERIAL_SKY_THEME,
+                "Emerald Garden": EMERALD_GARDEN_THEME,
+                "Crimson Relic": CRIMSON_RELIC_THEME,
+                "Golden Ember": GOLDEN_EMBER_THEME
+            }
+            self.apply_theme_func = apply_theme
+            self.load_theme_func = load_theme
+            self.save_theme_func = save_theme
+            print("✅ ThemeManager инициализирован с реальными темами")
+        except ImportError as e:
+            print(f"⚠️ Ошибка импорта тем: {e}")
+            self.themes = {}
+            self.apply_theme_func = None
+            self.load_theme_func = None
+            self.save_theme_func = None
 
     def apply_theme(self, app):
-        print("⚠ Используется заглушка ThemeManager.apply_theme")
+        """Применение текущей темы"""
+        if self.apply_theme_func:
+            try:
+                self.apply_theme_func(app)
+                print("✅ Реальная тема применена через ThemeManager")
+                return True
+            except Exception as e:
+                print(f"⚠️ Ошибка применения реальной темы: {e}")
+        
+        # Fallback
+        print("⚠️ Fallback к простой теме")
         return apply_simple_theme(app)
 
+    def apply_theme_by_name(self, theme_name):
+        """Применение темы по имени"""
+        if theme_name in self.themes and self.save_theme_func and self.apply_theme_func:
+            try:
+                theme = self.themes[theme_name]
+                # Используем тёмный вариант по умолчанию
+                theme_colors = theme.get('dark', theme.get('light', {}))
+                self.save_theme_func(theme_colors)
+                
+                from PySide6.QtWidgets import QApplication
+                app = QApplication.instance()
+                if app:
+                    self.apply_theme_func(app)
+                    self.current_theme = theme_name
+                    print(f"✅ Тема '{theme_name}' применена")
+                    return True
+            except Exception as e:
+                print(f"⚠️ Ошибка применения темы '{theme_name}': {e}")
+        
+        print(f"⚠️ Тема '{theme_name}' недоступна")
+        return False
+
     def load_theme(self, theme_name):
-        print(f"⚠ Используется заглушка ThemeManager.load_theme: {theme_name}")
+        """Загрузка темы"""
+        if self.load_theme_func:
+            return self.load_theme_func()
+        print(f"⚠️ Используется заглушка ThemeManager.load_theme: {theme_name}")
         return None
+
+    def get_available_themes(self):
+        """Получить список доступных тем"""
+        return list(self.themes.keys())
 
 
 THEMES_AVAILABLE = False
