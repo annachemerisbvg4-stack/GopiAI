@@ -16,7 +16,7 @@ def _safe_import(module_name, package_name):
         module = __import__(module_name, fromlist=[package_name])
         return getattr(module, package_name, None)
     except ImportError:
-        warnings.warn(f"Модуль {module_name}.{package_name} недоступен")
+        # Не выводим предупреждение, так как некоторые модули могут быть опциональными
         return None
 
 # Попытка импорта всех основных модулей
