@@ -391,10 +391,25 @@ class GopiAISettingsDialog(QDialog):
                     self.theme_combo.setCurrentIndex(i)
                     break
     
+    def load_current_settings(self):
+        """Загрузка текущих настроек"""
+        if self.theme_manager:
+            current_theme = self.theme_manager.get_current_theme()
+            # Найти индекс текущей темы в комбобоксе
+            for i in range(self.theme_combo.count()):
+                if self.theme_combo.itemData(i) == current_theme:
+                    self.theme_combo.setCurrentIndex(i)
+                    break
+                    
+            # Устанавливаем темный режим если у менеджера тем есть соответствующий атрибут
+            if hasattr(self.theme_manager, '_current_variant'):
+                self.dark_mode_check.setChecked(self.theme_manager._current_variant == "dark")
+    
     def collect_settings(self) -> dict:
         """Сбор всех настроек из интерфейса"""
         settings = {
             'theme': self.theme_combo.currentData(),
+            'dark_mode': self.dark_mode_check.isChecked(),  # Добавляем состояние темного режима
             'font_size': self.font_size_spin.value(),
             'font_family': self.font_family_combo.currentText(),
             'accent_color': self.accent_color_combo.currentText(),
