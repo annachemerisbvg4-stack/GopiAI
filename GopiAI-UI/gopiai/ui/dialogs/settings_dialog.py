@@ -83,6 +83,10 @@ class GopiAISettingsDialog(QDialog):
                 accent_color = current_theme_data.get('accent_color', '#007bff')
                 text_color = current_theme_data.get('text_color', '#212529')
                 
+                # Определяем текст на основе яркости фона
+                is_light_bg = self._is_light_color(main_color)
+                button_text_color = "#1a1a1a" if is_light_bg else "#ffffff"
+                
                 # Применяем стили ко всему диалогу
                 self.setStyleSheet(f"""
                     QDialog {{
@@ -94,7 +98,7 @@ class GopiAISettingsDialog(QDialog):
                     }}
                     QPushButton {{
                         background-color: {accent_color};
-                        color: white;
+                        color: {button_text_color};
                         border: none;
                         padding: 5px 10px;
                         border-radius: 4px;
@@ -124,6 +128,42 @@ class GopiAISettingsDialog(QDialog):
                     SettingsCard:hover {{
                         background-color: {main_color}ee;
                     }}
+                    QComboBox {{
+                        background-color: {main_color}ee;
+                        color: {text_color};
+                        border: 1px solid #dee2e6;
+                        border-radius: 4px;
+                        padding: 3px;
+                    }}
+                    QComboBox:hover {{
+                        border: 1px solid {accent_color};
+                    }}
+                    QCheckBox {{
+                        color: {text_color};
+                    }}
+                    QCheckBox::indicator {{
+                        width: 15px;
+                        height: 15px;
+                        border: 1px solid #dee2e6;
+                        border-radius: 3px;
+                    }}
+                    QCheckBox::indicator:checked {{
+                        background-color: {accent_color};
+                    }}
+                    QSpinBox, QLineEdit, QTextEdit {{
+                        background-color: {main_color}ee;
+                        color: {text_color};
+                        border: 1px solid #dee2e6;
+                        border-radius: 4px;
+                        padding: 3px;
+                    }}
+                    QSpinBox:hover, QLineEdit:hover, QTextEdit:hover {{
+                        border: 1px solid {accent_color};
+                    }}
+                    QScrollArea, QScrollBar {{
+                        background-color: {main_color};
+                        border: none;
+                    }}
                 """)
         
         # Основной layout
@@ -139,6 +179,161 @@ class GopiAISettingsDialog(QDialog):
         title_label.setFont(title_font)
         header_layout.addWidget(title_label)
         header_layout.addStretch()
+        main_layout.addLayout(header_layout)
+        
+        # Tabs
+        self.tab_widget = QTabWidget()
+        main_layout.addWidget(self.tab_widget)
+        
+        # Создание вкладок
+        self.create_appearance_tab()
+        self.create_interface_tab()
+        self.create_advanced_tab()
+        
+        # Добавляем функцию для определения яркости цвета
+    def _is_light_color(self, color):
+        """Определяет, является ли цвет светлым"""
+        # Убираем # если есть
+        if color.startswith('#'):
+            color = color[1:]
+        
+        # Для HEX формата #RRGGBB
+        if len(color) == 6:
+            r = int(color[0:2], 16)
+            g = int(color[2:4], 16)
+            b = int(color[4:6], 16)
+            # Формула для определения яркости
+            brightness = (r * 299 + g * 587 + b * 114) / 1000
+            return brightness > 128
+        return True  # По умолчанию считаем светлым
+        
+    def setup_ui(self):
+        """Настройка пользовательского интерфейса"""
+        self.setWindowTitle("Настройки GopiAI")
+        self.setMinimumSize(600, 500)
+        self.resize(800, 600)
+        
+        # Применяем текущую тему к диалогу
+        if self.theme_manager:
+            # Получаем цвета из текущей темы
+            current_theme_data = self.theme_manager.get_current_theme_data()
+            if current_theme_data:
+                main_color = current_theme_data.get('main_color', '#f8f9fa')
+                accent_color = current_theme_data.get('accent_color', '#007bff')
+                text_color = current_theme_data.get('text_color', '#212529')
+                
+                # Определяем текст на основе яркости фона
+                is_light_bg = self._is_light_color(main_color)
+                button_text_color = "#1a1a1a" if is_light_bg else "#ffffff"
+                
+                # Применяем стили ко всему диалогу
+                self.setStyleSheet(f"""
+                    QDialog {{
+                        background-color: {main_color};
+                        color: {text_color};
+                    }}
+                    QLabel {{
+                        color: {text_color};
+                    }}
+                    QPushButton {{
+                        background-color: {accent_color};
+                        color: {button_text_color};
+                        border: none;
+                        padding: 5px 10px;
+                        border-radius: 4px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {accent_color}cc;
+                    }}
+                    QTabWidget::pane {{
+                        border: 1px solid #dee2e6;
+                        border-radius: 4px;
+                    }}
+                    QTabBar::tab {{
+                        background-color: {main_color};
+                        color: {text_color};
+                        padding: 8px 12px;
+                    }}
+                    QTabBar::tab:selected {{
+                        background-color: {accent_color}33;
+                    }}
+                    SettingsCard {{
+                        background-color: {main_color}cc;
+                        border: 1px solid #dee2e6;
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin: 4px;
+                    }}
+                    SettingsCard:hover {{
+                        background-color: {main_color}ee;
+                    }}
+                    QComboBox {{
+                        background-color: {main_color}ee;
+                        color: {text_color};
+                        border: 1px solid #dee2e6;
+                        border-radius: 4px;
+                        padding: 3px;
+                    }}
+                    QComboBox:hover {{
+                        border: 1px solid {accent_color};
+                    }}
+                    QCheckBox {{
+                        color: {text_color};
+                    }}
+                    QCheckBox::indicator {{
+                        width: 15px;
+                        height: 15px;
+                        border: 1px solid #dee2e6;
+                        border-radius: 3px;
+                    }}
+                    QCheckBox::indicator:checked {{
+                        background-color: {accent_color};
+                    }}
+                    QSpinBox, QLineEdit, QTextEdit {{
+                        background-color: {main_color}ee;
+                        color: {text_color};
+                        border: 1px solid #dee2e6;
+                        border-radius: 4px;
+                        padding: 3px;
+                    }}
+                    QSpinBox:hover, QLineEdit:hover, QTextEdit:hover {{
+                        border: 1px solid {accent_color};
+                    }}
+                    QScrollArea, QScrollBar {{
+                        background-color: {main_color};
+                        border: none;
+                    }}
+                """)
+        
+        # Основной layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(16)
+        
+        # Заголовок
+        header_layout = QHBoxLayout()
+        title_label = QLabel("Настройки")
+        title_font = QFont()
+        title_font.setBold(True)
+        title_font.setPointSize(16)
+        title_label.setFont(title_font)
+        header_layout.addWidget(title_label)
+        
+        # Добавляем кнопку закрытия для безрамочного режима
+        close_button = QPushButton("✕")
+        close_button.setMaximumSize(30, 30)
+        close_button.clicked.connect(self.reject)
+        close_button.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #ff6b6b;
+                color: white;
+            }
+        """)
+        header_layout.addWidget(close_button)
+        
         main_layout.addLayout(header_layout)
         
         # Tabs
