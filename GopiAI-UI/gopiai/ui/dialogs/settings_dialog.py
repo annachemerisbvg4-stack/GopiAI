@@ -420,10 +420,17 @@ class GopiAISettingsDialog(QDialog):
         """Применение настроек"""
         self.settings = self.collect_settings()
         
-        # Применение темы
+        # Применение темы и темного режима
         if self.theme_manager and self.settings.get('theme'):
             theme_name = self.settings.get('theme')
+            
+            # Устанавливаем темный/светлый вариант в менеджере тем
+            if hasattr(self.theme_manager, '_current_variant'):
+                self.theme_manager._current_variant = "dark" if self.settings.get('dark_mode', False) else "light"
+            
+            # Применяем тему
             self.theme_manager.apply_theme(theme_name)
+            
             # Сигнал изменения темы
             self.themeChanged.emit(theme_name)
         
