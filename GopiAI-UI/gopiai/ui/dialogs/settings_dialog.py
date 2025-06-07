@@ -141,9 +141,12 @@ class GopiAISettingsDialog(QDialog):
             "Выберите тему оформления интерфейса"
         )
         
-        theme_layout = QHBoxLayout()
+        theme_layout = QVBoxLayout()
+        
+        # Выбор темы
+        theme_combo_layout = QHBoxLayout()
         theme_label = QLabel("Тема:")
-        theme_layout.addWidget(theme_label)
+        theme_combo_layout.addWidget(theme_label)
         
         self.theme_combo = QComboBox()
         self.theme_combo.setMinimumWidth(200)
@@ -154,10 +157,24 @@ class GopiAISettingsDialog(QDialog):
             for theme_key, display_name in themes.items():
                 self.theme_combo.addItem(display_name, theme_key)
         
-        theme_layout.addWidget(self.theme_combo)
-        theme_layout.addStretch()
+        theme_combo_layout.addWidget(self.theme_combo)
+        theme_combo_layout.addStretch()
+        theme_layout.addLayout(theme_combo_layout)
         
-        theme_card.add_content(self.theme_combo)
+        # Переключатель темного режима
+        dark_mode_layout = QHBoxLayout()
+        dark_mode_layout.addWidget(QLabel("Темный режим:"))
+        
+        self.dark_mode_check = QCheckBox()
+        self.dark_mode_check.setToolTip("Включить темный режим интерфейса")
+        dark_mode_layout.addWidget(self.dark_mode_check)
+        dark_mode_layout.addStretch()
+        theme_layout.addLayout(dark_mode_layout)
+        
+        # Добавляем все в карточку
+        theme_widget = QWidget()
+        theme_widget.setLayout(theme_layout)
+        theme_card.add_content(theme_widget)
         layout.addWidget(theme_card)
         
         # Карточка шрифтов
