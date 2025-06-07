@@ -590,9 +590,15 @@ def _adjust_text_contrast(theme):
             bg_color = theme.get(bg_element)
             if isinstance(bg_color, str) and bg_color.startswith("#"):
                 is_light = _is_light(bg_color)
-                # Для светлого фона - тёмный текст, для тёмного - светлый
+                
+                # Определяем более контрастные цвета для лучшей читаемости
+                # Для светлого фона - чёрный текст, для тёмного - белый
                 if text_element not in theme:  # Не перезаписываем, если уже задан
-                    theme[text_element] = "#1a1a1a" if is_light else "#ffffff"
+                    theme[text_element] = "#000000" if is_light else "#ffffff"
+                    
+                # Особая обработка для кнопок - нужен максимальный контраст
+                if bg_element.startswith("button_"):
+                    theme[text_element] = "#000000" if is_light else "#ffffff"
     
     return theme
 
