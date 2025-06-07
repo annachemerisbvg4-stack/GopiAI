@@ -30,7 +30,7 @@ MATERIAL_SKY_THEME = {
         "accent_color": "#7a4c8f",
         "titlebar_background": "#cde5ff",
         "button_color": "#3d6281",
-        "button_hover_color": "#93ccff",
+        "button_hover_color": "#4d6d88",
         "button_active_color": "#006398",
         "text_color": "#1c1b1c",
         "border_color": "#75777b",
@@ -568,6 +568,34 @@ def _darken_color(hex_color, percent=20):
     b = max(0, int(b * (1 - percent / 100)))
     return f"#{r:02x}{g:02x}{b:02x}"
 
+def _adjust_text_contrast(theme):
+    """Автоматически настраивает контраст текста для всех элементов темы."""
+    # Список элементов, для которых нужно проверить контраст текста
+    elements_with_text = {
+        "main_color": "text_color",
+        "button_color": "button_text",
+        "header_color": "header_text",
+        "titlebar_background": "titlebar_text",
+        "control_color": "control_text",
+        "button_hover_color": "button_hover_text",
+        "button_active_color": "button_active_text"
+    }
+    
+    for bg_element, text_element in elements_with_text.items():
+        if bg_element in theme:
+            # Если это titlebar_text и он уже есть в теме, не переопределяем
+            if bg_element == "titlebar_background" and "titlebar_text" in theme:
+                continue
+                
+            bg_color = theme.get(bg_element)
+            if isinstance(bg_color, str) and bg_color.startswith("#"):
+                is_light = _is_light(bg_color)
+                # Для светлого фона - тёмный текст, для тёмного - светлый
+                if text_element not in theme:  # Не перезаписываем, если уже задан
+                    theme[text_element] = "#1a1a1a" if is_light else "#ffffff"
+    
+    return theme
+
 def generate_default_colors():
     """Генерирует дефолтные цвета на основе начального положения маркеров на цветовом колесе."""
     primary_color = QColor(0, 120, 255)  # #0078FF - ярко-синий
@@ -642,13 +670,9 @@ def apply_theme(app):
         theme = load_theme()
         if not theme:
             return False
-    if "main_color" in theme:
-        main_color = QColor(theme.get("main_color"))
-        luminance = (0.299 * main_color.red() + 0.587 * main_color.green() + 0.114 * main_color.blue())
-        if luminance < 128:
-            theme["text_color"] = "#FFFFFF"
-        else:
-            theme["text_color"] = "#000000"
+            
+    # Автоматически настраиваем контраст текста для всех элементов
+    theme = _adjust_text_contrast(theme)
     try:
         palette = QPalette()
         main_color = QColor(theme.get("main_color", "#FFFFFF"))
