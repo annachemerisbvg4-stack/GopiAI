@@ -196,16 +196,6 @@ class StandaloneMenuBar(QMenuBar):
         # Основные настройки
         self.settings_action = settings_menu.addAction("Настройки приложения")
         self.settings_action.triggered.connect(self.openSettingsRequested.emit)
-        """Настройка меню настроек"""
-        # Основные настройки
-        self.settings_action = settings_menu.addAction("Настройки приложения")
-        self.settings_action.triggered.connect(self.openSettingsRequested.emit)
-        
-        settings_menu.addSeparator()
-        
-        # Быстрая смена темы
-        self.change_theme_action = settings_menu.addAction("Сменить тему")
-        self.change_theme_action.triggered.connect(lambda: self.changeThemeRequested.emit("dialog"))
 
     def _update_menu_icons(self):
         """Обновление иконок в меню"""

@@ -110,9 +110,20 @@ class FileExplorerWidget(QWidget):
           # Добавляем дерево файлов
         self.tree_view = QTreeView()
         self.model = QFileSystemModel()
+        # Правильная инициализация модели файловой системы
+        self.model.setRootPath(QDir.homePath())
+        # Установка фильтров для отображения всех файлов и директорий
+        self.model.setFilter(QDir.Filter.AllDirs | QDir.Filter.Files | QDir.Filter.NoDotAndDotDot)
+        # Применяем модель к дереву
         self.tree_view.setModel(self.model)
+        # Устанавливаем корневой индекс для отображения домашней директории
         self.tree_view.setRootIndex(self.model.index(QDir.homePath()))
+        # Настраиваем отображение колонок
         self.tree_view.setColumnWidth(0, 250)
+        # Скрываем ненужные колонки, оставляя только имя и размер
+        for i in range(1, self.model.columnCount()):
+            if i != 1:  # Оставляем колонку с размером (обычно 1)
+                self.tree_view.hideColumn(i)
         layout.addWidget(self.tree_view)
 
     def _connect_signals(self):
