@@ -98,7 +98,16 @@ except ImportError as e:
     TabDocumentWidget = lambda parent=None: SimpleWidget("TabDocument")
     ChatWidget = lambda parent=None: SimpleWidget("Chat")
     TerminalWidget = lambda parent=None: SimpleWidget("Terminal")
-    ThemeManager = None
+    
+    # Fallback ThemeManager class
+    class FallbackThemeManager:
+        def __init__(self):
+            pass
+        def apply_theme(self, theme_name):
+            print(f"Fallback: apply_theme({theme_name})")
+            return False
+    
+    ThemeManager = FallbackThemeManager
     AutoIconSystem = None
 
 # Глобальные переменные для систем
@@ -261,9 +270,11 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             self.theme_manager = ThemeManager()
             if self.theme_manager:
                 print("✅ Менеджер тем инициализирован")
-                # Применяем тему по умолчанию - используем конкретную тему вместо "simple",
-                # чтобы избежать появления диалога выбора темы при запуске
-                self.theme_manager.apply_theme("Material Sky")
+                # Применяем тему, сохраненную в файле настроек
+                app = QApplication.instance()
+                if app:
+                    self.theme_manager.apply_theme(app)
+                    print("✅ Применена тема из файла настроек")
             else:
                 print("⚠️ Не удалось создать менеджер тем")
         except Exception as e:
@@ -305,7 +316,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             color: #ffffff;
         }
         QWidget {
-            background-color: #2d2d2d;
+            background-color: #ff0000;
             color: #ffffff;
             border: none;
         }
@@ -327,7 +338,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         }
         QTabWidget::pane {
             border: 1px solid #404040;
-            background-color: #2d2d2d;
+            background-color: #ff0000;
         }
         QTabBar::tab {
             background-color: #404040;
