@@ -138,6 +138,12 @@ class StandaloneTitlebarWithMenu(QWidget):
                 self.titlebar.maximize_button.setVisible(False)
                 self.titlebar.restore_button.setVisible(True)
 
+    def menuBar(self):
+        """Возвращает объект меню"""
+        if hasattr(self, 'menu_bar'):
+            return self.menu_bar
+        return None
+
 
 class CustomGrip(QWidget):
     """Элемент для изменения размера окна"""

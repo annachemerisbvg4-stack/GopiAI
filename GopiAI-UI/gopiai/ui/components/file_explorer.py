@@ -18,9 +18,9 @@ File Explorer Component для GopiAI Standalone Interface
 """
 
 import os
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTreeView, QHBoxLayout, QPushButton, QLineEdit, QHeaderView
-from PySide6.QtCore import QDir, Signal, Qt, QSize
-from PySide6.QtWidgets import QFileSystemModel
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTreeView, QHBoxLayout, 
+                               QPushButton, QLineEdit, QHeaderView, QSizePolicy, QFileSystemModel)
+from PySide6.QtCore import QDir, Signal, Qt
 from .file_type_detector import FileTypeDetector
 
 
@@ -41,15 +41,14 @@ class FileExplorerWidget(QWidget):
         from PySide6.QtWidgets import QSizePolicy
         self.setMinimumWidth(250)
         self.setMaximumWidth(400)
-        
-        # Устанавливаем политику размера: фиксированная ширина, расширяемая высота
+          # Устанавливаем политику размера: фиксированная ширина, расширяемая высота
         size_policy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         size_policy.setHorizontalStretch(0)
         self.setSizePolicy(size_policy)
         
         self._setup_ui()
         self._connect_signals()
-        
+
     def _setup_ui(self):
         """Настройка интерфейса проводника"""
         layout = QVBoxLayout(self)
@@ -108,120 +107,48 @@ class FileExplorerWidget(QWidget):
         path_layout.addWidget(go_btn)
         
         layout.addLayout(path_layout)
-        
-        # Дерево файлов
-        self.tree_view = QTreeView(self)
-        self.tree_view.setObjectName("fileTreeView")
-        self.tree_view.setHeaderHidden(True)
-        self.tree_view.setUniformRowHeights(True)
-        self.tree_view.setAlternatingRowColors(True)
-        self.tree_view.setRootIsDecorated(False)
-        self.tree_view.setItemsExpandable(True)
-        self.tree_view.setExpandsOnDoubleClick(True)
-        
-        # Отключаем горизонтальный скроллбар
-        self.tree_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        
-        layout.addWidget(self.tree_view)
-          # Установка модели файловой системы
+          # Добавляем дерево файлов
+        self.tree_view = QTreeView()
         self.model = QFileSystemModel()
-        if self.icon_manager:
-            self.model.iconProvider = self.icon_manager
-        self.model.setRootPath(QDir.rootPath())
         self.tree_view.setModel(self.model)
-        
-        # Установка корневого индекса
-        self.tree_view.setRootIndex(self.model.index(self._current_path))
-        
-        # Настройка размеров колонок
-        header = self.tree_view.header()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        self.tree_view.setColumnWidth(0, 200)  # Имя файла
-        for column in range(1, self.model.columnCount()):
-            header.hideSection(column)  # Скрываем все колонки, кроме имени файла
-        
-        # Сигналы изменения модели
-        self.model.modelReset.connect(self._on_model_reset)
-        self.model.directoryLoaded.connect(self._on_directory_loaded)
-        
+        self.tree_view.setRootIndex(self.model.index(QDir.homePath()))
+        self.tree_view.setColumnWidth(0, 250)
+        layout.addWidget(self.tree_view)
+
     def _connect_signals(self):
-        """Подключение сигналов проводника"""
-        if hasattr(self, 'tree_view'):
-            # Сигналы дерева файлов
-            self.tree_view.clicked.connect(self._handle_click)
-            self.tree_view.doubleClicked.connect(self._handle_double_click)
+        """Подключение сигналов"""
+        if hasattr(self.tree_view, 'doubleClicked'):
+            self.tree_view.doubleClicked.connect(self._on_item_double_clicked)
 
     def _go_home(self):
-        """Переход в домашнюю директорию"""
-        home_path = os.path.expanduser("~")
-        self._current_path = home_path
+        """Переход в домашнюю папку"""
+        home_path = QDir.homePath()
         self.path_input.setText(home_path)
-        if hasattr(self, 'tree_view'):
-            self.tree_view.setRootIndex(self.model.index(home_path))
+        self.tree_view.setRootIndex(self.model.index(home_path))
 
     def _go_up(self):
         """Переход на уровень вверх"""
-        current = self._current_path
-        parent = os.path.dirname(current)
-        if parent != current:  # Проверка, что мы не в корне
-            self._current_path = parent
-            self.path_input.setText(parent)
-            if hasattr(self, 'tree_view'):
-                self.tree_view.setRootIndex(self.model.index(parent))
+        current_path = self.path_input.text()
+        parent_path = QDir(current_path).absolutePath()
+        if parent_path != current_path:
+            parent_dir = QDir(parent_path)
+            parent_dir.cdUp()
+            new_path = parent_dir.absolutePath()
+            self.path_input.setText(new_path)
+            self.tree_view.setRootIndex(self.model.index(new_path))
 
     def _path_changed(self):
         """Обработка изменения пути"""
-        new_path = self.path_input.text()
-        if os.path.exists(new_path):
-            self._current_path = new_path
-            if hasattr(self, 'tree_view'):
-                self.tree_view.setRootIndex(self.model.index(new_path))
-        else:
-            # Возвращаем старый путь при ошибке
-            self.path_input.setText(self._current_path)
-
-    def _handle_click(self, index):
-        """Обработка клика по элементу"""
-        if hasattr(self, 'model'):
-            path = self.model.filePath(index)
-            if os.path.isfile(path):
-                self.file_selected.emit(path)
-
-    def _handle_double_click(self, index):
-        """Обработка двойного клика по элементу"""
-        if hasattr(self, 'model'):
-            path = self.model.filePath(index)
-            if os.path.isfile(path):
-                self.file_double_clicked.emit(path)
-            elif os.path.isdir(path):
-                self._current_path = path
-                self.path_input.setText(path)
-
-    def _on_model_reset(self):
-        """Обработка сброса модели"""
-        if hasattr(self, 'tree_view'):
-            self.tree_view.setRootIndex(self.model.index(self._current_path))
-
-    def _on_directory_loaded(self, path):
-        """Обработка загрузки директории"""
-        if path == self._current_path and hasattr(self, 'tree_view'):
-            # Обновляем вид после загрузки директории
+        path = self.path_input.text()
+        if QDir(path).exists():
             self.tree_view.setRootIndex(self.model.index(path))
-            # При необходимости раскрываем первый уровень
-            self.tree_view.expandToDepth(0)
-            
-    def sizeHint(self):
-        """Предпочтительный размер виджета"""
-        return QSize(300, 600)  # Ширина: 300px, Высота: 600px
-        
-    def resizeEvent(self, event):
-        """Обработка изменения размера виджета"""
-        if not self._ignore_resize:
-            try:
-                super().resizeEvent(event)
-                # Ограничиваем ширину tree_view
-                if hasattr(self, 'tree_view'):
-                    self.tree_view.setFixedWidth(self.width() - 10)  # Отступ 5px с каждой стороны
-            except Exception as e:
-                print(f"Ошибка при изменении размера: {e}")
-        event.accept()
+        else:
+            self.path_input.setText(QDir.homePath())
+            self.tree_view.setRootIndex(self.model.index(QDir.homePath()))
+
+    def _on_item_double_clicked(self, index):
+        """Обработка двойного клика по элементу"""
+        if self.model.isDir(index):
+            path = self.model.filePath(index)
+            self.path_input.setText(path)
+            self.tree_view.setRootIndex(index)

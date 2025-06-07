@@ -70,13 +70,19 @@ def init_all_extensions(main_window):
         init_status_bar_extension(main_window)
     except Exception as e:
         logger.error(f"Ошибка при инициализации статусной строки: {e}")
-        
-    # Инициализируем центр уведомлений
+          # Инициализируем центр уведомлений
     try:
         logger.info("Инициализация центра уведомлений...")
         init_notification_center_extension(main_window)
     except Exception as e:
         logger.error(f"Ошибка при инициализации центра уведомлений: {e}")
+
+    # Инициализируем AutoGen расширение
+    try:
+        logger.info("Инициализация AutoGen расширения...")
+        init_autogen_extension(main_window)
+    except Exception as e:
+        logger.error(f"Ошибка при инициализации AutoGen: {e}")
 
     logger.info("Инициализация расширений завершена")
 
@@ -169,6 +175,41 @@ def init_notification_center_extension(main_window):
             logger.warning("Функция init_extension в notification_center_extension не найдена")
     except Exception as e:
         logger.error(f"Ошибка при инициализации центра уведомлений: {e}")
+    return None
+
+def init_autogen_extension(main_window):
+    """Инициализирует AutoGen расширение."""
+    try:
+        # Ищем AutoGen extension в разных возможных местах
+        autogen_module = None
+        
+        # Пробуем импортировать из autogen пакета
+        try:
+            import sys
+            import os
+            autogen_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'autogen')
+            if autogen_path not in sys.path:
+                sys.path.insert(0, autogen_path)
+            
+            from autogen.autogen_extension import add_autogen_dock
+            autogen_module = True
+        except ImportError:
+            # Пробуем альтернативный импорт
+            try:
+                from autogen_extension import add_autogen_dock
+                autogen_module = True
+            except ImportError:
+                logger.warning("AutoGen extension модуль не найден")
+                return None
+        
+        if autogen_module:
+            logger.info("✅ AutoGen extension найден, добавляем dock...")
+            add_autogen_dock(main_window)
+            logger.info("✅ AutoGen extension успешно инициализирован")
+        else:
+            logger.warning("AutoGen extension не найден или недоступен")
+    except Exception as e:
+        logger.error(f"Ошибка при инициализации AutoGen extension: {e}")
     return None
 
 __version__ = "0.1.0"

@@ -21,15 +21,16 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
 
+# Импорт компонентов тем
+from gopiai.ui.utils.theme_manager import ThemeManager
+from gopiai.ui.dialogs.settings_dialog import GopiAISettingsDialog
+
 # Настройка путей для импорта модулей GopiAI
 script_dir = os.path.dirname(os.path.abspath(__file__))
-# Поднимаемся на 2 уровня: ui -> gopiai -> GopiAI-UI
-gopiai_ui_root = os.path.dirname(os.path.dirname(script_dir))
 # Поднимаемся на 3 уровня: ui -> gopiai -> GopiAI-UI -> корень проекта
-gopiai_modules_root = os.path.dirname(gopiai_ui_root)
+gopiai_modules_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 
 module_paths = [
-    gopiai_ui_root,  # Путь к GopiAI-UI для импорта gopiai.ui.components
     os.path.join(gopiai_modules_root, "GopiAI-Core"),
     os.path.join(gopiai_modules_root, "GopiAI-Widgets"), 
     os.path.join(gopiai_modules_root, "GopiAI-App"),
@@ -67,7 +68,7 @@ except ImportError as e:
     print(f"⚠️ Ошибка импорта UI модулей: {e}")
     print("Запускаем в fallback режиме...")
     MODULES_LOADED = False
-    # Fallback - создаём простые заглушки
+      # Fallback - создаём простые заглушки
     class SimpleWidget(QWidget):
         def __init__(self, name="Widget"):
             super().__init__()
@@ -97,21 +98,12 @@ except ImportError as e:
     TabDocumentWidget = lambda parent=None: SimpleWidget("TabDocument")
     ChatWidget = lambda parent=None: SimpleWidget("Chat")
     TerminalWidget = lambda parent=None: SimpleWidget("Terminal")
-    
+    ThemeManager = None
+    AutoIconSystem = None
+
 # Глобальные переменные для систем
 AutoIconSystem = None
-
-# Base ThemeManager class
-class BaseThemeManager:
-    def __init__(self):
-        self.current_theme = {"name": "Default", "primary": "#2196F3"}
-    
-    def apply_theme(self, app):
-        return True
-    
-    def apply_theme_by_name(self, theme_name):
-        return True
-
+ThemeManagerClass = None  # Переименовано чтобы избежать конфликта с импортом
 GopiAIThemeManager = None
 apply_theme = None
 load_theme = None
@@ -138,7 +130,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         # Константы
         self.TITLEBAR_HEIGHT = 40
         self.GRIP_SIZE = 10
-        # Инициализация
+          # Инициализация
         self._init_theme_system()
         self._setup_ui()
         self._init_grips()
@@ -157,7 +149,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
-        # Titlebar с меню (модульный)
+          # Titlebar с меню (модульный)
         if MODULES_LOADED:
             self.titlebar_with_menu = StandaloneTitlebarWithMenu(self)
             if hasattr(self.titlebar_with_menu, 'set_window'):
@@ -247,16 +239,12 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
     def _init_theme_system(self):
         """Инициализация системы тем и иконок"""
-        global AutoIconSystem, BaseThemeManager, GopiAIThemeManager, apply_theme, load_theme, save_theme
-        
-        # Импорт системы иконок после создания QApplication
+        # Импорт системы иконок
         try:
-            # Using QtAwesome as a fallback icon system
             import qtawesome as qta
             class SimpleIconManager:
                 def __init__(self):
                     self.qta = qta
-                    
                 def get_icon(self, name):
                     return self.qta.icon('fa.' + name)
             
@@ -268,63 +256,21 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         except Exception as e:
             print(f"⚠️ Ошибка инициализации иконок: {e}")
             self.icon_manager = None
-            
-        # Импорт системы тем после создания QApplication
+              # Инициализация системы тем
         try:
-            # First try to import from installed packages
-            try:
-                # Create a basic theme manager since utils.simple_theme_manager is not available
-                class SimpleThemeManager:
-                    def __init__(self):
-                        self.current_theme = {"name": "Default", "primary": "#2196F3"}
-                        
-                    def apply_theme(self, app):
-                        return True
-                        
-                    def apply_theme_by_name(self, theme_name):
-                        return True
-                        
-                self.theme_manager = SimpleThemeManager()
-            except Exception:
-                # Fallback to basic theme manager
-                class BasicThemeManager:
-                    def __init__(self):
-                        self.current_theme = {"name": "Default", "primary": "#2196F3"}
-                        
-                    def apply_theme(self, app):
-                        return True
-                        
-                    def apply_theme_by_name(self, theme_name):
-                        self.current_theme = {"name": theme_name, "primary": "#2196F3"}
-                        return True
-                        
-                self.theme_manager = BasicThemeManager()
-            print("✅ Расширенная система тем GopiAI инициализирована")
-        except ImportError:
-            try:
-                # Create a simple ThemeManager class as fallback
-                class ThemeManager:
-                    def __init__(self):
-                        self.current_theme = {"name": "Default", "primary": "#2196F3"}
-                        
-                    def apply_theme(self, app):
-                        return True
-                        
-                    def apply_theme_by_name(self, theme_name):
-                        return True
-                        
-                self.theme_manager = ThemeManager()
-                print("✅ Локальная система тем инициализирована")
-            except Exception:
-                self.theme_manager = None
-                print("⚠️ Система тем недоступна - используем встроенные темы")
+            self.theme_manager = ThemeManager()
+            if self.theme_manager:
+                print("✅ Менеджер тем инициализирован")
+                # Применяем тему по умолчанию
+                self.theme_manager.apply_theme("simple")
+            else:
+                print("⚠️ Не удалось создать менеджер тем")
         except Exception as e:
-            print(f"⚠️ Ошибка инициализации тем: {e}")
+            print(f"⚠️ Ошибка инициализации менеджера тем: {e}")
             self.theme_manager = None
 
     def _apply_default_styles(self):
-        """Применение стилей по умолчанию"""
-        # Пытаемся применить систему тем через theme_manager
+        """Применение стилей по умолчанию"""        # Пытаемся применить систему тем через theme_manager
         try:
             if self.theme_manager and hasattr(self.theme_manager, 'apply_theme'):
                 from PySide6.QtWidgets import QApplication
@@ -390,28 +336,141 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         }
         QTabBar::tab:selected {
             background-color: #4CAF50;
-        }
-        """
+        }        """
         self.setStyleSheet(fallback_style)
-
+        
     def _connect_menu_signals(self):
         """Подключение сигналов меню"""
         try:
             menu_bar = getattr(self.titlebar_with_menu, 'menu_bar', None)
-            if menu_bar and hasattr(menu_bar, 'newFileRequested'):
-                # Подключаем сигналы файлового меню
-                menu_bar.newFileRequested.connect(self._on_new_file)
-                menu_bar.openFileRequested.connect(self._on_open_file)
-                menu_bar.saveRequested.connect(self._on_save_file)
-                menu_bar.exitRequested.connect(self.close)                # Подключаем сигналы вида
-                menu_bar.openChatRequested.connect(self._toggle_chat)
-                menu_bar.openTerminalRequested.connect(self._toggle_terminal)
-                
-                # Подключаем сигнал смены темы
+            if not menu_bar:
+                print("⚠️ Меню недоступно")
+                return
+            
+            # Подключаем новые сигналы
+            if hasattr(menu_bar, 'openSettingsRequested'):
+                menu_bar.openSettingsRequested.connect(self._open_settings)
+                print("✅ Сигнал openSettingsRequested подключен")
+            
+            if hasattr(menu_bar, 'changeThemeRequested'):
                 menu_bar.changeThemeRequested.connect(self.on_change_theme)
-                print("✅ Сигналы меню подключены")
+                print("✅ Сигнал changeThemeRequested подключен")
+                
+            # Подключаем остальные сигналы файлового меню
+            if hasattr(menu_bar, 'newFileRequested'):
+                menu_bar.newFileRequested.connect(self._on_new_file)
+            if hasattr(menu_bar, 'openFileRequested'):
+                menu_bar.openFileRequested.connect(self._on_open_file)
+            if hasattr(menu_bar, 'saveRequested'):
+                menu_bar.saveRequested.connect(self._on_save_file)
+            if hasattr(menu_bar, 'exitRequested'):
+                menu_bar.exitRequested.connect(self.close)
+                
+            # Подключаем сигналы меню вида
+            if hasattr(menu_bar, 'openChatRequested'):
+                menu_bar.openChatRequested.connect(self._toggle_chat)
+            if hasattr(menu_bar, 'openTerminalRequested'):
+                menu_bar.openTerminalRequested.connect(self._toggle_terminal)
+            
+            print("✅ Сигналы меню подключены успешно")
         except Exception as e:
             print(f"⚠️ Ошибка подключения сигналов меню: {e}")
+
+    def _open_settings(self):
+        """Открыть диалог настроек"""
+        try:
+            # Удаляем вызов старого диалога настроек
+            from gopiai.ui.dialogs.settings_dialog import GopiAISettingsDialog
+            settings_dialog = GopiAISettingsDialog(self.theme_manager, self)
+            
+            # Подключаем сигналы диалога настроек
+            if hasattr(settings_dialog, 'themeChanged'):
+                settings_dialog.themeChanged.connect(self.on_change_theme)
+            if hasattr(settings_dialog, 'settings_applied'):
+                settings_dialog.settings_applied.connect(self._on_settings_changed)
+            
+            # Показываем диалог
+            result = settings_dialog.exec()
+            if result == settings_dialog.DialogCode.Accepted:
+                print("✅ Настройки применены")
+            else:
+                print("⚠️ Настройки отменены")
+                
+        except ImportError as e:
+            print(f"⚠️ Ошибка импорта диалога настроек: {e}")
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Ошибка", "Диалог настроек недоступен")
+        except Exception as e:
+            print(f"⚠️ Ошибка открытия настроек: {e}")
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "Ошибка", f"Не удалось открыть настройки: {e}")
+
+    def _on_settings_changed(self, settings_dict):
+        """Обработка изменения настроек"""
+        try:
+            print(f"🔧 Настройки изменены: {settings_dict}")
+            
+            # Применяем изменения шрифта
+            if 'font_size' in settings_dict:
+                font_size = settings_dict['font_size']
+                font = self.font()
+                font.setPointSize(font_size)
+                self.setFont(font)
+                print(f"✅ Размер шрифта изменен на {font_size}")
+            
+            # Применяем изменения темы
+            if 'theme' in settings_dict:
+                theme_mapping = {
+                    "Светлая": "light",
+                    "Тёмная": "dark",
+                    "Автоматическая": "auto",
+                    "Пользовательская": "custom"
+                }
+                theme_key = theme_mapping.get(settings_dict['theme'], "light")
+                self.on_change_theme(theme_key)
+            
+            # Показать/скрыть панели
+            if 'show_panels' in settings_dict:
+                panels = settings_dict['show_panels']
+                if 'file_explorer' in panels:
+                    self.file_explorer.setVisible(panels['file_explorer'])
+                if 'terminal' in panels:
+                    self.terminal_widget.setVisible(panels['terminal'])
+                if 'chat' in panels:
+                    self.chat_widget.setVisible(panels['chat'])
+                print("✅ Видимость панелей обновлена")            # Применяем настройки расширений
+            if 'extensions' in settings_dict:
+                extensions = settings_dict['extensions']
+                print(f"🔌 Настройки расширений: {extensions}")
+                # Здесь можно добавить логику включения/отключения расширений                
+        except Exception as e:
+            print(f"⚠️ Ошибка применения настроек: {e}")
+
+    def _show_settings(self):
+        """Показать диалог настроек"""
+        try:
+            settings_dialog = GopiAISettingsDialog(self.theme_manager, self)
+              # Подключаем сигнал для применения настроек
+            settings_dialog.settings_applied.connect(self._on_settings_changed)
+            
+            # Показываем диалог
+            if settings_dialog.exec() == settings_dialog.DialogCode.Accepted:
+                print("✅ Настройки применены")
+                
+        except Exception as e:
+            print(f"⚠️ Ошибка отображения диалога настроек: {e}")
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Ошибка", f"Не удалось открыть настройки: {e}")
+    
+    def _apply_theme_change(self, theme_key: str):
+        """Применение изменения темы"""
+        try:
+            if self.theme_manager and self.theme_manager.apply_theme(theme_key):
+                print(f"🎨 Тема изменена на: {theme_key}")
+            else:
+                print(f"⚠️ Не удалось применить тему: {theme_key}")
+        except Exception as e:
+            print(f"⚠️ Ошибка применения темы: {e}")
 
     def _on_new_file(self):
         """Создание нового файла"""
@@ -491,10 +550,10 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                     print("⚠️ Диалог выбора темы недоступен")
                 return
             
-            # Пытаемся применить тему через theme_manager
-            if self.theme_manager and hasattr(self.theme_manager, 'apply_theme_by_name'):
+            # Пытаемся применить тему через theme_manager            
+            if self.theme_manager and hasattr(self.theme_manager, 'apply_theme'):
                 try:
-                    self.theme_manager.apply_theme_by_name(theme_name)
+                    self.theme_manager.apply_theme(theme_name)
                     print(f"✅ Тема '{theme_name}' применена через theme_manager")
                     return
                 except Exception as e:
@@ -503,22 +562,11 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             print(f"⚠️ Не удалось применить тему: {theme_name}")
                 
         except Exception as e:
-            print(f"⚠️ Ошибка смены темы: {e}")# Fallback - применяем простую тему
+            print(f"⚠️ Ошибка смены темы: {e}")        # Fallback - применяем простую тему
             try:
-                # Define simple fallback theme function
-                def apply_simple_fallback_theme(app):
-                    app.setStyleSheet("""
-                        QMainWindow, QWidget { background-color: #2d2d2d; color: #ffffff; }
-                        QMenuBar { background-color: #333333; padding: 4px; }
-                        QMenuBar::item { padding: 8px 12px; }
-                        QMenuBar::item:selected { background-color: #4CAF50; }
-                    """)
-                    
-                from PySide6.QtWidgets import QApplication
-                app = QApplication.instance()
-                if isinstance(app, QApplication):
-                    apply_simple_fallback_theme(app)
-                    print("✅ Применена простая fallback тема")
+                # Применяем fallback стили
+                self._apply_fallback_styles()
+                print("✅ Применена простая fallback тема")
             except Exception as fallback_error:
                 print(f"⚠️ Ошибка fallback темы: {fallback_error}")
 

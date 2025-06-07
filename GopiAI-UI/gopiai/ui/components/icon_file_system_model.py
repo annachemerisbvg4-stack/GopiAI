@@ -116,9 +116,7 @@ class UniversalIconManager:
         
         # Проверяем кеш
         if cache_key in self.icon_cache:
-            return self.icon_cache[cache_key]
-        
-        # Пытаемся получить иконку из Lucide
+            return self.icon_cache[cache_key]        # Пытаемся получить иконку из Lucide
         icon = None
         if self.lucide_manager:
             try:
@@ -129,8 +127,16 @@ class UniversalIconManager:
             except Exception as e:
                 logger.debug(f"Ошибка при получении иконки {icon_name} из LucideIconManager: {e}")
                 icon = None
+        else:
+            # print(f"🔍 UniversalIconManager: lucide_manager = None, ищем {icon_name} в fallback")
+            pass
         
         # Если иконка не получена, используем fallback
+        if icon is None:
+            # Пытаемся загрузить SVG файл
+            icon = self._load_svg_icon(icon_name, size)
+            
+        # Если все еще нет иконки, используем fallback
         if icon is None:
             # Проверяем fallback иконки
             if icon_name in self.fallback_icons:
@@ -138,10 +144,29 @@ class UniversalIconManager:
             else:
                 # Создаем универсальную fallback иконку
                 icon = self._create_fallback_icon(icon_name, size)
-        
-        # Кешируем и возвращаем результат
+          # Кешируем и возвращаем результат
         self.icon_cache[cache_key] = icon
         return icon
+    
+    def _load_svg_icon(self, icon_name: str, size: QSize) -> Optional[QIcon]:
+        """Загружает SVG иконку из файловой системы"""
+        # Пути для поиска иконок
+        icon_paths = [
+            Path(__file__).parent.parent / "assets" / "icons" / "lucide" / f"{icon_name}.svg",
+            Path(__file__).parent.parent.parent.parent / "GopiAI" / "GopiAI-Assets" / "gopiai" / "assets" / "icons" / "lucide" / f"{icon_name}.svg"        ]
+        
+        for svg_path in icon_paths:
+            if svg_path.exists():
+                # print(f"✅ Загружаем SVG иконку: {svg_path}")
+                icon = QIcon(str(svg_path))
+                if not icon.isNull():
+                    return icon
+                else:
+                    # print(f"❌ Не удалось загрузить SVG: {svg_path}")
+                    pass
+        
+        # print(f"❌ SVG иконка не найдена: {icon_name}")
+        return None
     
     def _create_fallback_icon(self, icon_name: str, size: QSize) -> QIcon:
         """Создает универсальную fallback иконку с первой буквой имени"""

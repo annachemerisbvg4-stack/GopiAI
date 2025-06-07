@@ -15,23 +15,20 @@ if gopiai_ui_path not in sys.path:
 print("Тестируем импорт namespace-пакета gopiai.ui...")
 print(f"PYTHONPATH содержит: {gopiai_ui_path}")
 
-try:    # Базовый импорт
+try:
+    # Базовый импорт
     import gopiai.ui
     print("✓ Успешно импортирован gopiai.ui")
-    
-    # Импорт базовых компонентов
+      # Импорт базовых компонентов
     from gopiai.ui.base import BaseWindow, WindowRegistry
     print("✓ Успешно импортированы базовые компоненты")
     
     # Импорт утилит
     from gopiai.ui.utils import UniversalIconManager
     print("✓ Успешно импортированы утилиты")
-      # Импорт компонентов
-    from gopiai.ui.components import (
-        StandaloneMenuBar,
-        StandaloneTitlebar,
-        StandaloneTitlebarWithMenu
-    )
+    
+    # Импорт компонентов
+    from gopiai.ui.components import MainMenuWidget
     print("✓ Успешно импортированы компоненты")
     
     # Проверим пути

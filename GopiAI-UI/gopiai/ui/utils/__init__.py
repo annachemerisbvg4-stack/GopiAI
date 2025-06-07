@@ -1,12 +1,7 @@
 """
-GopiAI UI Utils Package
-=======================
-
-Утилиты для UI компонентов GopiAI.
+Утилиты GopiAI UI
 """
 
-from .icon_manager import UniversalIconManager
+from .theme_manager import ThemeManager
 
-__all__ = [
-    'UniversalIconManager',
-]
+__all__ = ['ThemeManager']

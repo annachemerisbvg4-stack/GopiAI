@@ -11,7 +11,9 @@ dependencies = [
     "PySide6>=6.5.0",
     "gopiai-core>=0.1.0",
     "gopiai-widgets>=0.1.0",
+    "autogen-agentchat~=0.2",
+    "python-dotenv>=1.0.0",
 ]
 
 [tool.setuptools]
-packages = ["gopiai.extensions"]
+packages = ["gopiai.extensions", "autogen"]

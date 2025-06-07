@@ -2,12 +2,12 @@
 echo Starting GopiAI Application...
 echo ===============================
 
-REM Переходим в папку с модульным UI
-cd /d "%~dp0GopiAI-UI\gopiai\ui"
+REM Переходим в папку UI где находится main.py
+cd /d "%~dp0GopiAI-UI"
 
 REM Проверяем существование main.py
 if not exist "main.py" (
-    echo ERROR: main.py not found in GopiAI-UI\gopiai\ui folder!
+    echo ERROR: main.py not found in UI folder!
     pause
     exit /b 1
 )

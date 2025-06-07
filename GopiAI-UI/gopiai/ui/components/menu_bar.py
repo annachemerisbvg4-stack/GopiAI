@@ -39,7 +39,9 @@ class StandaloneMenuBar(QMenuBar):
     toggleProductivityExtension = Signal()
     toggleVoiceExtension = Signal()
     toggleAiToolsExtension = Signal()
-      # Сигналы темы
+    
+    # Сигналы настроек
+    openSettingsRequested = Signal()
     changeThemeRequested = Signal(str)  # Передаем название темы
 
     def __init__(self, parent=None):
@@ -63,7 +65,7 @@ class StandaloneMenuBar(QMenuBar):
         """Создание простого менеджера иконок как fallback"""
         class SimpleIconManager:
             def __init__(self):
-                self.icons_path = Path(__file__).parent.parent / "node_modules" / "lucide-static" / "icons"
+                self.icons_path = Path(__file__).parent.parent / "assets" / "icons" / "lucide"
                 self._icon_cache = {}
                 
             def get_icon(self, icon_name: str):
@@ -72,10 +74,14 @@ class StandaloneMenuBar(QMenuBar):
                     return self._icon_cache[icon_name]
                 
                 svg_path = self.icons_path / f"{icon_name}.svg"
+                print(f"🔍 Ищем иконку: {svg_path}")
                 if svg_path.exists():
                     icon = QIcon(str(svg_path))
                     self._icon_cache[icon_name] = icon
+                    print(f"✅ Иконка загружена: {icon_name}")
                     return icon
+                else:
+                    print(f"❌ Иконка не найдена: {svg_path}")
                 
                 return QIcon()  # Пустая иконка
             
@@ -90,19 +96,30 @@ class StandaloneMenuBar(QMenuBar):
     def _build_menu(self):
         """Создание структуры меню"""
         # Файловое меню
-        file_menu = self.addMenu("📁 Файл")
+        file_menu = self.addMenu("Файл")
         self._setup_file_menu(file_menu)
         
         # Меню правки
-        edit_menu = self.addMenu("✏️ Правка")
+        edit_menu = self.addMenu("Правка")
         self._setup_edit_menu(edit_menu)
         
         # Меню вида
-        view_menu = self.addMenu("👁️ Вид")
+        view_menu = self.addMenu("Вид")
         self._setup_view_menu(view_menu)
+        
+        # Меню настроек
+        settings_menu = self.addMenu("Настройки")
+        self._setup_settings_menu(settings_menu)
+        
+        # Сохраняем ссылки на меню для установки иконок
+        self.file_menu = file_menu
+        self.edit_menu = edit_menu
+        self.view_menu = view_menu
+        self.settings_menu = settings_menu
         
         # Обновляем иконки меню
         self._update_menu_icons()
+        self._update_menu_bar_icons()
 
     def _setup_file_menu(self, file_menu):
         """Настройка файлового меню"""
@@ -136,7 +153,8 @@ class StandaloneMenuBar(QMenuBar):
         self.select_all_action = edit_menu.addAction("Выделить всё")
 
     def _setup_view_menu(self, view_menu):
-        """Настройка меню вида"""        # Основные панели
+        """Настройка меню вида"""
+        # Основные панели
         self.project_explorer_action = view_menu.addAction("Файловый проводник")
         self.chat_action = view_menu.addAction("ИИ чат")
         self.browser_action = view_menu.addAction("Браузер")
@@ -146,17 +164,12 @@ class StandaloneMenuBar(QMenuBar):
         view_menu.addSeparator()
         
         # Подменю расширений
-        extensions_menu = view_menu.addMenu("🔌 Расширения")
-        self.productivity_action = extensions_menu.addAction("📝 Инструменты продуктивности")
-        self.voice_action = extensions_menu.addAction("🎤 Голосовое управление")
-        self.ai_tools_action = extensions_menu.addAction("🤖 ИИ инструменты")        # Подменю настроек темы
-        view_menu.addSeparator()
-          # Простое действие для открытия диалога смены темы
-        change_theme_action = view_menu.addAction("🎨 Тема")
-        change_theme_action.triggered.connect(lambda: self.changeThemeRequested.emit("dialog"))
+        extensions_menu = view_menu.addMenu("Расширения")
+        self.extensions_menu = extensions_menu  # Сохраняем для установки иконки
         
-        # Сохраняем ссылку на действие для назначения иконки
-        self.change_theme_action = change_theme_action
+        self.productivity_action = extensions_menu.addAction("Инструменты продуктивности")
+        self.voice_action = extensions_menu.addAction("Голосовое управление")
+        self.ai_tools_action = extensions_menu.addAction("ИИ инструменты")
         
         # Делаем действия расширений checkable
         self.productivity_action.setCheckable(True)
@@ -165,7 +178,8 @@ class StandaloneMenuBar(QMenuBar):
         
         # По умолчанию продуктивность включена
         self.productivity_action.setChecked(True)
-          # Подключение сигналов вида
+        
+        # Подключение сигналов вида
         self.project_explorer_action.triggered.connect(self.openProjectExplorerRequested.emit)
         self.chat_action.triggered.connect(self.openChatRequested.emit)
         self.browser_action.triggered.connect(self.openBrowserRequested.emit)
@@ -177,17 +191,35 @@ class StandaloneMenuBar(QMenuBar):
         self.voice_action.triggered.connect(self.toggleVoiceExtension.emit)
         self.ai_tools_action.triggered.connect(self.toggleAiToolsExtension.emit)
 
+    def _setup_settings_menu(self, settings_menu):
+        """Настройка меню настроек"""
+        # Основные настройки
+        self.settings_action = settings_menu.addAction("Настройки приложения")
+        self.settings_action.triggered.connect(self.openSettingsRequested.emit)
+        """Настройка меню настроек"""
+        # Основные настройки
+        self.settings_action = settings_menu.addAction("Настройки приложения")
+        self.settings_action.triggered.connect(self.openSettingsRequested.emit)
+        
+        settings_menu.addSeparator()
+        
+        # Быстрая смена темы
+        self.change_theme_action = settings_menu.addAction("Сменить тему")
+        self.change_theme_action.triggered.connect(lambda: self.changeThemeRequested.emit("dialog"))
+
     def _update_menu_icons(self):
         """Обновление иконок в меню"""
         # Маппинг действий к иконкам
         icon_mapping = {
             # Файловое меню
             'new_action': 'file-plus',
-            'open_action': 'file-open',
+            'open_action': 'folder-open',
             'open_folder_action': 'folder-open',
             'save_action': 'save',
-            'save_as_action': 'save-as',
-            'exit_action': 'x',            # Меню правки
+            'save_as_action': 'save-all',
+            'exit_action': 'x',
+            
+            # Меню правки
             'undo_action': 'undo',
             'redo_action': 'redo',
             'cut_action': 'scissors',
@@ -195,24 +227,31 @@ class StandaloneMenuBar(QMenuBar):
             'paste_action': 'clipboard',
             'delete_action': 'trash-2',
             'select_all_action': 'text-select',
-              # Меню вида
+            
+            # Меню вида
             'project_explorer_action': 'folder-open',
             'chat_action': 'message-circle',
             'browser_action': 'globe',
             'terminal_action': 'terminal',
             'text_editor_action': 'file-text',
-            'change_theme_action': 'palette',  # Иконка для смены темы
-        }        # Применяем иконки
+            
+            # Меню настроек
+            'settings_action': 'settings',
+            'change_theme_action': 'palette',
+            
+            # Расширения
+            'productivity_action': 'briefcase',
+            'voice_action': 'mic',
+            'ai_tools_action': 'cpu',
+        }
+
+        # Применяем иконки к действиям
         for action_name, icon_name in icon_mapping.items():
             if hasattr(self, action_name):
                 action = getattr(self, action_name)
                 
-                # Проверяем тип icon_system и используем соответствующий метод
                 try:
-                    # Всегда используем маппинг для получения имени иконки
-                    icon_name = icon_mapping.get(action_name, action_name.replace('_action', ''))
-                    
-                    # Получаем иконку методом get_icon, который должен быть у любой системы иконок
+                    # Получаем иконку методом get_icon
                     if hasattr(self.icon_system, 'get_icon'):
                         icon = self.icon_system.get_icon(icon_name)
                     else:
@@ -224,7 +263,36 @@ class StandaloneMenuBar(QMenuBar):
                 except Exception as e:
                     print(f"⚠️ Ошибка получения иконки для {action_name}: {e}")
 
+    def _update_menu_bar_icons(self):
+        """Обновление иконок для самих пунктов меню (File, Edit, View, Settings)"""
+        try:
+            # Иконки для главных меню
+            menu_icons = {
+                'file_menu': 'folder',
+                'edit_menu': 'pencil',
+                'view_menu': 'eye',
+                'settings_menu': 'settings',
+            }
+            
+            for menu_name, icon_name in menu_icons.items():
+                if hasattr(self, menu_name):
+                    menu = getattr(self, menu_name)
+                    if hasattr(self.icon_system, 'get_icon'):
+                        icon = self.icon_system.get_icon(icon_name)
+                        if not icon.isNull():
+                            menu.setIcon(icon)
+            
+            # Иконка для подменю расширений
+            if hasattr(self, 'extensions_menu') and hasattr(self.icon_system, 'get_icon'):
+                extensions_icon = self.icon_system.get_icon('puzzle')
+                if not extensions_icon.isNull():
+                    self.extensions_menu.setIcon(extensions_icon)
+                    
+        except Exception as e:
+            print(f"⚠️ Ошибка установки иконок меню: {e}")
+
     def refresh_icons(self):
         """Принудительное обновление всех иконок в меню"""
         self._update_menu_icons()
+        self._update_menu_bar_icons()
         print("🔄 Иконки меню обновлены")

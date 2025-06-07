@@ -6,9 +6,8 @@ import pytest
 from PySide6.QtWidgets import QApplication, QWidget, QMessageBox
 
 sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('GopiAI-Extensions'))
-from gopiai_standalone_interface import FramelessGopiAIStandaloneWindow
-
+sys.path.insert(0, os.path.abspath('extensions'))
+from gopiai.ui.standalone_interface import FramelessGopiAIStandaloneWindow
 class DummyMain:
     def __init__(self):
         self.dock_widgets = {}
@@ -24,10 +23,28 @@ class DummyMain:
 
     def _add_to_bottom_panel(self, widget):
         self.bottom.append(widget)
-
-DummyMain.add_dock_widget = FramelessGopiAIStandaloneWindow.add_dock_widget
-DummyMain._toggle_ai_tools_extension = FramelessGopiAIStandaloneWindow._toggle_ai_tools_extension
-
+        
+    def add_dock_widget(self, name, widget, position):
+        self.dock_widgets[name] = widget
+        if position == 'left':
+            self._add_to_left_panel(widget)
+        elif position == 'right':
+            self._add_to_right_panel(widget)
+        elif position == 'bottom':
+            self._add_to_bottom_panel(widget)
+        
+    def _toggle_ai_tools_extension(self):
+        try:
+            import gopiai.extensions.ai_tools_extension
+            if 'ai_tools' not in self.dock_widgets:
+                gopiai.extensions.ai_tools_extension.init_extension(self)
+            else:
+                widget = self.dock_widgets['ai_tools']
+                visible = widget.isVisible()
+                widget.setVisible(not visible)
+        except ImportError:
+            QMessageBox.warning(None, "Extension Error", "Could not load AI tools extension")
+            return
 @pytest.fixture
 def app():
     app = QApplication([])
@@ -40,6 +57,11 @@ def main(app):
 
 def setup_dummy_extension():
     # Создаем минимальный модуль gopiai.extensions с функцией _safely_import
+    # Create gopiai module first if it doesn't exist
+    if 'gopiai' not in sys.modules:
+        gopiai_pkg = types.ModuleType('gopiai')
+        sys.modules['gopiai'] = gopiai_pkg
+    
     extensions_pkg = types.ModuleType('gopiai.extensions')
     def _safely_import(name):
         return importlib.import_module(name)
