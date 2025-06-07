@@ -261,8 +261,9 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             self.theme_manager = ThemeManager()
             if self.theme_manager:
                 print("✅ Менеджер тем инициализирован")
-                # Применяем тему по умолчанию
-                self.theme_manager.apply_theme("simple")
+                # Применяем тему по умолчанию - используем конкретную тему вместо "simple",
+                # чтобы избежать появления диалога выбора темы при запуске
+                self.theme_manager.apply_theme("Material Sky")
             else:
                 print("⚠️ Не удалось создать менеджер тем")
         except Exception as e:
@@ -519,36 +520,6 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         """Обработчик смены темы"""
         try:
             print(f"🎨 Запрос смены темы: {theme_name}")
-            
-            if theme_name == "dialog":
-                # Показываем диалог выбора темы
-                try:
-                    from PySide6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QApplication
-                    
-                    class SimpleThemeDialog(QDialog):
-                        def __init__(self, parent=None):
-                            super().__init__(parent)
-                            self.setWindowTitle("Выбор темы")
-                            layout = QVBoxLayout(self)
-                            
-                            themes = ["light", "dark", "blue", "green"]
-                            for theme in themes:
-                                btn = QPushButton(theme.title(), self)
-                                btn.clicked.connect(lambda checked, t=theme: self._on_theme_selected(t))
-                                layout.addWidget(btn)
-                                
-                        def _on_theme_selected(self, theme):
-                            parent = self.parent()
-                            if isinstance(parent, FramelessGopiAIStandaloneWindow):
-                                parent.on_change_theme(theme)
-                            self.accept()
-                    
-                    dialog = SimpleThemeDialog(self)
-                    dialog.exec()
-                    print("✅ Диалог выбора темы открыт")
-                except ImportError:
-                    print("⚠️ Диалог выбора темы недоступен")
-                return
             
             # Пытаемся применить тему через theme_manager            
             if self.theme_manager and hasattr(self.theme_manager, 'apply_theme'):
