@@ -19,18 +19,7 @@ class SettingsCard(QFrame):
     def __init__(self, title: str, description: str = "", parent=None):
         super().__init__(parent)
         self.setFrameStyle(QFrame.Shape.StyledPanel)
-        self.setStyleSheet("""
-            SettingsCard {
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
-                padding: 12px;
-                margin: 4px;
-            }
-            SettingsCard:hover {
-                background-color: #e9ecef;
-            }
-        """)
+        # Удаляем жестко заданные стили, они будут применяться из глобальной темы
         
         layout = QVBoxLayout(self)
         layout.setSpacing(8)
@@ -47,7 +36,7 @@ class SettingsCard(QFrame):
         if description:
             desc_label = QLabel(description)
             desc_label.setWordWrap(True)
-            desc_label.setStyleSheet("color: #6c757d; font-size: 9pt;")
+            desc_label.setStyleSheet("font-size: 9pt;")  # Убираем жестко заданный цвет
             layout.addWidget(desc_label)
         
         # Контейнер для контента
@@ -72,6 +61,8 @@ class GopiAISettingsDialog(QDialog):
     
     def __init__(self, theme_manager=None, parent=None):
         super().__init__(parent)
+        # Добавляем свойство безрамочного окна
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.theme_manager = theme_manager
         self.settings = {}
         self.setup_ui()
@@ -82,6 +73,58 @@ class GopiAISettingsDialog(QDialog):
         self.setWindowTitle("Настройки GopiAI")
         self.setMinimumSize(600, 500)
         self.resize(800, 600)
+        
+        # Применяем текущую тему к диалогу
+        if self.theme_manager:
+            # Получаем цвета из текущей темы
+            current_theme_data = self.theme_manager.get_current_theme_data()
+            if current_theme_data:
+                main_color = current_theme_data.get('main_color', '#f8f9fa')
+                accent_color = current_theme_data.get('accent_color', '#007bff')
+                text_color = current_theme_data.get('text_color', '#212529')
+                
+                # Применяем стили ко всему диалогу
+                self.setStyleSheet(f"""
+                    QDialog {{
+                        background-color: {main_color};
+                        color: {text_color};
+                    }}
+                    QLabel {{
+                        color: {text_color};
+                    }}
+                    QPushButton {{
+                        background-color: {accent_color};
+                        color: white;
+                        border: none;
+                        padding: 5px 10px;
+                        border-radius: 4px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {accent_color}cc;
+                    }}
+                    QTabWidget::pane {{
+                        border: 1px solid #dee2e6;
+                        border-radius: 4px;
+                    }}
+                    QTabBar::tab {{
+                        background-color: {main_color};
+                        color: {text_color};
+                        padding: 8px 12px;
+                    }}
+                    QTabBar::tab:selected {{
+                        background-color: {accent_color}33;
+                    }}
+                    SettingsCard {{
+                        background-color: {main_color}cc;
+                        border: 1px solid #dee2e6;
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin: 4px;
+                    }}
+                    SettingsCard:hover {{
+                        background-color: {main_color}ee;
+                    }}
+                """)
         
         # Основной layout
         main_layout = QVBoxLayout(self)
