@@ -419,16 +419,14 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 self.setFont(font)
                 print(f"✅ Размер шрифта изменен на {font_size}")
             
-            # Применяем изменения темы
+            # Применяем изменения темы и тёмного режима
+            # Примечание: переключатель тёмного режима уже обработан в settings_dialog.py
+            # и применён к theme_manager._current_variant
             if 'theme' in settings_dict:
-                theme_mapping = {
-                    "Светлая": "light",
-                    "Тёмная": "dark",
-                    "Автоматическая": "auto",
-                    "Пользовательская": "custom"
-                }
-                theme_key = theme_mapping.get(settings_dict['theme'], "light")
-                self.on_change_theme(theme_key)
+                # Используем имя темы напрямую, а не маппинг, так как теперь
+                # настройка темного режима обрабатывается отдельно
+                theme_name = settings_dict['theme']
+                self.on_change_theme(theme_name)
             
             # Показать/скрыть панели
             if 'show_panels' in settings_dict:
