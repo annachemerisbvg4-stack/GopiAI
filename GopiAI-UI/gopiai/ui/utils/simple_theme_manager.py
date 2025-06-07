@@ -711,17 +711,84 @@ def apply_theme(app):
         palette.setColor(QPalette.ColorRole.Highlight, accent_color)
         palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.white)
         
-        # Добавляем стиль для улучшения контраста кнопок
+        # Добавляем стиль для улучшения контраста всех виджетов
         app.setStyleSheet(f"""
+        /* Стили для кнопок */
         QPushButton {{
             color: {button_text_color.name()};
             background-color: {button_color.name()};
+            border: 1px solid {border_color.name()};
         }}
         QPushButton:hover {{
             color: {button_hover_text_color.name()};
             background-color: {theme.get("button_hover_color", "#F0F0F0")};
         }}
         QPushButton:pressed {{
+            color: {button_active_text_color.name()};
+            background-color: {theme.get("button_active_color", "#0078D7")};
+        }}
+        
+        /* Стили для всех других виджетов */
+        QLabel {{
+            color: {text_color.name()};
+        }}
+        QComboBox {{
+            color: {button_text_color.name()};
+            background-color: {button_color.name()};
+            border: 1px solid {border_color.name()};
+        }}
+        QComboBox QAbstractItemView {{
+            color: {text_color.name()};
+            background-color: {main_color.name()};
+            selection-background-color: {accent_color.name()};
+            selection-color: #FFFFFF;
+        }}
+        QLineEdit, QTextEdit, QPlainTextEdit {{
+            color: {text_color.name()};
+            background-color: {main_color.name()};
+            border: 1px solid {border_color.name()};
+        }}
+        QMenuBar::item:selected, QMenu::item:selected {{
+            color: #FFFFFF;
+            background-color: {accent_color.name()};
+        }}
+        QCheckBox, QRadioButton {{
+            color: {text_color.name()};
+        }}
+        QTabBar::tab {{
+            color: {button_text_color.name()};
+            background-color: {button_color.name()};
+        }}
+        QTabBar::tab:selected {{
+            color: {button_active_text_color.name()};
+            background-color: {theme.get("button_active_color", "#0078D7")};
+        }}
+        QToolTip {{
+            color: {text_color.name()};
+            background-color: {main_color.name()};
+            border: 1px solid {border_color.name()};
+        }}
+        QTreeView, QListView, QTableView {{
+            color: {text_color.name()};
+            background-color: {main_color.name()};
+        }}
+        QTreeView::item:selected, QListView::item:selected, QTableView::item:selected {{
+            color: #FFFFFF;
+            background-color: {accent_color.name()};
+        }}
+        QHeaderView::section {{
+            color: {text_color.name()};
+            background-color: {header_color.name()};
+        }}
+        QToolButton {{
+            color: {button_text_color.name()};
+            background-color: {button_color.name()};
+        }}
+        QToolButton:hover {{
+            color: {button_hover_text_color.name()};
+            background-color: {theme.get("button_hover_color", "#F0F0F0")};
+        }}
+        QToolButton:pressed {{
             color: {button_active_text_color.name()};
             background-color: {theme.get("button_active_color", "#0078D7")};
         }}
