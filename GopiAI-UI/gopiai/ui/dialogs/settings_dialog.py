@@ -82,6 +82,10 @@ class GopiAISettingsDialog(QDialog):
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.theme_manager = theme_manager
         self.settings = {}
+        
+        # Переменная для хранения позиции мыши при перетаскивании
+        self._drag_position = None
+        
         self.setup_ui()
         self.load_current_settings()
     
@@ -532,6 +536,25 @@ class GopiAISettingsDialog(QDialog):
         }
         return settings
     
+    # События мыши для перетаскивания безрамочного окна
+    def mousePressEvent(self, event):
+        """Обработка нажатия кнопки мыши для начала перетаскивания"""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+    
+    def mouseMoveEvent(self, event):
+        """Обработка движения мыши для перетаскивания окна"""
+        if event.buttons() & Qt.MouseButton.LeftButton and self._drag_position is not None:
+            self.move(event.globalPosition().toPoint() - self._drag_position)
+            event.accept()
+    
+    def mouseReleaseEvent(self, event):
+        """Обработка отпускания кнопки мыши для завершения перетаскивания"""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_position = None
+            event.accept()
+    
     def apply_settings(self):
         """Применение настроек"""
         self.settings = self.collect_settings()
@@ -547,11 +570,114 @@ class GopiAISettingsDialog(QDialog):
             # Применяем тему
             self.theme_manager.apply_theme(theme_name)
             
+            # Применяем тему также к диалогу настроек для мгновенного обновления
+            self._update_dialog_theme()
+            
             # Сигнал изменения темы
             self.themeChanged.emit(theme_name)
         
         # Испускание сигнала для передачи настроек в основное окно
         self.settings_applied.emit(self.settings)
+    
+    def _update_dialog_theme(self):
+        """Обновляет тему диалога настроек, применяя текущие цвета из менеджера тем"""
+        if self.theme_manager:
+            # Получаем данные текущей темы
+            current_theme_data = self.theme_manager.get_current_theme_data()
+            if current_theme_data:
+                main_color = current_theme_data.get('main_color', '#f8f9fa')
+                accent_color = current_theme_data.get('accent_color', '#007bff')
+                text_color = current_theme_data.get('text_color', '#212529')
+                
+                # Определяем текст на основе яркости фона
+                is_light_bg = self._is_light_color(main_color)
+                button_text_color = "#1a1a1a" if is_light_bg else "#ffffff"
+                
+                # Обновляем стили всех виджетов
+                self.setStyleSheet(f"""
+                    QDialog {{
+                        background-color: {main_color};
+                        color: {text_color};
+                    }}
+                    QLabel {{
+                        color: {text_color};
+                    }}
+                    QPushButton {{
+                        background-color: {accent_color};
+                        color: {button_text_color};
+                        border: none;
+                        padding: 5px 10px;
+                        border-radius: 4px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {accent_color}cc;
+                    }}
+                    QTabWidget::pane {{
+                        border: 1px solid #dee2e6;
+                        border-radius: 4px;
+                    }}
+                    QTabBar::tab {{
+                        background-color: {main_color};
+                        color: {text_color};
+                        padding: 8px 12px;
+                    }}
+                    QTabBar::tab:selected {{
+                        background-color: {accent_color}33;
+                    }}
+                    SettingsCard {{
+                        background-color: {main_color}cc;
+                        border: 1px solid #dee2e6;
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin: 4px;
+                    }}
+                    SettingsCard:hover {{
+                        background-color: {main_color}ee;
+                    }}
+                    QComboBox {{
+                        background-color: {main_color}ee;
+                        color: {text_color};
+                        border: 1px solid #dee2e6;
+                        border-radius: 4px;
+                        padding: 3px;
+                    }}
+                    QComboBox:hover {{
+                        border: 1px solid {accent_color};
+                    }}
+                    QCheckBox {{
+                        color: {text_color};
+                    }}
+                    QCheckBox::indicator {{
+                        width: 15px;
+                        height: 15px;
+                        border: 1px solid #dee2e6;
+                        border-radius: 3px;
+                    }}
+                    QCheckBox::indicator:checked {{
+                        background-color: {accent_color};
+                    }}
+                    QSpinBox, QLineEdit, QTextEdit {{
+                        background-color: {main_color}ee;
+                        color: {text_color};
+                        border: 1px solid #dee2e6;
+                        border-radius: 4px;
+                        padding: 3px;
+                    }}
+                    QSpinBox:hover, QLineEdit:hover, QTextEdit:hover {{
+                        border: 1px solid {accent_color};
+                    }}
+                    QScrollArea, QScrollBar {{
+                        background-color: {main_color};
+                        border: none;
+                    }}
+                """)
+                
+                # Принудительно обновляем все дочерние виджеты
+                for child in self.findChildren(QWidget):
+                    child.update()
+                
+                # Обновляем также сам диалог
+                self.update()
     
     def accept_settings(self):
         """Принятие и применение настроек с закрытием диалога"""
