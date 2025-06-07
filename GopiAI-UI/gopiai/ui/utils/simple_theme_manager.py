@@ -687,6 +687,13 @@ def apply_theme(app):
         border_color = QColor(theme.get("border_color", "#CCCCCC"))
         button_color = QColor(theme.get("button_color", "#E0E0E0"))
         header_color = QColor(theme.get("header_color", "#F0F0F0"))
+        
+        # Специфические цвета текста для различных элементов
+        button_text_color = QColor(theme.get("button_text", "#000000" if _is_light(theme.get("button_color", "#E0E0E0")) else "#FFFFFF"))
+        button_hover_text_color = QColor(theme.get("button_hover_text", "#000000" if _is_light(theme.get("button_hover_color", "#F0F0F0")) else "#FFFFFF"))
+        button_active_text_color = QColor(theme.get("button_active_text", "#000000" if _is_light(theme.get("button_active_color", "#0078D7")) else "#FFFFFF"))
+        
+        # Устанавливаем цвета элементов
         palette.setColor(QPalette.ColorRole.Window, main_color)
         palette.setColor(QPalette.ColorRole.WindowText, text_color)
         palette.setColor(QPalette.ColorRole.Base, main_color)
@@ -695,11 +702,30 @@ def apply_theme(app):
         palette.setColor(QPalette.ColorRole.ToolTipText, text_color)
         palette.setColor(QPalette.ColorRole.Text, text_color)
         palette.setColor(QPalette.ColorRole.Button, button_color)
-        palette.setColor(QPalette.ColorRole.ButtonText, text_color)
+        
+        # Применяем специфические цвета текста для кнопок вместо общего text_color
+        palette.setColor(QPalette.ColorRole.ButtonText, button_text_color)
+        
         palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.white)
         palette.setColor(QPalette.ColorRole.Link, accent_color)
         palette.setColor(QPalette.ColorRole.Highlight, accent_color)
         palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.white)
+        
+        # Добавляем стиль для улучшения контраста кнопок
+        app.setStyleSheet(f"""
+        QPushButton {{
+            color: {button_text_color.name()};
+            background-color: {button_color.name()};
+        }}
+        QPushButton:hover {{
+            color: {button_hover_text_color.name()};
+            background-color: {theme.get("button_hover_color", "#F0F0F0")};
+        }}
+        QPushButton:pressed {{
+            color: {button_active_text_color.name()};
+            background-color: {theme.get("button_active_color", "#0078D7")};
+        }}
+        """)
         app.setPalette(palette)
         app.setStyle("Fusion")
         return True
