@@ -164,6 +164,37 @@ class ThemeManager(QObject):
         
         return theme_names
     
+    def get_current_theme_data(self) -> Optional[dict]:
+        """
+        Возвращает данные текущей темы.
+        
+        Returns:
+            Optional[dict]: Словарь с данными текущей темы или None, если тема не загружена
+        """
+        try:
+            # Загружаем данные текущей темы из файла настроек
+            theme_data = stm.load_theme()
+            
+            # Если данные загружены успешно, возвращаем их
+            if theme_data:
+                return theme_data
+                
+            # Если текущая тема установлена, но данные не загружены,
+            # пытаемся найти тему в коллекции
+            if self._current_theme:
+                variant = self._current_variant or "light"
+                
+                for theme in stm.THEME_COLLECTION:
+                    if theme["name"] == self._current_theme and variant in theme:
+                        theme_data = theme[variant].copy()
+                        theme_data["name"] = theme["name"]
+                        theme_data["variant"] = variant
+                        return theme_data
+        except Exception as e:
+            logger.error(f"Ошибка при получении данных текущей темы: {e}")
+            
+        return None
+    
     def show_theme_dialog(self) -> bool:
         """
         Показывает диалог выбора темы.
