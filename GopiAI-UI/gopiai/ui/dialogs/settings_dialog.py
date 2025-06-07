@@ -104,10 +104,6 @@ class GopiAISettingsDialog(QDialog):
                 is_light_bg = self._is_light_color(main_color)
                 button_text_color = "#1a1a1a" if is_light_bg else "#ffffff"
                 
-                # Определяем текст на основе яркости фона
-                is_light_bg = self._is_light_color(main_color)
-                button_text_color = "#1a1a1a" if is_light_bg else "#ffffff"
-                
                 # Применяем стили ко всему диалогу
                 self.setStyleSheet(f"""
                     QDialog {{
