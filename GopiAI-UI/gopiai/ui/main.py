@@ -85,6 +85,9 @@ except ImportError as e:
             
         def set_window(self, window):
             pass  # Fallback заглушка
+            
+        def add_browser_tab(self, url="about:blank", title="Браузер"):
+            print(f"Fallback: add_browser_tab({url}, {title}) - Browser not available")
     
     class SimpleMenuBar(QMenuBar):
         def refresh_icons(self):
