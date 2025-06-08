@@ -382,6 +382,10 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 menu_bar.openChatRequested.connect(self._toggle_chat)
             if hasattr(menu_bar, 'openTerminalRequested'):
                 menu_bar.openTerminalRequested.connect(self._toggle_terminal)
+            # Подключаем сигнал открытия браузера
+            if hasattr(menu_bar, 'openBrowserRequested'):
+                menu_bar.openBrowserRequested.connect(self.tab_document.add_browser_tab)
+                print("✅ Сигнал openBrowserRequested подключен к add_browser_tab")
             
             print("✅ Сигналы меню подключены успешно")
         except Exception as e:
