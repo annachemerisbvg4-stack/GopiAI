@@ -3,7 +3,7 @@ echo Starting GopiAI Application...
 echo ===============================
 
 REM Переходим в папку UI где находится main.py
-cd /d "%~dp0GopiAI-UI"
+cd /d "GopiAI-UI\gopiai\ui"
 
 REM Проверяем существование main.py
 if not exist "main.py" (

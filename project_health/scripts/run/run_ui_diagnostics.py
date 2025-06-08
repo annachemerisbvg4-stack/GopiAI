@@ -18,7 +18,7 @@ if not os.path.exists("app") or not os.path.exists("requirements.txt"):
 
 # Импортируем модуль диагностики
 try:
-    from gopiai.widgets.debug_ui import run_ui_diagnostics
+    from gopiai.widgets.core.debug_ui import run_ui_diagnostics
 except ImportError as e:
     print(f"Ошибка при импорте модуля диагностики: {e}")
     print("Убедитесь, что вы запускаете скрипт из корневой директории проекта и виртуальное окружение активировано.")

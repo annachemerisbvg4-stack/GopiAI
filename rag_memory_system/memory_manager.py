@@ -91,14 +91,15 @@ class RAGMemoryManager:
             raise
     
     def create_session(self, title: str, project_context: Optional[str] = None, 
-                      tags: List[str] = None) -> ConversationSession:
+                      tags: Optional[List[str]] = None) -> ConversationSession:
         """Создать новую сессию разговора"""
         session_id = str(uuid.uuid4())
         session = ConversationSession(
             session_id=session_id,
             title=title,
             project_context=project_context,
-            tags=tags or []
+            tags=tags or [],
+            summary=""  # Добавляем пустую строку как начальное значение для summary
         )
         
         self.active_sessions[session_id] = session
@@ -106,7 +107,7 @@ class RAGMemoryManager:
         return session
     
     def add_message(self, session_id: str, role: MessageRole, content: str, 
-                   metadata: Dict[str, Any] = None) -> ConversationMessage:
+                   metadata: Optional[Dict[str, Any]] = None) -> ConversationMessage:
         """Добавить сообщение в сессию"""
         if session_id not in self.active_sessions:
             # Попытаемся загрузить сессию из файла
@@ -116,7 +117,7 @@ class RAGMemoryManager:
             self.active_sessions[session_id] = session
         
         session = self.active_sessions[session_id]
-        message = session.add_message(role, content, metadata)
+        message = session.add_message(role, content, metadata or {})
         
         # Автосохранение если включено
         if config.auto_save_enabled:
@@ -196,7 +197,7 @@ class RAGMemoryManager:
         except Exception as e:
             self.logger.error(f"Ошибка индексации сессии {session.session_id}: {e}")
     
-    def search_conversations(self, query: str, limit: int = None) -> List[SearchResult]:
+    def search_conversations(self, query: str, limit: Optional[int] = None) -> List[SearchResult]:
         """Поиск релевантных разговоров"""
         try:
             limit = limit or config.top_k_results
@@ -298,7 +299,15 @@ class RAGMemoryManager:
             
         except Exception as e:
             self.logger.error(f"Ошибка получения статистики: {e}")
-            return MemoryStats(total_sessions=0, total_messages=0, total_documents=0)
+            return MemoryStats(
+                total_sessions=0, 
+                total_messages=0, 
+                total_documents=0,
+                oldest_session=None,
+                newest_session=None,
+                most_active_tags=[],
+                storage_size_mb=0.0
+            )
     
     def cleanup_old_sessions(self, days_old: int = 30):
         """Очистка старых сессий (архивирование)"""

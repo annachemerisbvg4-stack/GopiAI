@@ -56,7 +56,7 @@ class OutputWidget(QWidget):
         # Создаем текстовое поле для вывода
         self.output_text = QTextEdit()
         self.output_text.setReadOnly(True)
-        self.output_text.setLineWrapMode(QTextEdit.NoWrap)
+        self.output_text.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
         self.output_text.setStyleSheet("""
             QTextEdit {
                 font-family: 'Consolas', 'Courier New', monospace;

@@ -377,8 +377,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 menu_bar.saveRequested.connect(self._on_save_file)
             if hasattr(menu_bar, 'exitRequested'):
                 menu_bar.exitRequested.connect(self.close)
-                
-            # Подключаем сигналы меню вида
+                  # Подключаем сигналы меню вида
             if hasattr(menu_bar, 'openChatRequested'):
                 menu_bar.openChatRequested.connect(self._toggle_chat)
             if hasattr(menu_bar, 'openTerminalRequested'):
@@ -387,13 +386,17 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             print("✅ Сигналы меню подключены успешно")
         except Exception as e:
             print(f"⚠️ Ошибка подключения сигналов меню: {e}")
-
+    
     def _open_settings(self):
         """Открыть диалог настроек"""
         try:
+            print("🔧 Создание диалога настроек...")
             # Удаляем вызов старого диалога настроек
             from gopiai.ui.dialogs.settings_dialog import GopiAISettingsDialog
+            print("🔧 Импорт выполнен успешно")
+            
             settings_dialog = GopiAISettingsDialog(self.theme_manager, self)
+            print("🔧 Диалог настроек создан успешно")
             
             # Подключаем сигналы диалога настроек
             if hasattr(settings_dialog, 'themeChanged'):
@@ -401,6 +404,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             if hasattr(settings_dialog, 'settings_applied'):
                 settings_dialog.settings_applied.connect(self._on_settings_changed)
             
+            print("🔧 Показываем диалог настроек...")
             # Показываем диалог
             result = settings_dialog.exec()
             if result == settings_dialog.DialogCode.Accepted:

@@ -27,7 +27,7 @@ def apply_theme_from_json(qapp, theme_path):
         # Генерируем QSS
         qss = f"""
         QWidget {{
-            background-color: {theme['main_color']};
+            background-color: {theme['button_color']};
             color: {theme['text_color']};
             font-family: Segoe UI, Inter, Arial, sans-serif;
         }}

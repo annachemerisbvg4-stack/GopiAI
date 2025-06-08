@@ -6,7 +6,7 @@ Tab Widget Component для GopiAI Standalone Interface
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QTextEdit
-
+from .enhanced_browser_widget import EnhancedBrowserWidget # Импортируем новый виджет
 
 class TabDocumentWidget(QWidget):
     """Центральная область с вкладками документов"""
@@ -50,12 +50,22 @@ class TabDocumentWidget(QWidget):
         layout.addWidget(self.tab_widget)
 
     def add_new_tab(self, title="Новый документ", content=""):
-        """Добавление новой вкладки"""
+        """Добавление новой вкладки с текстовым редактором"""
         editor = QTextEdit()
         editor.setPlainText(content)
         index = self.tab_widget.addTab(editor, title)
         self.tab_widget.setCurrentIndex(index)
+        index = self.tab_widget.addTab(editor, title)
+        self.tab_widget.setCurrentIndex(index)
         return editor
+
+    def add_browser_tab(self, url="about:blank", title="Браузер"):
+        """Добавление новой вкладки с браузером"""
+        browser_widget = EnhancedBrowserWidget()
+        index = self.tab_widget.addTab(browser_widget, title)
+        self.tab_widget.setCurrentIndex(index)
+        browser_widget.load_url(url)
+        return browser_widget
 
     def close_current_tab(self):
         """Закрытие текущей вкладки"""

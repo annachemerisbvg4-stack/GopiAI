@@ -70,14 +70,15 @@ class GopiAISettingsDialog(QDialog):
         if len(color) == 6:
             r = int(color[0:2], 16)
             g = int(color[2:4], 16)
-            b = int(color[4:6], 16)
-            # Формула для определения яркости
+            b = int(color[4:6], 16)            # Формула для определения яркости
             brightness = (r * 299 + g * 587 + b * 114) / 1000
             return brightness > 128
         return True  # По умолчанию считаем светлым
     
     def __init__(self, theme_manager=None, parent=None):
+        print("🔧 GopiAISettingsDialog.__init__ начат")
         super().__init__(parent)
+        print("🔧 super().__init__ выполнен")
         # Добавляем свойство безрамочного окна
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.theme_manager = theme_manager
@@ -86,8 +87,13 @@ class GopiAISettingsDialog(QDialog):
         # Переменная для хранения позиции мыши при перетаскивании
         self._drag_position = None
         
+        print("🔧 Вызываем setup_ui()")
         self.setup_ui()
+        print("🔧 setup_ui() завершен")
+        print("🔧 Вызываем load_current_settings()")
         self.load_current_settings()
+        print("🔧 load_current_settings() завершен")
+        print("🔧 GopiAISettingsDialog.__init__ завершен")
     
     def setup_ui(self):
         """Настройка пользовательского интерфейса"""
@@ -96,12 +102,10 @@ class GopiAISettingsDialog(QDialog):
         self.resize(800, 600)
         
         # Применяем текущую тему к диалогу
-        if self.theme_manager:
-            # Получаем цвета из текущей темы
+        if self.theme_manager:            # Получаем цвета из текущей темы
             current_theme_data = self.theme_manager.get_current_theme_data()
             if current_theme_data:
                 main_color = current_theme_data.get('main_color', '#f8f9fa')
-                accent_color = current_theme_data.get('accent_color', '#007bff')
                 text_color = current_theme_data.get('text_color', '#212529')
                 
                 # Определяем текст на основе яркости фона
@@ -118,14 +122,14 @@ class GopiAISettingsDialog(QDialog):
                         color: {text_color};
                     }}
                     QPushButton {{
-                        background-color: {accent_color};
+                        background-color: {main_color}dd;
                         color: {button_text_color};
-                        border: none;
+                        border: 1px solid #dee2e6;
                         padding: 5px 10px;
                         border-radius: 4px;
                     }}
                     QPushButton:hover {{
-                        background-color: {accent_color}cc;
+                        background-color: {main_color}ee;
                     }}
                     QTabWidget::pane {{
                         border: 1px solid #dee2e6;
@@ -137,7 +141,7 @@ class GopiAISettingsDialog(QDialog):
                         padding: 8px 12px;
                     }}
                     QTabBar::tab:selected {{
-                        background-color: {accent_color}33;
+                        background-color: {main_color}cc;
                     }}
                     SettingsCard {{
                         background-color: {main_color}cc;
@@ -157,7 +161,7 @@ class GopiAISettingsDialog(QDialog):
                         padding: 3px;
                     }}
                     QComboBox:hover {{
-                        border: 1px solid {accent_color};
+                        border: 1px solid #bbb;
                     }}
                     QCheckBox {{
                         color: {text_color};
@@ -169,7 +173,7 @@ class GopiAISettingsDialog(QDialog):
                         border-radius: 3px;
                     }}
                     QCheckBox::indicator:checked {{
-                        background-color: {accent_color};
+                        background-color: {main_color}dd;
                     }}
                     QSpinBox, QLineEdit, QTextEdit {{
                         background-color: {main_color}ee;
@@ -179,7 +183,7 @@ class GopiAISettingsDialog(QDialog):
                         padding: 3px;
                     }}
                     QSpinBox:hover, QLineEdit:hover, QTextEdit:hover {{
-                        border: 1px solid {accent_color};
+                        border: 1px solid #bbb;
                     }}
                     QScrollArea, QScrollBar {{
                         background-color: {main_color};
@@ -270,14 +274,17 @@ class GopiAISettingsDialog(QDialog):
         
         self.theme_combo = QComboBox()
         self.theme_combo.setMinimumWidth(200)
+        print(f"🔧 theme_combo создан: {self.theme_combo}")
         
         # Заполнение списка тем
         if self.theme_manager:
             themes = self.theme_manager.get_theme_display_names()
             for theme_key, display_name in themes.items():
                 self.theme_combo.addItem(display_name, theme_key)
+            print(f"🔧 theme_combo заполнен, count = {self.theme_combo.count()}")
         
         theme_combo_layout.addWidget(self.theme_combo)
+        print(f"🔧 theme_combo добавлен в layout")
         theme_combo_layout.addStretch()
         theme_layout.addLayout(theme_combo_layout)
         
@@ -321,30 +328,7 @@ class GopiAISettingsDialog(QDialog):
         font_widget.setLayout(font_layout)
         font_card.add_content(font_widget)
         layout.addWidget(font_card)
-        
-        # Карточка цветов
-        colors_card = SettingsCard(
-            "Цвета",
-            "Настройка цветовой схемы"
-        )
-        
-        colors_layout = QFormLayout()
-        
-        self.accent_color_combo = QComboBox()
-        self.accent_color_combo.addItems([
-            "Синий", "Зелёный", "Красный", "Фиолетовый", 
-            "Оранжевый", "Серый"
-        ])
-        colors_layout.addRow("Акцентный цвет:", self.accent_color_combo)
-        
-        colors_widget = QWidget()
-        colors_widget.setLayout(colors_layout)
-        colors_card.add_content(colors_widget)
-        layout.addWidget(colors_card)
-        
-        layout.addStretch()
-        self.tab_widget.addTab(scroll, "Внешний вид")
-    
+
     def create_interface_tab(self):
         """Создание вкладки интерфейса"""
         tab = QWidget()
@@ -366,15 +350,18 @@ class GopiAISettingsDialog(QDialog):
         self.show_toolbar_check = QCheckBox("Показывать панель инструментов")
         self.show_toolbar_check.setChecked(True)
         toolbar_layout.addWidget(self.show_toolbar_check)
+          # Размер панели инструментов
+        toolbar_size_layout = QHBoxLayout()
+        toolbar_size_layout.addWidget(QLabel("Размер иконок:"))
         
         self.toolbar_size_combo = QComboBox()
         self.toolbar_size_combo.addItems(["Маленькая", "Средняя", "Большая"])
         self.toolbar_size_combo.setCurrentText("Средняя")
-        toolbar_size_layout = QHBoxLayout()
-        toolbar_size_layout.addWidget(QLabel("Размер иконок:"))
         toolbar_size_layout.addWidget(self.toolbar_size_combo)
         toolbar_size_layout.addStretch()
         toolbar_layout.addLayout(toolbar_size_layout)
+        
+        toolbar_layout.addStretch()
         
         toolbar_widget = QWidget()
         toolbar_widget.setLayout(toolbar_layout)
@@ -503,17 +490,34 @@ class GopiAISettingsDialog(QDialog):
     
     def load_current_settings(self):
         """Загрузка текущих настроек"""
+        print("🔧 load_current_settings() начат")
         if self.theme_manager:
+            print("🔧 theme_manager существует")
             current_theme = self.theme_manager.get_current_theme()
-            # Найти индекс текущей темы в комбобоксе
-            for i in range(self.theme_combo.count()):
-                if self.theme_combo.itemData(i) == current_theme:
-                    self.theme_combo.setCurrentIndex(i)
-                    break
-                    
+            print(f"🔧 current_theme = {current_theme}")
+              # Проверяем, что theme_combo существует
+            if hasattr(self, 'theme_combo') and self.theme_combo:
+                print(f"🔧 theme_combo существует: {self.theme_combo}")
+                try:
+                    count = self.theme_combo.count()
+                    print(f"🔧 theme_combo.count() = {count}")
+                    # Найти индекс текущей темы в комбобоксе
+                    for i in range(count):
+                        if self.theme_combo.itemData(i) == current_theme:
+                            self.theme_combo.setCurrentIndex(i)
+                            print(f"🔧 Установлен индекс темы: {i}")
+                            break
+                except Exception as e:
+                    print(f"❌ Ошибка при работе с theme_combo: {e}")
+                    print(f"❌ Тип ошибки: {type(e)}")
+            else:
+                print("❌ theme_combo не существует или был удален!")
+            
             # Устанавливаем темный режим если у менеджера тем есть соответствующий атрибут
-            if hasattr(self.theme_manager, '_current_variant'):
+            if hasattr(self, 'dark_mode_check') and hasattr(self.theme_manager, '_current_variant'):
                 self.dark_mode_check.setChecked(self.theme_manager._current_variant == "dark")
+                print(f"🔧 Установлен темный режим: {self.theme_manager._current_variant == 'dark'}")
+        print("🔧 load_current_settings() завершен")
     
     def collect_settings(self) -> dict:
         """Сбор всех настроек из интерфейса"""
@@ -522,7 +526,6 @@ class GopiAISettingsDialog(QDialog):
             'dark_mode': self.dark_mode_check.isChecked(),  # Добавляем состояние темного режима
             'font_size': self.font_size_spin.value(),
             'font_family': self.font_family_combo.currentText(),
-            'accent_color': self.accent_color_combo.currentText(),
             'show_toolbar': self.show_toolbar_check.isChecked(),
             'toolbar_size': self.toolbar_size_combo.currentText(),
             'show_status': self.show_status_check.isChecked(),
@@ -575,8 +578,7 @@ class GopiAISettingsDialog(QDialog):
             
             # Сигнал изменения темы
             self.themeChanged.emit(theme_name)
-        
-        # Испускание сигнала для передачи настроек в основное окно
+          # Испускание сигнала для передачи настроек в основное окно
         self.settings_applied.emit(self.settings)
     
     def _update_dialog_theme(self):
@@ -586,7 +588,6 @@ class GopiAISettingsDialog(QDialog):
             current_theme_data = self.theme_manager.get_current_theme_data()
             if current_theme_data:
                 main_color = current_theme_data.get('main_color', '#f8f9fa')
-                accent_color = current_theme_data.get('accent_color', '#007bff')
                 text_color = current_theme_data.get('text_color', '#212529')
                 
                 # Определяем текст на основе яркости фона
@@ -603,14 +604,20 @@ class GopiAISettingsDialog(QDialog):
                         color: {text_color};
                     }}
                     QPushButton {{
-                        background-color: {accent_color};
+                        background-color: {main_color}dd;
                         color: {button_text_color};
-                        border: none;
+                        border: 1px solid #dee2e6;
                         padding: 5px 10px;
                         border-radius: 4px;
                     }}
                     QPushButton:hover {{
-                        background-color: {accent_color}cc;
+                        background-color: {main_color}ee;
+                    }}
+                    QPushButton:pressed {{
+                        background-color: {main_color}cc;
+                    }}
+                    QPushButton:disabled {{
+                        background-color: {main_color}88;
                     }}
                     QTabWidget::pane {{
                         border: 1px solid #dee2e6;
@@ -622,7 +629,10 @@ class GopiAISettingsDialog(QDialog):
                         padding: 8px 12px;
                     }}
                     QTabBar::tab:selected {{
-                        background-color: {accent_color}33;
+                        background-color: {main_color}cc;
+                    }}
+                    QTabBar::tab:hover {{
+                        background-color: {main_color}dd;
                     }}
                     SettingsCard {{
                         background-color: {main_color}cc;
@@ -634,6 +644,12 @@ class GopiAISettingsDialog(QDialog):
                     SettingsCard:hover {{
                         background-color: {main_color}ee;
                     }}
+                    SettingsCard:pressed {{
+                        background-color: {main_color}dd;
+                    }}
+                    SettingsCard:disabled {{
+                        background-color: {main_color}66;
+                    }}
                     QComboBox {{
                         background-color: {main_color}ee;
                         color: {text_color};
@@ -642,7 +658,7 @@ class GopiAISettingsDialog(QDialog):
                         padding: 3px;
                     }}
                     QComboBox:hover {{
-                        border: 1px solid {accent_color};
+                        border: 1px solid #bbb;
                     }}
                     QCheckBox {{
                         color: {text_color};
@@ -654,7 +670,7 @@ class GopiAISettingsDialog(QDialog):
                         border-radius: 3px;
                     }}
                     QCheckBox::indicator:checked {{
-                        background-color: {accent_color};
+                        background-color: {main_color}dd;
                     }}
                     QSpinBox, QLineEdit, QTextEdit {{
                         background-color: {main_color}ee;
@@ -664,7 +680,7 @@ class GopiAISettingsDialog(QDialog):
                         padding: 3px;
                     }}
                     QSpinBox:hover, QLineEdit:hover, QTextEdit:hover {{
-                        border: 1px solid {accent_color};
+                        border: 1px solid #bbb;
                     }}
                     QScrollArea, QScrollBar {{
                         background-color: {main_color};
@@ -677,8 +693,7 @@ class GopiAISettingsDialog(QDialog):
                     child.update()
                 
                 # Обновляем также сам диалог
-                self.update()
-    
+                self.update()    
     def accept_settings(self):
         """Принятие и применение настроек с закрытием диалога"""
         self.apply_settings()
@@ -690,10 +705,12 @@ class GopiAISettingsDialog(QDialog):
         if self.theme_combo.count() > 0:
             self.theme_combo.setCurrentIndex(0)
         
+        # Сброс темного режима
+        self.dark_mode_check.setChecked(False)
+        
         # Сброс других настроек
         self.font_size_spin.setValue(10)
         self.font_family_combo.setCurrentIndex(0)
-        self.accent_color_combo.setCurrentIndex(0)
         self.show_toolbar_check.setChecked(True)
         self.toolbar_size_combo.setCurrentText("Средняя")
         self.show_status_check.setChecked(True)
