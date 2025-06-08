@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout,
                                QTreeWidgetItem, QTableWidget, QTableWidgetItem,
                                QHeaderView, QLineEdit, QGridLayout, QMenu, QToolBar)
 from gopiai.widgets.i18n.translator import tr
-from gopiai.widgets.core.icon_adapter import get_icon
+from gopiai.ui.utils.icon_manager import get_icon # Исправленный импорт
 
 logger = get_logger().logger
 
