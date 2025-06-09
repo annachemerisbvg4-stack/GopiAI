@@ -469,14 +469,14 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             if hasattr(self._settings_dialog, 'settings_applied'):
                 self._settings_dialog.settings_applied.connect(self._on_settings_changed)
             
-        print("🔧 Показываем диалог настроек...")
-        # Показываем диалог
-        result = self._settings_dialog.exec()
-        if result == self._settings_dialog.DialogCode.Accepted:
-            print("✅ Настройки применены")
-        else:
-            print("⚠️ Настройки отменены")
-        # Не устанавливаем self._settings_dialog = None, чтобы избежать преждевременного удаления объекта
+            print("🔧 Показываем диалог настроек...")
+            # Показываем диалог
+            result = self._settings_dialog.exec()
+            if result == self._settings_dialog.DialogCode.Accepted:
+                print("✅ Настройки применены")
+            else:
+                print("⚠️ Настройки отменены")
+            # Не устанавливаем self._settings_dialog = None, чтобы избежать преждевременного удаления объекта
                 
         except ImportError as e:
             print(f"⚠️ Ошибка импорта диалога настроек: {e}")
