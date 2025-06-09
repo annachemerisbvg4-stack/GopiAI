@@ -6,15 +6,15 @@
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 from PySide6.QtCore import QObject, QThread, Signal, Slot
-from gopiai.app.agent.agent_manager import AgentManager
-from gopiai.app.agent.base import BaseAgent
-from gopiai.app.agent.coding_agent import CodingAgent
-from gopiai.core.logging import get_logger
-logger = get_logger().logger
-from gopiai.app.schema import Message
+from gopiai.core.agent.agent_manager import AgentManager
+from gopiai.core.agent.base import BaseAgent
+from gopiai.core.agent.coding_agent import CodingAgent
+import logging
+logger = logging.getLogger(__name__)
+from gopiai.core.schema import Message
 
 
 class AgentWorkerSignals(QObject):
@@ -103,6 +103,8 @@ class AgentWorker(QThread):
             task.cancel()
 
 
+from typing import Any, Callable, Dict, Optional
+
 class AgentController(QObject):
     """
     Контроллер для централизованного управления агентами.
@@ -110,6 +112,7 @@ class AgentController(QObject):
     Предоставляет единый интерфейс для взаимодействия с различными типами агентов
     и маршрутизирует результаты обратно к компонентам интерфейса.
     """
+    _instance: Optional["AgentController"] = None
 
     def __init__(self):
         super().__init__()
@@ -121,8 +124,8 @@ class AgentController(QObject):
         self.component_callbacks: Dict[str, Dict[str, Callable]] = {}
 
     def register_component(
-        self, component_id: str, agent_type: str = None, **kwargs
-    ) -> str:
+        self, component_id: str, agent_type: Optional[str] = None, **kwargs
+    ) -> Optional[str]:
         """
         Регистрирует компонент интерфейса и создает для него агента.
 
@@ -364,8 +367,6 @@ class AgentController(QObject):
         try:
             callback(data)
         except Exception as e:
-            logger.error(f"Error in callback for {event_type}: {str(e)}")
-
     @staticmethod
     def instance() -> "AgentController":
         """
@@ -374,6 +375,9 @@ class AgentController(QObject):
         Returns:
             Экземпляр AgentController
         """
-        if not hasattr(AgentController, "_instance"):
+        if AgentController._instance is None:
+            AgentController._instance = AgentController()
+        assert AgentController._instance is not None
+        return AgentController._instance
             AgentController._instance = AgentController()
         return AgentController._instance

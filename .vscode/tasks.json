@@ -2,6 +2,26 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "🤖 Start MCP Serena (CMD)",
+            "type": "shell",
+            "command": "cd /d C:\\Users\\crazy\\mcp_servers\\serena && call .venv\\Scripts\\activate.bat && uv run serena-mcp-server --transport sse --port 8000 --project C:\\Users\\crazy\\GOPI_AI_MODULES\\.serena\\project.yml",
+            "isBackground": true,
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/c"
+                    ]
+                }
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "close": false
+            }
+        },
+        {
             "label": "Qt: Build UI Files",
             "type": "shell",
             "command": "pyside6-uic",
@@ -37,18 +57,11 @@
             "type": "shell",
             "command": "${command:autoDocstring.generateDocstring}",
             "problemMatcher": []
-        },
-        {
-            "label": "🤖 Start MCP Serena",
+        },        {
+            "label": "📝 Generate Docstrings",
             "type": "shell",
-            "command": "cd /d C:\\Users\\crazy\\mcp_servers\\serena & npm start",
-            "isBackground": true,
-            "problemMatcher": [],
-            "presentation": {
-                "reveal": "always",
-                "panel": "new",
-                "close": false
-            }
+            "command": "${command:autoDocstring.generateDocstring}",
+            "problemMatcher": []
         }
     ]
 }

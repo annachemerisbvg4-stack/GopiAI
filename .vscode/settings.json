@@ -23,9 +23,10 @@
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
         "source.organizeImports": "explicit"
-    },
-    // GitHub Copilot MCP settings
+    }, // GitHub Copilot MCP settings
     "github.copilot.advanced": {
-        "mcp.runtime": "C:\\Users\\crazy\\mcp_servers\\serena"
-    }
+        "mcp.serverUrl": "http://localhost:8000",
+        "debug": true
+    },
+    "chat.mcp.debug": true
 }

@@ -1,7 +1,7 @@
 {
   "project_overview": {
     "name": "GopiAI",
-    "total_files": 155,
+    "total_files": 156,
     "total_modules": 7,
     "modules": [
       "root",
@@ -16,16 +16,41 @@
   "modules_detail": {
     "root": {
       "files": [
+        "test_autogen",
+        "test_autogen_worker",
+        "test_chat_widget_autogen",
         "update_project_map",
         "GopiAI.GopiAI-Assets.gopiai.assets.__init__",
-        "GopiAI.GopiAI-Widgets.gopiai.widgets.core.text_editor",
-        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_agent_dialog",
-        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_agent_interface",
-        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_tab_widget",
-        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_widget",
-        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).dock_title_bar_fixed"
+        "GopiAI.GopiAI-Widgets.gopiai.widgets.core.text_editor"
       ],
       "dependencies": {
+        "test_autogen": [
+          "dotenv",
+          "autogen",
+          "os",
+          "sys",
+          "load_dotenv",
+          "AssistantAgent"
+        ],
+        "test_autogen_worker": [
+          "PySide6.QtWidgets",
+          "PySide6.QtCore",
+          "gopiai.ui.components.chat_widget",
+          "sys",
+          "os",
+          "QApplication",
+          "QCoreApplication",
+          "AutoGenWorker",
+          "logging"
+        ],
+        "test_chat_widget_autogen": [
+          "PySide6.QtWidgets",
+          "gopiai.ui.components.chat_widget",
+          "sys",
+          "os",
+          "QApplication",
+          "ChatWidget"
+        ],
         "update_project_map": [
           "pathlib",
           "subprocess",
@@ -53,108 +78,9 @@
           "chardet",
           "QMessageBox",
           "QFileDialog"
-        ],
-        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_agent_dialog": [
-          "typing",
-          "PySide6.QtCore",
-          "PySide6.QtGui",
-          "PySide6.QtWidgets",
-          "app.ui.browser_agent_interface",
-          "app.ui.browser_tab_widget",
-          "app.ui.i18n.translator",
-          "app.ui.icon_adapter",
-          "app.utils.theme_manager",
-          "app.utils.chat_indexer",
-          "app.ui.chat_search_dialog",
-          "app.ui.lucide_icon_manager",
-          "app.ui.emoji_dialog",
-          "PySide6.QtWidgets",
-          "PySide6.QtCore",
-          "asyncio",
-          "Optional",
-          "datetime",
-          "json",
-          "os",
-          "QPoint",
-          "QAction",
-          "BrowserAgentInterface",
-          "MultiBrowserWidget",
-          "tr",
-          "get_icon",
-          "ThemeManager",
-          "ChatHistoryIndexer",
-          "ChatSearchDialog",
-          "get_lucide_icon",
-          "EmojiDialog",
-          "QApplication",
-          "QPoint"
-        ],
-        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_agent_interface": [
-          "typing",
-          "PySide6.QtCore",
-          "app.agent.browser_agent",
-          "app.ui.browser_tab_widget",
-          "app.tool.browser_tools_integration",
-          "app.agent.llm_interaction",
-          "app.prompt.browser_agent",
-          "app.ui.i18n.translator",
-          "asyncio",
-          "logging",
-          "json",
-          "datetime",
-          "Optional",
-          "QObject",
-          "EnhancedBrowserAgent",
-          "MultiBrowserWidget",
-          "initialize_browser_tools",
-          "llm_agentic_action",
-          "BROWSER_AGENT_SYSTEM_PROMPT",
-          "tr"
-        ],
-        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_tab_widget": [
-          "PySide6.QtCore",
-          "PySide6.QtWidgets",
-          "PySide6.QtGui",
-          "PySide6.QtWebEngineWidgets",
-          "PySide6.QtWebEngineCore",
-          "sys",
-          "os",
-          "Qt",
-          "QIcon",
-          "QWebEngineView",
-          "QWebEnginePage"
-        ],
-        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_widget": [
-          "PySide6.QtWebEngineWidgets",
-          "PySide6.QtCore",
-          "PySide6.QtWidgets",
-          "logging",
-          "QWebEngineView",
-          "QUrl",
-          "QLabel"
-        ],
-        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).dock_title_bar_fixed": [
-          "typing",
-          "PySide6.QtCore",
-          "PySide6.QtGui",
-          "PySide6.QtWidgets",
-          "app.ui.i18n.translator",
-          "app.ui.icon_adapter",
-          "app.ui.theme_manager",
-          "simple_theme_manager",
-          "os",
-          "sys",
-          "logging",
-          "Optional",
-          "QSize",
-          "QIcon",
-          "tr",
-          "IconAdapter",
-          "ThemeManager",
-          "ThemeManager"
         ]
       },
-      "file_count": 8
+      "file_count": 6
     },
     "GopiAI-App": {
       "files": [
@@ -297,11 +223,11 @@
           "concurrent.futures",
           "typing",
           "PySide6.QtCore",
-          "gopiai.app.agent.agent_manager",
-          "gopiai.app.agent.base",
-          "gopiai.app.agent.coding_agent",
-          "gopiai.core.logging",
-          "gopiai.app.schema",
+          "gopiai.core.agent.agent_manager",
+          "gopiai.core.agent.base",
+          "gopiai.core.agent.coding_agent",
+          "gopiai.core.schema",
+          "typing",
           "asyncio",
           "ThreadPoolExecutor",
           "Any",
@@ -309,8 +235,9 @@
           "AgentManager",
           "BaseAgent",
           "CodingAgent",
-          "get_logger",
-          "Message"
+          "logging",
+          "Message",
+          "Any"
         ],
         "GopiAI-App.gopiai.app.logic.agent_setup": [
           "gopiai.core.logging",
@@ -1136,6 +1063,9 @@
         "GopiAI-UI.gopiai.ui.main",
         "GopiAI-UI.gopiai.ui.__init__",
         "GopiAI-UI.gopiai.ui.components.chat_widget",
+        "GopiAI-UI.gopiai.ui.components.chat_widget_fixed",
+        "GopiAI-UI.gopiai.ui.components.chat_widget_new",
+        "GopiAI-UI.gopiai.ui.components.chat_widget_old",
         "GopiAI-UI.gopiai.ui.components.enhanced_browser_widget",
         "GopiAI-UI.gopiai.ui.components.file_explorer",
         "GopiAI-UI.gopiai.ui.components.file_type_detector",
@@ -1163,6 +1093,7 @@
         "GopiAI-UI.gopiai.__init__": [],
         "GopiAI-UI.gopiai.ui.main": [
           "pathlib",
+          "dotenv",
           "PySide6.QtWidgets",
           "PySide6.QtCore",
           "PySide6.QtGui",
@@ -1179,6 +1110,7 @@
           "os",
           "warnings",
           "Path",
+          "load_dotenv",
           "Qt",
           "QAction",
           "ThemeManager",
@@ -1207,7 +1139,52 @@
         ],
         "GopiAI-UI.gopiai.ui.components.chat_widget": [
           "PySide6.QtWidgets",
-          "QWidget"
+          "PySide6.QtCore",
+          "PySide6.QtGui",
+          "dotenv",
+          "autogen.agentchat",
+          "logging",
+          "QWidget",
+          "Signal",
+          "QKeyEvent",
+          "os",
+          "load_dotenv",
+          "sys",
+          "os",
+          "autogen",
+          "AssistantAgent"
+        ],
+        "GopiAI-UI.gopiai.ui.components.chat_widget_fixed": [
+          "PySide6.QtWidgets",
+          "PySide6.QtCore",
+          "autogen.autogen_core",
+          "QWidget",
+          "Signal",
+          "sys",
+          "os",
+          "autogen_manager"
+        ],
+        "GopiAI-UI.gopiai.ui.components.chat_widget_new": [
+          "PySide6.QtWidgets",
+          "PySide6.QtCore",
+          "dotenv",
+          "logging",
+          "QWidget",
+          "Signal",
+          "os",
+          "load_dotenv",
+          "pyautogen"
+        ],
+        "GopiAI-UI.gopiai.ui.components.chat_widget_old": [
+          "PySide6.QtWidgets",
+          "PySide6.QtCore",
+          "dotenv",
+          "logging",
+          "QWidget",
+          "Signal",
+          "os",
+          "load_dotenv",
+          "pyautogen"
         ],
         "GopiAI-UI.gopiai.ui.components.enhanced_browser_widget": [],
         "GopiAI-UI.gopiai.ui.components.file_explorer": [
@@ -1410,7 +1387,7 @@
           "Qt"
         ]
       },
-      "file_count": 26
+      "file_count": 29
     },
     "GopiAI-Widgets": {
       "files": [
@@ -1882,7 +1859,7 @@
       "file_count": 36
     }
   },
-  "generated_at": "2025-06-08T19:36:04.993611",
+  "generated_at": "2025-06-09T05:04:26.001654",
   "quick_access": {
     "ui_files": [],
     "core_files": [
