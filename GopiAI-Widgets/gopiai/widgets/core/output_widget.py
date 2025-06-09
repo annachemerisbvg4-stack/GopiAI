@@ -4,9 +4,22 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton,
     QComboBox, QLabel, QToolBar
 )
-from gopiai.widgets.core.icon_adapter import get_icon
 
-from .i18n.translator import tr
+# Пытаемся импортировать get_icon из разных мест
+try:
+    from gopiai.ui.components.icon_file_system_model import get_icon
+except ImportError:
+    try:
+        from gopiai.ui.utils.icon_manager import get_icon
+    except ImportError:
+        # Заглушка, если иконки недоступны
+        def get_icon(name):
+            from PySide6.QtGui import QIcon
+            return QIcon()
+
+# Простая заглушка для переводчика
+def tr(key, default_text=None):
+    return default_text if default_text else key
 
 
 class OutputWidget(QWidget):

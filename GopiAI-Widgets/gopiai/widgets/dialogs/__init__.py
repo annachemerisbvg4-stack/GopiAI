@@ -8,15 +8,11 @@ This module contains dialog windows and popup interfaces including:
 - Reasoning and coding agent interfaces
 """
 
-from .chat_search_dialog import ChatSearchDialog
-# Временно отключены для исправления импортов
-# from .coding_agent_dialog import CodingAgentDialog
-# from .emoji_dialog import EmojiDialog
-# from .reasoning_agent_dialog import ReasoningAgentDialog
+# Импортируем только существующие файлы
+from .emoji_dialog import EmojiDialog
+from .reasoning_agent_dialog import ReasoningAgentDialog
 
 __all__ = [
-    'ChatSearchDialog',
-    # 'CodingAgentDialog', 
-    # 'EmojiDialog',
-    # 'ReasoningAgentDialog'
+    'EmojiDialog',
+    'ReasoningAgentDialog'
 ]

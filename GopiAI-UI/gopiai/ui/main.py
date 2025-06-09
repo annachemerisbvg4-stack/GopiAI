@@ -14,9 +14,19 @@ import sys
 import os
 import warnings
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
+
+# Настройка WebEngine для предотвращения графических ошибок
+os.environ.setdefault('QTWEBENGINE_CHROMIUM_FLAGS', '--disable-gpu --disable-software-rasterizer --disable-3d-apis --disable-accelerated-2d-canvas --no-sandbox --disable-dev-shm-usage --disable-gpu-sandbox --disable-gpu-compositing --disable-webgl --disable-webgl2')
+os.environ.setdefault('QT_OPENGL', 'software')
+os.environ.setdefault('QTWEBENGINE_DISABLE_SANDBOX', '1')
+
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-    QSplitter, QMenuBar, QLabel, QFileDialog, QMessageBox
+    QSplitter, QMenuBar, QLabel, QFileDialog, QMessageBox, QTabWidget, QSizePolicy
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
@@ -258,9 +268,23 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 def __init__(self):
                     self.qta = qta
                 def get_icon(self, name):
-                    return self.qta.icon('fa.' + name)
+                    # Try several icon prefixes, fallback to a default icon if not found
+                    prefixes = ['fa5.', 'fa.', 'mdi.', 'ei.']
+                    for prefix in prefixes:
+                        try:
+                            icon = self.qta.icon(prefix + name)
+                            if not icon.isNull():
+                                return icon
+                        except Exception:
+                            continue
+                    # Fallback to a default icon if all attempts fail
+                    try:
+                        return self.qta.icon('fa5.question')
+                    except Exception:
+                        return None
             
             self.icon_manager = SimpleIconManager()
+            self.icon_manager.get_icon("example")
             print("✅ Система иконок SimpleIconManager инициализирована")
         except ImportError:
             self.icon_manager = None
@@ -268,7 +292,8 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         except Exception as e:
             print(f"⚠️ Ошибка инициализации иконок: {e}")
             self.icon_manager = None
-              # Инициализация системы тем
+
+        # Инициализация системы тем
         try:
             self.theme_manager = ThemeManager()
             if self.theme_manager:
@@ -285,31 +310,31 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             self.theme_manager = None
 
     def _apply_default_styles(self):
-        """Применение стилей по умолчанию"""        # Пытаемся применить систему тем через theme_manager
-        try:
-            if self.theme_manager and hasattr(self.theme_manager, 'apply_theme'):
-                from PySide6.QtWidgets import QApplication
-                app = QApplication.instance()
-                print(f"🔍 main.py: QApplication.instance() = {app}")
-                if app:
-                    print(f"🔍 main.py: Вызываем self.theme_manager.apply_theme({app})")
-                    result = self.theme_manager.apply_theme(app)
-                    print(f"🔍 main.py: Результат apply_theme = {result}")
-                    if result:
-                        print("✅ Система тем применена через theme_manager")
-                        return
-                    else:
-                        print("⚠️ apply_theme вернул False")
+    """Применение стилей по умолчанию"""        # Пытаемся применить систему тем через theme_manager
+    try:
+        if self.theme_manager and hasattr(self.theme_manager, 'apply_theme'):
+            from PySide6.QtWidgets import QApplication 
+            app = QApplication.instance()
+            print(f"🔍 main.py: QApplication.instance() = {app}")
+            if app:
+                print(f"🔍 main.py: Вызываем self.theme_manager.apply_theme({app})")
+                result = self.theme_manager.apply_theme(app)
+                print(f"🔍 main.py: Результат apply_theme = {result}")
+                if result:
+                    print("✅ Система тем применена через theme_manager")
+                    return
                 else:
-                    print("⚠️ QApplication.instance() вернул None")
-        except Exception as e:
-            print(f"⚠️ Ошибка применения темы через theme_manager: {e}")
-            import traceback
-            traceback.print_exc()
-            
-        # Последний fallback - встроенные стили
-        print("⚠️ Используем встроенные стили fallback")
-        self._apply_fallback_styles()
+                    print("⚠️ apply_theme вернул False")
+            else:
+                print("⚠️ QApplication.instance() вернул None")
+    except Exception as e:
+        print(f"⚠️ Ошибка применения темы через theme_manager: {e}")
+        import traceback
+        traceback.print_exc()
+        
+    # Последний fallback - встроенные стили
+    print("⚠️ Используем встроенные стили fallback")
+    self._apply_fallback_styles()
 
     def _apply_fallback_styles(self):
         """Применение запасных стилей"""
@@ -365,10 +390,14 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             # Подключаем новые сигналы
             if hasattr(menu_bar, 'openSettingsRequested'):
                 menu_bar.openSettingsRequested.connect(self._open_settings)
+                if self.icon_manager is not None:
+                    self.icon_manager.get_icon("settings")
                 print("✅ Сигнал openSettingsRequested подключен")
             
             if hasattr(menu_bar, 'changeThemeRequested'):
                 menu_bar.changeThemeRequested.connect(self.on_change_theme)
+                if self.icon_manager is not None:
+                    self.icon_manager.get_icon("theme")
                 print("✅ Сигнал changeThemeRequested подключен")
                 
             # Подключаем остальные сигналы файлового меню
@@ -380,16 +409,37 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 menu_bar.saveRequested.connect(self._on_save_file)
             if hasattr(menu_bar, 'exitRequested'):
                 menu_bar.exitRequested.connect(self.close)
-                  # Подключаем сигналы меню вида
+
+            # Подключаем сигналы меню вида
             if hasattr(menu_bar, 'openChatRequested'):
                 menu_bar.openChatRequested.connect(self._toggle_chat)
             if hasattr(menu_bar, 'openTerminalRequested'):
                 menu_bar.openTerminalRequested.connect(self._toggle_terminal)
+            if hasattr(menu_bar, 'toggleFileExplorerRequested'):
+                menu_bar.toggleFileExplorerRequested.connect(
+                    lambda: self.file_explorer.setVisible(not self.file_explorer.isVisible())
+                )
+            if hasattr(menu_bar, 'togglePanelsRequested'):
+                def toggle_panels():
+                    self.file_explorer.setVisible(not self.file_explorer.isVisible())
+                    self.chat_widget.setVisible(not self.chat_widget.isVisible())
+                    self.terminal_widget.setVisible(not self.terminal_widget.isVisible())
+                menu_bar.togglePanelsRequested.connect(toggle_panels)
+
             # Подключаем сигнал открытия браузера
             if hasattr(menu_bar, 'openBrowserRequested'):
-                menu_bar.openBrowserRequested.connect(self.tab_document.add_browser_tab)
-                print("✅ Сигнал openBrowserRequested подключен к add_browser_tab")
-            
+                if hasattr(self.tab_document, 'add_browser_tab'):
+                    menu_bar.openBrowserRequested.connect(self.tab_document.add_browser_tab)
+                    print("✅ Сигнал openBrowserRequested подключен к add_browser_tab")
+                else:
+                    print("⚠️ tab_document не поддерживает add_browser_tab")
+
+            # Подключаем сигналы для обновления иконок и тем
+            if hasattr(menu_bar, 'refreshIconsRequested'):
+                menu_bar.refreshIconsRequested.connect(menu_bar.refresh_icons)
+            if hasattr(menu_bar, 'refreshThemeRequested'):
+                menu_bar.refreshThemeRequested.connect(lambda: self.on_change_theme(getattr(self.theme_manager, 'current_theme', 'default')))
+
             print("✅ Сигналы меню подключены успешно")
         except Exception as e:
             print(f"⚠️ Ошибка подключения сигналов меню: {e}")
@@ -402,22 +452,30 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             from gopiai.ui.dialogs.settings_dialog import GopiAISettingsDialog
             print("🔧 Импорт выполнен успешно")
             
-            settings_dialog = GopiAISettingsDialog(self.theme_manager, self)
+            # Сохраняем диалог как атрибут экземпляра, чтобы избежать удаления
+            if hasattr(self, '_settings_dialog') and self._settings_dialog is not None:
+                try:
+                    self._settings_dialog.close()
+                except Exception:
+                    pass
+                self._settings_dialog = None
+            self._settings_dialog = GopiAISettingsDialog(self.theme_manager, self)
             print("🔧 Диалог настроек создан успешно")
             
             # Подключаем сигналы диалога настроек
-            if hasattr(settings_dialog, 'themeChanged'):
-                settings_dialog.themeChanged.connect(self.on_change_theme)
-            if hasattr(settings_dialog, 'settings_applied'):
-                settings_dialog.settings_applied.connect(self._on_settings_changed)
+            if hasattr(self._settings_dialog, 'themeChanged'):
+                self._settings_dialog.themeChanged.connect(self.on_change_theme)
+            if hasattr(self._settings_dialog, 'settings_applied'):
+                self._settings_dialog.settings_applied.connect(self._on_settings_changed)
             
             print("🔧 Показываем диалог настроек...")
             # Показываем диалог
-            result = settings_dialog.exec()
-            if result == settings_dialog.DialogCode.Accepted:
+            result = self._settings_dialog.exec()
+            if result == self._settings_dialog.DialogCode.Accepted:
                 print("✅ Настройки применены")
             else:
                 print("⚠️ Настройки отменены")
+            self._settings_dialog = None
                 
         except ImportError as e:
             print(f"⚠️ Ошибка импорта диалога настроек: {e}")
@@ -470,13 +528,21 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
     def _show_settings(self):
         """Показать диалог настроек"""
         try:
-            settings_dialog = GopiAISettingsDialog(self.theme_manager, self)
-              # Подключаем сигнал для применения настроек
-            settings_dialog.settings_applied.connect(self._on_settings_changed)
+            # Сохраняем диалог как атрибут экземпляра, чтобы избежать удаления
+            if hasattr(self, '_settings_dialog') and self._settings_dialog is not None:
+                try:
+                    self._settings_dialog.close()
+                except Exception:
+                    pass
+                self._settings_dialog = None
+            self._settings_dialog = GopiAISettingsDialog(self.theme_manager, self)
+            # Подключаем сигнал для применения настроек
+            self._settings_dialog.settings_applied.connect(self._on_settings_changed)
             
             # Показываем диалог
-            if settings_dialog.exec() == settings_dialog.DialogCode.Accepted:
+            if self._settings_dialog.exec() == self._settings_dialog.DialogCode.Accepted:
                 print("✅ Настройки применены")
+            self._settings_dialog = None
                 
         except Exception as e:
             print(f"⚠️ Ошибка отображения диалога настроек: {e}")
@@ -581,6 +647,9 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 def main():
     """Основная функция запуска приложения"""
     print("🚀 Запуск модульного GopiAI...")
+    
+    # Настройка WebEngine для исправления графических проблем
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-gpu --disable-software-rasterizer --disable-3d-apis --disable-accelerated-2d-canvas --no-sandbox'
     
     # Создание приложения
     app = QApplication(sys.argv)

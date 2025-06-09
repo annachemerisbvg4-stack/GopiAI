@@ -1,10 +1,13 @@
 """
 Модуль для обратной совместимости с кодом, использующим FlowVisualizationDialog.
-Этот файл переэкспортирует функцию show_flow_visualizer_dialog из flow_visualizer.py
-как FlowVisualizationDialog для поддержки существующего кода.
+Заглушка для функциональности визуализации потока.
 """
 
-from .flow_visualizer import show_flow_visualizer_dialog
+# Заглушка для функции визуализации потока
+def show_flow_visualizer_dialog(*args, **kwargs):
+    """Заглушка для диалога визуализации потока"""
+    print("FlowVisualizationDialog временно недоступен")
+    return None
 
 # Для обратной совместимости с main_window.py
 FlowVisualizationDialog = show_flow_visualizer_dialog

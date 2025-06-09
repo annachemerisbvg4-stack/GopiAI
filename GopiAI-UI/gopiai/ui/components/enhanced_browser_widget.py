@@ -1,48 +1,31 @@
 """
-Улучшенный виджет браузера с поддержкой асинхронной обработки страниц.
-Обеспечивает более эффективное взаимодействие ИИ с веб-страницами.
-"""
-
-import asyncio
-from gopiai.core.logging import get_logger
-logger = get_logger().logger
-from typing import Dict, Optional, Any
-
-from PySide6.QtCore import Qt, QUrl, Signal, Slot, QObject
-from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QProgressBar
-
-from gopiai.widgets.processors.action_predictor import ActionPredictor
-from gopiai.widgets.processors.browser_processor import AsyncPagePreProcessor, ContentOptimizer
-
-logger = get_logger().logger
-
-class EnhancedBrowserWidget(QWidget):
-    """
-    Улучшенный виджет браузера с интегрированными возможностями асинхронной обработки.
-    """
-    
-    # Сигналы
-    page_loaded = Signal(str, str)  # url, title
-    page_analyzed = Signal(str, dict)  # url, analysis_results
-    content_extracted = Signal(str, dict)  # url, extracted_content
-    
-    def __init__(self, parent=None):
-        """
-        Инициализирует улучшенный виджет браузера.
-        
-        Args:
-            parent: Родительский виджет
-        """
-        super().__init__(parent)
-        
-        # Основные компоненты
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
-        
-        # Создаем основной браузерный виджет
+Улучшенный виджет браузера с поддержкой асинхронной об        # Создаем основной браузерный виджет
         self.browser = QWebEngineView(self)
+        self.browser.setMinimumSize(400, 300)  # Увеличили минимальные размеры
+        
+        # Принудительно устанавливаем стиль для браузера
+        self.browser.setStyleSheet("""
+            QWebEngineView {
+                background-color: white;
+                border: 1px solid #cccccc;
+            }
+        """)
+        
+        # Настройка браузера для предотвращения графических ошибок
+        settings = self.browser.settings()
+        settings.setAttribute(settings.WebAttribute.WebGLEnabled, False)
+        settings.setAttribute(settings.WebAttribute.Accelerated2dCanvasEnabled, False)
+        settings.setAttribute(settings.WebAttribute.LocalContentCanAccessRemoteUrls, True)
+        settings.setAttribute(settings.WebAttribute.LocalContentCanAccessFileUrls, True)
+        settings.setAttribute(settings.WebAttribute.PluginsEnabled, False)
+        settings.setAttribute(settings.WebAttribute.JavascriptCanOpenWindows, False)
+        
+        # Принудительно устанавливаем размер браузера
+        self.browser.resize(640, 480)
+        
+        # ВАЖНО: Принудительно показываем браузер
+        self.browser.show()
+        self.browser.setVisible(True)
         
         # Создаем индикатор загрузки
         self.progress_bar = QProgressBar(self)
@@ -55,10 +38,11 @@ class EnhancedBrowserWidget(QWidget):
             "QProgressBar::chunk { background-color: #4a86e8; }"
         )
         self.progress_bar.hide()
+          # Добавляем компоненты в лейаут
+        main_layout.addWidget(self.progress_bar)
+        main_layout.addWidget(self.browser)
         
-        # Добавляем компоненты в лейаут
-        self.layout.addWidget(self.progress_bar)
-        self.layout.addWidget(self.browser)
+        logger.debug(f"Browser widget added to layout. Size: {self.browser.size()}")
         
         # Устанавливаем пустую страницу
         self.browser.setUrl(QUrl("about:blank"))
@@ -98,9 +82,20 @@ class EnhancedBrowserWidget(QWidget):
         # Нормализуем URL
         if not url.startswith(("http://", "https://", "file://", "about:")):
             url = "https://" + url
-            
-        logger.info(f"Loading URL: {url}")
+              logger.info(f"Loading URL: {url}")
+        
+        # Принудительно показываем браузер
+        self.browser.show()
+        self.browser.setVisible(True)
+        self.show()
+        self.setVisible(True)
+        
+        # Загружаем URL
         self.browser.load(QUrl(url))
+        
+        # Принудительно обновляем виджет
+        self.browser.update()
+        self.update()
     
     def get_current_url(self) -> str:
         """
@@ -437,7 +432,7 @@ class EnhancedBrowserWidget(QWidget):
         }
 
 
-def get_enhanced_browser_widget(parent=None) -> EnhancedBrowserWidget:
+def get_enhanced_browser_widget(parent=None) -> Optional[EnhancedBrowserWidget]:
     """
     Создает и возвращает экземпляр улучшенного виджета браузера.
     
@@ -445,13 +440,10 @@ def get_enhanced_browser_widget(parent=None) -> EnhancedBrowserWidget:
         parent: Родительский виджет
         
     Returns:
-        EnhancedBrowserWidget: Экземпляр улучшенного виджета браузера
+        Optional[EnhancedBrowserWidget]: Экземпляр улучшенного виджета браузера или None в случае ошибки
     """
     try:
         return EnhancedBrowserWidget(parent)
     except Exception as e:
         logger.error(f"Error creating enhanced browser widget: {str(e)}")
-        
-        # Возвращаем заглушку в случае ошибки
-        from PySide6.QtWidgets import QLabel
-        return QLabel(f"Браузер недоступен: {str(e)}", parent)
+        return None

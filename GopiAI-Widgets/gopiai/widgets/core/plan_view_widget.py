@@ -26,8 +26,22 @@ from PySide6.QtWidgets import (
 )
 from gopiai.core.logging import get_logger
 logger = get_logger().logger
-from gopiai.widgets.i18n.translator import tr
-from gopiai.widgets.core.icon_adapter import get_icon
+
+# Простая заглушка для переводчика
+def tr(key, default_text=None):
+    return default_text if default_text else key
+
+# Пытаемся импортировать get_icon из разных мест
+try:
+    from gopiai.ui.components.icon_file_system_model import get_icon
+except ImportError:
+    try:
+        from gopiai.ui.utils.icon_manager import get_icon
+    except ImportError:
+        # Заглушка, если иконки недоступны
+        def get_icon(name):
+            from PySide6.QtGui import QIcon
+            return QIcon()
 
 
 class RiskLevelIndicator(QWidget):

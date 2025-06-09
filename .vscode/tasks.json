@@ -37,6 +37,18 @@
             "type": "shell",
             "command": "${command:autoDocstring.generateDocstring}",
             "problemMatcher": []
+        },
+        {
+            "label": "🤖 Start MCP Serena",
+            "type": "shell",
+            "command": "cd /d C:\\Users\\crazy\\mcp_servers\\serena & npm start",
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "close": false
+            }
         }
     ]
 }

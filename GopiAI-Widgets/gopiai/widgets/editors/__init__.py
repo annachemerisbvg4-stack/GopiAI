@@ -7,10 +7,9 @@ This module contains editor components including:
 - Code formatting and analysis tools
 """
 
-from .code_editor import CodeEditor
-from .syntax_highlighter import SyntaxHighlighter
+# Импортируем только существующие файлы
+from .syntax_highlighter import PythonHighlighter
 
 __all__ = [
-    'CodeEditor',
-    'SyntaxHighlighter'
+    'PythonHighlighter'
 ]

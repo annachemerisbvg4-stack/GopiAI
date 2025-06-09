@@ -16,12 +16,17 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QTabWidget,
-    QVBoxLayout,
-    QWidget,
+    QVBoxLayout,    QWidget,
 )
 
-from .i18n.translator import tr
-from .lucide_icon_manager import get_lucide_icon
+# Простая заглушка для переводчика
+def tr(key, default_text=None):
+    return default_text if default_text else key
+
+# Заглушка для иконок Lucide
+def get_lucide_icon(name, size=24):
+    from PySide6.QtGui import QIcon
+    return QIcon()
 
 logger = get_logger().logger
 

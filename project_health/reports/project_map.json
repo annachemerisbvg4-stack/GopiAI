@@ -1,19 +1,19 @@
 {
-  "generated_at": "2025-06-07T21:50:23.324110",
+  "generated_at": "2025-06-08T19:36:04.993611",
   "project_name": "GopiAI",
   "version": "1.0",
   "summary": {
-    "total_files": 146,
+    "total_files": 155,
     "total_modules": 7,
-    "total_dependencies": 1308,
+    "total_dependencies": 1369,
     "modules_overview": {
-      "root": 3,
+      "root": 8,
       "GopiAI-App": 46,
       "GopiAI-Assets": 2,
       "GopiAI-Core": 23,
       "GopiAI-Extensions": 14,
-      "GopiAI-UI": 21,
-      "GopiAI-Widgets": 37
+      "GopiAI-UI": 26,
+      "GopiAI-Widgets": 36
     }
   },
   "modules": {
@@ -21,7 +21,12 @@
       "files": [
         "update_project_map",
         "GopiAI.GopiAI-Assets.gopiai.assets.__init__",
-        "GopiAI.GopiAI-Widgets.gopiai.widgets.core.text_editor"
+        "GopiAI.GopiAI-Widgets.gopiai.widgets.core.text_editor",
+        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_agent_dialog",
+        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_agent_interface",
+        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_tab_widget",
+        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_widget",
+        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).dock_title_bar_fixed"
       ],
       "dependencies": {
         "update_project_map": [
@@ -51,9 +56,108 @@
           "chardet",
           "QMessageBox",
           "QFileDialog"
+        ],
+        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_agent_dialog": [
+          "typing",
+          "PySide6.QtCore",
+          "PySide6.QtGui",
+          "PySide6.QtWidgets",
+          "app.ui.browser_agent_interface",
+          "app.ui.browser_tab_widget",
+          "app.ui.i18n.translator",
+          "app.ui.icon_adapter",
+          "app.utils.theme_manager",
+          "app.utils.chat_indexer",
+          "app.ui.chat_search_dialog",
+          "app.ui.lucide_icon_manager",
+          "app.ui.emoji_dialog",
+          "PySide6.QtWidgets",
+          "PySide6.QtCore",
+          "asyncio",
+          "Optional",
+          "datetime",
+          "json",
+          "os",
+          "QPoint",
+          "QAction",
+          "BrowserAgentInterface",
+          "MultiBrowserWidget",
+          "tr",
+          "get_icon",
+          "ThemeManager",
+          "ChatHistoryIndexer",
+          "ChatSearchDialog",
+          "get_lucide_icon",
+          "EmojiDialog",
+          "QApplication",
+          "QPoint"
+        ],
+        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_agent_interface": [
+          "typing",
+          "PySide6.QtCore",
+          "app.agent.browser_agent",
+          "app.ui.browser_tab_widget",
+          "app.tool.browser_tools_integration",
+          "app.agent.llm_interaction",
+          "app.prompt.browser_agent",
+          "app.ui.i18n.translator",
+          "asyncio",
+          "logging",
+          "json",
+          "datetime",
+          "Optional",
+          "QObject",
+          "EnhancedBrowserAgent",
+          "MultiBrowserWidget",
+          "initialize_browser_tools",
+          "llm_agentic_action",
+          "BROWSER_AGENT_SYSTEM_PROMPT",
+          "tr"
+        ],
+        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_tab_widget": [
+          "PySide6.QtCore",
+          "PySide6.QtWidgets",
+          "PySide6.QtGui",
+          "PySide6.QtWebEngineWidgets",
+          "PySide6.QtWebEngineCore",
+          "sys",
+          "os",
+          "Qt",
+          "QIcon",
+          "QWebEngineView",
+          "QWebEnginePage"
+        ],
+        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).browser_widget": [
+          "PySide6.QtWebEngineWidgets",
+          "PySide6.QtCore",
+          "PySide6.QtWidgets",
+          "logging",
+          "QWebEngineView",
+          "QUrl",
+          "QLabel"
+        ],
+        "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить).dock_title_bar_fixed": [
+          "typing",
+          "PySide6.QtCore",
+          "PySide6.QtGui",
+          "PySide6.QtWidgets",
+          "app.ui.i18n.translator",
+          "app.ui.icon_adapter",
+          "app.ui.theme_manager",
+          "simple_theme_manager",
+          "os",
+          "sys",
+          "logging",
+          "Optional",
+          "QSize",
+          "QIcon",
+          "tr",
+          "IconAdapter",
+          "ThemeManager",
+          "ThemeManager"
         ]
       },
-      "file_count": 3
+      "file_count": 8
     },
     "GopiAI-App": {
       "files": [
@@ -1035,13 +1139,16 @@
         "GopiAI-UI.gopiai.ui.main",
         "GopiAI-UI.gopiai.ui.__init__",
         "GopiAI-UI.gopiai.ui.components.chat_widget",
+        "GopiAI-UI.gopiai.ui.components.enhanced_browser_widget",
         "GopiAI-UI.gopiai.ui.components.file_explorer",
         "GopiAI-UI.gopiai.ui.components.file_type_detector",
         "GopiAI-UI.gopiai.ui.components.icon_file_system_model",
         "GopiAI-UI.gopiai.ui.components.menu_bar",
+        "GopiAI-UI.gopiai.ui.components.simple_browser_widget",
         "GopiAI-UI.gopiai.ui.components.tab_widget",
         "GopiAI-UI.gopiai.ui.components.terminal_widget",
         "GopiAI-UI.gopiai.ui.components.titlebar",
+        "GopiAI-UI.gopiai.ui.components.ultra_simple_browser",
         "GopiAI-UI.gopiai.ui.components.__init__",
         "GopiAI-UI.gopiai.ui.dialogs.settings_dialog",
         "GopiAI-UI.gopiai.ui.dialogs.__init__",
@@ -1051,7 +1158,9 @@
         "GopiAI-UI.gopiai.ui.utils.icon_system",
         "GopiAI-UI.gopiai.ui.utils.simple_theme_manager",
         "GopiAI-UI.gopiai.ui.utils.theme_manager",
-        "GopiAI-UI.gopiai.ui.utils.__init__"
+        "GopiAI-UI.gopiai.ui.utils.__init__",
+        "GopiAI-UI.gopiai.ui.widgets.central_widget",
+        "GopiAI-UI.gopiai.ui.widgets.docks"
       ],
       "dependencies": {
         "GopiAI-UI.gopiai.__init__": [],
@@ -1103,6 +1212,7 @@
           "PySide6.QtWidgets",
           "QWidget"
         ],
+        "GopiAI-UI.gopiai.ui.components.enhanced_browser_widget": [],
         "GopiAI-UI.gopiai.ui.components.file_explorer": [
           "PySide6.QtWidgets",
           "PySide6.QtCore",
@@ -1147,9 +1257,23 @@
           "UniversalIconManager",
           "icon_file_system_model"
         ],
+        "GopiAI-UI.gopiai.ui.components.simple_browser_widget": [
+          "PySide6.QtCore",
+          "PySide6.QtWebEngineWidgets",
+          "PySide6.QtWidgets",
+          "logging",
+          "QUrl",
+          "QWebEngineView",
+          "QWidget"
+        ],
         "GopiAI-UI.gopiai.ui.components.tab_widget": [
           "PySide6.QtWidgets",
-          "QWidget"
+          "PySide6.QtCore",
+          "PySide6.QtWebEngineWidgets",
+          "QWidget",
+          "Qt",
+          "QWebEngineView",
+          "traceback"
         ],
         "GopiAI-UI.gopiai.ui.components.terminal_widget": [
           "typing",
@@ -1166,6 +1290,15 @@
           "QMouseEvent",
           "StandaloneMenuBar",
           "menu_bar"
+        ],
+        "GopiAI-UI.gopiai.ui.components.ultra_simple_browser": [
+          "PySide6.QtWidgets",
+          "PySide6.QtWebEngineWidgets",
+          "PySide6.QtCore",
+          "os",
+          "sys",
+          "QWebEngineView",
+          "QUrl"
         ],
         "GopiAI-UI.gopiai.ui.components.__init__": [
           "StandaloneTitlebar",
@@ -1266,9 +1399,21 @@
         "GopiAI-UI.gopiai.ui.utils.__init__": [
           "ThemeManager",
           "theme_manager"
+        ],
+        "GopiAI-UI.gopiai.ui.widgets.central_widget": [
+          "PySide6.QtWidgets",
+          "logging",
+          "QTabWidget"
+        ],
+        "GopiAI-UI.gopiai.ui.widgets.docks": [
+          "PySide6.QtWidgets",
+          "PySide6.QtCore",
+          "logging",
+          "QDockWidget",
+          "Qt"
         ]
       },
-      "file_count": 21
+      "file_count": 26
     },
     "GopiAI-Widgets": {
       "files": [
@@ -1288,7 +1433,6 @@
         "GopiAI-Widgets.gopiai.widgets.core.central_widget",
         "GopiAI-Widgets.gopiai.widgets.core.code_analysis_widget",
         "GopiAI-Widgets.gopiai.widgets.core.debug_ui",
-        "GopiAI-Widgets.gopiai.widgets.core.enhanced_browser_widget",
         "GopiAI-Widgets.gopiai.widgets.core.flow_visualization",
         "GopiAI-Widgets.gopiai.widgets.core.output_widget",
         "GopiAI-Widgets.gopiai.widgets.core.plan_view_widget",
@@ -1364,29 +1508,22 @@
           ""
         ],
         "GopiAI-Widgets.gopiai.widgets.__init__": [
+          "gopiai.ui.components.file_explorer",
+          "gopiai.ui.dialogs.settings_dialog",
           "CardWidget",
           "SimpleLabel",
           "TextEditorWidget",
           "setup_central_widget",
           "CodeAnalysisWidget",
           "UIDiagnostics",
-          "create_docks",
-          "DockTitleBar",
           "FlowVisualizationDialog",
-          "FlowVisualizer",
-          "IconAdapter",
           "OutputWidget",
           "PlanViewWidget",
-          "ProjectExplorer",
-          "SettingsWidget",
-          "ChatSearchDialog",
-          "CodingAgentDialog",
+          "FileExplorerWidget",
+          "GopiAISettingsDialog",
           "EmojiDialog",
           "ReasoningAgentDialog",
-          "CodeEditor",
           "PythonHighlighter",
-          "LucideIconManager",
-          "ThemeManager",
           "ActionPredictor",
           "AsyncPagePreProcessor",
           "components",
@@ -1396,24 +1533,13 @@
           "core.central_widget",
           "core.code_analysis_widget",
           "core.debug_ui",
-          "core.docks",
-          "core.dock_title_bar",
           "core.flow_visualization",
-          "core.flow_visualizer",
-          "core.icon_adapter",
           "core.output_widget",
           "core.plan_view_widget",
-          "core.project_explorer",
-          "core.settings_widget",
           "core.widgets",
-          "dialogs.chat_search_dialog",
-          "dialogs.coding_agent_dialog",
           "dialogs.emoji_dialog",
           "dialogs.reasoning_agent_dialog",
-          "editors.code_editor",
           "editors.syntax_highlighter",
-          "managers.lucide_icon_manager",
-          "managers.theme_manager",
           "processors.action_predictor",
           "processors.browser_processor",
           ""
@@ -1463,13 +1589,9 @@
           "QEvent"
         ],
         "GopiAI-Widgets.gopiai.widgets.components.__init__": [
-          "agent_integration",
           "edit_actions",
           "file_actions",
           "menubar",
-          "tab_management",
-          "titlebar",
-          "view_management",
           "window_events"
         ],
         "GopiAI-Widgets.gopiai.widgets.core.card_widget": [
@@ -1491,7 +1613,7 @@
           "PySide6.QtGui",
           "PySide6.QtWidgets",
           "gopiai.widgets.i18n.translator",
-          "gopiai.widgets.core.icon_adapter",
+          "gopiai.ui.utils.icon_manager",
           "importlib",
           "importlib",
           "importlib",
@@ -1537,43 +1659,23 @@
           "check_translator",
           "_run_signal_checks"
         ],
-        "GopiAI-Widgets.gopiai.widgets.core.enhanced_browser_widget": [
-          "gopiai.core.logging",
-          "typing",
-          "PySide6.QtCore",
-          "PySide6.QtWebEngineWidgets",
-          "PySide6.QtWidgets",
-          "gopiai.widgets.processors.action_predictor",
-          "gopiai.widgets.processors.browser_processor",
-          "PySide6.QtWidgets",
-          "asyncio",
-          "get_logger",
-          "Dict",
-          "Qt",
-          "QWebEngineView",
-          "QWidget",
-          "ActionPredictor",
-          "AsyncPagePreProcessor",
-          "QLabel"
-        ],
-        "GopiAI-Widgets.gopiai.widgets.core.flow_visualization": [
-          "show_flow_visualizer_dialog",
-          "flow_visualizer"
-        ],
+        "GopiAI-Widgets.gopiai.widgets.core.flow_visualization": [],
         "GopiAI-Widgets.gopiai.widgets.core.output_widget": [
           "PySide6.QtCore",
           "PySide6.QtGui",
           "PySide6.QtWidgets",
-          "gopiai.widgets.core.icon_adapter",
+          "gopiai.ui.components.icon_file_system_model",
+          "gopiai.ui.utils.icon_manager",
+          "PySide6.QtGui",
           "PySide6.QtWidgets",
           "PySide6.QtWidgets",
           "Qt",
           "QTextCursor",
           "get_icon",
-          "tr",
+          "get_icon",
+          "QIcon",
           "QFileDialog",
-          "QMessageBox",
-          "i18n.translator"
+          "QMessageBox"
         ],
         "GopiAI-Widgets.gopiai.widgets.core.plan_view_widget": [
           "typing",
@@ -1581,15 +1683,17 @@
           "PySide6.QtGui",
           "PySide6.QtWidgets",
           "gopiai.core.logging",
-          "gopiai.widgets.i18n.translator",
-          "gopiai.widgets.core.icon_adapter",
+          "gopiai.ui.components.icon_file_system_model",
+          "gopiai.ui.utils.icon_manager",
+          "PySide6.QtGui",
           "PySide6.QtGui",
           "Any",
           "QSize",
           "QColor",
           "get_logger",
-          "tr",
           "get_icon",
+          "get_icon",
+          "QIcon",
           "QBrush"
         ],
         "GopiAI-Widgets.gopiai.widgets.core.simple_label": [
@@ -1602,7 +1706,7 @@
           "PySide6.QtCore",
           "PySide6.QtGui",
           "PySide6.QtWidgets",
-          "UI.utils.simple_theme_manager",
+          "gopiai.ui.utils.simple_theme_manager",
           "PySide6.QtWidgets",
           "PySide6.QtWidgets",
           "PySide6.QtWidgets",
@@ -1620,36 +1724,26 @@
         ],
         "GopiAI-Widgets.gopiai.widgets.core.widgets": [],
         "GopiAI-Widgets.gopiai.widgets.core.__init__": [
+          "gopiai.ui.components.file_explorer",
+          "gopiai.ui.components.icon_file_system_model",
+          "gopiai.ui.dialogs.settings_dialog",
           "CardWidget",
           "SimpleLabel",
           "TextEditorWidget",
           "setup_central_widget",
           "CodeAnalysisWidget",
-          "UIDiagnostics",
-          "create_docks",
-          "DockTitleBar",
-          "FlowVisualizationDialog",
-          "FlowVisualizer",
-          "IconAdapter",
           "OutputWidget",
           "PlanViewWidget",
-          "ProjectExplorer",
-          "SettingsWidget",
+          "FileExplorerWidget",
+          "IconFileSystemModel",
+          "GopiAISettingsDialog",
           "card_widget",
           "simple_label",
           "text_editor",
           "central_widget",
           "code_analysis_widget",
-          "debug_ui",
-          "docks",
-          "dock_title_bar",
-          "flow_visualization",
-          "flow_visualizer",
-          "icon_adapter",
           "output_widget",
-          "plan_view_widget",
-          "project_explorer",
-          "settings_widget"
+          "plan_view_widget"
         ],
         "GopiAI-Widgets.gopiai.widgets.custom_grips.custom_grips": [
           "PySide6.QtCore",
@@ -1666,6 +1760,7 @@
           "PySide6.QtCore",
           "PySide6.QtGui",
           "PySide6.QtWidgets",
+          "PySide6.QtGui",
           "PySide6.QtWidgets",
           "json",
           "get_logger",
@@ -1673,12 +1768,9 @@
           "Path",
           "QSize",
           "QColor",
-          "tr",
-          "get_lucide_icon",
+          "QIcon",
           "sys",
-          "QApplication",
-          "i18n.translator",
-          "lucide_icon_manager"
+          "QApplication"
         ],
         "GopiAI-Widgets.gopiai.widgets.dialogs.reasoning_agent_dialog": [
           "typing",
@@ -1708,12 +1800,8 @@
           "ThoughtTreeWidget"
         ],
         "GopiAI-Widgets.gopiai.widgets.dialogs.__init__": [
-          "ChatSearchDialog",
-          "CodingAgentDialog",
           "EmojiDialog",
           "ReasoningAgentDialog",
-          "chat_search_dialog",
-          "coding_agent_dialog",
           "emoji_dialog",
           "reasoning_agent_dialog"
         ],
@@ -1724,9 +1812,7 @@
           "QColor"
         ],
         "GopiAI-Widgets.gopiai.widgets.editors.__init__": [
-          "CodeEditor",
-          "SyntaxHighlighter",
-          "code_editor",
+          "PythonHighlighter",
           "syntax_highlighter"
         ],
         "GopiAI-Widgets.gopiai.widgets.i18n.compile_translations": [
@@ -1796,7 +1882,7 @@
           "browser_processor"
         ]
       },
-      "file_count": 37
+      "file_count": 36
     }
   },
   "raw_dependencies": {
@@ -2738,6 +2824,7 @@
       "PySide6.QtWidgets",
       "QWidget"
     ],
+    "GopiAI-UI\\gopiai\\ui\\components\\enhanced_browser_widget.py": [],
     "GopiAI-UI\\gopiai\\ui\\components\\file_explorer.py": [
       "PySide6.QtWidgets",
       "PySide6.QtCore",
@@ -2782,9 +2869,23 @@
       "UniversalIconManager",
       "icon_file_system_model"
     ],
+    "GopiAI-UI\\gopiai\\ui\\components\\simple_browser_widget.py": [
+      "PySide6.QtCore",
+      "PySide6.QtWebEngineWidgets",
+      "PySide6.QtWidgets",
+      "logging",
+      "QUrl",
+      "QWebEngineView",
+      "QWidget"
+    ],
     "GopiAI-UI\\gopiai\\ui\\components\\tab_widget.py": [
       "PySide6.QtWidgets",
-      "QWidget"
+      "PySide6.QtCore",
+      "PySide6.QtWebEngineWidgets",
+      "QWidget",
+      "Qt",
+      "QWebEngineView",
+      "traceback"
     ],
     "GopiAI-UI\\gopiai\\ui\\components\\terminal_widget.py": [
       "typing",
@@ -2801,6 +2902,15 @@
       "QMouseEvent",
       "StandaloneMenuBar",
       "menu_bar"
+    ],
+    "GopiAI-UI\\gopiai\\ui\\components\\ultra_simple_browser.py": [
+      "PySide6.QtWidgets",
+      "PySide6.QtWebEngineWidgets",
+      "PySide6.QtCore",
+      "os",
+      "sys",
+      "QWebEngineView",
+      "QUrl"
     ],
     "GopiAI-UI\\gopiai\\ui\\components\\__init__.py": [
       "StandaloneTitlebar",
@@ -2902,6 +3012,18 @@
       "ThemeManager",
       "theme_manager"
     ],
+    "GopiAI-UI\\gopiai\\ui\\widgets\\central_widget.py": [
+      "PySide6.QtWidgets",
+      "logging",
+      "QTabWidget"
+    ],
+    "GopiAI-UI\\gopiai\\ui\\widgets\\docks.py": [
+      "PySide6.QtWidgets",
+      "PySide6.QtCore",
+      "logging",
+      "QDockWidget",
+      "Qt"
+    ],
     "GopiAI-Widgets\\examples\\card_widget_demo.py": [
       "PySide6.QtWidgets",
       "PySide6.QtCore",
@@ -2955,29 +3077,22 @@
       ""
     ],
     "GopiAI-Widgets\\gopiai\\widgets\\__init__.py": [
+      "gopiai.ui.components.file_explorer",
+      "gopiai.ui.dialogs.settings_dialog",
       "CardWidget",
       "SimpleLabel",
       "TextEditorWidget",
       "setup_central_widget",
       "CodeAnalysisWidget",
       "UIDiagnostics",
-      "create_docks",
-      "DockTitleBar",
       "FlowVisualizationDialog",
-      "FlowVisualizer",
-      "IconAdapter",
       "OutputWidget",
       "PlanViewWidget",
-      "ProjectExplorer",
-      "SettingsWidget",
-      "ChatSearchDialog",
-      "CodingAgentDialog",
+      "FileExplorerWidget",
+      "GopiAISettingsDialog",
       "EmojiDialog",
       "ReasoningAgentDialog",
-      "CodeEditor",
       "PythonHighlighter",
-      "LucideIconManager",
-      "ThemeManager",
       "ActionPredictor",
       "AsyncPagePreProcessor",
       "components",
@@ -2987,24 +3102,13 @@
       "core.central_widget",
       "core.code_analysis_widget",
       "core.debug_ui",
-      "core.docks",
-      "core.dock_title_bar",
       "core.flow_visualization",
-      "core.flow_visualizer",
-      "core.icon_adapter",
       "core.output_widget",
       "core.plan_view_widget",
-      "core.project_explorer",
-      "core.settings_widget",
       "core.widgets",
-      "dialogs.chat_search_dialog",
-      "dialogs.coding_agent_dialog",
       "dialogs.emoji_dialog",
       "dialogs.reasoning_agent_dialog",
-      "editors.code_editor",
       "editors.syntax_highlighter",
-      "managers.lucide_icon_manager",
-      "managers.theme_manager",
       "processors.action_predictor",
       "processors.browser_processor",
       ""
@@ -3054,13 +3158,9 @@
       "QEvent"
     ],
     "GopiAI-Widgets\\gopiai\\widgets\\components\\__init__.py": [
-      "agent_integration",
       "edit_actions",
       "file_actions",
       "menubar",
-      "tab_management",
-      "titlebar",
-      "view_management",
       "window_events"
     ],
     "GopiAI-Widgets\\gopiai\\widgets\\core\\card_widget.py": [
@@ -3082,7 +3182,7 @@
       "PySide6.QtGui",
       "PySide6.QtWidgets",
       "gopiai.widgets.i18n.translator",
-      "gopiai.widgets.core.icon_adapter",
+      "gopiai.ui.utils.icon_manager",
       "importlib",
       "importlib",
       "importlib",
@@ -3128,43 +3228,23 @@
       "check_translator",
       "_run_signal_checks"
     ],
-    "GopiAI-Widgets\\gopiai\\widgets\\core\\enhanced_browser_widget.py": [
-      "gopiai.core.logging",
-      "typing",
-      "PySide6.QtCore",
-      "PySide6.QtWebEngineWidgets",
-      "PySide6.QtWidgets",
-      "gopiai.widgets.processors.action_predictor",
-      "gopiai.widgets.processors.browser_processor",
-      "PySide6.QtWidgets",
-      "asyncio",
-      "get_logger",
-      "Dict",
-      "Qt",
-      "QWebEngineView",
-      "QWidget",
-      "ActionPredictor",
-      "AsyncPagePreProcessor",
-      "QLabel"
-    ],
-    "GopiAI-Widgets\\gopiai\\widgets\\core\\flow_visualization.py": [
-      "show_flow_visualizer_dialog",
-      "flow_visualizer"
-    ],
+    "GopiAI-Widgets\\gopiai\\widgets\\core\\flow_visualization.py": [],
     "GopiAI-Widgets\\gopiai\\widgets\\core\\output_widget.py": [
       "PySide6.QtCore",
       "PySide6.QtGui",
       "PySide6.QtWidgets",
-      "gopiai.widgets.core.icon_adapter",
+      "gopiai.ui.components.icon_file_system_model",
+      "gopiai.ui.utils.icon_manager",
+      "PySide6.QtGui",
       "PySide6.QtWidgets",
       "PySide6.QtWidgets",
       "Qt",
       "QTextCursor",
       "get_icon",
-      "tr",
+      "get_icon",
+      "QIcon",
       "QFileDialog",
-      "QMessageBox",
-      "i18n.translator"
+      "QMessageBox"
     ],
     "GopiAI-Widgets\\gopiai\\widgets\\core\\plan_view_widget.py": [
       "typing",
@@ -3172,15 +3252,17 @@
       "PySide6.QtGui",
       "PySide6.QtWidgets",
       "gopiai.core.logging",
-      "gopiai.widgets.i18n.translator",
-      "gopiai.widgets.core.icon_adapter",
+      "gopiai.ui.components.icon_file_system_model",
+      "gopiai.ui.utils.icon_manager",
+      "PySide6.QtGui",
       "PySide6.QtGui",
       "Any",
       "QSize",
       "QColor",
       "get_logger",
-      "tr",
       "get_icon",
+      "get_icon",
+      "QIcon",
       "QBrush"
     ],
     "GopiAI-Widgets\\gopiai\\widgets\\core\\simple_label.py": [
@@ -3193,7 +3275,7 @@
       "PySide6.QtCore",
       "PySide6.QtGui",
       "PySide6.QtWidgets",
-      "UI.utils.simple_theme_manager",
+      "gopiai.ui.utils.simple_theme_manager",
       "PySide6.QtWidgets",
       "PySide6.QtWidgets",
       "PySide6.QtWidgets",
@@ -3211,36 +3293,26 @@
     ],
     "GopiAI-Widgets\\gopiai\\widgets\\core\\widgets.py": [],
     "GopiAI-Widgets\\gopiai\\widgets\\core\\__init__.py": [
+      "gopiai.ui.components.file_explorer",
+      "gopiai.ui.components.icon_file_system_model",
+      "gopiai.ui.dialogs.settings_dialog",
       "CardWidget",
       "SimpleLabel",
       "TextEditorWidget",
       "setup_central_widget",
       "CodeAnalysisWidget",
-      "UIDiagnostics",
-      "create_docks",
-      "DockTitleBar",
-      "FlowVisualizationDialog",
-      "FlowVisualizer",
-      "IconAdapter",
       "OutputWidget",
       "PlanViewWidget",
-      "ProjectExplorer",
-      "SettingsWidget",
+      "FileExplorerWidget",
+      "IconFileSystemModel",
+      "GopiAISettingsDialog",
       "card_widget",
       "simple_label",
       "text_editor",
       "central_widget",
       "code_analysis_widget",
-      "debug_ui",
-      "docks",
-      "dock_title_bar",
-      "flow_visualization",
-      "flow_visualizer",
-      "icon_adapter",
       "output_widget",
-      "plan_view_widget",
-      "project_explorer",
-      "settings_widget"
+      "plan_view_widget"
     ],
     "GopiAI-Widgets\\gopiai\\widgets\\custom_grips\\custom_grips.py": [
       "PySide6.QtCore",
@@ -3257,6 +3329,7 @@
       "PySide6.QtCore",
       "PySide6.QtGui",
       "PySide6.QtWidgets",
+      "PySide6.QtGui",
       "PySide6.QtWidgets",
       "json",
       "get_logger",
@@ -3264,12 +3337,9 @@
       "Path",
       "QSize",
       "QColor",
-      "tr",
-      "get_lucide_icon",
+      "QIcon",
       "sys",
-      "QApplication",
-      "i18n.translator",
-      "lucide_icon_manager"
+      "QApplication"
     ],
     "GopiAI-Widgets\\gopiai\\widgets\\dialogs\\reasoning_agent_dialog.py": [
       "typing",
@@ -3299,12 +3369,8 @@
       "ThoughtTreeWidget"
     ],
     "GopiAI-Widgets\\gopiai\\widgets\\dialogs\\__init__.py": [
-      "ChatSearchDialog",
-      "CodingAgentDialog",
       "EmojiDialog",
       "ReasoningAgentDialog",
-      "chat_search_dialog",
-      "coding_agent_dialog",
       "emoji_dialog",
       "reasoning_agent_dialog"
     ],
@@ -3315,9 +3381,7 @@
       "QColor"
     ],
     "GopiAI-Widgets\\gopiai\\widgets\\editors\\__init__.py": [
-      "CodeEditor",
-      "SyntaxHighlighter",
-      "code_editor",
+      "PythonHighlighter",
       "syntax_highlighter"
     ],
     "GopiAI-Widgets\\gopiai\\widgets\\i18n\\compile_translations.py": [
@@ -3385,6 +3449,105 @@
       "AsyncPagePreProcessor",
       "action_predictor",
       "browser_processor"
+    ],
+    "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить)\\browser_agent_dialog.py": [
+      "typing",
+      "PySide6.QtCore",
+      "PySide6.QtGui",
+      "PySide6.QtWidgets",
+      "app.ui.browser_agent_interface",
+      "app.ui.browser_tab_widget",
+      "app.ui.i18n.translator",
+      "app.ui.icon_adapter",
+      "app.utils.theme_manager",
+      "app.utils.chat_indexer",
+      "app.ui.chat_search_dialog",
+      "app.ui.lucide_icon_manager",
+      "app.ui.emoji_dialog",
+      "PySide6.QtWidgets",
+      "PySide6.QtCore",
+      "asyncio",
+      "Optional",
+      "datetime",
+      "json",
+      "os",
+      "QPoint",
+      "QAction",
+      "BrowserAgentInterface",
+      "MultiBrowserWidget",
+      "tr",
+      "get_icon",
+      "ThemeManager",
+      "ChatHistoryIndexer",
+      "ChatSearchDialog",
+      "get_lucide_icon",
+      "EmojiDialog",
+      "QApplication",
+      "QPoint"
+    ],
+    "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить)\\browser_agent_interface.py": [
+      "typing",
+      "PySide6.QtCore",
+      "app.agent.browser_agent",
+      "app.ui.browser_tab_widget",
+      "app.tool.browser_tools_integration",
+      "app.agent.llm_interaction",
+      "app.prompt.browser_agent",
+      "app.ui.i18n.translator",
+      "asyncio",
+      "logging",
+      "json",
+      "datetime",
+      "Optional",
+      "QObject",
+      "EnhancedBrowserAgent",
+      "MultiBrowserWidget",
+      "initialize_browser_tools",
+      "llm_agentic_action",
+      "BROWSER_AGENT_SYSTEM_PROMPT",
+      "tr"
+    ],
+    "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить)\\browser_tab_widget.py": [
+      "PySide6.QtCore",
+      "PySide6.QtWidgets",
+      "PySide6.QtGui",
+      "PySide6.QtWebEngineWidgets",
+      "PySide6.QtWebEngineCore",
+      "sys",
+      "os",
+      "Qt",
+      "QIcon",
+      "QWebEngineView",
+      "QWebEnginePage"
+    ],
+    "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить)\\browser_widget.py": [
+      "PySide6.QtWebEngineWidgets",
+      "PySide6.QtCore",
+      "PySide6.QtWidgets",
+      "logging",
+      "QWebEngineView",
+      "QUrl",
+      "QLabel"
+    ],
+    "СТАРЫЕ ЧЕРНОВИКИ (после использования немедленно удалить)\\dock_title_bar_fixed.py": [
+      "typing",
+      "PySide6.QtCore",
+      "PySide6.QtGui",
+      "PySide6.QtWidgets",
+      "app.ui.i18n.translator",
+      "app.ui.icon_adapter",
+      "app.ui.theme_manager",
+      "simple_theme_manager",
+      "os",
+      "sys",
+      "logging",
+      "Optional",
+      "QSize",
+      "QIcon",
+      "tr",
+      "IconAdapter",
+      "ThemeManager",
+      "ThemeManager"
     ]
   },
   "output_path": "c:\\Users\\crazy\\GOPI_AI_MODULES\\project_health\\reports\\project_map.json"

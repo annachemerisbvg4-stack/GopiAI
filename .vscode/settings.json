@@ -24,4 +24,8 @@
     "editor.codeActionsOnSave": {
         "source.organizeImports": "explicit"
     },
+    // GitHub Copilot MCP settings
+    "github.copilot.advanced": {
+        "mcp.runtime": "C:\\Users\\crazy\\mcp_servers\\serena"
+    }
 }
