@@ -1,4 +1,7 @@
 @echo off
+chcp 65001 >nul || exit /b
+REM Скрипт запуска GopiAI UI приложения
+
 echo Starting GopiAI Application...
 echo ===============================
 
