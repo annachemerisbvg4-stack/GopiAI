@@ -491,33 +491,60 @@ class GopiAISettingsDialog(QDialog):
     def load_current_settings(self):
         """Загрузка текущих настроек"""
         print("🔧 load_current_settings() начат")
-        if self.theme_manager:
-            print("🔧 theme_manager существует")
-            current_theme = self.theme_manager.get_current_theme()
-            print(f"🔧 current_theme = {current_theme}")
-              # Проверяем, что theme_combo существует
-            if hasattr(self, 'theme_combo') and self.theme_combo:
-                print(f"🔧 theme_combo существует: {self.theme_combo}")
+        try:
+            if self.theme_manager:
+                print("🔧 theme_manager существует")
+                current_theme = self.theme_manager.get_current_theme()
+                print(f"🔧 current_theme = {current_theme}")
+                
+                # Проверяем, что theme_combo существует и действителен
+                if hasattr(self, 'theme_combo') and self.theme_combo:
+                    try:
+                        # Защита от случая, когда C++ объект уже удален
+                        if not self.theme_combo.isVisible() and not sip_is_deleted(self.theme_combo):
+                            print("🔧 theme_combo существует, но невидим")
+                        
+                        print(f"🔧 theme_combo существует: {self.theme_combo}")
+                        count = self.theme_combo.count()
+                        print(f"🔧 theme_combo.count() = {count}")
+                        
+                        # Найти индекс текущей темы в комбобоксе
+                        for i in range(count):
+                            if self.theme_combo.itemData(i) == current_theme:
+                                self.theme_combo.setCurrentIndex(i)
+                                print(f"🔧 Установлен индекс темы: {i}")
+                                break
+                    except RuntimeError as e:
+                        if "Internal C++ object" in str(e):
+                            print(f"⚠️ C++ объект QComboBox уже удален: {e}")
+                        else:
+                            print(f"❌ Ошибка при работе с theme_combo: {e}")
+                    except Exception as e:
+                        print(f"❌ Ошибка при работе с theme_combo: {e}")
+                        print(f"❌ Тип ошибки: {type(e)}")
+                else:
+                    print("❌ theme_combo не существует или был удален!")
+                
+                # Устанавливаем темный режим если у менеджера тем есть соответствующий атрибут
                 try:
-                    count = self.theme_combo.count()
-                    print(f"🔧 theme_combo.count() = {count}")
-                    # Найти индекс текущей темы в комбобоксе
-                    for i in range(count):
-                        if self.theme_combo.itemData(i) == current_theme:
-                            self.theme_combo.setCurrentIndex(i)
-                            print(f"🔧 Установлен индекс темы: {i}")
-                            break
+                    if hasattr(self, 'dark_mode_check') and hasattr(self.theme_manager, '_current_variant'):
+                        self.dark_mode_check.setChecked(self.theme_manager._current_variant == "dark")
+                        print(f"🔧 Установлен темный режим: {self.theme_manager._current_variant == 'dark'}")
                 except Exception as e:
-                    print(f"❌ Ошибка при работе с theme_combo: {e}")
-                    print(f"❌ Тип ошибки: {type(e)}")
-            else:
-                print("❌ theme_combo не существует или был удален!")
+                    print(f"❌ Ошибка при установке темного режима: {e}")
+        except Exception as e:
+            print(f"⚠️ Ошибка открытия настроек: {e}")
             
-            # Устанавливаем темный режим если у менеджера тем есть соответствующий атрибут
-            if hasattr(self, 'dark_mode_check') and hasattr(self.theme_manager, '_current_variant'):
-                self.dark_mode_check.setChecked(self.theme_manager._current_variant == "dark")
-                print(f"🔧 Установлен темный режим: {self.theme_manager._current_variant == 'dark'}")
         print("🔧 load_current_settings() завершен")
+        
+def sip_is_deleted(obj):
+    """Проверяет, был ли C++ объект удален"""
+    try:
+        from sip import isdeleted
+        return isdeleted(obj)
+    except (ImportError, AttributeError):
+        # Если sip недоступен или не имеет метода isdeleted
+        return False
     
     def collect_settings(self) -> dict:
         """Сбор всех настроек из интерфейса"""
