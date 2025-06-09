@@ -295,7 +295,10 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
         # Инициализация системы тем
         try:
-            self.theme_manager = ThemeManager()
+            self.theme_manager = ThemeManager()  # Создаем экземпляр ThemeManager без аргументов
+            # Если в ThemeManager есть метод для установки родителя, используем его
+            if hasattr(self.theme_manager, 'set_parent'):
+                self.theme_manager.set_parent(self)
             if self.theme_manager:
                 print("✅ Менеджер тем инициализирован")
                 # Применяем тему, сохраненную в файле настроек
