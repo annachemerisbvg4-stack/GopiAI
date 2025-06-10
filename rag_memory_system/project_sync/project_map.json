@@ -1,59 +1,29 @@
 {
-  "generated_at": "2025-06-09T05:04:26.001654",
+  "generated_at": "2025-06-10T22:57:34.072680",
   "project_name": "GopiAI",
   "version": "1.0",
   "summary": {
-    "total_files": 156,
+    "total_files": 145,
     "total_modules": 7,
-    "total_dependencies": 1343,
+    "total_dependencies": 1221,
     "modules_overview": {
-      "root": 6,
+      "root": 3,
       "GopiAI-App": 46,
       "GopiAI-Assets": 2,
       "GopiAI-Core": 23,
       "GopiAI-Extensions": 14,
-      "GopiAI-UI": 29,
+      "GopiAI-UI": 21,
       "GopiAI-Widgets": 36
     }
   },
   "modules": {
     "root": {
       "files": [
-        "test_autogen",
-        "test_autogen_worker",
-        "test_chat_widget_autogen",
         "update_project_map",
         "GopiAI.GopiAI-Assets.gopiai.assets.__init__",
         "GopiAI.GopiAI-Widgets.gopiai.widgets.core.text_editor"
       ],
       "dependencies": {
-        "test_autogen": [
-          "dotenv",
-          "autogen",
-          "os",
-          "sys",
-          "load_dotenv",
-          "AssistantAgent"
-        ],
-        "test_autogen_worker": [
-          "PySide6.QtWidgets",
-          "PySide6.QtCore",
-          "gopiai.ui.components.chat_widget",
-          "sys",
-          "os",
-          "QApplication",
-          "QCoreApplication",
-          "AutoGenWorker",
-          "logging"
-        ],
-        "test_chat_widget_autogen": [
-          "PySide6.QtWidgets",
-          "gopiai.ui.components.chat_widget",
-          "sys",
-          "os",
-          "QApplication",
-          "ChatWidget"
-        ],
         "update_project_map": [
           "pathlib",
           "subprocess",
@@ -83,7 +53,7 @@
           "QFileDialog"
         ]
       },
-      "file_count": 6
+      "file_count": 3
     },
     "GopiAI-App": {
       "files": [
@@ -1066,67 +1036,34 @@
         "GopiAI-UI.gopiai.ui.main",
         "GopiAI-UI.gopiai.ui.__init__",
         "GopiAI-UI.gopiai.ui.components.chat_widget",
-        "GopiAI-UI.gopiai.ui.components.chat_widget_fixed",
-        "GopiAI-UI.gopiai.ui.components.chat_widget_new",
-        "GopiAI-UI.gopiai.ui.components.chat_widget_old",
         "GopiAI-UI.gopiai.ui.components.enhanced_browser_widget",
         "GopiAI-UI.gopiai.ui.components.file_explorer",
         "GopiAI-UI.gopiai.ui.components.file_type_detector",
         "GopiAI-UI.gopiai.ui.components.icon_file_system_model",
         "GopiAI-UI.gopiai.ui.components.menu_bar",
-        "GopiAI-UI.gopiai.ui.components.simple_browser_widget",
         "GopiAI-UI.gopiai.ui.components.tab_widget",
         "GopiAI-UI.gopiai.ui.components.terminal_widget",
         "GopiAI-UI.gopiai.ui.components.titlebar",
-        "GopiAI-UI.gopiai.ui.components.ultra_simple_browser",
         "GopiAI-UI.gopiai.ui.components.__init__",
         "GopiAI-UI.gopiai.ui.dialogs.settings_dialog",
         "GopiAI-UI.gopiai.ui.dialogs.__init__",
-        "GopiAI-UI.gopiai.ui.utils.icon_manager",
         "GopiAI-UI.gopiai.ui.utils.icon_manager.ts",
         "GopiAI-UI.gopiai.ui.utils.icon_mapping",
         "GopiAI-UI.gopiai.ui.utils.icon_system",
         "GopiAI-UI.gopiai.ui.utils.simple_theme_manager",
         "GopiAI-UI.gopiai.ui.utils.theme_manager",
-        "GopiAI-UI.gopiai.ui.utils.__init__",
-        "GopiAI-UI.gopiai.ui.widgets.central_widget",
-        "GopiAI-UI.gopiai.ui.widgets.docks"
+        "GopiAI-UI.gopiai.ui.utils.__init__"
       ],
       "dependencies": {
         "GopiAI-UI.gopiai.__init__": [],
         "GopiAI-UI.gopiai.ui.main": [
-          "pathlib",
-          "dotenv",
           "PySide6.QtWidgets",
           "PySide6.QtCore",
           "PySide6.QtGui",
-          "gopiai.ui.utils.theme_manager",
-          "gopiai.ui.dialogs.settings_dialog",
-          "gopiai.ui.components",
-          "PySide6.QtWidgets",
-          "PySide6.QtWidgets",
-          "gopiai.ui.dialogs.settings_dialog",
-          "PySide6.QtWidgets",
-          "PySide6.QtWidgets",
-          "PySide6.QtWidgets",
-          "sys",
-          "os",
-          "warnings",
-          "Path",
-          "load_dotenv",
+          "pathlib",
           "Qt",
-          "QAction",
-          "ThemeManager",
-          "GopiAISettingsDialog",
-          "QSizePolicy",
-          "qtawesome",
-          "QApplication",
-          "traceback",
-          "GopiAISettingsDialog",
-          "QMessageBox",
-          "QMessageBox",
-          "QMessageBox",
-          "traceback"
+          "QFont",
+          "Path"
         ],
         "GopiAI-UI.gopiai.ui.__init__": [
           "components",
@@ -1142,52 +1079,7 @@
         ],
         "GopiAI-UI.gopiai.ui.components.chat_widget": [
           "PySide6.QtWidgets",
-          "PySide6.QtCore",
-          "PySide6.QtGui",
-          "dotenv",
-          "autogen.agentchat",
-          "logging",
-          "QWidget",
-          "Signal",
-          "QKeyEvent",
-          "os",
-          "load_dotenv",
-          "sys",
-          "os",
-          "autogen",
-          "AssistantAgent"
-        ],
-        "GopiAI-UI.gopiai.ui.components.chat_widget_fixed": [
-          "PySide6.QtWidgets",
-          "PySide6.QtCore",
-          "autogen.autogen_core",
-          "QWidget",
-          "Signal",
-          "sys",
-          "os",
-          "autogen_manager"
-        ],
-        "GopiAI-UI.gopiai.ui.components.chat_widget_new": [
-          "PySide6.QtWidgets",
-          "PySide6.QtCore",
-          "dotenv",
-          "logging",
-          "QWidget",
-          "Signal",
-          "os",
-          "load_dotenv",
-          "pyautogen"
-        ],
-        "GopiAI-UI.gopiai.ui.components.chat_widget_old": [
-          "PySide6.QtWidgets",
-          "PySide6.QtCore",
-          "dotenv",
-          "logging",
-          "QWidget",
-          "Signal",
-          "os",
-          "load_dotenv",
-          "pyautogen"
+          "QWidget"
         ],
         "GopiAI-UI.gopiai.ui.components.enhanced_browser_widget": [],
         "GopiAI-UI.gopiai.ui.components.file_explorer": [
@@ -1234,15 +1126,6 @@
           "UniversalIconManager",
           "icon_file_system_model"
         ],
-        "GopiAI-UI.gopiai.ui.components.simple_browser_widget": [
-          "PySide6.QtCore",
-          "PySide6.QtWebEngineWidgets",
-          "PySide6.QtWidgets",
-          "logging",
-          "QUrl",
-          "QWebEngineView",
-          "QWidget"
-        ],
         "GopiAI-UI.gopiai.ui.components.tab_widget": [
           "PySide6.QtWidgets",
           "PySide6.QtCore",
@@ -1267,15 +1150,6 @@
           "QMouseEvent",
           "StandaloneMenuBar",
           "menu_bar"
-        ],
-        "GopiAI-UI.gopiai.ui.components.ultra_simple_browser": [
-          "PySide6.QtWidgets",
-          "PySide6.QtWebEngineWidgets",
-          "PySide6.QtCore",
-          "os",
-          "sys",
-          "QWebEngineView",
-          "QUrl"
         ],
         "GopiAI-UI.gopiai.ui.components.__init__": [
           "StandaloneTitlebar",
@@ -1303,23 +1177,6 @@
         "GopiAI-UI.gopiai.ui.dialogs.__init__": [
           "GopiAISettingsDialog",
           "settings_dialog"
-        ],
-        "GopiAI-UI.gopiai.ui.utils.icon_manager": [
-          "pathlib",
-          "typing",
-          "PySide6.QtCore",
-          "PySide6.QtCore",
-          "PySide6.QtGui",
-          "PySide6.QtGui",
-          "os",
-          "sys",
-          "Path",
-          "Dict",
-          "logging",
-          "QSize",
-          "Qt",
-          "QIcon",
-          "QPainter"
         ],
         "GopiAI-UI.gopiai.ui.utils.icon_manager.ts": [],
         "GopiAI-UI.gopiai.ui.utils.icon_mapping": [
@@ -1376,21 +1233,9 @@
         "GopiAI-UI.gopiai.ui.utils.__init__": [
           "ThemeManager",
           "theme_manager"
-        ],
-        "GopiAI-UI.gopiai.ui.widgets.central_widget": [
-          "PySide6.QtWidgets",
-          "logging",
-          "QTabWidget"
-        ],
-        "GopiAI-UI.gopiai.ui.widgets.docks": [
-          "PySide6.QtWidgets",
-          "PySide6.QtCore",
-          "logging",
-          "QDockWidget",
-          "Qt"
         ]
       },
-      "file_count": 29
+      "file_count": 21
     },
     "GopiAI-Widgets": {
       "files": [
@@ -1863,33 +1708,6 @@
     }
   },
   "raw_dependencies": {
-    "test_autogen.py": [
-      "dotenv",
-      "autogen",
-      "os",
-      "sys",
-      "load_dotenv",
-      "AssistantAgent"
-    ],
-    "test_autogen_worker.py": [
-      "PySide6.QtWidgets",
-      "PySide6.QtCore",
-      "gopiai.ui.components.chat_widget",
-      "sys",
-      "os",
-      "QApplication",
-      "QCoreApplication",
-      "AutoGenWorker",
-      "logging"
-    ],
-    "test_chat_widget_autogen.py": [
-      "PySide6.QtWidgets",
-      "gopiai.ui.components.chat_widget",
-      "sys",
-      "os",
-      "QApplication",
-      "ChatWidget"
-    ],
     "update_project_map.py": [
       "pathlib",
       "subprocess",
@@ -2782,38 +2600,13 @@
     ],
     "GopiAI-UI\\gopiai\\__init__.py": [],
     "GopiAI-UI\\gopiai\\ui\\main.py": [
-      "pathlib",
-      "dotenv",
       "PySide6.QtWidgets",
       "PySide6.QtCore",
       "PySide6.QtGui",
-      "gopiai.ui.utils.theme_manager",
-      "gopiai.ui.dialogs.settings_dialog",
-      "gopiai.ui.components",
-      "PySide6.QtWidgets",
-      "PySide6.QtWidgets",
-      "gopiai.ui.dialogs.settings_dialog",
-      "PySide6.QtWidgets",
-      "PySide6.QtWidgets",
-      "PySide6.QtWidgets",
-      "sys",
-      "os",
-      "warnings",
-      "Path",
-      "load_dotenv",
+      "pathlib",
       "Qt",
-      "QAction",
-      "ThemeManager",
-      "GopiAISettingsDialog",
-      "QSizePolicy",
-      "qtawesome",
-      "QApplication",
-      "traceback",
-      "GopiAISettingsDialog",
-      "QMessageBox",
-      "QMessageBox",
-      "QMessageBox",
-      "traceback"
+      "QFont",
+      "Path"
     ],
     "GopiAI-UI\\gopiai\\ui\\__init__.py": [
       "components",
@@ -2829,52 +2622,7 @@
     ],
     "GopiAI-UI\\gopiai\\ui\\components\\chat_widget.py": [
       "PySide6.QtWidgets",
-      "PySide6.QtCore",
-      "PySide6.QtGui",
-      "dotenv",
-      "autogen.agentchat",
-      "logging",
-      "QWidget",
-      "Signal",
-      "QKeyEvent",
-      "os",
-      "load_dotenv",
-      "sys",
-      "os",
-      "autogen",
-      "AssistantAgent"
-    ],
-    "GopiAI-UI\\gopiai\\ui\\components\\chat_widget_fixed.py": [
-      "PySide6.QtWidgets",
-      "PySide6.QtCore",
-      "autogen.autogen_core",
-      "QWidget",
-      "Signal",
-      "sys",
-      "os",
-      "autogen_manager"
-    ],
-    "GopiAI-UI\\gopiai\\ui\\components\\chat_widget_new.py": [
-      "PySide6.QtWidgets",
-      "PySide6.QtCore",
-      "dotenv",
-      "logging",
-      "QWidget",
-      "Signal",
-      "os",
-      "load_dotenv",
-      "pyautogen"
-    ],
-    "GopiAI-UI\\gopiai\\ui\\components\\chat_widget_old.py": [
-      "PySide6.QtWidgets",
-      "PySide6.QtCore",
-      "dotenv",
-      "logging",
-      "QWidget",
-      "Signal",
-      "os",
-      "load_dotenv",
-      "pyautogen"
+      "QWidget"
     ],
     "GopiAI-UI\\gopiai\\ui\\components\\enhanced_browser_widget.py": [],
     "GopiAI-UI\\gopiai\\ui\\components\\file_explorer.py": [
@@ -2921,15 +2669,6 @@
       "UniversalIconManager",
       "icon_file_system_model"
     ],
-    "GopiAI-UI\\gopiai\\ui\\components\\simple_browser_widget.py": [
-      "PySide6.QtCore",
-      "PySide6.QtWebEngineWidgets",
-      "PySide6.QtWidgets",
-      "logging",
-      "QUrl",
-      "QWebEngineView",
-      "QWidget"
-    ],
     "GopiAI-UI\\gopiai\\ui\\components\\tab_widget.py": [
       "PySide6.QtWidgets",
       "PySide6.QtCore",
@@ -2954,15 +2693,6 @@
       "QMouseEvent",
       "StandaloneMenuBar",
       "menu_bar"
-    ],
-    "GopiAI-UI\\gopiai\\ui\\components\\ultra_simple_browser.py": [
-      "PySide6.QtWidgets",
-      "PySide6.QtWebEngineWidgets",
-      "PySide6.QtCore",
-      "os",
-      "sys",
-      "QWebEngineView",
-      "QUrl"
     ],
     "GopiAI-UI\\gopiai\\ui\\components\\__init__.py": [
       "StandaloneTitlebar",
@@ -2990,23 +2720,6 @@
     "GopiAI-UI\\gopiai\\ui\\dialogs\\__init__.py": [
       "GopiAISettingsDialog",
       "settings_dialog"
-    ],
-    "GopiAI-UI\\gopiai\\ui\\utils\\icon_manager.py": [
-      "pathlib",
-      "typing",
-      "PySide6.QtCore",
-      "PySide6.QtCore",
-      "PySide6.QtGui",
-      "PySide6.QtGui",
-      "os",
-      "sys",
-      "Path",
-      "Dict",
-      "logging",
-      "QSize",
-      "Qt",
-      "QIcon",
-      "QPainter"
     ],
     "GopiAI-UI\\gopiai\\ui\\utils\\icon_manager.ts": [],
     "GopiAI-UI\\gopiai\\ui\\utils\\icon_mapping.py": [
@@ -3063,18 +2776,6 @@
     "GopiAI-UI\\gopiai\\ui\\utils\\__init__.py": [
       "ThemeManager",
       "theme_manager"
-    ],
-    "GopiAI-UI\\gopiai\\ui\\widgets\\central_widget.py": [
-      "PySide6.QtWidgets",
-      "logging",
-      "QTabWidget"
-    ],
-    "GopiAI-UI\\gopiai\\ui\\widgets\\docks.py": [
-      "PySide6.QtWidgets",
-      "PySide6.QtCore",
-      "logging",
-      "QDockWidget",
-      "Qt"
     ],
     "GopiAI-Widgets\\examples\\card_widget_demo.py": [
       "PySide6.QtWidgets",

@@ -23,10 +23,24 @@
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
         "source.organizeImports": "explicit"
-    }, // GitHub Copilot MCP settings
-    "github.copilot.advanced": {
-        "mcp.serverUrl": "http://localhost:8000",
-        "debug": true
+    }, // MCP Server Configuration
+    "mcp.servers": {
+        "serena": {
+            "command": "python -m uv",
+            "args": [
+                "run",
+                "--directory",
+                "C:/Users/crazy/mcp_servers/serena",
+                "serena-mcp-server",
+                "--project-file",
+                "C:/Users/crazy/mcp_servers/serena/project.yml"
+            ],
+            "type": "stdio"
+        }
     },
-    "chat.mcp.debug": true
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }
