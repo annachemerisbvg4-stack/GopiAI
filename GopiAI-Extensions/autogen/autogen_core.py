@@ -11,12 +11,79 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Проверяем наличие AutoGen
-try:
-    from autogen import AssistantAgent, UserProxyAgent
-    AUTOGEN_AVAILABLE = True
-except ImportError:
-    print("⚠️ AutoGen не установлен. Установите: pip install 'pyautogen[cerebras]'")
-    AUTOGEN_AVAILABLE = False
+AUTOGEN_AVAILABLE = False
+ConversableAgent = None
+AssistantAgent = None  
+UserProxyAgent = None
+
+# Пробуем различные варианты импорта AutoGen
+import_attempts = [
+    # Попытка 1: Стандартный импорт
+    lambda: __import__('autogen', fromlist=['ConversableAgent', 'AssistantAgent', 'UserProxyAgent']),
+    # Попытка 2: Из agentchat
+    lambda: __import__('autogen.agentchat', fromlist=['ConversableAgent', 'AssistantAgent', 'UserProxyAgent']),
+    # Попытка 3: Прямой импорт модулей
+    lambda: (
+        __import__('autogen.agentchat.conversable_agent', fromlist=['ConversableAgent']),
+        __import__('autogen.agentchat.assistant_agent', fromlist=['AssistantAgent']),
+        __import__('autogen.agentchat.user_proxy_agent', fromlist=['UserProxyAgent'])
+    )
+]
+
+for i, attempt in enumerate(import_attempts, 1):
+    try:
+        print(f"🔄 Попытка импорта AutoGen #{i}...")
+        
+        if i == 1:  # Стандартный импорт
+            autogen_module = attempt()
+            ConversableAgent = getattr(autogen_module, 'ConversableAgent', None)
+            AssistantAgent = getattr(autogen_module, 'AssistantAgent', None)
+            UserProxyAgent = getattr(autogen_module, 'UserProxyAgent', None)
+            
+        elif i == 2:  # Из agentchat
+            agentchat_module = attempt()
+            ConversableAgent = getattr(agentchat_module, 'ConversableAgent', None)
+            AssistantAgent = getattr(agentchat_module, 'AssistantAgent', None)
+            UserProxyAgent = getattr(agentchat_module, 'UserProxyAgent', None)
+            
+        elif i == 3:  # Прямой импорт
+            conv_module, assist_module, proxy_module = attempt()
+            ConversableAgent = getattr(conv_module, 'ConversableAgent', None)
+            AssistantAgent = getattr(assist_module, 'AssistantAgent', None)
+            UserProxyAgent = getattr(proxy_module, 'UserProxyAgent', None)
+        
+        # Проверяем, что все классы загружены
+        if ConversableAgent and AssistantAgent and UserProxyAgent:
+            AUTOGEN_AVAILABLE = True
+            print(f"✅ AutoGen импортирован успешно (попытка #{i})")
+            break
+        else:
+            print(f"⚠️ Попытка #{i}: Не все классы найдены")
+            
+    except ImportError as e:
+        print(f"⚠️ Попытка #{i} неудачна: {e}")
+        continue
+    except Exception as e:
+        print(f"❌ Ошибка при попытке #{i}: {e}")
+        continue
+
+# Если AutoGen недоступен, создаем заглушки
+if not AUTOGEN_AVAILABLE:
+    print("⚠️ AutoGen не найден. Создаем заглушки...")
+    print("💡 Для установки выполните: pip install 'pyautogen[cerebras]' или pip install pyautogen")
+    
+    class MockAgent:
+        """Заглушка для AutoGen агентов"""
+        def __init__(self, *args, **kwargs):
+            self.name = kwargs.get('name', 'MockAgent')
+            print(f"⚠️ Создана заглушка агента: {self.name}")
+        
+        def initiate_chat(self, *args, **kwargs):
+            return {"chat_history": [{"name": self.name, "content": "AutoGen недоступен"}]}
+    
+    ConversableAgent = MockAgent
+    AssistantAgent = MockAgent
+    UserProxyAgent = MockAgent
 
 class AutoGenConfig:
     """Конфигурация для AutoGen агентов"""
@@ -109,18 +176,51 @@ class AutoGenAgent:
             config_list = AutoGenConfig.get_config_list(self.strategy)
             
             if self.role == "assistant":
-                self.agent = AssistantAgent(
-                    name=self.name,
-                    llm_config={"config_list": config_list},
-                    system_message="Ты полезный ассистент в системе GopiAI. Отвечай кратко и по делу."
-                )
+                try:
+                    # Проверяем доступность ConversableAgent
+                    if ConversableAgent is None:
+                        raise NameError("ConversableAgent недоступен")
+                    # Пробуем новый API
+                    self.agent = ConversableAgent(
+                        name=self.name,
+                        llm_config={"config_list": config_list},
+                        system_message="Ты полезный ассистент в системе GopiAI. Отвечай кратко и по делу.",
+                        human_input_mode="NEVER"
+                    )
+                except NameError:
+                    # Проверяем доступность AssistantAgent
+                    if AssistantAgent is None:
+                        raise Exception("Классы агентов недоступны - AutoGen не установлен")
+                    # Fallback на старый API
+                    self.agent = AssistantAgent(
+                        name=self.name,
+                        llm_config={"config_list": config_list},
+                        system_message="Ты полезный ассистент в системе GopiAI. Отвечай кратко и по делу."
+                    )
             elif self.role == "user_proxy":
-                self.agent = UserProxyAgent(
-                    name=self.name,
-                    human_input_mode="NEVER",
-                    max_consecutive_auto_reply=1,
-                    code_execution_config=False
-                )
+                try:
+                    # Проверяем доступность ConversableAgent
+                    if ConversableAgent is None:
+                        raise NameError("ConversableAgent недоступен")
+                    # Пробуем новый API
+                    self.agent = ConversableAgent(
+                        name=self.name,
+                        llm_config=False,
+                        human_input_mode="NEVER",
+                        max_consecutive_auto_reply=1,
+                        code_execution_config=False
+                    )
+                except NameError:
+                    # Проверяем доступность UserProxyAgent
+                    if UserProxyAgent is None:
+                        raise Exception("Классы агентов недоступны - AutoGen не установлен")
+                    # Fallback на старый API
+                    self.agent = UserProxyAgent(
+                        name=self.name,
+                        human_input_mode="NEVER",
+                        max_consecutive_auto_reply=1,
+                        code_execution_config=False
+                    )
             
             print(f"✅ Агент {self.name} создан успешно")
         except Exception as e:

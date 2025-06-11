@@ -7,45 +7,62 @@ Chat Widget Component для GopiAI Standalone Interface
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QPushButton
 from PySide6.QtCore import Qt, QThread, Signal
+import importlib.util
+import sys
+
+# Попытка импорта AutoGen с обработкой ошибок
+try:
+    # Используем importlib для импорта модуля с дефисом в названии
+    spec = importlib.util.spec_from_file_location(
+        "autogen_core", 
+        "GopiAI-Extensions/autogen/autogen_core.py"
+    )
+    if spec and spec.loader:
+        autogen_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(autogen_module)
+        AutoGenAgent = autogen_module.AutoGenAgent
+        AutoGenManager = autogen_module.AutoGenManager
+        AUTOGEN_AVAILABLE = True
+    else:
+        raise ImportError("Не удалось загрузить модуль autogen_core")
+except (ImportError, FileNotFoundError, AttributeError):
+    AUTOGEN_AVAILABLE = False
+    AutoGenAgent = None
+    AutoGenManager = None
 
 # Заглушка для обработки сообщений, если ИИ недоступен
 class MockAIProcessor:
-from GopiAI-Extensions.autogen.autogen_core import AutoGenAgent, AutoGenManager
+    def process_message(self, message: str) -> str:
+        return f"Заглушка ответа на: '{message}'. ИИ пока не подключен."
 
-# Создаем экземпляр AutoGenAgent с ролью "user_proxy"
-autogen_manager = AutoGenManager()
-user_agent = autogen_manager.create_agent("User", "user_proxy")
-
-# Обновляем метод _send_message для интеграции с AutoGenAgent
-def _send_message(self):
-    message = self.input_field.toPlainText().strip()
-    if message:
-        # Добавляем сообщение пользователя
-        self.add_message("user", message)
-        
-        # Очищаем поле ввода
-        self.input_field.clear()
-        
-        # Блокируем кнопку отправки
-        self.send_button.setEnabled(False)
-        self.send_button.setText("⏳ Обработка...")
-        
-        if self.ai_available and user_agent:
-            # Отправляем запрос к ИИ через AutoGenAgent
-            response = user_agent.chat(message, autogen_manager.create_agent("Assistant", "assistant"))
-            self._on_ai_response(response.chat_history[-1]['content'])
-        else:
-            self._on_ai_response("Спасибо за ваш вопрос! В данный момент ИИ недоступен. Проверьте настройки подключения.")
+class AIResponseThread(QThread):
+    response_ready = Signal(str)
+    
+    def __init__(self, message: str):
         super().__init__()
         self.message = message
     
     def run(self):
         try:
-            # Используем временную заглушку или реальный процессор, если он будет доступен
-            response = ai_processor.process_message(self.message)
-            self.response_ready.emit(response)
+            if AUTOGEN_AVAILABLE and AutoGenManager is not None:
+                # Инициализация AutoGen
+                autogen_manager = AutoGenManager()
+                user_agent = autogen_manager.create_agent("User", "user_proxy")
+                assistant_agent = autogen_manager.create_agent("Assistant", "assistant")
+                
+                # Отправка сообщения
+                response = user_agent.chat(self.message, assistant_agent)
+                if response and hasattr(response, 'chat_history') and response.chat_history:
+                    self.response_ready.emit(response.chat_history[-1]['content'])
+                else:
+                    self.response_ready.emit("Получен пустой ответ от ИИ.")
+            else:
+                # Используем заглушку
+                mock_processor = MockAIProcessor()
+                response = mock_processor.process_message(self.message)
+                self.response_ready.emit(response)
         except Exception as e:
-            self.response_ready.emit(f"Ошибка: {str(e)}")
+            self.response_ready.emit(f"Ошибка обработки: {str(e)}")
 
 
 class ChatWidget(QWidget):
@@ -55,9 +72,8 @@ class ChatWidget(QWidget):
         super().__init__(parent)
         self.setObjectName("chatWidget")
         
-        # Флаг доступности ИИ (пока всегда True для использования заглушки)
-        # TODO: Определять доступность ИИ через AgentController
-        self.ai_available = True 
+        # Флаг доступности ИИ
+        self.ai_available = AUTOGEN_AVAILABLE
         
         self.ai_thread = None
         self._setup_ui()
@@ -76,8 +92,8 @@ class ChatWidget(QWidget):
         # Область чата
         self.chat_area = QTextEdit()
         self.chat_area.setReadOnly(True)
-        self.chat_area.setPlainText("""
-🤖 GopiAI: Привет! Я ваш ИИ ассистент.
+        
+        welcome_text = """🤖 GopiAI: Привет! Я ваш ИИ ассистент.
 
 Я могу помочь с:
 • Анализом кода
@@ -86,8 +102,12 @@ class ChatWidget(QWidget):
 • Объяснением сложных концепций
 • Оптимизацией алгоритмов
 
-Напишите ваш вопрос ниже и нажмите Enter!
-        """)
+Напишите ваш вопрос ниже и нажмите Enter!"""
+        
+        if not self.ai_available:
+            welcome_text += "\n\n⚠️ Внимание: AutoGen недоступен. Используется режим заглушки."
+            
+        self.chat_area.setPlainText(welcome_text)
         layout.addWidget(self.chat_area, 1)
         
         # Поле ввода
@@ -133,14 +153,10 @@ class ChatWidget(QWidget):
             self.send_button.setEnabled(False)
             self.send_button.setText("⏳ Обработка...")
             
-            if self.ai_available:
-                # Отправляем запрос к ИИ в отдельном потоке
-                self.ai_thread = AIResponseThread(message)
-                self.ai_thread.response_ready.connect(self._on_ai_response)
-                self.ai_thread.start()
-            else:
-                # Заглушка если ИИ недоступен (этот блок, возможно, не понадобится с заглушкой выше)
-                self._on_ai_response("Спасибо за ваш вопрос! В данный момент ИИ недоступен. Проверьте настройки подключения.")
+            # Отправляем запрос к ИИ в отдельном потоке
+            self.ai_thread = AIResponseThread(message)
+            self.ai_thread.response_ready.connect(self._on_ai_response)
+            self.ai_thread.start()
 
     def _on_ai_response(self, response: str):
         """Обработка ответа от ИИ"""
@@ -173,7 +189,7 @@ class ChatWidget(QWidget):
         """Очистка чата"""
         welcome_msg = "🤖 GopiAI: Чат очищен. Как дела?"
         if not self.ai_available:
-            welcome_msg += "\n\n⚠️ Внимание: ИИ недоступен. Проверьте настройки подключения."
+            welcome_msg += "\n\n⚠️ Внимание: AutoGen недоступен. Используется режим заглушки."
         self.chat_area.setPlainText(welcome_msg)
 
     def get_input_text(self) -> str:

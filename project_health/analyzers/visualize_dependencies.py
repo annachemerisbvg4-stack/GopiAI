@@ -216,7 +216,7 @@ def create_text_report(G: nx.DiGraph, analysis: dict) -> str:
 
     lines.append("")
 
-    # Модули с наибольшим числом импортов
+    # Модули с наибольшим числом зависимостей
     lines.append("МОДУЛИ С НАИБОЛЬШИМ ЧИСЛОМ ЗАВИСИМОСТЕЙ:")
     for module, count in analysis["heavy_dependents"][:10]:
         lines.append(f"- {module}: импортирует {count} модулей")
