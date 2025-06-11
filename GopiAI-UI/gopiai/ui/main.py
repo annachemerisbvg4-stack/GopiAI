@@ -10,6 +10,18 @@ GopiAI Standalone Interface - Модульная версия
 Дата: 2025-06-03
 """
 
+#!/usr/bin/env python3
+"""
+GopiAI Standalone Interface - Модульная версия
+=============================================
+
+Основной файл для запуска модульного интерфейса GopiAI.
+
+Автор: Crazy Coder
+Версия: 0.3.0 (Модульная)
+Дата: 2025-06-03
+"""
+
 import sys
 import os
 import warnings
@@ -18,18 +30,6 @@ from dotenv import load_dotenv
 
 # Загружаем переменные окружения из .env файла
 load_dotenv()
-
-# Импорт функции инициализации расширений
-try:
-    from gopiai.extensions import init_all_extensions
-    EXTENSIONS_AVAILABLE = True
-    print("✅ Модуль расширений загружен успешно")
-except ImportError as e:
-    print(f"⚠️ Модуль расширений недоступен: {e}")
-    EXTENSIONS_AVAILABLE = False
-    # Заглушка для функции инициализации
-    def init_all_extensions(main_window):
-        print("⚠️ Инициализация расширений пропущена: модуль недоступен")
 
 
 # Настройка WebEngine для предотвращения графических ошибок
