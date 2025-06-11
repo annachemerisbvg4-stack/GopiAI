@@ -6,6 +6,7 @@ Chat Widget Component для GopiAI Standalone Interface
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QPushButton
+from PySide6.QtCore import Qt
 
 
 class ChatWidget(QWidget):
@@ -48,15 +49,30 @@ class ChatWidget(QWidget):
         input_layout = QHBoxLayout()
         self.input_field = QTextEdit()
         self.input_field.setFixedHeight(60)
-        self.input_field.setPlaceholderText("Введите ваш вопрос...")
+        self.input_field.setPlaceholderText("Введите ваш вопрос... (Enter - отправить, Shift+Enter - новая строка)")
+        self.input_field.keyPressEvent = self._input_key_press
         
         self.send_button = QPushButton("➤ Отправить")
+        self.send_button.setObjectName("sendButton")
         self.send_button.setFixedSize(100, 60)
         self.send_button.clicked.connect(self._send_message)
         
         input_layout.addWidget(self.input_field)
         input_layout.addWidget(self.send_button)
         layout.addLayout(input_layout)
+
+    def _input_key_press(self, event):
+        """Обработка нажатий клавиш в поле ввода"""
+        if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
+            if event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
+                # Shift+Enter - новая строка
+                QTextEdit.keyPressEvent(self.input_field, event)
+            else:
+                # Enter - отправить сообщение
+                self._send_message()
+        else:
+            # Остальные клавиши обрабатываются обычно
+            QTextEdit.keyPressEvent(self.input_field, event)
 
     def _send_message(self):
         """Отправка сообщения в чат"""
