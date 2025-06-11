@@ -10,20 +10,32 @@ from PySide6.QtCore import Qt, QThread, Signal
 
 # Заглушка для обработки сообщений, если ИИ недоступен
 class MockAIProcessor:
-    """Заглушка для обработки сообщений"""
-    def process_message(self, message: str) -> str:
-        return f"Спасибо за ваш вопрос! В данный момент ИИ недоступен. Проверьте настройки подключения. Ваш запрос: '{message}'"
+from GopiAI-Extensions.autogen.autogen_core import AutoGenAgent, AutoGenManager
 
-# Временная заглушка для AIProcessor, пока не будет реализована интеграция через AgentController
-# TODO: Интегрировать с AgentController для обработки сообщений
-ai_processor = MockAIProcessor()
+# Создаем экземпляр AutoGenAgent с ролью "user_proxy"
+autogen_manager = AutoGenManager()
+user_agent = autogen_manager.create_agent("User", "user_proxy")
 
-
-class AIResponseThread(QThread):
-    """Поток для асинхронной обработки ответов ИИ"""
-    response_ready = Signal(str)
-    
-    def __init__(self, message: str):
+# Обновляем метод _send_message для интеграции с AutoGenAgent
+def _send_message(self):
+    message = self.input_field.toPlainText().strip()
+    if message:
+        # Добавляем сообщение пользователя
+        self.add_message("user", message)
+        
+        # Очищаем поле ввода
+        self.input_field.clear()
+        
+        # Блокируем кнопку отправки
+        self.send_button.setEnabled(False)
+        self.send_button.setText("⏳ Обработка...")
+        
+        if self.ai_available and user_agent:
+            # Отправляем запрос к ИИ через AutoGenAgent
+            response = user_agent.chat(message, autogen_manager.create_agent("Assistant", "assistant"))
+            self._on_ai_response(response.chat_history[-1]['content'])
+        else:
+            self._on_ai_response("Спасибо за ваш вопрос! В данный момент ИИ недоступен. Проверьте настройки подключения.")
         super().__init__()
         self.message = message
     
