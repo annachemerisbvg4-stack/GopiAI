@@ -250,6 +250,11 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self.chat_widget = ChatWidget()
         center_splitter.addWidget(self.chat_widget)
 
+        # Скрываем стандартный чат-виджет, если доступны расширения (AutoGen добавит свой)
+        if EXTENSIONS_AVAILABLE:
+            self.chat_widget.setVisible(False)
+            print("✅ Стандартный ChatWidget скрыт, так как доступны расширения")
+
         # Нижняя панель - терминал (модульный)
         self.terminal_widget = TerminalWidget()
         right_splitter.addWidget(self.terminal_widget)  # Настройка пропорций сплиттеров
