@@ -7,38 +7,30 @@ Chat Widget Component для GopiAI Standalone Interface
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QPushButton
 from PySide6.QtCore import Qt, QThread, Signal
-# import sys # Удаляем ненужный импорт
-# import os # Удаляем ненужный импорт
 
-# Импортируем глобальный менеджер AutoGen
-try:
-    from gopiai.extensions.autogen.autogen_core import autogen_manager
-    AUTOGEN_AVAILABLE = autogen_manager.is_available
-    print("✅ autogen_manager импортирован успешно")
-except ImportError as e:
-    print(f"❌ autogen_manager недоступен: {e}")
-    AUTOGEN_AVAILABLE = False
-    # Создаем заглушку, если менеджер недоступен
-    class MockAutoGenManager:
-        def __init__(self):
-            self.is_available = False
-        def simple_chat(self, message: str, strategy: str = "best_first") -> str:
-            return f"Извините, модуль AutoGen недоступен. Ваш запрос: '{message}'"
-    autogen_manager = MockAutoGenManager()
+# Заглушка для обработки сообщений, если ИИ недоступен
+class MockAIProcessor:
+    """Заглушка для обработки сообщений"""
+    def process_message(self, message: str) -> str:
+        return f"Спасибо за ваш вопрос! В данный момент ИИ недоступен. Проверьте настройки подключения. Ваш запрос: '{message}'"
+
+# Временная заглушка для AIProcessor, пока не будет реализована интеграция через AgentController
+# TODO: Интегрировать с AgentController для обработки сообщений
+ai_processor = MockAIProcessor()
 
 
 class AIResponseThread(QThread):
     """Поток для асинхронной обработки ответов ИИ"""
     response_ready = Signal(str)
     
-    def __init__(self, message): # Убираем autogen_core из параметров
+    def __init__(self, message: str):
         super().__init__()
         self.message = message
     
     def run(self):
         try:
-            # Используем глобальный autogen_manager
-            response = autogen_manager.simple_chat(self.message, strategy="best_first") # Используем simple_chat
+            # Используем временную заглушку или реальный процессор, если он будет доступен
+            response = ai_processor.process_message(self.message)
             self.response_ready.emit(response)
         except Exception as e:
             self.response_ready.emit(f"Ошибка: {str(e)}")
@@ -51,15 +43,9 @@ class ChatWidget(QWidget):
         super().__init__(parent)
         self.setObjectName("chatWidget")
         
-        # Инициализация AutoGen
-        try:
-            # Используем глобальный статус доступности
-            self.ai_available = AUTOGEN_AVAILABLE
-            if not self.ai_available:
-                 print("⚠️ AutoGen недоступен для чат-виджета")
-        except Exception as e:
-            print(f"Ошибка проверки доступности AutoGen: {e}")
-            self.ai_available = False
+        # Флаг доступности ИИ (пока всегда True для использования заглушки)
+        # TODO: Определять доступность ИИ через AgentController
+        self.ai_available = True 
         
         self.ai_thread = None
         self._setup_ui()
@@ -81,14 +67,6 @@ class ChatWidget(QWidget):
         self.chat_area.setPlainText("""
 🤖 GopiAI: Привет! Я ваш ИИ ассистент.
 
-Я могу помочь с:
-• Анализом кода
-• Написанием документации  
-• Решением задач программирования
-• Объяснением сложных концепций
-• Оптимизацией алгоритмов
-
-Напишите ваш вопрос ниже и нажмите Enter!
 Я могу помочь с:
 • Анализом кода
 • Написанием документации  
@@ -143,13 +121,13 @@ class ChatWidget(QWidget):
             self.send_button.setEnabled(False)
             self.send_button.setText("⏳ Обработка...")
             
-            if self.ai_available: # Проверяем доступность через глобальный флаг
+            if self.ai_available:
                 # Отправляем запрос к ИИ в отдельном потоке
-                self.ai_thread = AIResponseThread(message) # Передаем только сообщение
+                self.ai_thread = AIResponseThread(message)
                 self.ai_thread.response_ready.connect(self._on_ai_response)
                 self.ai_thread.start()
             else:
-                # Заглушка если ИИ недоступен
+                # Заглушка если ИИ недоступен (этот блок, возможно, не понадобится с заглушкой выше)
                 self._on_ai_response("Спасибо за ваш вопрос! В данный момент ИИ недоступен. Проверьте настройки подключения.")
 
     def _on_ai_response(self, response: str):
