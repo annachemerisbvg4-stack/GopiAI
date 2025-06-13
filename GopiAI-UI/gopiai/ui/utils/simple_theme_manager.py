@@ -37,7 +37,7 @@ MATERIAL_SKY_THEME = {
         "titlebar_text": "#001d31"
     },
     "dark": {
-        "main_color": "#131314",
+        "main_color": "#2d3e4c",
         "header_color": "#004b73",
         "control_color": "#93ccff",
         "accent_color": "#e9b3ff",
