@@ -24,18 +24,18 @@
     "editor.codeActionsOnSave": {
         "source.organizeImports": "explicit"
     }, // MCP Server Configuration
-    "mcp.servers": {
-        "serena": {
-            "command": "python -m uv",
-            "args": [
-                "run",
-                "--directory",
-                "C:/Users/crazy/mcp_servers/serena",
-                "serena-mcp-server",
-                "--project-file",
-                "C:/Users/crazy/mcp_servers/serena/project.yml"
-            ],
-            "type": "stdio"
+    "mcp": {
+        "servers": {
+            "serena": {
+                "command": "uv",
+                "args": [
+                    "run",
+                    "--directory",
+                    "C:/Users/crazy/mcp_servers/serena",
+                    "serena-mcp-server"
+                ],
+                "type": "stdio"
+            }
         }
     },
     "python.testing.pytestArgs": [
