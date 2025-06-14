@@ -103,7 +103,7 @@ class RAGMemoryManager:
         )
         
         self.active_sessions[session_id] = session
-        self.logger.info(f"Создана новая сессия: {title} (ID: {session_id})")
+        self.logger.info(f"Создана новая сессия (ID: {session_id})")
         return session
     
     def add_message(self, session_id: str, role: MessageRole, content: str, 
@@ -228,7 +228,7 @@ class RAGMemoryManager:
             # Сортируем по релевантности
             search_results.sort(key=lambda x: x.relevance_score, reverse=True)
             
-            self.logger.info(f"Найдено {len(search_results)} релевантных разговоров для запроса: {query}")
+            self.logger.info(f"Найдено {len(search_results)} релевантных разговоров")
             return search_results
             
         except Exception as e:

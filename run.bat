@@ -5,6 +5,13 @@ REM Скрипт запуска GopiAI UI приложения
 echo Starting GopiAI Application...
 echo ===============================
 
+REM активируем окружение Python
+source rag_memory_env/Scripts/activate || (
+    echo ERROR: Failed to activate Python environment!
+    pause
+    exit /b 1
+)
+
 REM Переходим в папку UI где находится main.py
 cd /d "GopiAI-UI\gopiai\ui"
 
