@@ -4,7 +4,8 @@
 import json
 import uuid
 import logging
-from datetime import datetime
+import hashlib
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 import chromadb
@@ -15,6 +16,8 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 from models import ConversationSession, ConversationMessage, MessageRole, SearchResult, MemoryStats
 from config import config
+
+JSON_GLOB_PATTERN = "*.json"
 
 class SimpleEmbeddings(Embeddings):
     """Простые эмбеддинги без зависимости от OpenAI"""
@@ -30,6 +33,42 @@ class SimpleEmbeddings(Embeddings):
     
     def embed_query(self, text: str) -> List[float]:
         return self.hf_embeddings.embed_query(text)
+
+class SafePathManager:
+    """Безопасное управление путями файловой системы"""
+    
+    ALLOWED_EXTENSIONS = {'.json', '.txt', '.md'}
+    SAFE_FILENAME_PATTERN = re.compile(r'^[\w\-\.]+$')
+    
+    def __init__(self, base_dir: Path):
+        self.base_dir = Path(base_dir).resolve()
+        if not self.base_dir.exists():
+            self.base_dir.mkdir(parents=True, exist_ok=True)
+    
+    def validate_filename(self, filename: str) -> bool:
+        """Проверка имени файла по белому списку"""
+        return bool(self.SAFE_FILENAME_PATTERN.match(filename))
+    
+    def get_safe_path(self, filename: str) -> Path:
+        """Получить безопасный путь к файлу"""
+        if not self.validate_filename(filename):
+            raise ValueError(f"Invalid filename: {filename}")
+            
+        # Проверяем расширение
+        suffix = Path(filename).suffix.lower()
+        if suffix not in self.ALLOWED_EXTENSIONS:
+            raise ValueError(f"Unsupported file extension: {suffix}")
+        
+        # Создаем путь относительно базовой директории
+        safe_path = (self.base_dir / filename).resolve()
+        
+        # Проверяем, что путь находится внутри базовой директории
+        try:
+            safe_path.relative_to(self.base_dir)
+        except ValueError:
+            raise ValueError("Path is outside of allowed directory")
+            
+        return safe_path
 
 class RAGMemoryManager:
     """Главный класс для управления RAG памятью разговоров"""
@@ -51,6 +90,9 @@ class RAGMemoryManager:
         
         # Кэш активных сессий
         self.active_sessions: Dict[str, ConversationSession] = {}
+        
+        # Инициализация SafePathManager
+        self.path_manager = SafePathManager(Path(config.conversations_path))
         
         self.logger.info("RAG Memory Manager инициализирован")
     
@@ -75,7 +117,7 @@ class RAGMemoryManager:
             try:
                 self.collection = self.chroma_client.get_collection(config.collection_name)
                 self.logger.info(f"Найдена существующая коллекция: {config.collection_name}")
-            except:
+            except chromadb.ApiError:
                 self.collection = self.chroma_client.create_collection(config.collection_name)
                 self.logger.info(f"Создана новая коллекция: {config.collection_name}")
             
@@ -103,7 +145,7 @@ class RAGMemoryManager:
         )
         
         self.active_sessions[session_id] = session
-        self.logger.info(f"Создана новая сессия (ID: {session_id})")
+        self.logger.info("Создана новая сессия (ID скрыт)")
         return session
     
     def add_message(self, session_id: str, role: MessageRole, content: str, 
@@ -113,7 +155,7 @@ class RAGMemoryManager:
             # Попытаемся загрузить сессию из файла
             session = self.load_session(session_id)
             if not session:
-                raise ValueError(f"Сессия {session_id} не найдена")
+                raise ValueError("Сессия не найдена")
             self.active_sessions[session_id] = session
         
         session = self.active_sessions[session_id]
@@ -123,30 +165,39 @@ class RAGMemoryManager:
         if config.auto_save_enabled:
             self.save_session(session)
         
-        self.logger.info(f"Добавлено сообщение в сессию {session_id}")
+        self.logger.info("Добавлено сообщение в сессию (ID скрыт)")
         return message
+    
+    def _get_session_filename(self, session_id: str) -> str:
+        """Генерация имени файла сессии на основе хэшированного session_id"""
+        hashed_id = hashlib.sha256(session_id.encode()).hexdigest()[:16]
+        return f"{hashed_id}.json"
     
     def save_session(self, session: ConversationSession):
         """Сохранить сессию в файл и индексировать в векторной БД"""
         try:
+            file_name = self._get_session_filename(session.session_id)
+            session_file = self.path_manager.get_safe_path(file_name)
+            
             # Сохранение в JSON файл
-            session_file = Path(config.conversations_path) / f"{session.session_id}.json"
             with open(session_file, 'w', encoding='utf-8') as f:
                 json.dump(session.model_dump(), f, ensure_ascii=False, indent=2, default=str)
             
             # Индексирование в векторной БД
             self.index_session(session)
             
-            self.logger.info(f"Сессия {session.session_id} сохранена")
+            self.logger.info("Сессия сохранена")
             
         except Exception as e:
-            self.logger.error(f"Ошибка сохранения сессии {session.session_id}: {e}")
+            self.logger.error(f"Ошибка сохранения сессии: {e}")
             raise
-    
+
     def load_session(self, session_id: str) -> Optional[ConversationSession]:
         """Загрузить сессию из файла"""
         try:
-            session_file = Path(config.conversations_path) / f"{session_id}.json"
+            file_name = self._get_session_filename(session_id)
+            session_file = self.path_manager.get_safe_path(file_name)
+            
             if not session_file.exists():
                 return None
             
@@ -154,11 +205,11 @@ class RAGMemoryManager:
                 data = json.load(f)
             
             session = ConversationSession(**data)
-            self.logger.info(f"Сессия {session_id} загружена")
+            self.logger.info("Сессия загружена")
             return session
             
         except Exception as e:
-            self.logger.error(f"Ошибка загрузки сессии {session_id}: {e}")
+            self.logger.error(f"Ошибка загрузки сессии: {e}")
             return None
     
     def index_session(self, session: ConversationSession):
@@ -192,10 +243,10 @@ class RAGMemoryManager:
                     ids=[chunk_metadata["chunk_id"]]
                 )
             
-            self.logger.info(f"Сессия {session.session_id} проиндексирована ({len(chunks)} чанков)")
+            self.logger.info(f"Сессия проиндексирована ({len(chunks)} чанков)")
             
         except Exception as e:
-            self.logger.error(f"Ошибка индексации сессии {session.session_id}: {e}")
+            self.logger.error(f"Ошибка индексации сессии: {e}")
     
     def search_conversations(self, query: str, limit: Optional[int] = None) -> List[SearchResult]:
         """Поиск релевантных разговоров"""
@@ -244,49 +295,14 @@ class RAGMemoryManager:
     def get_memory_stats(self) -> MemoryStats:
         """Получить статистику памяти"""
         try:
-            # Подсчитываем файлы сессий
-            session_files = list(Path(config.conversations_path).glob("*.json"))
-            total_sessions = len(session_files)
-            total_messages = 0
-            oldest_date = None
-            newest_date = None
-            all_tags = []
-            
-            for session_file in session_files:
-                try:
-                    with open(session_file, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                    
-                    total_messages += len(data.get("messages", []))
-                    created_at = datetime.fromisoformat(data["created_at"])
-                    
-                    if oldest_date is None or created_at < oldest_date:
-                        oldest_date = created_at
-                    if newest_date is None or created_at > newest_date:
-                        newest_date = created_at
-                    
-                    all_tags.extend(data.get("tags", []))
-                    
-                except Exception as e:
-                    self.logger.warning(f"Ошибка чтения файла {session_file}: {e}")
-            
-            # Подсчитываем самые популярные теги
-            tag_counts = {}
-            for tag in all_tags:
-                tag_counts[tag] = tag_counts.get(tag, 0) + 1
-            most_active_tags = sorted(tag_counts.keys(), key=lambda x: tag_counts[x], reverse=True)[:10]
-            
-            # Размер хранилища
-            storage_size = 0
-            for path in [Path(config.conversations_path), Path(config.chroma_db_path)]:
-                if path.exists():
-                    for file_path in path.rglob("*"):
-                        if file_path.is_file():
-                            storage_size += file_path.stat().st_size
-            
-            # Количество документов в ChromaDB
+            # Используем безопасный путь для поиска файлов
+            json_files = list(self.path_manager.base_dir.glob(JSON_GLOB_PATTERN))
+            total_sessions = len(json_files)
+            total_messages, oldest_date, newest_date, all_tags = self._analyze_json_files(json_files)
+            most_active_tags = self._compute_most_active_tags(all_tags)
+            storage_size = self._compute_storage_size([Path(config.conversations_path), Path(config.chroma_db_path)])
             total_documents = self.collection.count()
-            
+
             return MemoryStats(
                 total_sessions=total_sessions,
                 total_messages=total_messages,
@@ -311,10 +327,106 @@ class RAGMemoryManager:
     
     def cleanup_old_sessions(self, days_old: int = 30):
         """Очистка старых сессий (архивирование)"""
-        # TODO: Реализовать архивирование старых сессий
-        pass
+        archive_dir = self.path_manager.base_dir / "archive"
+        archive_dir.mkdir(exist_ok=True)
+        cutoff_date = datetime.now() - timedelta(days=days_old)
+
+        for session_file in self.path_manager.base_dir.glob(JSON_GLOB_PATTERN):
+            try:
+                with open(session_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                session_date = datetime.fromisoformat(data["created_at"])
+                if session_date < cutoff_date:
+                    archived_file = archive_dir / session_file.name
+                    session_file.replace(archived_file)
+                    self.logger.info("Сессия архивирована.")
+            except Exception as e:
+                self.logger.warning(f"Ошибка архивирования (файл скрыт): {e}")
     
+    def _collect_sessions_data(self):
+        sessions_data = []
+        for session_file in self.path_manager.base_dir.glob(JSON_GLOB_PATTERN):
+            try:
+                with open(session_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                sessions_data.append(data)
+            except Exception as e:
+                self.logger.warning(f"Файл {session_file} пропущен: {e}")
+        return sessions_data
+
+    def _export_to_json(self, sessions_data, output_file):
+        with open(output_file, 'w', encoding='utf-8') as out:
+            json.dump(sessions_data, out, ensure_ascii=False, indent=2)
+
+    def _export_to_csv(self, sessions_data, output_file):
+        import csv
+        if sessions_data:
+            field_names = list(sessions_data[0].keys())
+            with open(output_file, 'w', newline='', encoding='utf-8') as out:
+                writer = csv.DictWriter(out, fieldnames=field_names)
+                writer.writeheader()
+                for row in sessions_data:
+                    writer.writerow(row)
+
+    def _export_to_markdown(self, sessions_data, output_file):
+        with open(output_file, 'w', encoding='utf-8') as out:
+            for session in sessions_data:
+                out.write(f"# {session.get('title','Без названия')}\n\n")
+                out.write(f"**ID:** {session.get('session_id','')}\n\n")
+                out.write("## Сообщения:\n")
+                for msg in session.get('messages', []):
+                    out.write(f"- **{msg.get('role')}**: {msg.get('content')}\n")
+                out.write("\n---\n\n")
+
     def export_conversations(self, output_file: str, format: str = "json"):
         """Экспорт разговоров в различные форматы"""
-        # TODO: Реализовать экспорт в JSON, CSV, Markdown
-        pass
+        sessions_data = self._collect_sessions_data()
+        fmt = format.lower()
+        if fmt == "json":
+            self._export_to_json(sessions_data, output_file)
+        elif fmt == "csv":
+            self._export_to_csv(sessions_data, output_file)
+        elif fmt in ["md", "markdown"]:
+            self._export_to_markdown(sessions_data, output_file)
+        else:
+            self.logger.warning(f"Неизвестный формат: {format}")
+    
+    def _analyze_json_files(self, json_files: List[Path]):
+        total_messages = 0
+        oldest_date = None
+        newest_date = None
+        all_tags = []
+        for session_file in json_files:
+            try:
+                with open(session_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                total_messages += len(data.get("messages", []))
+                created_at = datetime.fromisoformat(data["created_at"])
+                
+                if oldest_date is None or created_at < oldest_date:
+                    oldest_date = created_at
+                if newest_date is None or created_at > newest_date:
+                    newest_date = created_at
+                
+                all_tags.extend(data.get("tags", []))
+                
+            except Exception:
+                self.logger.warning(f"Ошибка чтения файла {session_file}")
+        
+        return total_messages, oldest_date, newest_date, all_tags
+
+    def _compute_most_active_tags(self, all_tags: List[str]) -> List[str]:
+        tag_counts = {}
+        for tag in all_tags:
+            tag_counts[tag] = tag_counts.get(tag, 0) + 1
+        return sorted(tag_counts.keys(), key=lambda x: tag_counts[x], reverse=True)[:10]
+
+    def _compute_storage_size(self, paths: List[Path]) -> int:
+        storage_size = 0
+        for path in paths:
+            if path.exists():
+                for file_path in path.rglob("*"):
+                    if file_path.is_file():
+                        storage_size += file_path.stat().st_size
+        return storage_size
