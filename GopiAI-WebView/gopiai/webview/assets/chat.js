@@ -530,9 +530,44 @@ class GopiAIChatInterface {
             console.error('Failed to copy to clipboard:', error);
         }
     }
+    
+    // Метод для обновления темы из Python
+    onThemeUpdated() {
+        console.log('Theme updated from Python');
+        // Можно добавить дополнительную логику обновления темы здесь
+        // например, пересчет контрастности или анимации
+        this.applyThemeTransitions();
+    }
+    
+    applyThemeTransitions() {
+        // Добавляем плавные переходы при смене темы
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach(element => {
+            if (!element.style.transition) {
+                element.style.transition = 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease';
+            }
+        });
+        
+        // Убираем переходы через некоторое время для обычной работы
+        setTimeout(() => {
+            allElements.forEach(element => {
+                if (element.style.transition.includes('background-color 0.3s ease')) {
+                    element.style.transition = '';
+                }
+            });
+        }, 500);
+    }
+    
+    // Обновление badge модели в соответствии с темой
+    updateModelBadge() {
+        const badges = document.querySelectorAll('.model-badge');
+        badges.forEach(badge => {
+            badge.textContent = this.currentModel === 'claude-sonnet-4' ? 'Claude Sonnet 4' : 'Claude Opus 4';
+        });
+    }
 }
 
-// Инициализация приложения
+$1
 document.addEventListener('DOMContentLoaded', () => {
     window.gopiaiChat = new GopiAIChatInterface();
     console.log('GopiAI Chat Interface initialized');

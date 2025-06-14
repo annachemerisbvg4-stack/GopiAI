@@ -11,6 +11,7 @@ from .file_explorer import FileExplorerWidget
 # Исправляем импорт для TabDocumentWidget
 from .tab_widget import TabDocumentWidget
 from .chat_widget import ChatWidget
+from .webview_chat_widget import WebViewChatWidget
 from .terminal_widget import TerminalWidget
 
 __all__ = [
@@ -21,5 +22,6 @@ __all__ = [
     'FileExplorerWidget',
     'TabDocumentWidget',
     'ChatWidget',
+    'WebViewChatWidget',
     'TerminalWidget',
 ]

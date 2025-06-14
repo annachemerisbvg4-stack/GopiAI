@@ -80,7 +80,7 @@ try:
         CustomGrip,
         FileExplorerWidget,
         TabDocumentWidget,
-        ChatWidget,
+        WebViewChatWidget,
         TerminalWidget,
     )
 
@@ -254,7 +254,6 @@ class DynamicColorManager:
         QMenuBar::item {{
             background-color: transparent;
             padding: 8px 12px;
-            border-radius: 4px;
             color: {colors.get('text', '#cccccc')};
         }}
         
@@ -276,7 +275,6 @@ class DynamicColorManager:
         
         QMenu::item {{
             padding: 6px 24px;
-            border-radius: 3px;
         }}
         
         QMenu::item:selected {{
@@ -345,7 +343,6 @@ class DynamicColorManager:
             color: {colors.get('text', '#cccccc')};
             border: 1px solid {colors.get('border', '#3e3e42')};
             padding: 6px 12px;
-            border-radius: 4px;
             min-width: 80px;
         }}
         
@@ -371,7 +368,6 @@ class DynamicColorManager:
             color: {colors.get('text', '#cccccc')};
             border: 1px solid {colors.get('border', '#3e3e42')};
             padding: 4px;
-            border-radius: 3px;
         }}
         
         QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
@@ -387,7 +383,6 @@ class DynamicColorManager:
         
         QScrollBar::handle:vertical {{
             background-color: {colors.get('hover', '#404040')};
-            border-radius: 6px;
             min-height: 20px;
         }}
         
@@ -408,7 +403,6 @@ class DynamicColorManager:
         
         QScrollBar::handle:horizontal {{
             background-color: {colors.get('hover', '#404040')};
-            border-radius: 6px;
             min-width: 20px;
         }}
         
@@ -420,7 +414,6 @@ class DynamicColorManager:
         QGroupBox {{
             color: {colors.get('text', '#cccccc')};
             border: 1px solid {colors.get('border', '#3e3e42')};
-            border-radius: 4px;
             padding-top: 16px;
             margin-top: 8px;
         }}
@@ -460,14 +453,12 @@ class DynamicColorManager:
         QProgressBar {{
             background-color: {colors.get('background', '#2d2d30')};
             border: 1px solid {colors.get('border', '#3e3e42')};
-            border-radius: 4px;
             text-align: center;
             color: {colors.get('text', '#cccccc')};
         }}
         
         QProgressBar::chunk {{
             background-color: {colors.get('accent', '#007acc')};
-            border-radius: 3px;
         }}
         """
 
@@ -629,7 +620,17 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         center_splitter.addWidget(self.tab_document)
 
         # Правая панель - чат с ИИ (модульный)
-        self.chat_widget = ChatWidget()
+        try:
+            # Пытаемся использовать WebView чат с современным интерфейсом
+            self.chat_widget = WebViewChatWidget()
+            # Передаем менеджер тем в WebView чат для интеграции
+            if hasattr(self, 'theme_manager'):
+                self.chat_widget.set_theme_manager(self.theme_manager)
+            print("✅ Используется WebView чат")
+        except Exception as e:
+            print(f"⚠️ WebView чат недоступен, используется обычный чат: {e}")
+            # Fallback - используем обычный ChatWidget
+            self.chat_widget = ChatWidget()
         self.chat_widget.setMinimumWidth(250)
         self.chat_widget.setMaximumWidth(600)
         self.chat_widget.resize(300, 600)
@@ -873,6 +874,9 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                     print(f"🔍 main.py: Результат apply_theme = {result}")
                     if result:
                         print("✅ Система тем применена через theme_manager")
+                        # Обновляем тему WebView чата
+                        if hasattr(self, 'chat_widget') and hasattr(self.chat_widget, '_apply_theme_to_webview'):
+                            self.chat_widget._apply_theme_to_webview()
                         return
                     else:
                         print("⚠️ apply_theme вернул False")
@@ -908,7 +912,6 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
       QMenuBar::item {
           background-color: transparent;
           padding: 8px 12px;
-          border-radius: 4px;
       }
       QMenuBar::item:selected {
           background-color: #4CAF50;
@@ -1201,6 +1204,15 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 try:
                     self.theme_manager.apply_theme(theme_name)
                     print(f"✅ Тема '{theme_name}' применена через theme_manager")
+                    
+                    # Обновляем все компоненты после применения глобальной темы
+                    self._apply_theme_to_components()
+                    
+                    # Обновляем тему в WebView чате если он есть
+                    if hasattr(self, 'chat_widget') and hasattr(self.chat_widget, '_apply_theme_to_webview'):
+                        self.chat_widget._apply_theme_to_webview()
+                        print("✅ Тема обновлена в WebView чате")
+                    
                     return
                 except Exception as e:
                     print(f"⚠️ Ошибка применения темы через theme_manager: {e}")
@@ -1232,6 +1244,66 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         except Exception as e:
             print(f"⚠️ Ошибка обновления иконок: {e}")
 
+    def _apply_theme_to_components(self):
+            """Применяет тему ко всем компонентам после смены глобальной темы"""
+            try:
+                print("🎨 Применяем тему к компонентам...")
+                
+                # Обновляем основные стили
+                self._apply_dynamic_styles()
+                
+                # Обновляем titlebar если есть
+                if hasattr(self, 'titlebar_with_menu'):
+                    try:
+                        menu_bar = getattr(self.titlebar_with_menu, 'menu_bar', None)
+                        if menu_bar and hasattr(menu_bar, 'refresh_colors'):
+                            menu_bar.refresh_colors()
+                            print("✅ Titlebar обновлен")
+                    except Exception as e:
+                        print(f"⚠️ Ошибка обновления titlebar: {e}")
+                
+                # Обновляем file_explorer если есть apply_theme
+                if hasattr(self, 'file_explorer'):
+                    try:
+                        if hasattr(self.file_explorer, 'apply_theme'):
+                            self.file_explorer.apply_theme()
+                            print("✅ File Explorer обновлен")
+                        elif hasattr(self.file_explorer, 'refresh_colors'):
+                            self.file_explorer.refresh_colors()
+                            print("✅ File Explorer обновлен (refresh_colors)")
+                    except Exception as e:
+                        print(f"⚠️ Ошибка обновления File Explorer: {e}")
+                
+                # Обновляем tab_document если есть apply_theme
+                if hasattr(self, 'tab_document'):
+                    try:
+                        if hasattr(self.tab_document, 'apply_theme'):
+                            self.tab_document.apply_theme()
+                            print("✅ Tab Document обновлен")
+                        elif hasattr(self.tab_document, 'refresh_colors'):
+                            self.tab_document.refresh_colors()
+                            print("✅ Tab Document обновлен (refresh_colors)")
+                    except Exception as e:
+                        print(f"⚠️ Ошибка обновления Tab Document: {e}")
+                
+                # Обновляем terminal_widget если есть apply_theme
+                if hasattr(self, 'terminal_widget'):
+                    try:
+                        if hasattr(self.terminal_widget, 'apply_theme'):
+                            self.terminal_widget.apply_theme()
+                            print("✅ Terminal обновлен")
+                        elif hasattr(self.terminal_widget, 'refresh_colors'):
+                            self.terminal_widget.refresh_colors()
+                            print("✅ Terminal обновлен (refresh_colors)")
+                    except Exception as e:
+                        print(f"⚠️ Ошибка обновления Terminal: {e}")
+                
+                # Принудительно обновляем приложение
+                QApplication.instance().processEvents()
+                print("✅ Все компоненты обновлены")
+                
+            except Exception as e:
+                print(f"⚠️ Ошибка применения темы к компонентам: {e}")
 
 def main():
     """Основная функция запуска приложения"""
