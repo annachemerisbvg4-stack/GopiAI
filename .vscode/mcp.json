@@ -1,0 +1,14 @@
+{
+    "servers": {
+        "serena": {
+            "command": "uv",
+            "args": [
+                "run",
+                "--directory",
+                "C:/Users/crazy/mcp_servers/serena",
+                "serena-mcp-server"
+            ],
+            "type": "stdio"
+        }
+    }
+}

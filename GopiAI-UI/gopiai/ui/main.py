@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-GopiAI Standalone Interface - Модульная версия
-=============================================
+GopiAI Standalone Interface - Модульная версия с динамическими цветами
+=====================================================================
 
 Основной файл для запуска модульного интерфейса GopiAI.
+Все цвета теперь динамически привязаны к текущей теме.
 
 Автор: Crazy Coder
-Версия: 0.3.0 (Модульная)
+Версия: 0.3.1 (Модульная с динамическими цветами)
 Дата: 2025-06-03
 """
 
@@ -41,8 +42,8 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QSizePolicy,
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QAction, QPalette
 
 # Импорт компонентов тем
 from gopiai.ui.utils.theme_manager import ThemeManager
@@ -50,7 +51,6 @@ from gopiai.ui.dialogs.settings_dialog import GopiAISettingsDialog
 
 # Настройка путей для импорта модулей GopiAI
 script_dir = os.path.dirname(os.path.abspath(__file__))
-# Поднимаемся на 3 уровня: ui -> gopiai -> GopiAI-UI -> корень проекта
 gopiai_modules_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 
 module_paths = [
@@ -59,15 +59,14 @@ module_paths = [
     os.path.join(gopiai_modules_root, "GopiAI-App"),
     os.path.join(gopiai_modules_root, "GopiAI-Extensions"),
     os.path.join(gopiai_modules_root, "rag_memory_system"),
-    gopiai_modules_root,  # Для корневых модулей
+    gopiai_modules_root,
 ]
-
 
 for path in module_paths:
     if path not in sys.path:
         sys.path.insert(0, path)
 
-print("📦 Модульная версия GopiAI v0.3.0")
+print("📦 Модульная версия GopiAI v0.3.1 с динамическими цветами")
 print("Добавленные пути для модулей:")
 for p in module_paths:
     print(f"- {p} (существует: {os.path.exists(p)})")
@@ -109,7 +108,7 @@ except ImportError as e:
             return "Fallback content"
 
         def set_window(self, window):
-            pass  # Fallback заглушка
+            pass
 
         def add_browser_tab(self, url="about:blank", title="Браузер"):
             print(f"Fallback: add_browser_tab({url}, {title}) - Browser not available")
@@ -122,14 +121,11 @@ except ImportError as e:
     StandaloneTitlebar = lambda parent=None: SimpleWidget("Titlebar")
     StandaloneTitlebarWithMenu = lambda parent=None: SimpleWidget("TitlebarWithMenu")
     CustomGrip = lambda parent, direction: QWidget()
-    FileExplorerWidget = lambda parent=None, icon_manager=None: SimpleWidget(
-        "FileExplorer"
-    )
+    FileExplorerWidget = lambda parent=None, icon_manager=None: SimpleWidget("FileExplorer")
     TabDocumentWidget = lambda parent=None: SimpleWidget("TabDocument")
     ChatWidget = lambda parent=None: SimpleWidget("Chat")
     TerminalWidget = lambda parent=None: SimpleWidget("Terminal")
 
-    # Fallback ThemeManager class - оставляем только это объявление
     class FallbackThemeManager:
         def __init__(self):
             self.current_theme = "default"
@@ -137,14 +133,26 @@ except ImportError as e:
         def apply_theme(self, app_or_theme):
             print(f"Fallback: apply_theme({app_or_theme})")
             return False
+        
+        def get_theme_colors(self):
+            """Возвращает базовые цвета для fallback режима"""
+            return {
+                'background': '#2d2d30',
+                'foreground': '#ffffff',
+                'accent': '#007acc',
+                'border': '#3e3e42',
+                'hover': '#404040',
+                'selected': '#094771',
+                'text': '#cccccc',
+                'disabled': '#666666'
+            }
 
-    # Используем fallback только если ThemeManager не был импортирован выше
     if 'ThemeManager' not in globals() or ThemeManager is None:
         ThemeManager = FallbackThemeManager
 
 # Глобальные переменные для систем
 AutoIconSystem = None
-ThemeManagerClass = None  # Переименовано чтобы избежать конфликта с импортом
+ThemeManagerClass = None
 GopiAIThemeManager = None
 apply_theme = None
 load_theme = None
@@ -153,15 +161,338 @@ MATERIAL_SKY_THEME = {"name": "Material Sky", "primary": "#2196F3"}
 EXTENSIONS_AVAILABLE = True
 
 
+class DynamicColorManager:
+    """Менеджер динамических цветов для интерфейса"""
+    
+    def __init__(self, theme_manager=None):
+        self.theme_manager = theme_manager
+        self._theme_colors = {}
+        self._update_colors()
+    
+    def _update_colors(self):
+        """Обновляет цвета на основе текущей темы"""
+        if self.theme_manager and hasattr(self.theme_manager, 'get_theme_colors'):
+            try:
+                self._theme_colors = self.theme_manager.get_theme_colors()
+                print(f"✅ Цвета темы обновлены: {list(self._theme_colors.keys())}")
+            except Exception as e:
+                print(f"⚠️ Ошибка получения цветов темы: {e}")
+                self._use_fallback_colors()
+        else:
+            self._use_fallback_colors()
+    
+    def _use_fallback_colors(self):
+        """Использует базовые цвета в качестве запасного варианта"""
+        app = QApplication.instance()
+        if app and isinstance(app, QApplication):
+            palette = app.palette()
+            self._theme_colors = {
+                'background': palette.color(QPalette.ColorRole.Window).name(),
+                'foreground': palette.color(QPalette.ColorRole.WindowText).name(),
+                'accent': palette.color(QPalette.ColorRole.Highlight).name(),
+                'border': palette.color(QPalette.ColorRole.Mid).name(),
+                'hover': palette.color(QPalette.ColorRole.AlternateBase).name(),
+                'selected': palette.color(QPalette.ColorRole.Highlight).name(),
+                'text': palette.color(QPalette.ColorRole.Text).name(),
+                'disabled': palette.color(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text).name()
+            }
+        else:
+            # Последний fallback
+            self._theme_colors = {
+                'background': '#2d2d30',
+                'foreground': '#ffffff',
+                'accent': '#007acc',
+                'border': '#3e3e42',
+                'hover': '#404040',
+                'selected': '#094771',
+                'text': '#cccccc',
+                'disabled': '#666666'
+            }
+        print("✅ Используются fallback цвета")
+    
+    def get_color(self, color_name, fallback=None):
+        """Получает цвет по имени с возможностью fallback"""
+        color = self._theme_colors.get(color_name, fallback)
+        if color is None:
+            color = self._theme_colors.get('foreground', '#ffffff')
+        return color
+    
+    def get_all_colors(self):
+        """Возвращает все доступные цвета"""
+        return self._theme_colors.copy()
+    
+    def refresh_colors(self):
+        """Обновляет цвета при смене темы"""
+        self._update_colors()
+    
+    def generate_dynamic_stylesheet(self):
+        """Генерирует динамический stylesheet на основе цветов темы"""
+        colors = self._theme_colors
+        
+        return f"""
+        /* Основные стили окна */
+        QMainWindow {{
+            background-color: {colors.get('background', '#2d2d30')};
+            color: {colors.get('foreground', '#ffffff')};
+            border: none;
+        }}
+        
+        QWidget {{
+            background-color: {colors.get('background', '#2d2d30')};
+            color: {colors.get('text', '#cccccc')};
+            border: none;
+        }}
+        
+        /* Меню */
+        QMenuBar {{
+            background-color: {colors.get('background', '#2d2d30')};
+            color: {colors.get('text', '#cccccc')};
+            padding: 4px;
+            border-bottom: 1px solid {colors.get('border', '#3e3e42')};
+        }}
+        
+        QMenuBar::item {{
+            background-color: transparent;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: {colors.get('text', '#cccccc')};
+        }}
+        
+        QMenuBar::item:selected {{
+            background-color: {colors.get('accent', '#007acc')};
+            color: {colors.get('foreground', '#ffffff')};
+        }}
+        
+        QMenuBar::item:pressed {{
+            background-color: {colors.get('selected', '#094771')};
+        }}
+        
+        QMenu {{
+            background-color: {colors.get('background', '#2d2d30')};
+            color: {colors.get('text', '#cccccc')};
+            border: 1px solid {colors.get('border', '#3e3e42')};
+            padding: 4px;
+        }}
+        
+        QMenu::item {{
+            padding: 6px 24px;
+            border-radius: 3px;
+        }}
+        
+        QMenu::item:selected {{
+            background-color: {colors.get('accent', '#007acc')};
+            color: {colors.get('foreground', '#ffffff')};
+        }}
+        
+        /* Сплиттеры */
+        QSplitter::handle {{
+            background-color: {colors.get('border', '#3e3e42')};
+            border: 1px solid {colors.get('border', '#3e3e42')};
+        }}
+        
+        QSplitter::handle:horizontal {{
+            width: 3px;
+            background-color: {colors.get('border', '#3e3e42')};
+        }}
+        
+        QSplitter::handle:vertical {{
+            height: 3px;
+            background-color: {colors.get('border', '#3e3e42')};
+        }}
+        
+        QSplitter::handle:hover {{
+            background-color: {colors.get('accent', '#007acc')};
+        }}
+        
+        QSplitter::handle:pressed {{
+            background-color: {colors.get('selected', '#094771')};
+        }}
+        
+        /* Вкладки */
+        QTabWidget::pane {{
+            border: 1px solid {colors.get('border', '#3e3e42')};
+            background-color: {colors.get('background', '#2d2d30')};
+            border-top: none;
+        }}
+        
+        QTabBar::tab {{
+            background-color: {colors.get('hover', '#404040')};
+            color: {colors.get('text', '#cccccc')};
+            padding: 8px 16px;
+            margin-right: 2px;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            min-width: 80px;
+        }}
+        
+        QTabBar::tab:selected {{
+            background-color: {colors.get('accent', '#007acc')};
+            color: {colors.get('foreground', '#ffffff')};
+        }}
+        
+        QTabBar::tab:hover:!selected {{
+            background-color: {colors.get('hover', '#404040')};
+        }}
+        
+        QTabBar::tab:disabled {{
+            color: {colors.get('disabled', '#666666')};
+            background-color: {colors.get('background', '#2d2d30')};
+        }}
+        
+        /* Кнопки */
+        QPushButton {{
+            background-color: {colors.get('hover', '#404040')};
+            color: {colors.get('text', '#cccccc')};
+            border: 1px solid {colors.get('border', '#3e3e42')};
+            padding: 6px 12px;
+            border-radius: 4px;
+            min-width: 80px;
+        }}
+        
+        QPushButton:hover {{
+            background-color: {colors.get('accent', '#007acc')};
+            color: {colors.get('foreground', '#ffffff')};
+            border-color: {colors.get('accent', '#007acc')};
+        }}
+        
+        QPushButton:pressed {{
+            background-color: {colors.get('selected', '#094771')};
+        }}
+        
+        QPushButton:disabled {{
+            background-color: {colors.get('background', '#2d2d30')};
+            color: {colors.get('disabled', '#666666')};
+            border-color: {colors.get('disabled', '#666666')};
+        }}
+        
+        /* Поля ввода */
+        QLineEdit, QTextEdit, QPlainTextEdit {{
+            background-color: {colors.get('background', '#2d2d30')};
+            color: {colors.get('text', '#cccccc')};
+            border: 1px solid {colors.get('border', '#3e3e42')};
+            padding: 4px;
+            border-radius: 3px;
+        }}
+        
+        QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
+            border-color: {colors.get('accent', '#007acc')};
+        }}
+        
+        /* Скроллбары */
+        QScrollBar:vertical {{
+            background-color: {colors.get('background', '#2d2d30')};
+            width: 12px;
+            border: none;
+        }}
+        
+        QScrollBar::handle:vertical {{
+            background-color: {colors.get('hover', '#404040')};
+            border-radius: 6px;
+            min-height: 20px;
+        }}
+        
+        QScrollBar::handle:vertical:hover {{
+            background-color: {colors.get('accent', '#007acc')};
+        }}
+        
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+            border: none;
+            background: none;
+        }}
+        
+        QScrollBar:horizontal {{
+            background-color: {colors.get('background', '#2d2d30')};
+            height: 12px;
+            border: none;
+        }}
+        
+        QScrollBar::handle:horizontal {{
+            background-color: {colors.get('hover', '#404040')};
+            border-radius: 6px;
+            min-width: 20px;
+        }}
+        
+        QScrollBar::handle:horizontal:hover {{
+            background-color: {colors.get('accent', '#007acc')};
+        }}
+        
+        /* Группы виджетов */
+        QGroupBox {{
+            color: {colors.get('text', '#cccccc')};
+            border: 1px solid {colors.get('border', '#3e3e42')};
+            border-radius: 4px;
+            padding-top: 16px;
+            margin-top: 8px;
+        }}
+        
+        QGroupBox::title {{
+            color: {colors.get('accent', '#007acc')};
+            subcontrol-origin: margin;
+            left: 8px;
+            padding: 0 8px 0 8px;
+        }}
+        
+        /* Списки */
+        QListWidget, QTreeWidget {{
+            background-color: {colors.get('background', '#2d2d30')};
+            color: {colors.get('text', '#cccccc')};
+            border: 1px solid {colors.get('border', '#3e3e42')};
+            alternate-background-color: {colors.get('hover', '#404040')};
+        }}
+        
+        QListWidget::item:selected, QTreeWidget::item:selected {{
+            background-color: {colors.get('accent', '#007acc')};
+            color: {colors.get('foreground', '#ffffff')};
+        }}
+        
+        QListWidget::item:hover, QTreeWidget::item:hover {{
+            background-color: {colors.get('hover', '#404040')};
+        }}
+        
+        /* Статусная строка */
+        QStatusBar {{
+            background-color: {colors.get('background', '#2d2d30')};
+            color: {colors.get('text', '#cccccc')};
+            border-top: 1px solid {colors.get('border', '#3e3e42')};
+        }}
+        
+        /* Прогресс-бары */
+        QProgressBar {{
+            background-color: {colors.get('background', '#2d2d30')};
+            border: 1px solid {colors.get('border', '#3e3e42')};
+            border-radius: 4px;
+            text-align: center;
+            color: {colors.get('text', '#cccccc')};
+        }}
+        
+        QProgressBar::chunk {{
+            background-color: {colors.get('accent', '#007acc')};
+            border-radius: 3px;
+        }}
+        """
+
+
 class FramelessGopiAIStandaloneWindow(QMainWindow):
-    """Основное frameless окно GopiAI - модульная версия"""
+    """Основное frameless окно GopiAI с динамическими цветами"""
+
+    def _apply_dynamic_styles(self):
+        """Применяет динамические стили на основе текущей темы"""
+        try:
+            if hasattr(self, "color_manager"):
+                stylesheet = self.color_manager.generate_dynamic_stylesheet()
+                self.setStyleSheet(stylesheet)
+                print("✅ Динамические стили применены")
+            else:
+                print("⚠️ color_manager не инициализирован, стили не применены")
+        except Exception as e:
+            print(f"⚠️ Ошибка применения динамических стилей: {e}")
 
     def __init__(self):
         super().__init__()
-        print("🚀 Инициализация модульного интерфейса GopiAI...")
+        print("🚀 Инициализация модульного интерфейса GopiAI с динамическими цветами...")
 
         # Базовые настройки окна
-        self.setWindowTitle("GopiAI v0.3.0 - Модульный ИИ Интерфейс")
+        self.setWindowTitle("GopiAI v0.3.1 - Модульный ИИ Интерфейс")
         self.setMinimumSize(1000, 700)
         self.resize(1400, 900)
 
@@ -172,14 +503,83 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         # Константы
         self.TITLEBAR_HEIGHT = 40
         self.GRIP_SIZE = 10
-        # Инициализация
+        
+        # Инициализация систем
         self._init_theme_system()
+        self._init_color_manager()
         self._setup_ui()
         self._init_grips()
-        self._apply_default_styles()
+        self._apply_dynamic_styles()
         self._connect_menu_signals()
+        self._apply_vscode_like_layout()
+        self._setup_panel_shortcuts()
 
-        print("✅ FramelessGopiAIStandaloneWindow готов к работе!")
+        # Настройка автоматического обновления цветов
+        self._setup_color_refresh_timer()
+
+        print("✅ FramelessGopiAIStandaloneWindow с динамическими цветами готов к работе!")
+
+    def _init_color_manager(self):
+        """Инициализация менеджера динамических цветов"""
+        try:
+            self.color_manager = DynamicColorManager(self.theme_manager)
+            print("✅ Менеджер динамических цветов инициализирован")
+        except Exception as e:
+            print(f"⚠️ Ошибка инициализации менеджера цветов: {e}")
+            self.color_manager = DynamicColorManager()
+
+    def _setup_color_refresh_timer(self):
+        """Настройка таймера для обновления цветов"""
+        self.color_refresh_timer = QTimer()
+        self.color_refresh_timer.timeout.connect(self._refresh_colors_if_needed)
+        self.color_refresh_timer.start(1000)  # Проверяем каждую секунду
+
+    def _refresh_colors_if_needed(self):
+        """Обновляет цвета при необходимости"""
+        try:
+            # Проверяем, изменилась ли тема
+            if hasattr(self.theme_manager, 'current_theme'):
+                current_theme = getattr(self.theme_manager, 'current_theme', None)
+                if not hasattr(self, '_last_theme') or self._last_theme != current_theme:
+                    self._last_theme = current_theme
+                    self._refresh_all_colors()
+        except Exception as e:
+            # Тихо игнорируем ошибки обновления
+            pass
+
+    def _refresh_all_colors(self):
+        """Полное обновление всех цветов интерфейса"""
+        try:
+            print("🎨 Обновление цветов интерфейса...")
+            self.color_manager.refresh_colors()
+            self._apply_dynamic_styles()
+            
+            # Обновляем цвета всех дочерних виджетов
+            self._update_child_widgets_colors()
+            
+            print("✅ Цвета интерфейса обновлены")
+        except Exception as e:
+            print(f"⚠️ Ошибка обновления цветов: {e}")
+
+    def _update_child_widgets_colors(self):
+        """Обновляет цвета всех дочерних виджетов"""
+        try:
+            # Обновляем цвета меню
+            if hasattr(self, 'titlebar_with_menu'):
+                menu_bar = getattr(self.titlebar_with_menu, 'menu_bar', None)
+                if menu_bar and hasattr(menu_bar, 'refresh_colors'):
+                    menu_bar.refresh_colors()
+            
+            # Обновляем цвета всех виджетов, только если у них есть метод refresh_colors
+            for widget in self.findChildren(QWidget):
+                if hasattr(widget, 'refresh_colors') and callable(getattr(widget, 'refresh_colors', None)):
+                    try:
+                        widget.refresh_colors() # type: ignore
+                    except Exception as widget_error:
+                        print(f"⚠️ Ошибка обновления цветов виджета {type(widget).__name__}: {widget_error}")
+                    
+        except Exception as e:
+            print(f"⚠️ Ошибка обновления цветов дочерних виджетов: {e}")
 
     def _setup_ui(self):
         """Настройка модульного пользовательского интерфейса"""
@@ -191,6 +591,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+        
         # Titlebar с меню (модульный)
         if MODULES_LOADED:
             self.titlebar_with_menu = StandaloneTitlebarWithMenu(self)
@@ -203,24 +604,16 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
         # Основной сплиттер (горизонтальный)
         main_splitter = QSplitter(Qt.Orientation.Horizontal)
-        main_layout.addWidget(
-            main_splitter, 1
-        )  # Левая панель - файловый проводник (модульный)
+        main_layout.addWidget(main_splitter, 1)
+        
+        # Левая панель - файловый проводник (модульный)
         self.file_explorer = FileExplorerWidget(icon_manager=self.icon_manager)
-
-        # Зафиксировать размер проводника
-        from PySide6.QtWidgets import QSizePolicy
-
         self.file_explorer.setMinimumWidth(250)
-        self.file_explorer.setMaximumWidth(400)
+        self.file_explorer.setMaximumWidth(600)
         self.file_explorer.resize(300, 600)
 
-        # Установить политику размера - фиксированная ширина, растягиваемая высота
-        size_policy = QSizePolicy(
-            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding
-        )
+        size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self.file_explorer.setSizePolicy(size_policy)
-
         main_splitter.addWidget(self.file_explorer)
 
         # Правый сплиттер (вертикальный)
@@ -237,27 +630,105 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
         # Правая панель - чат с ИИ (модульный)
         self.chat_widget = ChatWidget()
+        self.chat_widget.setMinimumWidth(250)
+        self.chat_widget.setMaximumWidth(600)
+        self.chat_widget.resize(300, 600)
+        
+        chat_size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        self.chat_widget.setSizePolicy(chat_size_policy)
         center_splitter.addWidget(self.chat_widget)
 
-        # Скрываем стандартный чат-виджет, если доступны расширения
         if EXTENSIONS_AVAILABLE:
             self.chat_widget.setVisible(False)
-            print("✅ Стандартный ChatWidget скрыт, так как доступны расширения")
 
         # Нижняя панель - терминал (модульный)
         self.terminal_widget = TerminalWidget()
-        right_splitter.addWidget(self.terminal_widget)  # Настройка пропорций сплиттеров
-        main_splitter.setSizes([300, 1100])  # Левая панель : Остальное
-        center_splitter.setSizes([800, 350])  # Документы : Чат
-        right_splitter.setSizes([700, 200])  # Верх : Терминал
+        self.terminal_widget.setMinimumHeight(150)
+        self.terminal_widget.setMaximumHeight(400)
+        
+        terminal_size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.terminal_widget.setSizePolicy(terminal_size_policy)
+        right_splitter.addWidget(self.terminal_widget)
 
-        # Разрешаем складывание панелей, но устанавливаем стабильные размеры
+        # Настройка пропорций сплиттеров
+        main_splitter.setSizes([300, 1100])
+        center_splitter.setSizes([700, 350])
+        right_splitter.setSizes([700, 200])
+
         main_splitter.setChildrenCollapsible(True)
+        center_splitter.setChildrenCollapsible(True)
+        right_splitter.setChildrenCollapsible(False)
 
-        # ВАЖНО: Устанавливаем стретч-факторы для предотвращения автоматического изменения размеров
-        # Панель проводника (индекс 0) не растягивается, основная область (индекс 1) растягивается
-        main_splitter.setStretchFactor(0, 0)  # Проводник не растягивается
-        main_splitter.setStretchFactor(1, 1)  # Основная область растягивается
+        main_splitter.setStretchFactor(0, 0)
+        main_splitter.setStretchFactor(1, 1)
+        center_splitter.setStretchFactor(0, 1)
+        center_splitter.setStretchFactor(1, 0)
+        right_splitter.setStretchFactor(0, 1)
+        right_splitter.setStretchFactor(1, 0)
+
+        self._configure_splitter_behavior()
+        print("✅ Модульный UI настроен с ограничениями размеров панелей")
+
+    def _configure_splitter_behavior(self):
+        """Дополнительная настройка поведения сплиттеров"""
+        try:
+            main_splitter = self.findChild(QSplitter)
+            if main_splitter:
+                main_splitter.setHandleWidth(3)
+                
+                right_splitter = main_splitter.widget(1)
+                if isinstance(right_splitter, QSplitter):
+                    right_splitter.setHandleWidth(3)
+                    
+                    center_splitter = right_splitter.widget(0)
+                    if isinstance(center_splitter, QSplitter):
+                        center_splitter.setHandleWidth(3)
+                        center_splitter.setCollapsible(0, False)
+                        center_splitter.setCollapsible(1, True)
+                    
+                    right_splitter.setCollapsible(0, False)
+                    right_splitter.setCollapsible(1, True)
+                
+                main_splitter.setCollapsible(0, True)
+                main_splitter.setCollapsible(1, False)
+                
+            print("✅ Поведение сплиттеров настроено")
+            
+        except Exception as e:
+            print(f"⚠️ Ошибка настройки сплиттеров: {e}")
+
+    def _apply_vscode_like_layout(self):
+        """Применить макет в стиле VSCode с динамическими цветами"""
+        try:
+            print("✅ Применен макет в стиле VSCode с динамическими цветами")
+        except Exception as e:
+            print(f"⚠️ Ошибка применения макета VSCode: {e}")
+
+    def _setup_panel_shortcuts(self):
+        """Настройка горячих клавиш для управления панелями"""
+        try:
+            from PySide6.QtGui import QKeySequence, QShortcut
+            
+            toggle_explorer = QShortcut(QKeySequence("Ctrl+B"), self)
+            toggle_explorer.activated.connect(
+                lambda: self.file_explorer.setVisible(not self.file_explorer.isVisible())
+            )
+            
+            toggle_terminal = QShortcut(QKeySequence("Ctrl+`"), self)
+            toggle_terminal.activated.connect(
+                lambda: self.terminal_widget.setVisible(not self.terminal_widget.isVisible())
+            )
+            
+            # Ctrl+Shift+C - переключение чата
+            toggle_chat = QShortcut(QKeySequence("Ctrl+Shift+C"), self)
+            toggle_chat.activated.connect(
+                lambda: self.chat_widget.setVisible(not self.chat_widget.isVisible())
+            )
+            
+            print("✅ Горячие клавиши для панелей настроены")
+            
+        except Exception as e:
+            print(f"⚠️ Ошибка настройки горячих клавиш: {e}")
 
         print("✅ Модульный UI настроен")
 

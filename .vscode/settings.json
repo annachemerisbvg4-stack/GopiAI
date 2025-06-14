@@ -1,6 +1,4 @@
 {
-    "wolf.disableHotModeWarning": true,
-    // Python settings
     "python.defaultInterpreterPath": "./rag_memory_env/Scripts/python.exe",
     "python.analysis.extraPaths": [
         "./GopiAI-UI",
@@ -43,8 +41,5 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "sonarlint.connectedMode.project": {
-        "connectionId": "amritagopi",
-        "projectKey": "amritagopi_GopiAI"
-    }
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
 }
