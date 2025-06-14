@@ -1,15 +1,15 @@
 {
-  "main_color": "#fcf8f7",
-  "header_color": "#c8ead9",
-  "control_color": "#466557",
-  "accent_color": "#585d77",
-  "titlebar_background": "#c8ead9",
-  "button_color": "#54615b",
-  "button_hover_color": "#adcebe",
-  "button_active_color": "#466557",
-  "text_color": "#1c1b1b",
-  "border_color": "#747875",
-  "titlebar_text": "#012016",
-  "name": "Mint Frost",
-  "variant": "light"
+  "main_color": "#2d3e4c",
+  "header_color": "#004b73",
+  "control_color": "#93ccff",
+  "accent_color": "#e9b3ff",
+  "titlebar_background": "#004b73",
+  "button_color": "#a5caee",
+  "button_hover_color": "#234a68",
+  "button_active_color": "#003351",
+  "text_color": "#e5e2e2",
+  "border_color": "#8f9195",
+  "titlebar_text": "#cde5ff",
+  "name": "Material Sky",
+  "variant": "dark"
 }
