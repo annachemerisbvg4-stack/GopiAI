@@ -289,35 +289,123 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         right_splitter.setStretchFactor(1, 0)
 
         self._configure_splitter_behavior()
+        self._setup_splitter_constraints()  # Добавляем этот вызов
+        
         print("✅ Модульный UI настроен с ограничениями размеров панелей")
 
     def _configure_splitter_behavior(self):
-        """Дополнительная настройка поведения сплиттеров"""
+        """Дополнительная настройка поведения сплиттеров с ограничениями"""
         try:
             main_splitter = self.findChild(QSplitter)
             if main_splitter:
-                main_splitter.setHandleWidth(3)
+                main_splitter.setHandleWidth(5)  # Увеличиваем ширину handle для лучшего захвата
+                
+                # Устанавливаем минимальные размеры для левой панели (файловый проводник)
+                self.file_explorer.setMinimumWidth(50)  # Минимум 50px
                 
                 right_splitter = main_splitter.widget(1)
                 if isinstance(right_splitter, QSplitter):
-                    right_splitter.setHandleWidth(3)
+                    right_splitter.setHandleWidth(5)
                     
                     center_splitter = right_splitter.widget(0)
                     if isinstance(center_splitter, QSplitter):
-                        center_splitter.setHandleWidth(3)
-                        center_splitter.setCollapsible(0, False)
-                        center_splitter.setCollapsible(1, True)
+                        center_splitter.setHandleWidth(5)
+                        
+                        # Устанавливаем минимальные размеры для центральной области
+                        self.tab_document.setMinimumWidth(200)  # Минимум 200px для редактора
+                        
+                        # Устанавливаем минимальные размеры для чата
+                        self.chat_widget.setMinimumWidth(50)  # Минимум 50px для чата
+                        
+                        center_splitter.setCollapsible(0, False)  # Центральная область не сворачивается
+                        center_splitter.setCollapsible(1, True)   # Чат может сворачиваться
                     
-                    right_splitter.setCollapsible(0, False)
-                    right_splitter.setCollapsible(1, True)
+                    # Устанавливаем минимальные размеры для терминала
+                    self.terminal_widget.setMinimumHeight(30)  # Минимум 30px для терминала
+                    
+                    right_splitter.setCollapsible(0, False)  # Центральная область не сворачивается
+                    right_splitter.setCollapsible(1, True)   # Терминал может сворачиваться
                 
-                main_splitter.setCollapsible(0, True)
-                main_splitter.setCollapsible(1, False)
+                main_splitter.setCollapsible(0, True)   # Файловый проводник может сворачиваться
+                main_splitter.setCollapsible(1, False)  # Правая часть не сворачивается
                 
-            print("✅ Поведение сплиттеров настроено")
+            print("✅ Поведение сплиттеров настроено с ограничениями")
             
         except Exception as e:
             print(f"⚠️ Ошибка настройки сплиттеров: {e}")
+    
+    def _setup_splitter_constraints(self):
+        """Настройка дополнительных ограничений для сплиттеров"""
+        try:
+            # Находим все сплиттеры и настраиваем их
+            splitters = self.findChildren(QSplitter)
+            
+            for splitter in splitters:
+                # Увеличиваем размер handle для лучшего захвата
+                splitter.setHandleWidth(6)
+                
+                # Подключаем сигнал для контроля перемещения
+                splitter.splitterMoved.connect(self._on_splitter_moved)
+            
+            print("✅ Дополнительные ограничения сплиттеров установлены")
+            
+        except Exception as e:
+            print(f"⚠️ Ошибка настройки ограничений сплиттеров: {e}")
+    
+    def _on_splitter_moved(self, pos, index):
+        """Обработчик перемещения сплиттера для контроля границ"""
+        try:
+            splitter = self.sender()
+            if not isinstance(splitter, QSplitter):
+                return
+            
+            sizes = splitter.sizes()
+            total_size = sum(sizes)
+            
+            # Минимальные размеры в процентах от общего размера
+            min_percent = 0.05  # 5% минимум для каждой панели
+            min_size = int(total_size * min_percent)
+            
+            # Проверяем и корректируем размеры
+            adjusted = False
+            for i, size in enumerate(sizes):
+                if size < min_size:
+                    sizes[i] = min_size
+                    adjusted = True
+            
+            # Если были корректировки, применяем их
+            if adjusted:
+                # Пересчитываем размеры пропорционально
+                current_total = sum(sizes)
+                if current_total != total_size:
+                    ratio = total_size / current_total
+                    sizes = [int(size * ratio) for size in sizes]
+                
+                splitter.setSizes(sizes)
+        
+        except Exception as e:
+            print(f"⚠️ Ошибка контроля перемещения сплиттера: {e}")
+    
+    def _reset_panel_sizes(self):
+        """Сброс размеров панелей к значениям по умолчанию"""
+        try:
+            main_splitter = self.findChild(QSplitter)
+            if main_splitter:
+                # Устанавливаем размеры по умолчанию
+                main_splitter.setSizes([300, 1100])
+                
+                right_splitter = main_splitter.widget(1)
+                if isinstance(right_splitter, QSplitter):
+                    right_splitter.setSizes([700, 200])
+                    
+                    center_splitter = right_splitter.widget(0)
+                    if isinstance(center_splitter, QSplitter):
+                        center_splitter.setSizes([700, 350])
+            
+            print("✅ Размеры панелей сброшены к значениям по умолчанию")
+            
+        except Exception as e:
+            print(f"⚠️ Ошибка сброса размеров панелей: {e}")
 
     def _apply_vscode_like_layout(self):
         """Применить макет в стиле VSCode с динамическими цветами"""
@@ -347,7 +435,11 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 lambda: self.chat_widget.setVisible(not self.chat_widget.isVisible())
             )
             
-            print("✅ Горячие клавиши для панелей настроены")
+            # Ctrl+Shift+R - сброс размеров панелей
+            reset_panels = QShortcut(QKeySequence("Ctrl+Shift+R"), self)
+            reset_panels.activated.connect(self._reset_panel_sizes)
+            
+            print("✅ Горячие клавиши для панелей настроены (включая сброс размеров)")
             
         except Exception as e:
             print(f"⚠️ Ошибка настройки горячих клавиш: {e}")
