@@ -123,7 +123,6 @@ except ImportError as e:
     CustomGrip = lambda parent, direction: QWidget()
     FileExplorerWidget = lambda parent=None, icon_manager=None: SimpleWidget("FileExplorer")
     TabDocumentWidget = lambda parent=None: SimpleWidget("TabDocument")
-    ChatWidget = lambda parent=None: SimpleWidget("Chat")
     TerminalWidget = lambda parent=None: SimpleWidget("Terminal")
 
     class FallbackThemeManager:
@@ -629,7 +628,8 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             print("✅ Используется WebView чат")
         except Exception as e:
             print(f"⚠️ WebView чат недоступен, используется обычный чат: {e}")
-            # Fallback - используем обычный ChatWidget
+            # Fallback - используем обычный ChatWidget из импорта
+            from gopiai.ui.components.chat_widget import ChatWidget
             self.chat_widget = ChatWidget()
         self.chat_widget.setMinimumWidth(250)
         self.chat_widget.setMaximumWidth(600)

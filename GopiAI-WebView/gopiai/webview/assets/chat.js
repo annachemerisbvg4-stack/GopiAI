@@ -567,7 +567,6 @@ class GopiAIChatInterface {
     }
 }
 
-$1
 document.addEventListener('DOMContentLoaded', () => {
     window.gopiaiChat = new GopiAIChatInterface();
     console.log('GopiAI Chat Interface initialized');

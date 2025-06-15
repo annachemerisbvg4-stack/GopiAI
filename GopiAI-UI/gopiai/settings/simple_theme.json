@@ -1,15 +1,15 @@
 {
-  "main_color": "#2d3e4c",
-  "header_color": "#004b73",
-  "control_color": "#93ccff",
-  "accent_color": "#e9b3ff",
-  "titlebar_background": "#004b73",
-  "button_color": "#a5caee",
-  "button_hover_color": "#234a68",
-  "button_active_color": "#003351",
-  "text_color": "#e5e2e2",
-  "border_color": "#8f9195",
-  "titlebar_text": "#cde5ff",
-  "name": "Material Sky",
-  "variant": "dark"
+  "main_color": "#fcf9f6",
+  "header_color": "#b9f47d",
+  "control_color": "#3b6a00",
+  "accent_color": "#006c53",
+  "titlebar_background": "#b9f47d",
+  "button_color": "#4f6538",
+  "button_hover_color": "#9ed764",
+  "button_active_color": "#3b6a00",
+  "text_color": "#1c1b1b",
+  "border_color": "#767870",
+  "titlebar_text": "#0e2000",
+  "name": "Emerald Garden",
+  "variant": "light"
 }

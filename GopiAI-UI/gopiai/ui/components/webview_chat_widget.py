@@ -8,7 +8,7 @@ WebView Chat Widget для GopiAI UI
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
-from PySide6.QtCore import Qt, Signal, QObject
+from PySide6.QtCore import Qt, Signal, QObject, Slot
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebEngineCore import QWebEngineSettings, QWebEnginePage
 from PySide6.QtWebChannel import QWebChannel
@@ -43,29 +43,41 @@ class WebViewChatBridge(QObject):
     def __init__(self, parent=None):
         super().__init__()
     
+    @Slot(str)
     def send_message(self, message: str):
         """Получение сообщения от JavaScript"""
+        print(f"🔄 Bridge: received message from JS: {message[:50]}...")
         self.message_sent.emit(message)
     
+    @Slot(str, str)
     def receive_ai_message(self, model: str, response: str):
         """Получение ответа ИИ от JavaScript"""
+        print(f"🤖 Bridge: received AI response from {model}: {response[:50]}...")
         self.ai_response_received.emit(model, response)
     
+    @Slot(str)
     def change_model(self, model: str):
         """Изменение модели ИИ"""
+        print(f"🔧 Bridge: model changed to {model}")
         self.model_changed.emit(model)
     
+    @Slot(str)
     def log_error(self, error: str):
         """Логирование ошибок"""
+        print(f"❌ Bridge: error from JS: {error}")
         self.error_occurred.emit(error)
     
+    @Slot()
     def clear_chat(self):
         """Очистка чата"""
-        pass
+        print("🧹 Bridge: chat cleared")
     
+    @Slot(result=str)
     def get_chat_history_json(self) -> str:
         """Получение истории чата в JSON формате"""
+        print("📜 Bridge: chat history requested")
         return json.dumps([])
+
 
 
 class WebViewChatWidget(QWidget):
@@ -127,20 +139,37 @@ class WebViewChatWidget(QWidget):
         self.bridge.ai_response_received.connect(self.response_received.emit)
     
     def _load_chat_interface(self):
-        """Загрузка HTML интерфейса чата"""
-        # Путь к HTML файлу
-        assets_path = Path(__file__).parent.parent.parent.parent / "GopiAI-WebView" / "gopiai" / "webview" / "assets"
-        html_path = assets_path / "chat.html"
-        
-        if html_path.exists():
-            # Загружаем HTML файл
-            self.web_view.load(f"file:///{html_path}")
+            """Загрузка HTML интерфейса чата"""
+            # Найдем корень проекта (где находятся GopiAI-UI и GopiAI-WebView)
+            current_file = Path(__file__).resolve()
+            root_path = current_file
             
-            # Ждем загрузки страницы и применяем тему
-            self.web_view.loadFinished.connect(self._on_page_loaded)
-        else:
-            # Если файл не найден, создаем базовый HTML
-            self._create_fallback_html()
+            # Поднимаемся по дереву папок пока не найдем GopiAI-WebView
+            while root_path.parent != root_path:
+                if (root_path / 'GopiAI-WebView').exists():
+                    break
+                root_path = root_path.parent
+            
+            assets_path = root_path / "GopiAI-WebView" / "gopiai" / "webview" / "assets"
+            html_path = assets_path / "chat.html"
+            
+            print(f"🔍 Checking HTML path: {html_path}")
+            print(f"🔍 HTML exists: {html_path.exists()}")
+            
+            if html_path.exists():
+                # Загружаем HTML файл
+                file_url = html_path.as_uri()
+                print(f"📁 Loading main HTML from: {file_url}")
+                self.web_view.load(file_url)
+                
+                # Ждем загрузки страницы и применяем тему
+                self.web_view.loadFinished.connect(self._on_page_loaded)
+            else:
+                # Если файл не найден, создаем базовый HTML
+                print("⚠️ Main HTML not found, using fallback")
+                self._create_fallback_html()
+
+
     
     def _on_page_loaded(self, success):
         """Обработчик завершения загрузки страницы"""
@@ -245,11 +274,18 @@ class WebViewChatWidget(QWidget):
                 let currentModel = 'claude-sonnet-4';
                 
                 // Инициализация WebChannel
-                if (typeof QWebChannel !== 'undefined') {
-                    new QWebChannel(qt.webChannelTransport, (channel) => {
-                        bridge = channel.objects.bridge;
-                        console.log('WebChannel bridge connected');
-                    });
+                if (typeof QWebChannel !== 'undefined' && typeof qt !== 'undefined') {
+                    try {
+                        new QWebChannel(qt.webChannelTransport, (channel) => {
+                            bridge = channel.objects.bridge;
+                            console.log('WebChannel bridge connected:', bridge);
+                            console.log('Available bridge methods:', Object.getOwnPropertyNames(bridge));
+                        });
+                    } catch (error) {
+                        console.error('Error initializing WebChannel:', error);
+                    }
+                } else {
+                    console.warn('QWebChannel or qt not available');
                 }
                 
                 // Ожидание загрузки puter.js
@@ -305,8 +341,14 @@ class WebViewChatWidget(QWidget):
                         addMessage('user', message);
                         
                         // Уведомляем Python
-                        if (bridge) {
-                            bridge.send_message(message);
+                        if (bridge && typeof bridge.send_message === 'function') {
+                            try {
+                                bridge.send_message(message);
+                            } catch (error) {
+                                console.error('Error calling bridge.send_message:', error);
+                            }
+                        } else {
+                            console.warn('Bridge not available or send_message method not found');
                         }
                         
                         try {
@@ -326,14 +368,22 @@ class WebViewChatWidget(QWidget):
                             }
                             
                             // Уведомляем Python о полном ответе
-                            if (bridge && fullResponse) {
-                                bridge.receive_ai_message(currentModel, fullResponse);
+                            if (bridge && fullResponse && typeof bridge.receive_ai_message === 'function') {
+                                try {
+                                    bridge.receive_ai_message(currentModel, fullResponse);
+                                } catch (error) {
+                                    console.error('Error calling bridge.receive_ai_message:', error);
+                                }
                             }
                             
                         } catch (error) {
                             addMessage('ai', `❌ Error: ${error.message}`);
-                            if (bridge) {
-                                bridge.log_error(error.message);
+                            if (bridge && typeof bridge.log_error === 'function') {
+                                try {
+                                    bridge.log_error(error.message);
+                                } catch (bridgeError) {
+                                    console.error('Error calling bridge.log_error:', bridgeError);
+                                }
                             }
                         }
                     }
