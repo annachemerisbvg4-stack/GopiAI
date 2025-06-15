@@ -24,7 +24,7 @@ MATERIAL_SKY_THEME = {
     "name": "Material Sky",
     "description": "Тема, сгенерированная на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fcf8f8",
+        "main_color": "#ffffff",
         "header_color": "#cde5ff",
         "control_color": "#006398",
         "accent_color": "#7a4c8f",
@@ -37,7 +37,7 @@ MATERIAL_SKY_THEME = {
         "titlebar_text": "#001d31"
     },
     "dark": {
-        "main_color": "#2d3e4c",
+        "main_color": "#333333",
         "header_color": "#004b73",
         "control_color": "#93ccff",
         "accent_color": "#e9b3ff",
@@ -57,7 +57,7 @@ EMERALD_GARDEN_THEME = {
     "name": "Emerald Garden",
     "description": "Зелёная тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fcf9f6",
+        "main_color": "#ffffff",
         "header_color": "#b9f47d",
         "control_color": "#3b6a00",
         "accent_color": "#006c53",
@@ -70,7 +70,7 @@ EMERALD_GARDEN_THEME = {
         "titlebar_text": "#0e2000"
     },
     "dark": {
-        "main_color": "#131312",
+        "main_color": "#333333",
         "header_color": "#2b5000",
         "control_color": "#9ed764",
         "accent_color": "#5ddcb5",
@@ -90,7 +90,7 @@ CRIMSON_RELIC_THEME = {
     "name": "Crimson Relic",
     "description": "Красная тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fff8f7",
+        "main_color": "#ffffff",
         "header_color": "#ffdad7",
         "control_color": "#c00020",
         "accent_color": "#875219",
@@ -103,7 +103,7 @@ CRIMSON_RELIC_THEME = {
         "titlebar_text": "#410005"
     },
     "dark": {
-        "main_color": "#151313",
+        "main_color": "#333333",
         "header_color": "#930016",
         "control_color": "#ffb3ae",
         "accent_color": "#ffb876",
@@ -123,7 +123,7 @@ GOLDEN_EMBER_THEME = {
     "name": "Golden Ember",
     "description": "Оранжево-золотая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fef8f7",
+        "main_color": "#ffffff",
         "header_color": "#ffdbcf",
         "control_color": "#a43d0b",
         "accent_color": "#6e5e00",
@@ -136,7 +136,7 @@ GOLDEN_EMBER_THEME = {
         "titlebar_text": "#380d00"
     },
     "dark": {
-        "main_color": "#151313",
+        "main_color": "#333333",
         "header_color": "#802a00",
         "control_color": "#ffb59a",
         "accent_color": "#ddc661",
@@ -156,7 +156,7 @@ SUNLIT_MEADOW_THEME = {
     "name": "Sunlit Meadow",
     "description": "Жёлто-зелёная тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fdf8f6",
+        "main_color": "#ffffff",
         "header_color": "#ffdf91",
         "control_color": "#755b00",
         "accent_color": "#506600",
@@ -169,7 +169,7 @@ SUNLIT_MEADOW_THEME = {
         "titlebar_text": "#241a00"
     },
     "dark": {
-        "main_color": "#141312",
+        "main_color": "#333333",
         "header_color": "#594400",
         "control_color": "#f3c015",
         "accent_color": "#b2d34e",
@@ -189,7 +189,7 @@ MINT_FROST_THEME = {
     "name": "Mint Frost",
     "description": "Мятно-серо-лавандовая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fcf8f7",
+        "main_color": "#ffffff",
         "header_color": "#c8ead9",
         "control_color": "#466557",
         "accent_color": "#585d77",
@@ -202,7 +202,7 @@ MINT_FROST_THEME = {
         "titlebar_text": "#012016"
     },
     "dark": {
-        "main_color": "#141313",
+        "main_color": "#333333",
         "header_color": "#2f4d40",
         "control_color": "#adcebe",
         "accent_color": "#c1c5e3",
@@ -222,7 +222,7 @@ VIOLET_DREAM_THEME = {
     "name": "Violet Dream",
     "description": "Сине-фиолетовая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#abb2ff",
+        "main_color": "#ffffff",
         "header_color": "#e0e0ff",
         "control_color": "#3e4ade",
         "accent_color": "#82478f",
@@ -235,7 +235,7 @@ VIOLET_DREAM_THEME = {
         "titlebar_text": "#000569"
     },
     "dark": {
-        "main_color": "#282a45",
+        "main_color": "#333333",
         "header_color": "#202cc7",
         "control_color": "#bec2ff",
         "accent_color": "#f4aeff",
@@ -255,7 +255,7 @@ INDIGO_CANDY_THEME = {
     "name": "Indigo Candy",
     "description": "Индиго-розовая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fcf8f9",
+        "main_color": "#ffffff",
         "header_color": "#e1e0ff",
         "control_color": "#4b50c6",
         "accent_color": "#8b428d",
@@ -268,7 +268,7 @@ INDIGO_CANDY_THEME = {
         "titlebar_text": "#04006d"
     },
     "dark": {
-        "main_color": "#141314",
+        "main_color": "#333333",
         "header_color": "#3235ad",
         "control_color": "#c0c1ff",
         "accent_color": "#ffa9fd",
@@ -288,7 +288,7 @@ PINK_MIRAGE_THEME = {
     "name": "Pink Mirage",
     "description": "Розово-фиолетовая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fef8f8",
+        "main_color": "#ffffff",
         "header_color": "#ffd7f2",
         "control_color": "#ab00a1",
         "accent_color": "#894d55",
@@ -301,7 +301,7 @@ PINK_MIRAGE_THEME = {
         "titlebar_text": "#390035"
     },
     "dark": {
-        "main_color": "#151314",
+        "main_color": "#333333",
         "header_color": "#83007b",
         "control_color": "#ffabed",
         "accent_color": "#ffb2bb",
@@ -321,7 +321,7 @@ OLIVE_LIBRARY_THEME = {
     "name": "Olive Library",
     "description": "Оливково-бежево-серая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fdf8f7",
+        "main_color": "#ffffff",
         "header_color": "#eae2c9",
         "control_color": "#635e4a",
         "accent_color": "#596154",
@@ -334,7 +334,7 @@ OLIVE_LIBRARY_THEME = {
         "titlebar_text": "#1f1c0c"
     },
     "dark": {
-        "main_color": "#141313",
+        "main_color": "#333333",
         "header_color": "#4b4734",
         "control_color": "#cec6ae",
         "accent_color": "#c1c9b9",
@@ -354,7 +354,7 @@ LAVENDER_MIST_THEME = {
     "name": "Lavender Mist",
     "description": "Лавандово-серая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fdf8f8",
+        "main_color": "#ffffff",
         "header_color": "#e0e1f2",
         "control_color": "#5b5e6b",
         "accent_color": "#6a5a64",
@@ -367,7 +367,7 @@ LAVENDER_MIST_THEME = {
         "titlebar_text": "#181b26"
     },
     "dark": {
-        "main_color": "#141313",
+        "main_color": "#333333",
         "header_color": "#434653",
         "control_color": "#c4c6d5",
         "accent_color": "#d6c1cd",
@@ -387,7 +387,7 @@ GRAPHITE_NIGHT_THEME = {
     "name": "Graphite Night",
     "description": "Графитово-серая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fdf8f8",
+        "main_color": "#ffffff",
         "header_color": "#dde4e3",
         "control_color": "#586060",
         "accent_color": "#605d64",
@@ -400,7 +400,7 @@ GRAPHITE_NIGHT_THEME = {
         "titlebar_text": "#161d1d"
     },
     "dark": {
-        "main_color": "#141313",
+        "main_color": "#333333",
         "header_color": "#414848",
         "control_color": "#c1c8c7",
         "accent_color": "#cac5cd",
@@ -420,7 +420,7 @@ PUMPKIN_FIELD_THEME = {
     "name": "Pumpkin Field",
     "description": "Тыквенно-оранжевая с зелёным акцентом тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fef8f6",
+        "main_color": "#ffffff",
         "header_color": "#ffdcc6",
         "control_color": "#944a00",
         "accent_color": "#5d6300",
@@ -433,7 +433,7 @@ PUMPKIN_FIELD_THEME = {
         "titlebar_text": "#301400"
     },
     "dark": {
-        "main_color": "#141312",
+        "main_color": "#333333",
         "header_color": "#713700",
         "control_color": "#ffb784",
         "accent_color": "#c6ce56",
@@ -453,7 +453,7 @@ SCARLET_FIRE_THEME = {
     "name": "Scarlet Fire",
     "description": "Алый, насыщенно-красный вариант на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fff8f7",
+        "main_color": "#ffffff",
         "header_color": "#ffdad5",
         "control_color": "#c00007",
         "accent_color": "#875203",
@@ -466,7 +466,7 @@ SCARLET_FIRE_THEME = {
         "titlebar_text": "#410001"
     },
     "dark": {
-        "main_color": "#151312",
+        "main_color": "#333333",
         "header_color": "#930004",
         "control_color": "#ffb4a9",
         "accent_color": "#ffb867",
@@ -486,7 +486,7 @@ TROPICAL_BOUQUET_THEME = {
     "name": "Tropical Bouquet",
     "description": "Тропическая тема: попугайчики, бугенвиллия, салатовые и розовые акценты. Светлый — нежный, тёмный — неоновый!",
     "light": {
-        "main_color": "#fff8f8",
+        "main_color": "#ffffff",
         "header_color": "#ffd9e2",
         "control_color": "#b90063",
         "accent_color": "#506600",
@@ -499,7 +499,7 @@ TROPICAL_BOUQUET_THEME = {
         "titlebar_text": "#3e001d"
     },
     "dark": {
-        "main_color": "#151313",
+        "main_color": "#333333",
         "header_color": "#8e004a",
         "control_color": "#ffb1c8",
         "accent_color": "#aad600",
