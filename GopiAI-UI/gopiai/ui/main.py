@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-GopiAI Standalone Interface - Модульная версия с динамическими цветами
+GopiAI Standalone Interface - Модульная версия с централизованной системой тем
 =====================================================================
 
 Основной файл для запуска модульного интерфейса GopiAI.
-Все цвета теперь динамически привязаны к текущей теме.
+Использует централизованную систему управления темами через ThemeManager.
 
 Автор: Crazy Coder
-Версия: 0.3.1 (Модульная с динамическими цветами)
+Версия: 0.3.2 (Модульная с централизованной системой тем)
 Дата: 2025-06-03
 """
 
@@ -66,7 +66,7 @@ for path in module_paths:
     if path not in sys.path:
         sys.path.insert(0, path)
 
-print("📦 Модульная версия GopiAI v0.3.1 с динамическими цветами")
+print("📦 Модульная версия GopiAI v0.3.2 с централизованной системой тем")
 print("Добавленные пути для модулей:")
 for p in module_paths:
     print(f"- {p} (существует: {os.path.exists(p)})")
@@ -133,18 +133,7 @@ except ImportError as e:
             print(f"Fallback: apply_theme({app_or_theme})")
             return False
         
-        def get_theme_colors(self):
-            """Возвращает базовые цвета для fallback режима"""
-            return {
-                'background': '#2d2d30',
-                'foreground': '#ffffff',
-                'accent': '#007acc',
-                'border': '#3e3e42',
-                'hover': '#404040',
-                'selected': '#094771',
-                'text': '#cccccc',
-                'disabled': '#666666'
-            }
+
 
     if 'ThemeManager' not in globals() or ThemeManager is None:
         ThemeManager = FallbackThemeManager
@@ -160,329 +149,17 @@ MATERIAL_SKY_THEME = {"name": "Material Sky", "primary": "#2196F3"}
 EXTENSIONS_AVAILABLE = True
 
 
-class DynamicColorManager:
-    """Менеджер динамических цветов для интерфейса"""
-    
-    def __init__(self, theme_manager=None):
-        self.theme_manager = theme_manager
-        self._theme_colors = {}
-        self._update_colors()
-    
-    def _update_colors(self):
-        """Обновляет цвета на основе текущей темы"""
-        if self.theme_manager and hasattr(self.theme_manager, 'get_theme_colors'):
-            try:
-                self._theme_colors = self.theme_manager.get_theme_colors()
-                print(f"✅ Цвета темы обновлены: {list(self._theme_colors.keys())}")
-            except Exception as e:
-                print(f"⚠️ Ошибка получения цветов темы: {e}")
-                self._use_fallback_colors()
-        else:
-            self._use_fallback_colors()
-    
-    def _use_fallback_colors(self):
-        """Использует базовые цвета в качестве запасного варианта"""
-        app = QApplication.instance()
-        if app and isinstance(app, QApplication):
-            palette = app.palette()
-            self._theme_colors = {
-                'background': palette.color(QPalette.ColorRole.Window).name(),
-                'foreground': palette.color(QPalette.ColorRole.WindowText).name(),
-                'accent': palette.color(QPalette.ColorRole.Highlight).name(),
-                'border': palette.color(QPalette.ColorRole.Mid).name(),
-                'hover': palette.color(QPalette.ColorRole.AlternateBase).name(),
-                'selected': palette.color(QPalette.ColorRole.Highlight).name(),
-                'text': palette.color(QPalette.ColorRole.Text).name(),
-                'disabled': palette.color(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text).name()
-            }
-        else:
-            # Последний fallback
-            self._theme_colors = {
-                'background': '#2d2d30',
-                'foreground': '#ffffff',
-                'accent': '#007acc',
-                'border': '#3e3e42',
-                'hover': '#404040',
-                'selected': '#094771',
-                'text': '#cccccc',
-                'disabled': '#666666'
-            }
-        print("✅ Используются fallback цвета")
-    
-    def get_color(self, color_name, fallback=None):
-        """Получает цвет по имени с возможностью fallback"""
-        color = self._theme_colors.get(color_name, fallback)
-        if color is None:
-            color = self._theme_colors.get('foreground', '#ffffff')
-        return color
-    
-    def get_all_colors(self):
-        """Возвращает все доступные цвета"""
-        return self._theme_colors.copy()
-    
-    def refresh_colors(self):
-        """Обновляет цвета при смене темы"""
-        self._update_colors()
-    
-    def generate_dynamic_stylesheet(self):
-        """Генерирует динамический stylesheet на основе цветов темы"""
-        colors = self._theme_colors
-        
-        return f"""
-        /* Основные стили окна */
-        QMainWindow {{
-            background-color: {colors.get('background', '#2d2d30')};
-            color: {colors.get('foreground', '#ffffff')};
-            border: none;
-        }}
-        
-        QWidget {{
-            background-color: {colors.get('background', '#2d2d30')};
-            color: {colors.get('text', '#cccccc')};
-            border: none;
-        }}
-        
-        /* Меню */
-        QMenuBar {{
-            background-color: {colors.get('background', '#2d2d30')};
-            color: {colors.get('text', '#cccccc')};
-            padding: 4px;
-            border-bottom: 1px solid {colors.get('border', '#3e3e42')};
-        }}
-        
-        QMenuBar::item {{
-            background-color: transparent;
-            padding: 8px 12px;
-            color: {colors.get('text', '#cccccc')};
-        }}
-        
-        QMenuBar::item:selected {{
-            background-color: {colors.get('accent', '#007acc')};
-            color: {colors.get('foreground', '#ffffff')};
-        }}
-        
-        QMenuBar::item:pressed {{
-            background-color: {colors.get('selected', '#094771')};
-        }}
-        
-        QMenu {{
-            background-color: {colors.get('background', '#2d2d30')};
-            color: {colors.get('text', '#cccccc')};
-            border: 1px solid {colors.get('border', '#3e3e42')};
-            padding: 4px;
-        }}
-        
-        QMenu::item {{
-            padding: 6px 24px;
-        }}
-        
-        QMenu::item:selected {{
-            background-color: {colors.get('accent', '#007acc')};
-            color: {colors.get('foreground', '#ffffff')};
-        }}
-        
-        /* Сплиттеры */
-        QSplitter::handle {{
-            background-color: {colors.get('border', '#3e3e42')};
-            border: 1px solid {colors.get('border', '#3e3e42')};
-        }}
-        
-        QSplitter::handle:horizontal {{
-            width: 3px;
-            background-color: {colors.get('border', '#3e3e42')};
-        }}
-        
-        QSplitter::handle:vertical {{
-            height: 3px;
-            background-color: {colors.get('border', '#3e3e42')};
-        }}
-        
-        QSplitter::handle:hover {{
-            background-color: {colors.get('accent', '#007acc')};
-        }}
-        
-        QSplitter::handle:pressed {{
-            background-color: {colors.get('selected', '#094771')};
-        }}
-        
-        /* Вкладки */
-        QTabWidget::pane {{
-            border: 1px solid {colors.get('border', '#3e3e42')};
-            background-color: {colors.get('background', '#2d2d30')};
-            border-top: none;
-        }}
-        
-        QTabBar::tab {{
-            background-color: {colors.get('hover', '#404040')};
-            color: {colors.get('text', '#cccccc')};
-            padding: 8px 16px;
-            margin-right: 2px;
-            border-top-left-radius: 4px;
-            border-top-right-radius: 4px;
-            min-width: 80px;
-        }}
-        
-        QTabBar::tab:selected {{
-            background-color: {colors.get('accent', '#007acc')};
-            color: {colors.get('foreground', '#ffffff')};
-        }}
-        
-        QTabBar::tab:hover:!selected {{
-            background-color: {colors.get('hover', '#404040')};
-        }}
-        
-        QTabBar::tab:disabled {{
-            color: {colors.get('disabled', '#666666')};
-            background-color: {colors.get('background', '#2d2d30')};
-        }}
-        
-        /* Кнопки */
-        QPushButton {{
-            background-color: {colors.get('hover', '#404040')};
-            color: {colors.get('text', '#cccccc')};
-            border: 1px solid {colors.get('border', '#3e3e42')};
-            padding: 6px 12px;
-            min-width: 80px;
-        }}
-        
-        QPushButton:hover {{
-            background-color: {colors.get('accent', '#007acc')};
-            color: {colors.get('foreground', '#ffffff')};
-            border-color: {colors.get('accent', '#007acc')};
-        }}
-        
-        QPushButton:pressed {{
-            background-color: {colors.get('selected', '#094771')};
-        }}
-        
-        QPushButton:disabled {{
-            background-color: {colors.get('background', '#2d2d30')};
-            color: {colors.get('disabled', '#666666')};
-            border-color: {colors.get('disabled', '#666666')};
-        }}
-        
-        /* Поля ввода */
-        QLineEdit, QTextEdit, QPlainTextEdit {{
-            background-color: {colors.get('background', '#2d2d30')};
-            color: {colors.get('text', '#cccccc')};
-            border: 1px solid {colors.get('border', '#3e3e42')};
-            padding: 4px;
-        }}
-        
-        QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
-            border-color: {colors.get('accent', '#007acc')};
-        }}
-        
-        /* Скроллбары */
-        QScrollBar:vertical {{
-            background-color: {colors.get('background', '#2d2d30')};
-            width: 12px;
-            border: none;
-        }}
-        
-        QScrollBar::handle:vertical {{
-            background-color: {colors.get('hover', '#404040')};
-            min-height: 20px;
-        }}
-        
-        QScrollBar::handle:vertical:hover {{
-            background-color: {colors.get('accent', '#007acc')};
-        }}
-        
-        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-            border: none;
-            background: none;
-        }}
-        
-        QScrollBar:horizontal {{
-            background-color: {colors.get('background', '#2d2d30')};
-            height: 12px;
-            border: none;
-        }}
-        
-        QScrollBar::handle:horizontal {{
-            background-color: {colors.get('hover', '#404040')};
-            min-width: 20px;
-        }}
-        
-        QScrollBar::handle:horizontal:hover {{
-            background-color: {colors.get('accent', '#007acc')};
-        }}
-        
-        /* Группы виджетов */
-        QGroupBox {{
-            color: {colors.get('text', '#cccccc')};
-            border: 1px solid {colors.get('border', '#3e3e42')};
-            padding-top: 16px;
-            margin-top: 8px;
-        }}
-        
-        QGroupBox::title {{
-            color: {colors.get('accent', '#007acc')};
-            subcontrol-origin: margin;
-            left: 8px;
-            padding: 0 8px 0 8px;
-        }}
-        
-        /* Списки */
-        QListWidget, QTreeWidget {{
-            background-color: {colors.get('background', '#2d2d30')};
-            color: {colors.get('text', '#cccccc')};
-            border: 1px solid {colors.get('border', '#3e3e42')};
-            alternate-background-color: {colors.get('hover', '#404040')};
-        }}
-        
-        QListWidget::item:selected, QTreeWidget::item:selected {{
-            background-color: {colors.get('accent', '#007acc')};
-            color: {colors.get('foreground', '#ffffff')};
-        }}
-        
-        QListWidget::item:hover, QTreeWidget::item:hover {{
-            background-color: {colors.get('hover', '#404040')};
-        }}
-        
-        /* Статусная строка */
-        QStatusBar {{
-            background-color: {colors.get('background', '#2d2d30')};
-            color: {colors.get('text', '#cccccc')};
-            border-top: 1px solid {colors.get('border', '#3e3e42')};
-        }}
-        
-        /* Прогресс-бары */
-        QProgressBar {{
-            background-color: {colors.get('background', '#2d2d30')};
-            border: 1px solid {colors.get('border', '#3e3e42')};
-            text-align: center;
-            color: {colors.get('text', '#cccccc')};
-        }}
-        
-        QProgressBar::chunk {{
-            background-color: {colors.get('accent', '#007acc')};
-        }}
-        """
-
-
 class FramelessGopiAIStandaloneWindow(QMainWindow):
-    """Основное frameless окно GopiAI с динамическими цветами"""
+    """Основное frameless окно GopiAI с модульной системой тем"""
 
-    def _apply_dynamic_styles(self):
-        """Применяет динамические стили на основе текущей темы"""
-        try:
-            if hasattr(self, "color_manager"):
-                stylesheet = self.color_manager.generate_dynamic_stylesheet()
-                self.setStyleSheet(stylesheet)
-                print("✅ Динамические стили применены")
-            else:
-                print("⚠️ color_manager не инициализирован, стили не применены")
-        except Exception as e:
-            print(f"⚠️ Ошибка применения динамических стилей: {e}")
+
 
     def __init__(self):
         super().__init__()
-        print("🚀 Инициализация модульного интерфейса GopiAI с динамическими цветами...")
+        print("🚀 Инициализация модульного интерфейса GopiAI с централизованной системой тем...")
 
         # Базовые настройки окна
-        self.setWindowTitle("GopiAI v0.3.1 - Модульный ИИ Интерфейс")
+        self.setWindowTitle("GopiAI v0.3.2 - Модульный ИИ Интерфейс")
         self.setMinimumSize(1000, 700)
         self.resize(1400, 900)
 
@@ -496,80 +173,15 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         
         # Инициализация систем
         self._init_theme_system()
-        self._init_color_manager()
         self._setup_ui()
         self._init_grips()
-        self._apply_dynamic_styles()
         self._connect_menu_signals()
         self._apply_vscode_like_layout()
         self._setup_panel_shortcuts()
 
-        # Настройка автоматического обновления цветов
-        self._setup_color_refresh_timer()
 
-        print("✅ FramelessGopiAIStandaloneWindow с динамическими цветами готов к работе!")
+        print("✅ FramelessGopiAIStandaloneWindow готов к работе!")
 
-    def _init_color_manager(self):
-        """Инициализация менеджера динамических цветов"""
-        try:
-            self.color_manager = DynamicColorManager(self.theme_manager)
-            print("✅ Менеджер динамических цветов инициализирован")
-        except Exception as e:
-            print(f"⚠️ Ошибка инициализации менеджера цветов: {e}")
-            self.color_manager = DynamicColorManager()
-
-    def _setup_color_refresh_timer(self):
-        """Настройка таймера для обновления цветов"""
-        self.color_refresh_timer = QTimer()
-        self.color_refresh_timer.timeout.connect(self._refresh_colors_if_needed)
-        self.color_refresh_timer.start(1000)  # Проверяем каждую секунду
-
-    def _refresh_colors_if_needed(self):
-        """Обновляет цвета при необходимости"""
-        try:
-            # Проверяем, изменилась ли тема
-            if hasattr(self.theme_manager, 'current_theme'):
-                current_theme = getattr(self.theme_manager, 'current_theme', None)
-                if not hasattr(self, '_last_theme') or self._last_theme != current_theme:
-                    self._last_theme = current_theme
-                    self._refresh_all_colors()
-        except Exception as e:
-            # Тихо игнорируем ошибки обновления
-            pass
-
-    def _refresh_all_colors(self):
-        """Полное обновление всех цветов интерфейса"""
-        try:
-            print("🎨 Обновление цветов интерфейса...")
-            self.color_manager.refresh_colors()
-            self._apply_dynamic_styles()
-            
-            # Обновляем цвета всех дочерних виджетов
-            self._update_child_widgets_colors()
-            
-            print("✅ Цвета интерфейса обновлены")
-        except Exception as e:
-            print(f"⚠️ Ошибка обновления цветов: {e}")
-
-    def _update_child_widgets_colors(self):
-        """Обновляет цвета всех дочерних виджетов"""
-        try:
-            # Обновляем цвета меню
-            if hasattr(self, 'titlebar_with_menu'):
-                menu_bar = getattr(self.titlebar_with_menu, 'menu_bar', None)
-                if menu_bar and hasattr(menu_bar, 'refresh_colors'):
-                    menu_bar.refresh_colors()
-            
-            # Обновляем цвета всех виджетов, только если у них есть метод refresh_colors
-            for widget in self.findChildren(QWidget):
-                if hasattr(widget, 'refresh_colors') and callable(getattr(widget, 'refresh_colors', None)):
-                    try:
-                        widget.refresh_colors() # type: ignore
-                    except Exception as widget_error:
-                        print(f"⚠️ Ошибка обновления цветов виджета {type(widget).__name__}: {widget_error}")
-                    
-        except Exception as e:
-            print(f"⚠️ Ошибка обновления цветов дочерних виджетов: {e}")
 
     def _setup_ui(self):
         """Настройка модульного пользовательского интерфейса"""
@@ -621,16 +233,25 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         # Правая панель - чат с ИИ (модульный)
         try:
             # Пытаемся использовать WebView чат с современным интерфейсом
+            print("🔍 Попытка создать WebViewChatWidget...")
             self.chat_widget = WebViewChatWidget()
+            print("🔍 WebViewChatWidget создан успешно")
+            
             # Передаем менеджер тем в WebView чат для интеграции
             if hasattr(self, 'theme_manager'):
+                print("🔍 Передаем theme_manager в WebViewChatWidget...")
                 self.chat_widget.set_theme_manager(self.theme_manager)
+                print("🔍 theme_manager передан успешно")
             print("✅ Используется WebView чат")
         except Exception as e:
-            print(f"⚠️ WebView чат недоступен, используется обычный чат: {e}")
+            print(f"❌ WebView чат недоступен, используется обычный чат: {e}")
+            print(f"❌ Тип ошибки: {type(e).__name__}")
+            import traceback
+            print(f"❌ Полная ошибка: {traceback.format_exc()}")
             # Fallback - используем обычный ChatWidget из импорта
             from gopiai.ui.components.chat_widget import ChatWidget
             self.chat_widget = ChatWidget()
+            print("🔄 Fallback: используется обычный ChatWidget")
         self.chat_widget.setMinimumWidth(250)
         self.chat_widget.setMaximumWidth(600)
         self.chat_widget.resize(300, 600)
@@ -874,9 +495,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                     print(f"🔍 main.py: Результат apply_theme = {result}")
                     if result:
                         print("✅ Система тем применена через theme_manager")
-                        # Обновляем тему WebView чата
-                        if hasattr(self, 'chat_widget') and hasattr(self.chat_widget, '_apply_theme_to_webview'):
-                            self.chat_widget._apply_theme_to_webview()
+                        
                         return
                     else:
                         print("⚠️ apply_theme вернул False")
@@ -888,51 +507,10 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
             traceback.print_exc()
 
-        # Последний fallback - встроенные стили
-        print("⚠️ Используем встроенные стили fallback")
-        self._apply_fallback_styles()
+        # Если все попытки применения темы не удались, оставляем стандартные системные стили
+        print("⚠️ Используется системная тема по умолчанию")
 
-    def _apply_fallback_styles(self):
-        """Применение запасных стилей"""
-        fallback_style = """
-      QMainWindow {
-          background-color: #1e1e1e;
-          color: #ffffff;
-      }
-      QWidget {
-          background-color: #ff0000;
-          color: #ffffff;
-          border: none;
-      }
-      QMenuBar {
-          background-color: #333333;
-          color: #ffffff;
-          padding: 4px;
-      }
-      QMenuBar::item {
-          background-color: transparent;
-          padding: 8px 12px;
-      }
-      QMenuBar::item:selected {
-          background-color: #4CAF50;
-      }
-      QSplitter::handle {
-          background-color: #404040;
-      }
-      QTabWidget::pane {
-          border: 1px solid #404040;
-          background-color: #ff0000;
-      }
-      QTabBar::tab {
-          background-color: #404040;
-          color: #ffffff;
-          padding: 8px 16px;
-          margin-right: 2px;
-      }
-      QTabBar::tab:selected {
-          background-color: #4CAF50;
-      }        """
-        self.setStyleSheet(fallback_style)
+
 
     def _connect_menu_signals(self):
         """Подключение сигналов меню"""
@@ -1106,32 +684,36 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             print(f"⚠️ Ошибка применения настроек: {e}")
 
     def _show_settings(self):
-        """Показать диалог настроек"""
-        try:
-            # Сохраняем диалог как атрибут экземпляра, чтобы избежать удаления
-            if hasattr(self, "_settings_dialog") and self._settings_dialog is not None:
-                try:
-                    self._settings_dialog.close()
-                except Exception:
-                    pass
+            """Показать диалог настроек"""
+            try:
+                # Сохраняем диалог как атрибут экземпляра, чтобы избежать удаления
+                if hasattr(self, "_settings_dialog") and self._settings_dialog is not None:
+                    try:
+                        self._settings_dialog.close()
+                    except Exception:
+                        pass
+                    self._settings_dialog = None
+                self._settings_dialog = GopiAISettingsDialog(self.theme_manager, self)
+                # Подключаем сигнал для применения настроек
+                self._settings_dialog.settings_applied.connect(self._on_settings_changed)
+                
+                # ИСПРАВЛЕНИЕ: Подключаем сигнал изменения темы для мгновенного обновления WebView
+                self._settings_dialog.themeChanged.connect(self.on_change_theme)
+    
+                # Показываем диалог
+                if (
+                    self._settings_dialog.exec()
+                    == self._settings_dialog.DialogCode.Accepted
+                ):
+                    print("✅ Настройки применены")
                 self._settings_dialog = None
-            self._settings_dialog = GopiAISettingsDialog(self.theme_manager, self)
-            # Подключаем сигнал для применения настроек
-            self._settings_dialog.settings_applied.connect(self._on_settings_changed)
+    
+            except Exception as e:
+                print(f"⚠️ Ошибка отображения диалога настроек: {e}")
+                from PySide6.QtWidgets import QMessageBox
+    
+                QMessageBox.warning(self, "Ошибка", f"Не удалось открыть настройки: {e}")
 
-            # Показываем диалог
-            if (
-                self._settings_dialog.exec()
-                == self._settings_dialog.DialogCode.Accepted
-            ):
-                print("✅ Настройки применены")
-            self._settings_dialog = None
-
-        except Exception as e:
-            print(f"⚠️ Ошибка отображения диалога настроек: {e}")
-            from PySide6.QtWidgets import QMessageBox
-
-            QMessageBox.warning(self, "Ошибка", f"Не удалось открыть настройки: {e}")
 
     def _apply_theme_change(self, theme_key: str):
         """Применение изменения темы"""
@@ -1208,11 +790,8 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                     # Обновляем все компоненты после применения глобальной темы
                     self._apply_theme_to_components()
                     
-                    # Обновляем тему в WebView чате если он есть
-                    if hasattr(self, 'chat_widget') and hasattr(self.chat_widget, '_apply_theme_to_webview'):
-                        self.chat_widget._apply_theme_to_webview()
-                        print("✅ Тема обновлена в WebView чате")
-                    
+
+
                     return
                 except Exception as e:
                     print(f"⚠️ Ошибка применения темы через theme_manager: {e}")
@@ -1220,13 +799,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             print(f"⚠️ Не удалось применить тему: {theme_name}")
 
         except Exception as e:
-            print(f"⚠️ Ошибка смены темы: {e}")  # Fallback - применяем простую тему
-            try:
-                # Применяем fallback стили
-                self._apply_fallback_styles()
-                print("✅ Применена простая fallback тема")
-            except Exception as fallback_error:
-                print(f"⚠️ Ошибка fallback темы: {fallback_error}")
+            print(f"⚠️ Ошибка смены темы: {e}")
 
     def resizeEvent(self, event):
         """Обработка изменения размера окна"""
@@ -1250,8 +823,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 print("🎨 Применяем тему к компонентам...")
                 
                 # Обновляем основные стили
-                self._apply_dynamic_styles()
-                
+                        
                 # Обновляем titlebar если есть
                 if hasattr(self, 'titlebar_with_menu'):
                     try:
@@ -1262,48 +834,35 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                     except Exception as e:
                         print(f"⚠️ Ошибка обновления titlebar: {e}")
                 
-                # Обновляем file_explorer если есть apply_theme
-                if hasattr(self, 'file_explorer'):
+                # ДИАГНОСТИКА: Проверяем, какой именно чат используется
+                if hasattr(self, 'chat_widget') and self.chat_widget:
+                    chat_type = type(self.chat_widget).__name__
+                    print(f"🔍 Тип чата: {chat_type}")
+                    print(f"🔍 Методы чата: {[method for method in dir(self.chat_widget) if 'theme' in method.lower() or 'apply' in method.lower()]}")
+                    
                     try:
-                        if hasattr(self.file_explorer, 'apply_theme'):
-                            self.file_explorer.apply_theme()
-                            print("✅ File Explorer обновлен")
-                        elif hasattr(self.file_explorer, 'refresh_colors'):
-                            self.file_explorer.refresh_colors()
-                            print("✅ File Explorer обновлен (refresh_colors)")
+                        if hasattr(self.chat_widget, '_apply_theme_to_webview'):
+                            print("🎯 Вызываем _apply_theme_to_webview()")
+                            self.chat_widget._apply_theme_to_webview() # type: ignore
+                            print("✅ WebView чат обновлен через _apply_theme_to_webview")
+                        elif hasattr(self.chat_widget, 'apply_theme'):
+                            print("🎯 Вызываем apply_theme()")
+                            self.chat_widget.apply_theme() # type: ignore
+                            print("✅ WebView чат обновлен через apply_theme")
+                        else:
+                            print("❌ У чата нет методов обновления темы!")
+                            print(f"❌ Это значит, что используется обычный ChatWidget, а не WebViewChatWidget")
                     except Exception as e:
-                        print(f"⚠️ Ошибка обновления File Explorer: {e}")
+                        print(f"⚠️ Ошибка обновления WebView чата: {e}")
+                else:
+                    print("❌ chat_widget не найден!")
                 
-                # Обновляем tab_document если есть apply_theme
-                if hasattr(self, 'tab_document'):
-                    try:
-                        if hasattr(self.tab_document, 'apply_theme'):
-                            self.tab_document.apply_theme()
-                            print("✅ Tab Document обновлен")
-                        elif hasattr(self.tab_document, 'refresh_colors'):
-                            self.tab_document.refresh_colors()
-                            print("✅ Tab Document обновлен (refresh_colors)")
-                    except Exception as e:
-                        print(f"⚠️ Ошибка обновления Tab Document: {e}")
-                
-                # Обновляем terminal_widget если есть apply_theme
-                if hasattr(self, 'terminal_widget'):
-                    try:
-                        if hasattr(self.terminal_widget, 'apply_theme'):
-                            self.terminal_widget.apply_theme()
-                            print("✅ Terminal обновлен")
-                        elif hasattr(self.terminal_widget, 'refresh_colors'):
-                            self.terminal_widget.refresh_colors()
-                            print("✅ Terminal обновлен (refresh_colors)")
-                    except Exception as e:
-                        print(f"⚠️ Ошибка обновления Terminal: {e}")
-                
-                # Принудительно обновляем приложение
-                QApplication.instance().processEvents()
                 print("✅ Все компоненты обновлены")
                 
             except Exception as e:
                 print(f"⚠️ Ошибка применения темы к компонентам: {e}")
+
+
 
 def main():
     """Основная функция запуска приложения"""

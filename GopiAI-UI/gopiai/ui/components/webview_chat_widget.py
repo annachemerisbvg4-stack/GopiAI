@@ -434,58 +434,61 @@ class WebViewChatWidget(QWidget):
         self._apply_theme_to_webview()
     
     def _apply_theme_to_webview(self):
-        """Применение глобальной темы к WebView с полным переопределением стилей"""
-        print("🎨 WebView chat: Начинаем применение темы...")
-        if not self.theme_manager:
-            print("⚠️ WebView chat: theme_manager не установлен")
-            return
-        
-        # Проверяем, что WebView загружен
-        if not hasattr(self, 'web_view') or not self.web_view.page():
-            print("⚠️ WebView chat: страница еще не загружена, откладываем применение темы")
-            # Устанавливаем флаг для применения темы после загрузки
-            self._theme_pending = True
-            return
-        
-        # Получаем цвета текущей темы
-        theme_colors = self._get_theme_colors()
-        
-        # Создаем более подробные CSS переменные для полной интеграции
-        css_variables = self._generate_css_variables(theme_colors)
-        
-        # Инъекция CSS переменных в WebView
-        css_injection = f"""
-        :root {{
-            {css_variables}
-        }}
-        
-        /* Применяем плавные переходы при смене темы */
-        *, *::before, *::after {{
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-        }}
-        """
-        
-        # Применяем CSS через JavaScript
-        script = f"""
-        // Удаляем предыдущие темы если есть
-        const existingThemeStyles = document.querySelectorAll('[data-gopiai-theme]');
-        existingThemeStyles.forEach(style => style.remove());
-        
-        // Создаем новый элемент стилей
-        const style = document.createElement('style');
-        style.setAttribute('data-gopiai-theme', 'true');
-        style.textContent = `{css_injection}`;
-        document.head.appendChild(style);
-        
-        // Уведомляем об обновлении темы если есть соответствующий обработчик
-        if (window.gopiaiChat && window.gopiaiChat.onThemeUpdated) {{
-            window.gopiaiChat.onThemeUpdated();
-        }}
-        
-        console.log('GopiAI theme applied to WebView chat');
-        """
-        
-        self.web_view.page().runJavaScript(script)
+            """Применение глобальной темы к WebView с полным переопределением стилей"""
+            print("🎨 WebView chat: Начинаем применение темы...")
+            if not self.theme_manager:
+                print("⚠️ WebView chat: theme_manager не установлен")
+                return
+            
+            # Проверяем, что WebView загружен
+            if not hasattr(self, 'web_view') or not self.web_view.page():
+                print("⚠️ WebView chat: страница еще не загружена, откладываем применение темы")
+                # Устанавливаем флаг для применения темы после загрузки
+                self._theme_pending = True
+                return
+            
+            # Получаем цвета текущей темы
+            theme_colors = self._get_theme_colors()
+            
+            # Создаем более подробные CSS переменные для полной интеграции
+            css_variables = self._generate_css_variables(theme_colors)
+            
+            # Инъекция CSS переменных в WebView
+            css_injection = f"""
+            :root {{
+                {css_variables}
+            }}
+            
+            /* Применяем плавные переходы при смене темы */
+            *, *::before, *::after {{
+                transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            }}
+            """
+            
+            # ИСПРАВЛЕНИЕ: Оборачиваем код в функцию для изоляции переменных
+            script = f"""
+            (function() {{
+                // Удаляем предыдущие темы если есть
+                const existingThemeStyles = document.querySelectorAll('[data-gopiai-theme]');
+                existingThemeStyles.forEach(style => style.remove());
+                
+                // Создаем новый элемент стилей
+                const style = document.createElement('style');
+                style.setAttribute('data-gopiai-theme', 'true');
+                style.textContent = `{css_injection}`;
+                document.head.appendChild(style);
+                
+                // Уведомляем об обновлении темы если есть соответствующий обработчик
+                if (window.gopiaiChat && window.gopiaiChat.onThemeUpdated) {{
+                    window.gopiaiChat.onThemeUpdated();
+                }}
+                
+                console.log('GopiAI theme applied to WebView chat');
+            }})();
+            """
+            
+            self.web_view.page().runJavaScript(script)
+
     
     def _generate_css_variables(self, theme_colors: dict) -> str:
         """Генерация CSS переменных из цветов темы"""

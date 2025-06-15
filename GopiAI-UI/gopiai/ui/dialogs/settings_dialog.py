@@ -1,6 +1,4 @@
-"""
-Диалог настроек GopiAI
-"""
+"""Диалог настроек GopiAI"""
 
 from PySide6.QtWidgets import (
     QDialog,
@@ -35,7 +33,11 @@ class SettingsCard(QFrame):
     def __init__(self, title: str, description: str = "", parent=None):
         super().__init__(parent)
         self.setFrameStyle(QFrame.Shape.StyledPanel)
-        # Удаляем жестко заданные стили, они будут применяться из глобальной темы
+        # Устанавливаем objectName для лучшего стилизирования
+        self.setObjectName("SettingsCard")
+        
+        # Убираем все жестко заданные стили - они будут применяться из глобальной темы
+        self.setContentsMargins(16, 16, 16, 16)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(8)
@@ -52,7 +54,8 @@ class SettingsCard(QFrame):
         if description:
             desc_label = QLabel(description)
             desc_label.setWordWrap(True)
-            desc_label.setStyleSheet("font-size: 9pt;")  # Убираем жестко заданный цвет
+            desc_label.setObjectName("DescriptionLabel")
+            # Убираем жестко заданные стили - они будут из темы
             layout.addWidget(desc_label)
 
         # Контейнер для контента
@@ -62,6 +65,7 @@ class SettingsCard(QFrame):
     def add_content(self, widget):
         """Добавить виджет в карточку"""
         self.content_layout.addWidget(widget)
+
 
 
 # Вспомогательные функции
@@ -109,124 +113,351 @@ class GopiAISettingsDialog(QDialog):
             brightness = (r * 299 + g * 587 + b * 114) / 1000
             return brightness > 128
         return True  # По умолчанию считаем светлым
-
+    
     def __init__(self, theme_manager=None, parent=None):
-        print("🔧 GopiAISettingsDialog.__init__ начат")
-        super().__init__(parent)
-        print("🔧 super().__init__ выполнен")
-        # Добавляем свойство безрамочного окна
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
-        self.theme_manager = theme_manager
-        self.settings = {}
+            print("🔧 GopiAISettingsDialog.__init__ начат")
+            super().__init__(parent)
+            print("🔧 super().__init__ выполнен")
+            # Добавляем свойство безрамочного окна
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
+            self.theme_manager = theme_manager
+            self.settings = {}
+    
+            # Переменная для хранения позиции мыши при перетаскивании
+            self._drag_position = None
+    
+            print("🔧 Вызываем setup_ui()")
+            self.setup_ui()
+            print("🔧 setup_ui() завершен")
+            print("🔧 Вызываем load_current_settings()")
+            self.load_current_settings()
+            print("🔧 load_current_settings() завершен")
+            print("🔧 GopiAISettingsDialog.__init__ завершен")    
+    def _get_theme_colors_for_dialog(self):
+            """Получает полную палитру цветов для диалога настроек"""
+            if not self.theme_manager:
+                return {
+                    'bg_color': '#f8f9fa',
+                    'text_color': '#212529',
+                    'border_color': '#dee2e6',
+                    'hover_color': '#e9ecef',
+                    'selected_color': '#007bff',
+                    'button_color': '#6c757d',
+                    'accent_color': '#007bff'
+                }
+            
+            theme_data = self.theme_manager.get_current_theme_data()
+            if not theme_data:
+                return {
+                    'bg_color': '#f8f9fa',
+                    'text_color': '#212529',
+                    'border_color': '#dee2e6',
+                    'hover_color': '#e9ecef',
+                    'selected_color': '#007bff',
+                    'button_color': '#6c757d',
+                    'accent_color': '#007bff'
+                }
+            
+            # Получаем основные цвета из темы
+            bg_color = theme_data.get('main_color', '#f8f9fa')
+            text_color = theme_data.get('text_color', '#212529')
+            
+            # Получаем дополнительные цвета или создаем на основе основных
+            border_color = theme_data.get('border_color', theme_data.get('secondary_color', '#dee2e6'))
+            accent_color = theme_data.get('accent_color', theme_data.get('primary_color', '#007bff'))
+            
+            # Создаем производные цвета
+            is_light = self._is_light_color(bg_color)
+            
+            if is_light:
+                hover_color = self._darken_color(bg_color, 0.05)
+                selected_color = self._darken_color(bg_color, 0.1)
+                button_color = self._darken_color(bg_color, 0.03)
+            else:
+                hover_color = self._lighten_color(bg_color, 0.1)
+                selected_color = self._lighten_color(bg_color, 0.15)
+                button_color = self._lighten_color(bg_color, 0.05)
+            
+            return {
+                'bg_color': bg_color,
+                'text_color': text_color,
+                'border_color': border_color,
+                'hover_color': hover_color,
+                'selected_color': selected_color,
+                'button_color': button_color,
+                'accent_color': accent_color
+            }
+    
+    def _darken_color(self, color, amount):
+        """Затемняет цвет на указанную величину"""
+        try:
+            if color.startswith('#'):
+                color = color[1:]
+            
+            r = int(color[0:2], 16)
+            g = int(color[2:4], 16)
+            b = int(color[4:6], 16)
+            
+            r = max(0, int(r * (1 - amount)))
+            g = max(0, int(g * (1 - amount)))
+            b = max(0, int(b * (1 - amount)))
+            
+            return f"#{r:02x}{g:02x}{b:02x}"
+        except:
+            return color
+    
+    def _lighten_color(self, color, amount):
+        """Осветляет цвет на указанную величину"""
+        try:
+            if color.startswith('#'):
+                color = color[1:]
+            
+            r = int(color[0:2], 16)
+            g = int(color[2:4], 16)
+            b = int(color[4:6], 16)
+            
+            r = min(255, int(r + (255 - r) * amount))
+            g = min(255, int(g + (255 - g) * amount))
+            b = min(255, int(b + (255 - b) * amount))
+            
+            return f"#{r:02x}{g:02x}{b:02x}"
+        except:
+            return color
+        
+    def _apply_theme_styles(self):
+        """Применяет полную интеграцию с темой для всех элементов диалога"""
+        colors = self._get_theme_colors_for_dialog()
+        
+        # Определяем текст для кнопок на основе яркости фона
+        is_light_bg = self._is_light_color(colors['bg_color'])
+        button_text_color = "#1a1a1a" if is_light_bg else "#ffffff"
+        
+        # Применяем полные стили с интеграцией темы
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {colors['bg_color']};
+                color: {colors['text_color']};
+                border: 1px solid {colors['border_color']};
+                border-radius: 1px;
+            }}
+            
+            QWidget {{
+                background-color: {colors['bg_color']};
+                color: {colors['text_color']};
+            }}
+            
+            QLabel {{
+                color: {colors['text_color']};
+                background-color: transparent;
+            }}
+            
+            QPushButton {{
+                background-color: {colors['button_color']};
+                color: {button_text_color};
+                border: 1px solid {colors['border_color']};
+                padding: 8px 16px;
+                border-radius: 1px;
+                font-weight: 500;
+                min-width: 80px;
+            }}
+            QPushButton:hover {{
+                background-color: {colors['hover_color']};
+                border-color: {colors['accent_color']};
+            }}
+            QPushButton:pressed {{
+                background-color: {colors['selected_color']};
+            }}
+            
+            QTabWidget::pane {{
+                border: 1px solid {colors['border_color']};
+                border-radius: 1px;
+                background-color: {colors['bg_color']};
+                top: -1px;
+            }}
+            QTabBar::tab {{
+                background-color: {colors['button_color']};
+                color: {colors['text_color']};
+                padding: 10px 20px;
+                margin-right: 2px;
+                border-top-left-radius: 6px;
+                border-top-right-radius: 6px;
+                border: 1px solid {colors['border_color']};
+                border-bottom: none;
+            }}
+            QTabBar::tab:selected {{
+                background-color: {colors['bg_color']};
+                border-bottom: 1px solid {colors['bg_color']};
+            }}
+            QTabBar::tab:hover {{
+                background-color: {colors['hover_color']};
+            }}
+            
+            QFrame {{
+                background-color: {colors['button_color']};
+                border: 1px solid {colors['border_color']};
+                border-radius: 1px;
+                color: {colors['text_color']};
+            }}
+            QFrame:hover {{
+                background-color: {colors['hover_color']};
+                border-color: {colors['accent_color']};
+            }}
+            
+            QFrame#SettingsCard {{
+                background-color: {colors['button_color']};
+                border: 1px solid {colors['border_color']};
+                border-radius: 1px;
+                color: {colors['text_color']};
+                padding: 16px;
+                margin: 6px;
+            }}
+            QFrame#SettingsCard:hover {{
+                background-color: {colors['hover_color']};
+                border-color: {colors['accent_color']};
+            }}
+            
+            QLabel#DescriptionLabel {{
+                color: {colors['text_color']};
+                background-color: transparent;
+                font-size: 9pt;
+            }}
+            
+            QComboBox {{
+                background-color: {colors['button_color']};
+                color: {colors['text_color']};
+                border: 1px solid {colors['border_color']};
+                border-radius: 1px;
+                padding: 6px;
+                min-width: 120px;
+            }}
+            QComboBox:hover {{
+                border-color: {colors['accent_color']};
+                background-color: {colors['hover_color']};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+                background-color: transparent;
+            }}
+            QComboBox::down-arrow {{
+                width: 12px;
+                height: 12px;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {colors['button_color']};
+                color: {colors['text_color']};
+                border: 1px solid {colors['border_color']};
+                selection-background-color: {colors['accent_color']};
+            }}
+            
+            QCheckBox {{
+                color: {colors['text_color']};
+                spacing: 8px;
+                background-color: transparent;
+            }}
+            QCheckBox::indicator {{
+                width: 18px;
+                height: 18px;
+                border: 2px solid {colors['border_color']};
+                border-radius: 1px;
+                background-color: {colors['button_color']};
+            }}
+            QCheckBox::indicator:hover {{
+                border-color: {colors['accent_color']};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {colors['accent_color']};
+                border-color: {colors['accent_color']};
+            }}
+            QCheckBox::indicator:checked:hover {{
+                background-color: {colors['selected_color']};
+            }}
+            
+            QSpinBox, QLineEdit, QTextEdit {{
+                background-color: {colors['button_color']};
+                color: {colors['text_color']};
+                border: 1px solid {colors['border_color']};
+                border-radius: 1px;
+                padding: 6px;
+            }}
+            QSpinBox:hover, QLineEdit:hover, QTextEdit:hover {{
+                border-color: {colors['accent_color']};
+                background-color: {colors['hover_color']};
+            }}
+            QSpinBox:focus, QLineEdit:focus, QTextEdit:focus {{
+                border-color: {colors['accent_color']};
+                border-width: 2px;
+            }}
+            
+            QScrollArea {{
+                background-color: {colors['bg_color']};
+                border: none;
+            }}
+            QScrollArea > QWidget > QWidget {{
+                background-color: {colors['bg_color']};
+            }}
+            
+            QScrollBar:vertical {{
+                background-color: {colors['button_color']};
+                width: 12px;
+                border-radius: 1px;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {colors['border_color']};
+                border-radius: 1px;
+                min-height: 20px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {colors['accent_color']};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                border: none;
+                background: none;
+            }}
+            
+            QFormLayout {{
+                background-color: transparent;
+            }}
+            QVBoxLayout {{
+                background-color: transparent;
+            }}
+            QHBoxLayout {{
+                background-color: transparent;
+            }}
+            QGridLayout {{
+                background-color: transparent;
+            }}
+        """)
 
-        # Переменная для хранения позиции мыши при перетаскивании
-        self._drag_position = None
 
-        print("🔧 Вызываем setup_ui()")
-        self.setup_ui()
-        print("🔧 setup_ui() завершен")
-        print("🔧 Вызываем load_current_settings()")
-        self.load_current_settings()
-        print("🔧 load_current_settings() завершен")
-        print("🔧 GopiAISettingsDialog.__init__ завершен")
-
+    def _apply_close_button_style(self):
+        """Применяет стиль к кнопке закрытия с интеграцией темы"""
+        colors = self._get_theme_colors_for_dialog()
+        
+        self.close_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {colors['text_color']};
+                font-weight: bold;
+                border: none;
+                border-radius: 1px;
+            }}
+            QPushButton:hover {{
+                background-color: #ff6b6b;
+                color: white;
+            }}
+            QPushButton:pressed {{
+                background-color: #ff5252;
+            }}
+        """)
+        
     def setup_ui(self):
         """Настройка пользовательского интерфейса"""
         self.setWindowTitle("Настройки GopiAI")
         self.setMinimumSize(600, 500)
         self.resize(800, 600)
 
-        # Применяем текущую тему к диалогу
-        if self.theme_manager:  # Получаем цвета из текущей темы
-            current_theme_data = self.theme_manager.get_current_theme_data()
-            if current_theme_data:
-                main_color = current_theme_data.get("main_color", "#f8f9fa")
-                text_color = current_theme_data.get("text_color", "#212529")
-
-                # Определяем текст на основе яркости фона
-                is_light_bg = self._is_light_color(main_color)
-                button_text_color = "#1a1a1a" if is_light_bg else "#ffffff"
-
-                # Применяем стили ко всему диалогу
-                self.setStyleSheet(
-                    f"""
-                  QDialog {{
-                      background-color: {main_color};
-                      color: {text_color};
-                  }}
-                  QLabel {{
-                      color: {text_color};
-                  }}
-                  QPushButton {{
-                      background-color: {main_color}dd;
-                      color: {button_text_color};
-                      border: 1px solid #dee2e6;
-                      padding: 5px 10px;
-                      border-radius: 4px;
-                  }}
-                  QPushButton:hover {{
-                      background-color: {main_color}ee;
-                  }}
-                  QTabWidget::pane {{
-                      border: 1px solid #dee2e6;
-                      border-radius: 4px;
-                  }}
-                  QTabBar::tab {{
-                      background-color: {main_color};
-                      color: {text_color};
-                      padding: 8px 12px;
-                  }}
-                  QTabBar::tab:selected {{
-                      background-color: {main_color}cc;
-                  }}
-                  SettingsCard {{
-                      background-color: {main_color}cc;
-                      border: 1px solid #dee2e6;
-                      border-radius: 8px;
-                      padding: 12px;
-                      margin: 4px;
-                  }}
-                  SettingsCard:hover {{
-                      background-color: {main_color}ee;
-                  }}
-                  QComboBox {{
-                      background-color: {main_color}ee;
-                      color: {text_color};
-                      border: 1px solid #dee2e6;
-                      border-radius: 4px;
-                      padding: 3px;
-                  }}
-                  QComboBox:hover {{
-                      border: 1px solid #bbb;
-                  }}
-                  QCheckBox {{
-                      color: {text_color};
-                  }}
-                  QCheckBox::indicator {{
-                      width: 15px;
-                      height: 15px;
-                      border: 1px solid #dee2e6;
-                      border-radius: 3px;
-                  }}
-                  QCheckBox::indicator:checked {{
-                      background-color: {main_color}dd;
-                  }}
-                  QSpinBox, QLineEdit, QTextEdit {{
-                      background-color: {main_color}ee;
-                      color: {text_color};
-                      border: 1px solid #dee2e6;
-                      border-radius: 4px;
-                      padding: 3px;
-                  }}
-                  QSpinBox:hover, QLineEdit:hover, QTextEdit:hover {{
-                      border: 1px solid #bbb;
-                  }}
-                  QScrollArea, QScrollBar {{
-                      background-color: {main_color};
-                      border: none;
-                  }}
-              """
-                )
+        # Применяем полную интеграцию с темой
+        self._apply_theme_styles()
 
         # Основной layout
         main_layout = QVBoxLayout(self)
@@ -242,22 +473,11 @@ class GopiAISettingsDialog(QDialog):
         header_layout.addWidget(title_label)
 
         # Добавляем кнопку закрытия для безрамочного режима
-        close_button = QPushButton("✕")
-        close_button.setMaximumSize(30, 30)
-        close_button.clicked.connect(self.reject)
-        close_button.setStyleSheet(
-            """
-          QPushButton {
-              background-color: transparent;
-              font-weight: bold;
-          }
-          QPushButton:hover {
-              background-color: #ff6b6b;
-              color: white;
-          }
-      """
-        )
-        header_layout.addWidget(close_button)
+        self.close_button = QPushButton("✕")
+        self.close_button.setMaximumSize(30, 30)
+        self.close_button.clicked.connect(self.reject)
+        self._apply_close_button_style()  # Применяем стиль с интеграцией темы
+        header_layout.addWidget(self.close_button)
 
         main_layout.addLayout(header_layout)
 
@@ -692,122 +912,31 @@ class GopiAISettingsDialog(QDialog):
     def _update_dialog_theme(self):
         """Обновляет тему диалога настроек, применяя текущие цвета из менеджера тем"""
         try:
-            if self.theme_manager:
-                # Получаем данные текущей темы
-                current_theme_data = self.theme_manager.get_current_theme_data()
-                if current_theme_data:
-                    main_color = current_theme_data.get("main_color", "#f8f9fa")
-                    text_color = current_theme_data.get("text_color", "#212529")
-
-                    # Определяем текст на основе яркости фона
-                    is_light_bg = self._is_light_color(main_color)
-                    button_text_color = "#1a1a1a" if is_light_bg else "#ffffff"
-
-                    # Обновляем стили всех виджетов
-                    self.setStyleSheet(
-                        f"""
-                      QDialog {{
-                          background-color: {main_color};
-                          color: {text_color};
-                      }}
-                      QLabel {{
-                          color: {text_color};
-                      }}
-                      QPushButton {{
-                          background-color: {main_color}dd;
-                          color: {button_text_color};
-                          border: 1px solid #dee2e6;
-                          padding: 5px 10px;
-                          border-radius: 4px;
-                      }}
-                      QPushButton:hover {{
-                          background-color: {main_color}ee;
-                      }}
-                      QPushButton:pressed {{
-                          background-color: {main_color}cc;
-                      }}
-                      QPushButton:disabled {{
-                          background-color: {main_color}88;
-                      }}
-                      QTabWidget::pane {{
-                          border: 1px solid #dee2e6;
-                          border-radius: 4px;
-                      }}
-                      QTabBar::tab {{
-                          background-color: {main_color};
-                          color: {text_color};
-                          padding: 8px 12px;
-                      }}
-                      QTabBar::tab:selected {{
-                          background-color: {main_color}cc;
-                      }}
-                      QTabBar::tab:hover {{
-                          background-color: {main_color}dd;
-                      }}
-                      SettingsCard {{
-                          background-color: {main_color}cc;
-                          border: 1px solid #dee2e6;
-                          border-radius: 8px;
-                          padding: 12px;
-                          margin: 4px;
-                      }}
-                      SettingsCard:hover {{
-                          background-color: {main_color}ee;
-                      }}
-                      SettingsCard:pressed {{
-                          background-color: {main_color}dd;
-                      }}
-                      SettingsCard:disabled {{
-                          background-color: {main_color}66;
-                      }}
-                      QComboBox {{
-                          background-color: {main_color}ee;
-                          color: {text_color};
-                          border: 1px solid #dee2e6;
-                          border-radius: 4px;
-                          padding: 3px;
-                      }}
-                      QComboBox:hover {{
-                          border: 1px solid #bbb;
-                      }}
-                      QCheckBox {{
-                          color: {text_color};
-                      }}
-                      QCheckBox::indicator {{
-                          width: 15px;
-                          height: 15px;
-                          border: 1px solid #dee2e6;
-                          border-radius: 3px;
-                      }}
-                      QCheckBox::indicator:checked {{
-                          background-color: {main_color}dd;
-                      }}
-                      QSpinBox, QLineEdit, QTextEdit {{
-                          background-color: {main_color}ee;
-                          color: {text_color};
-                          border: 1px solid #dee2e6;
-                          border-radius: 4px;
-                          padding: 3px;
-                      }}
-                      QSpinBox:hover, QLineEdit:hover, QTextEdit:hover {{
-                          border: 1px solid #bbb;
-                      }}
-                      QScrollArea, QScrollBar {{
-                          background-color: {main_color};
-                          border: none;
-                      }}
-                  """
-                    )
-
-                    # Принудительно обновляем все дочерние виджеты
-                    for child in self.findChildren(QWidget):
-                        if is_qt_object_valid(child):
-                            child.update()
-
-                    # Обновляем также сам диалог
-                    self.update()
+            # Применяем новую систему стилей с полной интеграцией
+            self._apply_theme_styles()
+            
+            # Обновляем стиль кнопки закрытия
+            if hasattr(self, 'close_button'):
+                self._apply_close_button_style()
+            
+            # Принудительно обновляем все дочерние виджеты
+            for child in self.findChildren(QWidget):
+                if is_qt_object_valid(child):
+                    try:
+                        # Некоторые виджеты (например QListView) требуют аргументы для update()
+                        # Поэтому вызываем repaint() который безопаснее
+                        child.repaint()
+                    except Exception:
+                        # Если и repaint не работает, просто пропускаем
+                        pass
+    
+            # Обновляем также сам диалог
+            self.repaint()
         except Exception as e:
             print(f"⚠️ Ошибка при обновлении темы диалога: {e}")
+
+
+
 
     def accept_settings(self):
         """Принятие и применение настроек с закрытием диалога"""
