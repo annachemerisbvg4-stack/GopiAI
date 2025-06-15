@@ -15,6 +15,19 @@ from PySide6.QtWebChannel import QWebChannel
 from pathlib import Path
 import json
 
+# Импорт системы памяти
+try:
+    import sys
+    webview_path = Path(__file__).parent.parent.parent.parent / "GopiAI-WebView"
+    if webview_path.exists():
+        sys.path.insert(0, str(webview_path))
+    from gopiai.webview.chat_memory import create_memory_manager
+    MEMORY_AVAILABLE = True
+    print("✅ Chat memory system imported successfully")
+except ImportError as e:
+    MEMORY_AVAILABLE = False
+    print(f"⚠️ Chat memory system not available: {e}")
+
 
 class PuterWebEnginePage(QWebEnginePage):
     """Кастомная веб-страница для разрешения pop-up окон puter.js"""
@@ -41,7 +54,18 @@ class WebViewChatBridge(QObject):
     error_occurred = Signal(str)
     
     def __init__(self, parent=None):
-        super().__init__()
+            super().__init__()
+            
+            # Инициализация системы памяти
+            self._memory_manager = None
+            if MEMORY_AVAILABLE:
+                try:
+                    self._memory_manager = create_memory_manager()
+                    print("✅ Memory system initialized in WebViewChatBridge")
+                except Exception as e:
+                    print(f"⚠️ Failed to initialize memory system: {e}")
+                    self._memory_manager = None
+
     
     @Slot(str)
     def send_message(self, message: str):
@@ -77,7 +101,79 @@ class WebViewChatBridge(QObject):
         """Получение истории чата в JSON формате"""
         print("📜 Bridge: chat history requested")
         return json.dumps([])
-
+    
+        
+        # Методы для работы с системой памяти
+        
+        @Slot(str, result=str)
+        def enrich_message(self, message: str) -> str:
+            """
+            Обогащение сообщения контекстом из памяти.
+            Вызывается из JavaScript перед отправкой к ИИ.
+            """
+            if self._memory_manager:
+                try:
+                    enriched = self._memory_manager.enrich_message(message)
+                    print(f"🧠 Memory: enriched message ({len(message)} -> {len(enriched)} chars)")
+                    return enriched
+                except Exception as e:
+                    print(f"❌ Memory enrichment error: {e}")
+                    return message
+            return message
+        
+        @Slot(str, str, result=str)
+        def save_chat_exchange(self, user_message: str, ai_response: str) -> str:
+            """
+            Сохранение обмена сообщениями в память.
+            Вызывается из JavaScript после получения ответа ИИ.
+            """
+            if self._memory_manager:
+                try:
+                    success = self._memory_manager.save_chat_exchange(user_message, ai_response)
+                    status = "OK" if success else "ERROR"
+                    print(f"💾 Memory: saved exchange ({status})")
+                    return status
+                except Exception as e:
+                    print(f"❌ Memory save error: {e}")
+                    return "ERROR"
+            return "OK"
+        
+        @Slot(result=str)
+        def start_new_chat_session(self) -> str:
+            """
+            Начало новой сессии чата.
+            Очищает краткосрочную память и создает новую RAG сессию.
+            """
+            if self._memory_manager:
+                try:
+                    self._memory_manager.start_new_session()
+                    print(f"🆕 Memory: new session {self._memory_manager.session_id}")
+                    return self._memory_manager.session_id
+                except Exception as e:
+                    print(f"❌ New session error: {e}")
+            return "default_session"
+        
+        @Slot(result=str)
+        def get_memory_stats(self) -> str:
+            """
+            Получение статистики памяти в формате JSON.
+            """
+            if self._memory_manager:
+                try:
+                    stats = self._memory_manager.get_memory_stats()
+                    return json.dumps(stats, ensure_ascii=False)
+                except Exception as e:
+                    print(f"❌ Memory stats error: {e}")
+            
+            return json.dumps({
+                "memory_available": False,
+                "error": "Memory system not initialized"
+            })
+        
+        @Slot(result=bool)
+        def is_memory_available(self) -> bool:
+            """Проверка доступности системы памяти."""
+            return self._memory_manager is not None
 
 
 class WebViewChatWidget(QWidget):
@@ -182,237 +278,391 @@ class WebViewChatWidget(QWidget):
             print("WebView page failed to load")
     
     def _create_fallback_html(self):
-        """Создание запасного HTML интерфейса"""
-        html_content = """
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>GopiAI Chat</title>
-            <script src="https://js.puter.com/v2/"></script>
-            <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
-            <style>
-                body {
-                    margin: 0;
-                    padding: 20px;
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    background: var(--chat-bg, #1e1e1e);
-                    color: var(--chat-text, #ffffff);
-                }
-                .chat-container {
-                    max-width: 800px;
-                    margin: 0 auto;
-                    height: 100vh;
-                    display: flex;
-                    flex-direction: column;
-                }
-                .messages-container {
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 10px;
-                    margin-bottom: 10px;
-                    border: 1px solid var(--chat-border, #333);
-                    border-radius: 8px;
-                    background: var(--chat-messages-bg, #2d2d2d);
-                }
-                .message {
-                    margin-bottom: 15px;
-                    padding: 10px;
-                    border-radius: 8px;
-                    max-width: 80%;
-                }
-                .user-message {
-                    background: var(--chat-user-bg, #0078d4);
-                    margin-left: auto;
-                    text-align: right;
-                }
-                .ai-message {
-                    background: var(--chat-ai-bg, #404040);
-                }
-                .input-container {
-                    display: flex;
-                    gap: 10px;
-                }
-                #message-input {
-                    flex: 1;
-                    padding: 10px;
-                    border: 1px solid var(--chat-border, #333);
-                    border-radius: 4px;
-                    background: var(--chat-input-bg, #2d2d2d);
-                    color: var(--chat-text, #ffffff);
-                }
-                #send-btn {
-                    padding: 10px 20px;
-                    background: var(--chat-btn-bg, #0078d4);
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                }
-                #send-btn:hover {
-                    background: var(--chat-btn-hover, #106ebe);
-                }
-            </style>
-        </head>
-        <body>
-            <div class="chat-container">
-                <div id="messages-container" class="messages-container">
-                    <div class="message ai-message">
-                        Welcome to GopiAI Chat! I'm powered by puter.js and ready to help you.
+            """Создание запасного HTML интерфейса с поддержкой памяти"""
+            html_content = """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>GopiAI Chat with Memory</title>
+                <script src="https://js.puter.com/v2/"></script>
+                <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+                <style>
+                    body {
+                        margin: 0;
+                        padding: 20px;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        background: var(--chat-bg, #1e1e1e);
+                        color: var(--chat-text, #ffffff);
+                    }
+                    .chat-container {
+                        max-width: 800px;
+                        margin: 0 auto;
+                        height: 100vh;
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    .memory-status {
+                        padding: 8px 12px;
+                        margin-bottom: 10px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        background: var(--chat-ai-bg, #404040);
+                        border-left: 3px solid var(--accent-primary, #0078d4);
+                    }
+                    .memory-available {
+                        border-left-color: #00cc66;
+                    }
+                    .memory-unavailable {
+                        border-left-color: #ff4444;
+                    }
+                    .messages-container {
+                        flex: 1;
+                        overflow-y: auto;
+                        padding: 10px;
+                        margin-bottom: 10px;
+                        border: 1px solid var(--chat-border, #333);
+                        border-radius: 8px;
+                        background: var(--chat-messages-bg, #2d2d2d);
+                    }
+                    .message {
+                        margin-bottom: 15px;
+                        padding: 10px;
+                        border-radius: 8px;
+                        max-width: 80%;
+                        word-wrap: break-word;
+                    }
+                    .user-message {
+                        background: var(--chat-user-bg, #0078d4);
+                        margin-left: auto;
+                        text-align: right;
+                        color: var(--user-message-text, #ffffff);
+                    }
+                    .ai-message {
+                        background: var(--chat-ai-bg, #404040);
+                        color: var(--ai-message-text, #ffffff);
+                    }
+                    .memory-enhanced {
+                        border-left: 3px solid #00cc66;
+                        background: var(--chat-ai-bg, #404040);
+                        font-style: italic;
+                        opacity: 0.8;
+                        margin-bottom: 5px;
+                        padding: 8px;
+                        font-size: 11px;
+                    }
+                    .input-container {
+                        display: flex;
+                        gap: 10px;
+                        align-items: center;
+                    }
+                    #message-input {
+                        flex: 1;
+                        padding: 10px;
+                        border: 1px solid var(--chat-border, #333);
+                        border-radius: 4px;
+                        background: var(--chat-input-bg, #2d2d2d);
+                        color: var(--chat-text, #ffffff);
+                    }
+                    #send-btn {
+                        padding: 10px 20px;
+                        background: var(--chat-btn-bg, #0078d4);
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    }
+                    #send-btn:hover {
+                        background: var(--chat-btn-hover, #106ebe);
+                    }
+                    #send-btn:disabled {
+                        background: #555;
+                        cursor: not-allowed;
+                    }
+                    .typing-indicator {
+                        display: none;
+                        font-style: italic;
+                        color: var(--text-muted, #888);
+                        padding: 5px 10px;
+                    }
+                    .typing-indicator.active {
+                        display: block;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="chat-container">
+                    <div id="memory-status" class="memory-status memory-unavailable">
+                        🧠 Проверка системы памяти...
+                    </div>
+                    
+                    <div id="messages-container" class="messages-container">
+                        <div class="message ai-message">
+                            🤖 Добро пожаловать в GopiAI Chat! Я работаю на основе puter.js и готов помочь вам.
+                            <br><br>
+                            💡 <strong>Новая функция:</strong> Теперь у меня есть память! Я запоминаю наши разговоры и могу ссылаться на предыдущие обсуждения.
+                        </div>
+                    </div>
+                    
+                    <div class="typing-indicator" id="typing-indicator">
+                        ИИ печатает...
+                    </div>
+                    
+                    <div class="input-container">
+                        <input type="text" id="message-input" placeholder="Введите ваше сообщение...">
+                        <button id="send-btn">Отправить</button>
                     </div>
                 </div>
                 
-                <div class="input-container">
-                    <input type="text" id="message-input" placeholder="Type your message here...">
-                    <button id="send-btn">Send</button>
-                </div>
-            </div>
-            
-            <script>
-                let bridge = null;
-                let currentModel = 'claude-sonnet-4';
-                
-                // Инициализация WebChannel
-                if (typeof QWebChannel !== 'undefined' && typeof qt !== 'undefined') {
-                    try {
-                        new QWebChannel(qt.webChannelTransport, (channel) => {
-                            bridge = channel.objects.bridge;
-                            console.log('WebChannel bridge connected:', bridge);
-                            console.log('Available bridge methods:', Object.getOwnPropertyNames(bridge));
-                        });
-                    } catch (error) {
-                        console.error('Error initializing WebChannel:', error);
-                    }
-                } else {
-                    console.warn('QWebChannel or qt not available');
-                }
-                
-                // Ожидание загрузки puter.js
-                async function waitForPuter() {
-                    return new Promise((resolve, reject) => {
-                        if (typeof puter !== 'undefined') {
-                            resolve();
-                        } else {
-                            let attempts = 0;
-                            const maxAttempts = 50;
-                            const checkInterval = setInterval(() => {
-                                attempts++;
-                                if (typeof puter !== 'undefined') {
-                                    clearInterval(checkInterval);
-                                    resolve();
-                                } else if (attempts >= maxAttempts) {
-                                    clearInterval(checkInterval);
-                                    reject(new Error('puter.js failed to load'));
-                                }
-                            }, 100);
-                        }
-                    });
-                }
-                
-                // Инициализация после загрузки DOM
-                document.addEventListener('DOMContentLoaded', async () => {
-                    const messageInput = document.getElementById('message-input');
-                    const sendBtn = document.getElementById('send-btn');
-                    const messagesContainer = document.getElementById('messages-container');
+                <script>
+                    let bridge = null;
+                    let currentModel = 'claude-sonnet-4';
+                    let memoryAvailable = false;
                     
-                    try {
-                        await waitForPuter();
-                        console.log('puter.js loaded successfully');
-                    } catch (error) {
-                        console.error('Failed to load puter.js:', error);
-                        addMessage('ai', '⚠️ Error: Failed to load puter.js. Please check your internet connection.');
+                    // Инициализация WebChannel
+                    if (typeof QWebChannel !== 'undefined' && typeof qt !== 'undefined') {
+                        try {
+                            new QWebChannel(qt.webChannelTransport, (channel) => {
+                                bridge = channel.objects.bridge;
+                                console.log('🔗 WebChannel bridge connected:', bridge);
+                                
+                                // Проверяем доступность памяти
+                                checkMemoryAvailability();
+                            });
+                        } catch (error) {
+                            console.error('❌ Error initializing WebChannel:', error);
+                        }
+                    } else {
+                        console.warn('⚠️ QWebChannel or qt not available');
                     }
                     
-                    // Обработчики событий
-                    sendBtn.addEventListener('click', sendMessage);
-                    messageInput.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            sendMessage();
-                        }
-                    });
-                    
-                    async function sendMessage() {
-                        const message = messageInput.value.trim();
-                        if (!message) return;
-                        
-                        messageInput.value = '';
-                        addMessage('user', message);
-                        
-                        // Уведомляем Python
-                        if (bridge && typeof bridge.send_message === 'function') {
+                    // Проверка доступности системы памяти
+                    async function checkMemoryAvailability() {
+                        if (bridge && typeof bridge.is_memory_available === 'function') {
                             try {
-                                bridge.send_message(message);
+                                bridge.is_memory_available((available) => {
+                                    memoryAvailable = available;
+                                    updateMemoryStatus();
+                                });
                             } catch (error) {
-                                console.error('Error calling bridge.send_message:', error);
+                                console.warn('⚠️ Memory check failed:', error);
+                                updateMemoryStatus();
                             }
                         } else {
-                            console.warn('Bridge not available or send_message method not found');
+                            updateMemoryStatus();
                         }
+                    }
+                    
+                    function updateMemoryStatus() {
+                        const statusEl = document.getElementById('memory-status');
+                        if (memoryAvailable) {
+                            statusEl.className = 'memory-status memory-available';
+                            statusEl.innerHTML = '🧠 Система памяти активна - ваши разговоры сохраняются и используются для улучшения ответов';
+                        } else {
+                            statusEl.className = 'memory-status memory-unavailable';
+                            statusEl.innerHTML = '🧠 Система памяти недоступна - работаю в обычном режиме';
+                        }
+                    }
+                    
+                    // Ожидание загрузки puter.js
+                    async function waitForPuter() {
+                        return new Promise((resolve, reject) => {
+                            if (typeof puter !== 'undefined') {
+                                resolve();
+                            } else {
+                                let attempts = 0;
+                                const maxAttempts = 50;
+                                const checkInterval = setInterval(() => {
+                                    attempts++;
+                                    if (typeof puter !== 'undefined') {
+                                        clearInterval(checkInterval);
+                                        resolve();
+                                    } else if (attempts >= maxAttempts) {
+                                        clearInterval(checkInterval);
+                                        reject(new Error('puter.js failed to load'));
+                                    }
+                                }, 100);
+                            }
+                        });
+                    }
+                    
+                    // Инициализация после загрузки DOM
+                    document.addEventListener('DOMContentLoaded', async () => {
+                        const messageInput = document.getElementById('message-input');
+                        const sendBtn = document.getElementById('send-btn');
+                        const messagesContainer = document.getElementById('messages-container');
+                        const typingIndicator = document.getElementById('typing-indicator');
                         
                         try {
-                            const response = await puter.ai.chat(message, {
-                                model: currentModel,
-                                stream: true
-                            });
-                            
-                            const messageElement = addMessage('ai', '', true);
-                            let fullResponse = '';
-                            
-                            for await (const part of response) {
-                                if (part?.text) {
-                                    fullResponse += part.text;
-                                    updateMessage(messageElement, fullResponse);
-                                }
-                            }
-                            
-                            // Уведомляем Python о полном ответе
-                            if (bridge && fullResponse && typeof bridge.receive_ai_message === 'function') {
-                                try {
-                                    bridge.receive_ai_message(currentModel, fullResponse);
-                                } catch (error) {
-                                    console.error('Error calling bridge.receive_ai_message:', error);
-                                }
-                            }
-                            
+                            await waitForPuter();
+                            console.log('✅ puter.js loaded successfully');
                         } catch (error) {
-                            addMessage('ai', `❌ Error: ${error.message}`);
-                            if (bridge && typeof bridge.log_error === 'function') {
+                            console.error('❌ Failed to load puter.js:', error);
+                            addMessage('ai', '⚠️ Ошибка: Не удалось загрузить puter.js. Проверьте подключение к интернету.');
+                        }
+                        
+                        // Обработчики событий
+                        sendBtn.addEventListener('click', sendMessage);
+                        messageInput.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                sendMessage();
+                            }
+                        });
+                        
+                        async function sendMessage() {
+                            const message = messageInput.value.trim();
+                            if (!message) return;
+                            
+                            // Блокируем UI пока обрабатываем
+                            messageInput.disabled = true;
+                            sendBtn.disabled = true;
+                            messageInput.value = '';
+                            
+                            // Показываем сообщение пользователя
+                            addMessage('user', message);
+                            
+                            // Уведомляем Python о сообщении
+                            if (bridge && typeof bridge.send_message === 'function') {
                                 try {
-                                    bridge.log_error(error.message);
-                                } catch (bridgeError) {
-                                    console.error('Error calling bridge.log_error:', bridgeError);
+                                    bridge.send_message(message);
+                                } catch (error) {
+                                    console.error('❌ Error calling bridge.send_message:', error);
                                 }
                             }
+                            
+                            try {
+                                let finalMessage = message;
+                                
+                                // 🧠 ШАГИ ИНТЕГРАЦИИ ПАМЯТИ - ВСЕГО 2 СТРОЧКИ!
+                                // Шаг 1: Обогащаем сообщение контекстом из памяти
+                                if (memoryAvailable && bridge && typeof bridge.enrich_message === 'function') {
+                                    try {
+                                        bridge.enrich_message(message, (enriched) => {
+                                            if (enriched && enriched !== message) {
+                                                // Показываем что сообщение обогащено памятью
+                                                addMemoryContext(enriched);
+                                                finalMessage = enriched;
+                                            }
+                                            
+                                            // Продолжаем отправку к ИИ
+                                            sendToAI(finalMessage, message);
+                                        });
+                                        return; // Ждем callback
+                                    } catch (error) {
+                                        console.warn('⚠️ Memory enrichment failed:', error);
+                                    }
+                                }
+                                
+                                // Если память недоступна, отправляем как есть
+                                sendToAI(finalMessage, message);
+                                
+                            } catch (error) {
+                                addMessage('ai', `❌ Ошибка: ${error.message}`);
+                                console.error('❌ Send message error:', error);
+                            } finally {
+                                // Разблокируем UI
+                                messageInput.disabled = false;
+                                sendBtn.disabled = false;
+                                messageInput.focus();
+                            }
                         }
-                    }
-                    
-                    function addMessage(type, content, isStreaming = false) {
-                        const messageDiv = document.createElement('div');
-                        messageDiv.className = `message ${type}-message`;
-                        messageDiv.innerHTML = content.replace(/\\n/g, '<br>');
                         
-                        if (isStreaming) {
-                            messageDiv.classList.add('streaming');
+                        async function sendToAI(finalMessage, originalMessage) {
+                            // Показываем индикатор печатания
+                            typingIndicator.classList.add('active');
+                            
+                            try {
+                                const response = await puter.ai.chat(finalMessage, {
+                                    model: currentModel,
+                                    stream: true
+                                });
+                                
+                                const messageElement = addMessage('ai', '', true);
+                                let fullResponse = '';
+                                
+                                for await (const part of response) {
+                                    if (part?.text) {
+                                        fullResponse += part.text;
+                                        updateMessage(messageElement, fullResponse);
+                                    }
+                                }
+                                
+                                // Шаг 2: Сохраняем обмен сообщениями в память
+                                if (memoryAvailable && bridge && fullResponse && typeof bridge.save_chat_exchange === 'function') {
+                                    try {
+                                        bridge.save_chat_exchange(originalMessage, fullResponse, (status) => {
+                                            if (status === 'OK') {
+                                                console.log('💾 Chat exchange saved to memory');
+                                            } else {
+                                                console.warn('⚠️ Failed to save to memory:', status);
+                                            }
+                                        });
+                                    } catch (error) {
+                                        console.warn('⚠️ Memory save failed:', error);
+                                    }
+                                }
+                                
+                                // Уведомляем Python о получении ответа
+                                if (bridge && fullResponse && typeof bridge.receive_ai_message === 'function') {
+                                    try {
+                                        bridge.receive_ai_message(currentModel, fullResponse);
+                                    } catch (error) {
+                                        console.error('❌ Error calling bridge.receive_ai_message:', error);
+                                    }
+                                }
+                                
+                            } catch (error) {
+                                addMessage('ai', `❌ Ошибка: ${error.message}`);
+                                if (bridge && typeof bridge.log_error === 'function') {
+                                    try {
+                                        bridge.log_error(error.message);
+                                    } catch (bridgeError) {
+                                        console.error('❌ Error calling bridge.log_error:', bridgeError);
+                                    }
+                                }
+                            } finally {
+                                // Убираем индикатор печатания
+                                typingIndicator.classList.remove('active');
+                            }
                         }
                         
-                        messagesContainer.appendChild(messageDiv);
-                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                        return messageDiv;
-                    }
-                    
-                    function updateMessage(messageElement, content) {
-                        messageElement.innerHTML = content.replace(/\\n/g, '<br>');
-                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                    }
-                });
-            </script>
-        </body>
-        </html>
-        """
-        
-        self.web_view.setHtml(html_content)
+                        function addMemoryContext(enrichedMessage) {
+                            const contextDiv = document.createElement('div');
+                            contextDiv.className = 'message memory-enhanced';
+                            contextDiv.innerHTML = '🧠 Используется контекст из памяти предыдущих разговоров';
+                            messagesContainer.appendChild(contextDiv);
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        }
+                        
+                        function addMessage(type, content, isStreaming = false) {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = `message ${type}-message`;
+                            messageDiv.innerHTML = content.replace(/\\n/g, '<br>');
+                            
+                            if (isStreaming) {
+                                messageDiv.classList.add('streaming');
+                            }
+                            
+                            messagesContainer.appendChild(messageDiv);
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                            return messageDiv;
+                        }
+                        
+                        function updateMessage(messageElement, content) {
+                            messageElement.innerHTML = content.replace(/\\n/g, '<br>');
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        }
+                    });
+                </script>
+            </body>
+            </html>
+            """
+            
+            self.web_view.setHtml(html_content)
+
+
     
     def set_theme_manager(self, theme_manager):
         """Установка менеджера тем для интеграции с глобальной темой"""

@@ -4,7 +4,12 @@ import chardet
 from PySide6.QtCore import Qt, QSettings, QRect, QSize, QPoint, Signal
 from PySide6.QtGui import QPainter, QColor, QTextFormat
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QFileDialog, QMessageBox, QPlainTextEdit, QInputDialog, QTabWidget
-from gopiai.ui.utils.simple_theme_manager import load_theme # Исправленный импорт
+try:
+    from gopiai.ui.utils.simple_theme_manager import load_theme # Исправленный импорт
+except ImportError:
+    # Fallback если модуль недоступен
+    def load_theme():
+        return None
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
@@ -61,10 +66,13 @@ class NumberedTextEdit(QPlainTextEdit):
     def highlight_current_line(self):
         extraSelections = []
         if not self.isReadOnly():
+            from PySide6.QtGui import QTextCursor, QTextCharFormat
+            from PySide6.QtWidgets import QTextEdit
             selection = QTextEdit.ExtraSelection()
-            lineColor = self._highlight_color
-            selection.format.setBackground(lineColor)
-            selection.format.setProperty(QTextFormat.Property.FullWidthSelection, True)
+            lineColor = QTextCharFormat()
+            lineColor.setBackground(self._highlight_color)
+            lineColor.setProperty(QTextFormat.Property.FullWidthSelection, True)
+            selection.format = lineColor
             selection.cursor = self.textCursor()
             selection.cursor.clearSelection()
             extraSelections.append(selection)
@@ -172,22 +180,22 @@ class TextEditorWidget(QWidget):
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Ошибка", f"Не удалось сохранить файл: {e}")
 
-def save_file_as(self):
-    from PySide6.QtWidgets import QFileDialog
-    file_path, selected_filter = QFileDialog.getSaveFileName(
-        self,
-        "Сохранить файл как",
-        "",
-        "Текстовые файлы (*.txt);;Все файлы (*.*)"
-    )
-    if file_path:
-        # Если выбран фильтр txt и нет расширения, добавляем .txt
-        if selected_filter.startswith("Текстовые файлы") and not file_path.lower().endswith(".txt"):
-            file_path += ".txt"
-        self.current_file = file_path
-        self.current_encoding = 'utf-8'
-        self.save_file()
-        self.file_name_changed.emit(os.path.basename(file_path))
+    def save_file_as(self):
+        from PySide6.QtWidgets import QFileDialog
+        file_path, selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Сохранить файл как",
+            "",
+            "Текстовые файлы (*.txt);;Все файлы (*.*)"
+        )
+        if file_path:
+            # Если выбран фильтр txt и нет расширения, добавляем .txt
+            if selected_filter.startswith("Текстовые файлы") and not file_path.lower().endswith(".txt"):
+                file_path += ".txt"
+            self.current_file = file_path
+            self.current_encoding = 'utf-8'
+            self.save_file()
+            self.file_name_changed.emit(os.path.basename(file_path))
 
     def undo(self):
         self.text_editor.undo()

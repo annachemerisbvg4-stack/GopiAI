@@ -85,6 +85,11 @@ try:
     )
 
     print("[OK] Все основные модули UI загружены успешно")
+    
+    # Инициализация системы памяти GopiAI
+    from gopiai.ui.memory_initializer import init_memory_system
+    init_memory_system(silent=True)
+    
     MODULES_LOADED = True
 
 except ImportError as e:
@@ -100,6 +105,11 @@ except ImportError as e:
             layout = QVBoxLayout()
             layout.addWidget(QLabel(f"Fallback: {name}"))
             self.setLayout(layout)
+            
+            # Create dummy signals for file explorer compatibility
+            from PySide6.QtCore import Signal
+            self.file_double_clicked = Signal(str)
+            self.file_selected = Signal(str)
 
         def add_new_tab(self, title, content):
             print(f"Fallback: add_new_tab({title})")
@@ -112,6 +122,9 @@ except ImportError as e:
 
         def add_browser_tab(self, url="about:blank", title="Браузер"):
             print(f"Fallback: add_browser_tab({url}, {title}) - Browser not available")
+
+        def open_file_in_tab(self, file_path):
+            print(f"Fallback: open_file_in_tab({file_path})")
 
     class SimpleMenuBar(QMenuBar):
         def refresh_icons(self):
@@ -444,6 +457,9 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         except Exception as e:
             print(f"[WARNING] Ошибка настройки горячих клавиш: {e}")
 
+        # Подключаем сигналы файлового проводника
+        self._connect_file_explorer_signals()
+        
         print("[OK] Модульный UI настроен")
 
     def _init_grips(self):
@@ -954,6 +970,75 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             except Exception as e:
                 print(f"[WARNING] Ошибка применения темы к компонентам: {e}")
 
+    def _connect_file_explorer_signals(self):
+        """Подключение сигналов файлового проводника"""
+        try:
+            # Подключаем двойной клик для открытия файлов
+            if hasattr(self.file_explorer, 'file_double_clicked'):
+                self.file_explorer.file_double_clicked.connect(self._open_file_in_editor)  # type: ignore
+                print("[OK] Сигнал file_double_clicked подключен")
+            
+            # Подключаем одинарный клик для выбора файлов
+            if hasattr(self.file_explorer, 'file_selected'):
+                self.file_explorer.file_selected.connect(self._on_file_selected)  # type: ignore
+                print("[OK] Сигнал file_selected подключен")
+                
+            print("[OK] Сигналы файлового проводника подключены")
+            
+        except Exception as e:
+            print(f"[WARNING] Ошибка подключения сигналов файлового проводника: {e}")
+
+    def _open_file_in_editor(self, file_path):
+        """Открытие файла в редакторе по двойному клику"""
+        try:
+            print(f"📂 Открываем файл: {file_path}")
+            
+            # Проверяем, что это действительно файл
+            import os
+            if not os.path.isfile(file_path):
+                print(f"⚠️ Это не файл: {file_path}")
+                return
+                
+            # Открываем файл в новой вкладке
+            if MODULES_LOADED and hasattr(self.tab_document, 'open_file_in_tab'):
+                self.tab_document.open_file_in_tab(file_path)
+            elif MODULES_LOADED and hasattr(self.tab_document, 'add_new_tab'):
+                # Fallback - используем add_new_tab
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    filename = os.path.basename(file_path)
+                    self.tab_document.add_new_tab(filename, content)
+                    print(f"✅ Файл открыт (fallback): {filename}")
+                except Exception as e:
+                    print(f"❌ Ошибка открытия файла: {e}")
+            else:
+                # Полный fallback для случая, когда модули не загружены
+                print(f"⚠️ Модули не загружены, открываем файл в системном редакторе: {file_path}")
+                try:
+                    import subprocess
+                    import platform
+                    if platform.system() == "Windows":
+                        os.startfile(file_path)
+                    elif platform.system() == "Darwin":  # macOS
+                        subprocess.run(["open", file_path])
+                    else:  # Linux
+                        subprocess.run(["xdg-open", file_path])
+                    print(f"✅ Файл открыт в системном редакторе: {file_path}")
+                except Exception as e:
+                    print(f"❌ Не удалось открыть файл в системном редакторе: {e}")
+                    
+        except Exception as e:
+            print(f"❌ Ошибка при открытии файла в редакторе: {e}")
+
+    def _on_file_selected(self, file_path):
+        """Обработка выбора файла в проводнике"""
+        try:
+            print(f"📄 Выбран файл: {file_path}")
+            # Здесь можно добавить дополнительную логику при выборе файла
+            # например, показать информацию о файле в статусной строке
+        except Exception as e:
+            print(f"[WARNING] Ошибка обработки выбора файла: {e}")
 
 
 def main():

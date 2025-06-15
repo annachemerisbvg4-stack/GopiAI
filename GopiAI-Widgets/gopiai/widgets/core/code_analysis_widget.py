@@ -13,7 +13,13 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout,
                                QTreeWidgetItem, QTableWidget, QTableWidgetItem,
                                QHeaderView, QLineEdit, QGridLayout, QMenu, QToolBar)
 from gopiai.widgets.i18n.translator import tr
-from gopiai.ui.utils.icon_manager import get_icon # Исправленный импорт
+# from gopiai.ui.utils.icon_manager import get_icon # Закомментировано - модуль не найден
+try:
+    from gopiai.ui.utils.icon_manager import get_icon
+except ImportError:
+    # Fallback function if icon_manager is not available
+    def get_icon(name):
+        return None
 
 logger = get_logger().logger
 
