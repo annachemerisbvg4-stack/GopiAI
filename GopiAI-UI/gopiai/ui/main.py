@@ -66,7 +66,7 @@ for path in module_paths:
     if path not in sys.path:
         sys.path.insert(0, path)
 
-print("📦 Модульная версия GopiAI v0.3.2 с централизованной системой тем")
+print("Модульная версия GopiAI v0.3.2 с централизованной системой тем")
 print("Добавленные пути для модулей:")
 for p in module_paths:
     print(f"- {p} (существует: {os.path.exists(p)})")
@@ -84,11 +84,11 @@ try:
         TerminalWidget,
     )
 
-    print("✅ Все основные модули UI загружены успешно")
+    print("[OK] Все основные модули UI загружены успешно")
     MODULES_LOADED = True
 
 except ImportError as e:
-    print(f"⚠️ Ошибка импорта UI модулей: {e}")
+    print(f"[WARNING] Ошибка импорта UI модулей: {e}")
     print("Запускаем в fallback режиме...")
     MODULES_LOADED = False
 
@@ -180,12 +180,12 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self._setup_panel_shortcuts()
 
 
-        print("✅ FramelessGopiAIStandaloneWindow готов к работе!")
+        print("[OK] FramelessGopiAIStandaloneWindow готов к работе!")
 
 
     def _setup_ui(self):
         """Настройка модульного пользовательского интерфейса"""
-        print("🔧 Настройка UI из модулей...")
+        print("[SETUP] Настройка UI из модулей...")
 
         # Центральный виджет
         central_widget = QWidget()
@@ -291,7 +291,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self._configure_splitter_behavior()
         self._setup_splitter_constraints()  # Добавляем этот вызов
         
-        print("✅ Модульный UI настроен с ограничениями размеров панелей")
+        print("[OK] Модульный UI настроен с ограничениями размеров панелей")
 
     def _configure_splitter_behavior(self):
         """Дополнительная настройка поведения сплиттеров с ограничениями"""
@@ -329,10 +329,10 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 main_splitter.setCollapsible(0, True)   # Файловый проводник может сворачиваться
                 main_splitter.setCollapsible(1, False)  # Правая часть не сворачивается
                 
-            print("✅ Поведение сплиттеров настроено с ограничениями")
+            print("[OK] Поведение сплиттеров настроено с ограничениями")
             
         except Exception as e:
-            print(f"⚠️ Ошибка настройки сплиттеров: {e}")
+            print(f"[WARNING] Ошибка настройки сплиттеров: {e}")
     
     def _setup_splitter_constraints(self):
         """Настройка дополнительных ограничений для сплиттеров"""
@@ -347,10 +347,10 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 # Подключаем сигнал для контроля перемещения
                 splitter.splitterMoved.connect(self._on_splitter_moved)
             
-            print("✅ Дополнительные ограничения сплиттеров установлены")
+            print("[OK] Дополнительные ограничения сплиттеров установлены")
             
         except Exception as e:
-            print(f"⚠️ Ошибка настройки ограничений сплиттеров: {e}")
+            print(f"[WARNING] Ошибка настройки ограничений сплиттеров: {e}")
     
     def _on_splitter_moved(self, pos, index):
         """Обработчик перемещения сплиттера для контроля границ"""
@@ -384,7 +384,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 splitter.setSizes(sizes)
         
         except Exception as e:
-            print(f"⚠️ Ошибка контроля перемещения сплиттера: {e}")
+            print(f"[WARNING] Ошибка контроля перемещения сплиттера: {e}")
     
     def _reset_panel_sizes(self):
         """Сброс размеров панелей к значениям по умолчанию"""
@@ -402,17 +402,17 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                     if isinstance(center_splitter, QSplitter):
                         center_splitter.setSizes([700, 350])
             
-            print("✅ Размеры панелей сброшены к значениям по умолчанию")
+            print("[OK] Размеры панелей сброшены к значениям по умолчанию")
             
         except Exception as e:
-            print(f"⚠️ Ошибка сброса размеров панелей: {e}")
+            print(f"[WARNING] Ошибка сброса размеров панелей: {e}")
 
     def _apply_vscode_like_layout(self):
         """Применить макет в стиле VSCode с динамическими цветами"""
         try:
-            print("✅ Применен макет в стиле VSCode с динамическими цветами")
+            print("[OK] Применен макет в стиле VSCode с динамическими цветами")
         except Exception as e:
-            print(f"⚠️ Ошибка применения макета VSCode: {e}")
+            print(f"[WARNING] Ошибка применения макета VSCode: {e}")
 
     def _setup_panel_shortcuts(self):
         """Настройка горячих клавиш для управления панелями"""
@@ -439,12 +439,12 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             reset_panels = QShortcut(QKeySequence("Ctrl+Shift+R"), self)
             reset_panels.activated.connect(self._reset_panel_sizes)
             
-            print("✅ Горячие клавиши для панелей настроены (включая сброс размеров)")
+            print("[OK] Горячие клавиши для панелей настроены (включая сброс размеров)")
             
         except Exception as e:
-            print(f"⚠️ Ошибка настройки горячих клавиш: {e}")
+            print(f"[WARNING] Ошибка настройки горячих клавиш: {e}")
 
-        print("✅ Модульный UI настроен")
+        print("[OK] Модульный UI настроен")
 
     def _init_grips(self):
         """Инициализация грипов для изменения размера"""
@@ -531,12 +531,12 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
             self.icon_manager = SimpleIconManager()
             self.icon_manager.get_icon("example")
-            print("✅ Система иконок SimpleIconManager инициализирована")
+            print("[OK] Система иконок SimpleIconManager инициализирована")
         except ImportError:
             self.icon_manager = None
-            print("⚠️ Система иконок недоступна")
+            print("[WARNING] Система иконок недоступна")
         except Exception as e:
-            print(f"⚠️ Ошибка инициализации иконок: {e}")
+            print(f"[WARNING] Ошибка инициализации иконок: {e}")
             self.icon_manager = None
 
         # Инициализация системы тем
@@ -568,7 +568,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 # Используем предварительно определенный LocalFallbackThemeManager
                 self.theme_manager = LocalFallbackThemeManager() # Создаем экземпляр
         except Exception as e:
-            print(f"⚠️ Ошибка инициализации менеджера тем: {e}")
+            print(f"[WARNING] Ошибка инициализации менеджера тем: {e}")
             # Используем предварительно определенный LocalFallbackThemeManager в случае ошибки
             self.theme_manager = LocalFallbackThemeManager() # Создаем экземпляр
 
@@ -580,27 +580,27 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 from PySide6.QtWidgets import QApplication
 
                 app = QApplication.instance()
-                print(f"🔍 main.py: QApplication.instance() = {app}")
+                print(f"[DEBUG] main.py: QApplication.instance() = {app}")
                 if app:
-                    print(f"🔍 main.py: Вызываем self.theme_manager.apply_theme({app})")
+                    print(f"[DEBUG] main.py: Вызываем self.theme_manager.apply_theme({app})")
                     result = self.theme_manager.apply_theme(app)
-                    print(f"🔍 main.py: Результат apply_theme = {result}")
+                    print(f"[DEBUG] main.py: Результат apply_theme = {result}")
                     if result:
-                        print("✅ Система тем применена через theme_manager")
+                        print("[OK] Система тем применена через theme_manager")
                         
                         return
                     else:
-                        print("⚠️ apply_theme вернул False")
+                        print("[WARNING] apply_theme вернул False")
                 else:
-                    print("⚠️ QApplication.instance() вернул None")
+                    print("[WARNING] QApplication.instance() вернул None")
         except Exception as e:
-            print(f"⚠️ Ошибка применения темы через theme_manager: {e}")
+            print(f"[WARNING] Ошибка применения темы через theme_manager: {e}")
             import traceback
 
             traceback.print_exc()
 
         # Если все попытки применения темы не удались, оставляем стандартные системные стили
-        print("⚠️ Используется системная тема по умолчанию")
+        print("[WARNING] Используется системная тема по умолчанию")
 
 
 
@@ -609,7 +609,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         try:
             menu_bar = getattr(self.titlebar_with_menu, "menu_bar", None)
             if not menu_bar:
-                print("⚠️ Меню недоступно")
+                print("[WARNING] Меню недоступно")
                 return
 
             # Подключаем новые сигналы
@@ -617,13 +617,13 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 menu_bar.openSettingsRequested.connect(self._open_settings)
                 if self.icon_manager is not None:
                     self.icon_manager.get_icon("settings")
-                print("✅ Сигнал openSettingsRequested подключен")
+                print("[OK] Сигнал openSettingsRequested подключен")
 
             if hasattr(menu_bar, "changeThemeRequested"):
                 menu_bar.changeThemeRequested.connect(self.on_change_theme)
                 if self.icon_manager is not None:
                     self.icon_manager.get_icon("theme")
-                print("✅ Сигнал changeThemeRequested подключен")
+                print("[OK] Сигнал changeThemeRequested подключен")
 
             # Подключаем остальные сигналы файлового меню
             if hasattr(menu_bar, "newFileRequested"):
@@ -886,7 +886,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
                     return
                 except Exception as e:
-                    print(f"⚠️ Ошибка применения темы через theme_manager: {e}")
+                    print(f"[WARNING] Ошибка применения темы через theme_manager: {e}")
 
             print(f"⚠️ Не удалось применить тему: {theme_name}")
 
@@ -947,18 +947,18 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                     except Exception as e:
                         print(f"⚠️ Ошибка обновления WebView чата: {e}")
                 else:
-                    print("❌ chat_widget не найден!")
+                    print("[ERROR] chat_widget не найден!")
                 
-                print("✅ Все компоненты обновлены")
+                print("[OK] Все компоненты обновлены")
                 
             except Exception as e:
-                print(f"⚠️ Ошибка применения темы к компонентам: {e}")
+                print(f"[WARNING] Ошибка применения темы к компонентам: {e}")
 
 
 
 def main():
     """Основная функция запуска приложения"""
-    print("🚀 Запуск модульного GopiAI...")
+    print("[LAUNCH] Запуск модульного GopiAI...")
 
     # Настройка WebEngine для исправления графических проблем
     os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = (
@@ -979,14 +979,14 @@ def main():
         window = FramelessGopiAIStandaloneWindow()
         window.show()
 
-        print("✅ GopiAI v0.3.0 успешно запущен!")
-        print("🎯 Модульная архитектура активна")
-        print("📊 Размер основного файла значительно уменьшен")
+        print("[SUCCESS] GopiAI v0.3.0 успешно запущен!")
+        print("[INFO] Модульная архитектура активна")
+        print("[INFO] Размер основного файла значительно уменьшен")
 
         # Запуск цикла приложения
         sys.exit(app.exec())
     except Exception as e:
-        print(f"❌ Критическая ошибка: {e}")
+        print(f"[CRITICAL ERROR] Критическая ошибка: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

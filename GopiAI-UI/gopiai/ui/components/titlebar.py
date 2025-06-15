@@ -30,7 +30,20 @@ class StandaloneTitlebar(QWidget):
         self.setFixedHeight(40)
         self._drag_active = False
         self._drag_pos = QPoint()
+        self.icon_manager = None
+        self._setup_icon_system()
+        self._setup_icon_system()
         self._setup_ui()
+
+    def _setup_icon_system(self):
+        """Настройка системы иконок"""
+        try:
+            from .icon_file_system_model import UniversalIconManager
+            self.icon_manager = UniversalIconManager()
+            print("✅ Titlebar: Загружена система иконок UniversalIconManager")
+        except ImportError:
+            self.icon_manager = None
+            print("❌ Titlebar: Не удалось загрузить UniversalIconManager")
 
     def _setup_ui(self):
         """Настройка интерфейса titlebar"""
@@ -45,30 +58,49 @@ class StandaloneTitlebar(QWidget):
         layout.addWidget(self.window_title, 1)
         
         # Кнопки управления окном
-        self.minimize_button = QPushButton("—", self)
-        self.minimize_button.setObjectName("minimizeButton")
-        self.minimize_button.setFixedSize(40, 40)
-        self.minimize_button.clicked.connect(self.minimizeClicked.emit)
+        self.minimize_button = self._create_titlebar_button("minimize", "—", self.minimizeClicked.emit)
         layout.addWidget(self.minimize_button)
         
-        self.restore_button = QPushButton("❐", self)
-        self.restore_button.setObjectName("restoreButton")
-        self.restore_button.setFixedSize(40, 40)
+        self.restore_button = self._create_titlebar_button("square", "❐", self.restoreClicked.emit)
         self.restore_button.setVisible(False)
-        self.restore_button.clicked.connect(self.restoreClicked.emit)
         layout.addWidget(self.restore_button)
         
-        self.maximize_button = QPushButton("□", self)
-        self.maximize_button.setObjectName("maximizeButton")
-        self.maximize_button.setFixedSize(40, 40)
-        self.maximize_button.clicked.connect(self.maximizeClicked.emit)
+        self.maximize_button = self._create_titlebar_button("maximize", "□", self.maximizeClicked.emit)
         layout.addWidget(self.maximize_button)
         
-        self.close_button = QPushButton("×", self)
-        self.close_button.setObjectName("closeButton")
-        self.close_button.setFixedSize(40, 40)
-        self.close_button.clicked.connect(self.closeClicked.emit)
+        self.close_button = self._create_titlebar_button("x", "×", self.closeClicked.emit)
         layout.addWidget(self.close_button)
+
+    def _create_titlebar_button(self, icon_name: str, fallback_text: str, callback) -> QPushButton:
+        """Создает кнопку titlebar с иконкой"""
+        btn = QPushButton()
+        btn.setFixedSize(40, 40)
+        btn.clicked.connect(callback)
+        
+        # Устанавливаем объект-нейм для стилизации
+        if icon_name == "minimize":
+            btn.setObjectName("minimizeButton")
+        elif icon_name == "maximize":
+            btn.setObjectName("maximizeButton")
+        elif icon_name == "square":
+            btn.setObjectName("restoreButton")
+        elif icon_name == "x":
+            btn.setObjectName("closeButton")
+        
+        if self.icon_manager:
+            try:
+                icon = self.icon_manager.get_icon(icon_name)
+                if icon and not icon.isNull():
+                    btn.setIcon(icon)
+                else:
+                    btn.setText(fallback_text)
+            except Exception as e:
+                print(f"⚠️ Ошибка загрузки иконки {icon_name}: {e}")
+                btn.setText(fallback_text)
+        else:
+            btn.setText(fallback_text)
+            
+        return btn
 
     def set_title(self, text: str):
         """Установка заголовка окна"""

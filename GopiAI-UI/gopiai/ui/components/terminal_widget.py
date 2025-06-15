@@ -15,21 +15,56 @@ class TerminalWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("terminalWidget")
+        self._setup_icon_system()
         self._setup_ui()
+
+    def _setup_icon_system(self):
+        """Настройка системы иконок"""
+        try:
+            from .icon_file_system_model import UniversalIconManager
+            self.icon_manager = UniversalIconManager()
+            print("[OK] Terminal: Загружена система иконок UniversalIconManager")
+        except ImportError:
+            self.icon_manager = None
+            print("[WARNING] Terminal: Не удалось загрузить UniversalIconManager")
 
     def _setup_ui(self):
         """Настройка интерфейса терминала"""
+        try:
+            from .terminal_widget import TerminalWidget 
+            print("[OK] Terminal: Импортирован TerminalWidget")
+        except ImportError:
+            print("[ERROR] Terminal: Не удалось импортировать TerminalWidget")
+            return  
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         
         # Заголовок с кнопками
         header_layout = QHBoxLayout()
-        header_label = QLabel("💻 Терминал")
+        header_label = QLabel("Терминал")
         header_label.setObjectName("panelHeader")
         
-        new_tab_btn = QPushButton("+ Новая вкладка")
+        # Добавляем иконку терминала
+        if self.icon_manager:
+            try:
+                terminal_icon = self.icon_manager.get_icon("terminal")
+                if terminal_icon and not terminal_icon.isNull():
+                    header_label.setPixmap(terminal_icon.pixmap(16, 16))
+            except Exception as e:
+                print(f"[WARNING] Ошибка загрузки иконки терминала: {e}")
+
+        new_tab_btn = QPushButton("Новая вкладка")
         new_tab_btn.setFixedHeight(25)
         new_tab_btn.clicked.connect(self._add_terminal_tab)
+        
+        # Добавляем иконку плюса к кнопке
+        if self.icon_manager:
+            try:
+                plus_icon = self.icon_manager.get_icon("plus")
+                if plus_icon and not plus_icon.isNull():
+                    new_tab_btn.setIcon(plus_icon)
+            except Exception as e:
+                print(f"[WARNING] Ошибка загрузки иконки плюса: {e}")
         
         header_layout.addWidget(header_label)
         header_layout.addStretch()
