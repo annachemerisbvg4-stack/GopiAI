@@ -7,7 +7,7 @@ Titlebar Component для GopiAI Standalone Interface
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Signal, Qt, QPoint, QRect
-from PySide6.QtGui import QMouseEvent
+from PySide6.QtGui import QMouseEvent, QIcon
 
 # Импорт меню для комбинированного titlebar
 try:
@@ -39,7 +39,7 @@ class StandaloneTitlebar(QWidget):
         layout.setSpacing(10)
         
         # Заголовок окна
-        self.window_title = QLabel("🚀 GopiAI v0.2.0", self)
+        self.window_title = QLabel("GopiAI v0.2.0", self)
         self.window_title.setObjectName("windowTitle")
         self.window_title.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(self.window_title, 1)

@@ -259,6 +259,51 @@ ICON_NAME_MAPPING = {
     "history": "clock",
     "strategy": "activity",
     "create": "plus",
+    "edit": "edit",
+    "delete": "trash",      
+    # Файловые операции
+    "📦": "package",
+    "📂": "folder",
+    "📄": "file-text",
+    "📝": "edit-3",
+    "💾": "save",
+    "📁": "folder-open",
+    "🗂️": "folder-tree",
+
+    # UI элементы
+    "🔧": "settings",
+    "⚙️": "cog",
+    "🎨": "palette",
+    "🌙": "moon",
+    "☀️": "sun",
+    "🔍": "search",
+    "➕": "plus",
+    "❌": "x",
+    "✅": "check",
+    "⚠️": "alert-triangle",
+    "❗": "alert-circle",
+
+    # Навигация
+    "🏠": "home",
+    "🔙": "arrow-left",
+    "🔄": "refresh-cw",
+    "📊": "bar-chart-3",
+    "🎯": "target",
+    "🚀": "rocket",
+
+    # Системные
+    "💻": "monitor",
+    "🖥️": "pc",
+    "📱": "smartphone",
+    "🔌": "plug",
+    "🌐": "globe",
+    "📡": "wifi",
+
+    # Статусы
+    "🟢": "circle", # зеленый статус
+    "🔴": "x-circle", # красный статус
+    "🟡": "alert-circle", # желтый статус
+    "🔵": "info", # синий статус
 }
 
 

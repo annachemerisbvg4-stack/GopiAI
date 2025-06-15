@@ -20,34 +20,50 @@ File Explorer Component для GopiAI Standalone Interface
 import os
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTreeView, QHBoxLayout, 
                                QPushButton, QLineEdit, QHeaderView, QSizePolicy, QFileSystemModel)
-from PySide6.QtCore import QDir, Signal, Qt
+from PySide6.QtCore import QDir, Signal, Qt, QModelIndex
+from PySide6.QtGui import QIcon
 from .file_type_detector import FileTypeDetector
+from .custom_file_system_model import CustomFileSystemModel
 
 
 class FileExplorerWidget(QWidget):
     """Проводник файлов с деревом папок и поддержкой иконок"""
-      # Сигналы
+    
+    # Сигналы
     file_selected = Signal(str)  # Файл выбран
     file_double_clicked = Signal(str)  # Файл открыт двойным кликом
     
     def __init__(self, parent=None, icon_manager=None):
         super().__init__(parent)
         self.setObjectName("fileExplorer")
-        self.icon_manager = icon_manager
         self._current_path = os.path.expanduser("~")
         self._ignore_resize = False  # Флаг для предотвращения циклов resizeEvent
+        
+        # Инициализируем систему иконок
+        self._setup_icon_system()
         
         # Настройка фиксированного размера для предотвращения "прыгания"
         from PySide6.QtWidgets import QSizePolicy
         self.setMinimumWidth(250)
         self.setMaximumWidth(400)
-          # Устанавливаем политику размера: фиксированная ширина, расширяемая высота
+        # Устанавливаем политику размера: фиксированная ширина, расширяемая высота
         size_policy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         size_policy.setHorizontalStretch(0)
         self.setSizePolicy(size_policy)
         
         self._setup_ui()
         self._connect_signals()
+
+    def _setup_icon_system(self):
+        """Настройка системы иконок"""
+        # Импорт системы иконок
+        try:
+            from .icon_file_system_model import UniversalIconManager
+            self.icon_manager = UniversalIconManager()
+            print("✅ Загружена система иконок UniversalIconManager")
+        except ImportError:
+            self.icon_manager = None
+            print("❌ Не удалось загрузить UniversalIconManager")
 
     def _setup_ui(self):
         """Настройка интерфейса проводника"""
@@ -61,31 +77,28 @@ class FileExplorerWidget(QWidget):
         if self.icon_manager:
             try:
                 folder_icon = self.icon_manager.get_icon("folder")
-                header = QLabel("Проводник")
+                header = QLabel("Проводник")  # Убираем emoji
+                # Если есть иконка, устанавливаем её
                 if folder_icon and not folder_icon.isNull():
+                    # Создаем QLabel с иконкой и текстом
+                    header = QLabel("Проводник")
                     header.setPixmap(folder_icon.pixmap(16, 16))
-            except:
-                header = QLabel("📁 Проводник")
+            except Exception as e:
+                print(f"⚠️ Ошибка загрузки иконки папки: {e}")
+                header = QLabel("Проводник")
         else:
-            header = QLabel("📁 Проводник")
+            header = QLabel("Проводник")
             
         header.setObjectName("panelHeader")
         header.setFixedHeight(30)
         header_layout.addWidget(header)
         header_layout.addStretch()
         
-        # Кнопка "Домой"
-        home_btn = QPushButton("🏠")
-        home_btn.setToolTip("Перейти в домашнюю папку")
-        home_btn.setFixedSize(30, 30)
-        home_btn.clicked.connect(self._go_home)
-        header_layout.addWidget(home_btn)
+        # Кнопки с иконками
+        home_btn = self._create_icon_button("home", "Перейти в домашнюю папку", self._go_home)
+        up_btn = self._create_icon_button("arrow-up", "Перейти на уровень вверх", self._go_up)
         
-        # Кнопка "Вверх"
-        up_btn = QPushButton("⬆️")
-        up_btn.setToolTip("Перейти на уровень вверх")
-        up_btn.setFixedSize(30, 30)
-        up_btn.clicked.connect(self._go_up)
+        header_layout.addWidget(home_btn)
         header_layout.addWidget(up_btn)
         
         layout.addLayout(header_layout)
@@ -100,36 +113,87 @@ class FileExplorerWidget(QWidget):
         self.path_input.returnPressed.connect(self._path_changed)
         path_layout.addWidget(self.path_input)
         
-        go_btn = QPushButton("➡️")
-        go_btn.setToolTip("Перейти к указанному пути")
-        go_btn.setFixedSize(30, 30)
-        go_btn.clicked.connect(self._path_changed)
+        go_btn = self._create_icon_button("arrow-right", "Перейти к указанному пути", self._path_changed)
         path_layout.addWidget(go_btn)
         
         layout.addLayout(path_layout)
-          # Добавляем дерево файлов
+        
+        # Добавляем дерево файлов с кастомной моделью
         self.tree_view = QTreeView()
-        self.model = QFileSystemModel()
+        self.model = CustomFileSystemModel(self.icon_manager)
+        
         # Правильная инициализация модели файловой системы
         self.model.setRootPath(QDir.homePath())
         # Установка фильтров для отображения всех файлов и директорий
         self.model.setFilter(QDir.Filter.AllDirs | QDir.Filter.Files | QDir.Filter.NoDotAndDotDot)
+        
         # Применяем модель к дереву
         self.tree_view.setModel(self.model)
         # Устанавливаем корневой индекс для отображения домашней директории
         self.tree_view.setRootIndex(self.model.index(QDir.homePath()))
+        
         # Настраиваем отображение колонок
         self.tree_view.setColumnWidth(0, 250)
         # Скрываем ненужные колонки, оставляя только имя и размер
         for i in range(1, self.model.columnCount()):
             if i != 1:  # Оставляем колонку с размером (обычно 1)
                 self.tree_view.hideColumn(i)
+        
         layout.addWidget(self.tree_view)
+
+    def _create_icon_button(self, icon_name: str, tooltip: str, callback) -> QPushButton:
+        """Создает кнопку с иконкой"""
+        btn = QPushButton()
+        btn.setToolTip(tooltip)
+        btn.setFixedSize(30, 30)
+        btn.clicked.connect(callback)
+        
+        if self.icon_manager:
+            try:
+                icon = self.icon_manager.get_icon(icon_name)
+                if icon and not icon.isNull():
+                    btn.setIcon(icon)
+                else:
+                    # Fallback - устанавливаем текст без emoji
+                    text_map = {
+                        "home": "Home",
+                        "arrow-up": "↑", 
+                        "arrow-right": "→"
+                    }
+                    btn.setText(text_map.get(icon_name, "?"))
+            except Exception as e:
+                print(f"⚠️ Ошибка загрузки иконки {icon_name}: {e}")
+                # Fallback - устанавливаем текст без emoji
+                text_map = {
+                    "home": "Home",
+                    "arrow-up": "↑",
+                    "arrow-right": "→"
+                }
+                btn.setText(text_map.get(icon_name, "?"))
+        else:
+            # Fallback - устанавливаем текст без emoji
+            text_map = {
+                "home": "Home",
+                "arrow-up": "↑",
+                "arrow-right": "→"
+            }
+            btn.setText(text_map.get(icon_name, "?"))
+            
+        return btn
 
     def _connect_signals(self):
         """Подключение сигналов"""
         if hasattr(self.tree_view, 'doubleClicked'):
             self.tree_view.doubleClicked.connect(self._on_item_double_clicked)
+        
+        if hasattr(self.tree_view, 'clicked'):
+            self.tree_view.clicked.connect(self._on_item_selected)
+
+    def _on_item_selected(self, index):
+        """Обработка выбора элемента"""
+        if index.isValid():
+            file_path = self.model.filePath(index)
+            self.file_selected.emit(file_path)
 
     def _go_home(self):
         """Переход в домашнюю папку"""
@@ -163,3 +227,7 @@ class FileExplorerWidget(QWidget):
             path = self.model.filePath(index)
             self.path_input.setText(path)
             self.tree_view.setRootIndex(index)
+        else:
+            # Если это файл, отправляем сигнал об открытии
+            file_path = self.model.filePath(index)
+            self.file_double_clicked.emit(file_path)
