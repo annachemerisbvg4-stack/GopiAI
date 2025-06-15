@@ -25,7 +25,17 @@ class ConversationMessage(BaseModel):
             datetime: lambda v: v.isoformat()
         }
 
-class ConversationSession(BaseModel):
+class CreateSessionRequest(BaseModel):
+    """Модель запроса для создания новой сессии"""
+    title: str = Field(..., description="Заголовок разговора")
+    project_context: Optional[str] = Field(None, description="Контекст проекта (например, GopiAI-Core)")
+    tags: List[str] = Field(default_factory=list, description="Теги для категоризации")
+
+class AddMessageRequest(BaseModel):
+    """Модель запроса для добавления сообщения в сессию"""
+    content: str = Field(..., description="Содержимое сообщения")
+    role: MessageRole = Field(..., description="Роль отправителя")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Дополнительные метаданные")class ConversationSession(BaseModel):
     """Модель сессии разговора"""
     session_id: str = Field(..., description="Уникальный ID сессии")
     title: str = Field(..., description="Заголовок разговора")

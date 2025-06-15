@@ -10,7 +10,7 @@ from datetime import datetime
 import json
 
 from memory_manager import RAGMemoryManager
-from models import ConversationSession, MessageRole, SearchResult, MemoryStats
+from models import ConversationSession, MessageRole, SearchResult, MemoryStats, CreateSessionRequest, AddMessageRequest
 
 # Создаем FastAPI приложение
 app = FastAPI(
@@ -162,29 +162,26 @@ async def get_stats() -> MemoryStats:
     return memory_manager.get_memory_stats()
 
 @app.post("/sessions")
-async def create_session(title: str, project_context: Optional[str] = None, tags: List[str] = []) -> dict:
+async def create_session(request: CreateSessionRequest) -> dict:
     """Создать новую сессию разговора"""
     try:
-        session = memory_manager.create_session(title, project_context, tags)
+        session = memory_manager.create_session(request.title, request.project_context, request.tags)
         return {"session_id": session.session_id, "message": "Сессия создана"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/sessions/{session_id}/messages")
-async def add_message(session_id: str, role: str, content: str, metadata: dict = {}) -> dict:
+async def add_message(session_id: str, request: AddMessageRequest) -> dict:
     """Добавить сообщение в сессию"""
     try:
-        # Валидация роли
-        if role not in ["user", "assistant", "system"]:
-            raise HTTPException(status_code=400, detail="Недопустимая роль. Используйте: user, assistant, system")
-        
-        message_role = MessageRole(role)
-        message = memory_manager.add_message(session_id, message_role, content, metadata)
+        message = memory_manager.add_message(session_id, request.role, request.content, request.metadata)
         return {"message_id": message.id, "message": "Сообщение добавлено"}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/search")
 async def search_conversations(q: str, limit: int = 5) -> List[SearchResult]:
