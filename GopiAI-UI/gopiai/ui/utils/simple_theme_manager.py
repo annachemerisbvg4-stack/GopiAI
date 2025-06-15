@@ -222,7 +222,7 @@ VIOLET_DREAM_THEME = {
     "name": "Violet Dream",
     "description": "Сине-фиолетовая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#fcf8f9",
+        "main_color": "#abb2ff",
         "header_color": "#e0e0ff",
         "control_color": "#3e4ade",
         "accent_color": "#82478f",
@@ -235,7 +235,7 @@ VIOLET_DREAM_THEME = {
         "titlebar_text": "#000569"
     },
     "dark": {
-        "main_color": "#141314",
+        "main_color": "#282a45",
         "header_color": "#202cc7",
         "control_color": "#bec2ff",
         "accent_color": "#f4aeff",

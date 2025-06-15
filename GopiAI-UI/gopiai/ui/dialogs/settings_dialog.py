@@ -134,59 +134,63 @@ class GopiAISettingsDialog(QDialog):
             print("🔧 load_current_settings() завершен")
             print("🔧 GopiAISettingsDialog.__init__ завершен")    
     def _get_theme_colors_for_dialog(self):
-            """Получает полную палитру цветов для диалога настроек"""
-            if not self.theme_manager:
-                return {
-                    'bg_color': '#f8f9fa',
-                    'text_color': '#212529',
-                    'border_color': '#dee2e6',
-                    'hover_color': '#e9ecef',
-                    'selected_color': '#007bff',
-                    'button_color': '#6c757d',
-                    'accent_color': '#007bff'
-                }
-            
-            theme_data = self.theme_manager.get_current_theme_data()
-            if not theme_data:
-                return {
-                    'bg_color': '#f8f9fa',
-                    'text_color': '#212529',
-                    'border_color': '#dee2e6',
-                    'hover_color': '#e9ecef',
-                    'selected_color': '#007bff',
-                    'button_color': '#6c757d',
-                    'accent_color': '#007bff'
-                }
-            
-            # Получаем основные цвета из темы
-            bg_color = theme_data.get('main_color', '#f8f9fa')
-            text_color = theme_data.get('text_color', '#212529')
-            
-            # Получаем дополнительные цвета или создаем на основе основных
-            border_color = theme_data.get('border_color', theme_data.get('secondary_color', '#dee2e6'))
-            accent_color = theme_data.get('accent_color', theme_data.get('primary_color', '#007bff'))
-            
-            # Создаем производные цвета
-            is_light = self._is_light_color(bg_color)
-            
-            if is_light:
-                hover_color = self._darken_color(bg_color, 0.05)
-                selected_color = self._darken_color(bg_color, 0.1)
-                button_color = self._darken_color(bg_color, 0.03)
-            else:
-                hover_color = self._lighten_color(bg_color, 0.1)
-                selected_color = self._lighten_color(bg_color, 0.15)
-                button_color = self._lighten_color(bg_color, 0.05)
-            
+        """Получает полную палитру цветов для диалога настроек"""
+        if not self.theme_manager:
             return {
-                'bg_color': bg_color,
-                'text_color': text_color,
-                'border_color': border_color,
-                'hover_color': hover_color,
-                'selected_color': selected_color,
-                'button_color': button_color,
-                'accent_color': accent_color
+                'bg_color': '#f8f9fa',
+                'text_color': '#212529',
+                'border_color': '#dee2e6',
+                'hover_color': '#e9ecef',
+                'selected_color': '#007bff',
+                'button_color': '#6c757d',
+                'accent_color': '#007bff'
             }
+        
+        theme_data = self.theme_manager.get_current_theme_data()
+        if not theme_data:
+            return {
+                'bg_color': '#f8f9fa',
+                'text_color': '#212529',
+                'border_color': '#dee2e6',
+                'hover_color': '#e9ecef',
+                'selected_color': '#007bff',
+                'button_color': '#6c757d',
+                'accent_color': '#007bff'
+            }
+        
+        # Получаем основные цвета из темы (используем точные названия из simple_theme_manager)
+        bg_color = theme_data.get('main_color', '#f8f9fa')
+        text_color = theme_data.get('text_color', '#212529')
+        button_color = theme_data.get('button_color', '#6c757d')
+        border_color = theme_data.get('border_color', '#dee2e6')
+        accent_color = theme_data.get('accent_color', '#007bff')
+        
+        # Используем правильные цвета из темы, если они есть
+        hover_color = theme_data.get('button_hover_color', button_color)
+        selected_color = theme_data.get('button_active_color', accent_color)
+        
+        # Если button_hover_color отсутствует, создаем его программно
+        if 'button_hover_color' not in theme_data:
+            is_light = self._is_light_color(button_color)
+            if is_light:
+                hover_color = self._darken_color(button_color, 0.1)
+            else:
+                hover_color = self._lighten_color(button_color, 0.1)
+        
+        # Если button_active_color отсутствует, используем control_color или создаем программно
+        if 'button_active_color' not in theme_data:
+            selected_color = theme_data.get('control_color', accent_color)
+        
+        return {
+            'bg_color': bg_color,
+            'text_color': text_color,
+            'border_color': border_color,
+            'hover_color': hover_color,
+            'selected_color': selected_color,
+            'button_color': button_color,
+            'accent_color': accent_color
+        }
+
     
     def _darken_color(self, color, amount):
         """Затемняет цвет на указанную величину"""
@@ -279,8 +283,8 @@ class GopiAISettingsDialog(QDialog):
                 color: {colors['text_color']};
                 padding: 10px 20px;
                 margin-right: 2px;
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
+                border-top-left-radius: 1px;
+                border-top-right-radius: 1px;
                 border: 1px solid {colors['border_color']};
                 border-bottom: none;
             }}
@@ -334,6 +338,10 @@ class GopiAISettingsDialog(QDialog):
                 border-color: {colors['accent_color']};
                 background-color: {colors['hover_color']};
             }}
+            QComboBox:focus {{
+                border-color: {colors['accent_color']};
+                border-width: 2px;
+            }}
             QComboBox::drop-down {{
                 border: none;
                 background-color: transparent;
@@ -363,6 +371,7 @@ class GopiAISettingsDialog(QDialog):
             }}
             QCheckBox::indicator:hover {{
                 border-color: {colors['accent_color']};
+                background-color: {colors['hover_color']};
             }}
             QCheckBox::indicator:checked {{
                 background-color: {colors['accent_color']};
