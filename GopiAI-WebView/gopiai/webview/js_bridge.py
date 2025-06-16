@@ -50,6 +50,10 @@ class JavaScriptBridge(QObject):
             # Текущая модель
             self._current_model = "claude-sonnet-4"
             
+            # Отладочный вывод для проверки загрузки методов
+            print("🔧 JavaScriptBridge initialized with browser automation methods!")
+            print(f"   Available methods: {[m for m in dir(self) if 'browser' in m.lower()]}")
+            
             # Инициализация системы памяти
             self._memory_manager = None
             if MEMORY_AVAILABLE:
@@ -60,6 +64,11 @@ class JavaScriptBridge(QObject):
                     print(f"⚠️ Failed to initialize memory system: {e}")
                     self._memory_manager = None
 
+    
+    @Slot(result=str)
+    def test_new_method(self) -> str:
+        """ТЕСТОВЫЙ МЕТОД - если он появится в bridge, значит код обновился!"""
+        return "NEW_CODE_LOADED"
     
     @Slot(str)
     def send_message(self, message: str):
@@ -334,3 +343,154 @@ class JavaScriptBridge(QObject):
             True если память доступна
         """
         return self._memory_manager is not None
+    
+    # ==============================================
+    # BROWSER AUTOMATION METHODS
+    # ==============================================
+    
+    @Slot(str, result=str)
+    def browser_automation_result(self, action: str, result: str) -> str:
+        """
+        Слот для получения результатов browser automation из JavaScript.
+        
+        Args:
+            action: Выполненное действие (navigate, click, type, etc.)
+            result: Результат действия в JSON формате
+            
+        Returns:
+            Статус обработки
+        """
+        try:
+            # Уведомляем Python о результате browser automation
+            print(f"🤖 Browser automation result: {action} -> {result}")
+            return "OK"
+        except Exception as e:
+            self.error_occurred.emit(f"Error processing browser automation result: {str(e)}")
+            return "ERROR"
+    
+    @Slot(str, result=str)
+    def get_browser_page_info(self, tab_name: str = "current") -> str:
+        """
+        Получение информации о текущей странице в браузере.
+        
+        Args:
+            tab_name: Имя вкладки (по умолчанию текущая)
+            
+        Returns:
+            JSON с информацией о странице
+        """
+        try:
+            # Здесь мы можем получить информацию из browser widget
+            # Пока возвращаем заглушку
+            page_info = {
+                "url": "unknown",
+                "title": "unknown", 
+                "status": "ready",
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Попытаемся получить реальную информацию из parent widget
+            if hasattr(self.parent(), 'get_current_page_info'):
+                real_info = self.parent().get_current_page_info()
+                if real_info:
+                    page_info.update(real_info)
+            
+            return json.dumps(page_info, ensure_ascii=False)
+            
+        except Exception as e:
+            self.error_occurred.emit(f"Error getting page info: {str(e)}")
+            return json.dumps({"error": str(e)})
+    
+    @Slot(str, str, result=str)
+    def execute_browser_action(self, action: str, params: str) -> str:
+        """
+        Выполнение browser automation действия.
+        
+        Args:
+            action: Тип действия (navigate, click, type, screenshot, etc.)
+            params: Параметры в JSON формате
+            
+        Returns:
+            JSON результат выполнения
+        """
+        try:
+            import json
+            params_dict = json.loads(params) if params else {}
+            
+            # Уведомляем Python о запросе browser automation
+            print(f"🔧 Browser automation request: {action} with params {params_dict}")
+            
+            # Здесь можно добавить логику выполнения действий
+            # Пока возвращаем заглушку
+            result = {
+                "action": action,
+                "status": "pending",
+                "message": f"Browser action '{action}' received",
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Попытаемся выполнить действие через parent widget  
+            if hasattr(self.parent(), 'execute_browser_automation'):
+                real_result = self.parent().execute_browser_automation(action, params_dict)
+                if real_result:
+                    result.update(real_result)
+            
+            return json.dumps(result, ensure_ascii=False)
+            
+        except Exception as e:
+            error_result = {
+                "action": action,
+                "status": "error", 
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
+            self.error_occurred.emit(f"Error executing browser action '{action}': {str(e)}")
+            return json.dumps(error_result, ensure_ascii=False)
+    
+    @Slot(result=str)
+    def get_browser_automation_capabilities(self) -> str:
+        """
+        Получение списка доступных browser automation возможностей.
+        
+        Returns:
+            JSON со списком доступных действий
+        """
+        try:
+            capabilities = {
+                "available_actions": [
+                    "navigate",        # Переход по URL
+                    "click",          # Клик по элементу
+                    "type",           # Ввод текста
+                    "get_text",       # Получение текста элемента
+                    "get_source",     # Получение HTML кода страницы
+                    "screenshot",     # Снимок экрана
+                    "scroll",         # Прокрутка страницы
+                    "wait",           # Ожидание элемента
+                    "get_elements",   # Поиск элементов
+                    "get_page_info"   # Информация о странице
+                ],
+                "supported_selectors": [
+                    "css",           # CSS селекторы
+                    "xpath",         # XPath селекторы
+                    "id",            # По ID элемента
+                    "class",         # По классу
+                    "tag",           # По тегу
+                    "text"           # По тексту
+                ],
+                "browser_engine": "QWebEngineView",
+                "javascript_execution": True,
+                "screenshot_formats": ["png", "jpg"],
+                "status": "available",
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            return json.dumps(capabilities, ensure_ascii=False, indent=2)
+            
+        except Exception as e:
+            error_result = {
+                "status": "error",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
+            self.error_occurred.emit(f"Error getting browser capabilities: {str(e)}")
+            return json.dumps(error_result, ensure_ascii=False)

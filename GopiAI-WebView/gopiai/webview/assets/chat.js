@@ -188,6 +188,27 @@ class GopiAIChatInterface {
             const command = parts[0];
             const args = parts.slice(1);
             
+            // Диагностические команды
+            if (command === 'bridge-debug') {
+                this.debugBridge();
+                return;
+            }
+            
+            if (command === 'get-page-info') {
+                await this.getPythonBrowserPageInfo();
+                return;
+            }
+            
+            if (command === 'capabilities') {
+                await this.getPythonBrowserCapabilities();
+                return;
+            }
+            
+            if (command === 'test-python-bridge') {
+                await this.testPythonBridgeAutomation();
+                return;
+            }
+            
             const result = await this.processBrowserCommand(command, args);
             if (result !== null) {
                 return; // Команда обработана, не отправляем в AI
@@ -729,9 +750,12 @@ ${JSON.stringify(tests, null, 2)}`);
                 case 'test-automation':
                     return await this.testBrowserAutomation();
                 
+                case 'test-python-bridge':
+                    return await this.testPythonBridgeAutomation();
+                
                 case 'navigate':
                     if (args[0]) {
-                        return await this.performBrowserAction('navigate', { url: args[0] });
+                        return await this.executePythonBrowserAction('navigate', { url: args[0] });
                     } else {
                         this.addSystemMessage('❌ Usage: /navigate <url>');
                         return null;
@@ -739,7 +763,7 @@ ${JSON.stringify(tests, null, 2)}`);
                 
                 case 'click':
                     if (args[0]) {
-                        return await this.performBrowserAction('click', { selector: args[0] });
+                        return await this.executePythonBrowserAction('click', { selector: args[0] });
                     } else {
                         this.addSystemMessage('❌ Usage: /click <selector>');
                         return null;
@@ -747,7 +771,7 @@ ${JSON.stringify(tests, null, 2)}`);
                 
                 case 'type':
                     if (args[0] && args[1]) {
-                        return await this.performBrowserAction('type', { 
+                        return await this.executePythonBrowserAction('type', { 
                             selector: args[0], 
                             text: args.slice(1).join(' ') 
                         });
@@ -757,30 +781,42 @@ ${JSON.stringify(tests, null, 2)}`);
                     }
                 
                 case 'screenshot':
-                    return await this.performBrowserAction('screenshot');
+                    return await this.executePythonBrowserAction('screenshot');
                 
                 case 'get-text':
                     if (args[0]) {
-                        return await this.performBrowserAction('getText', { selector: args[0] });
+                        return await this.executePythonBrowserAction('get_text', { selector: args[0] });
                     } else {
                         this.addSystemMessage('❌ Usage: /get-text <selector>');
                         return null;
                     }
                 
                 case 'get-source':
-                    return await this.performBrowserAction('getPageSource');
+                    return await this.executePythonBrowserAction('get_source');
+                
+                case 'get-page-info':
+                    return await this.getPythonBrowserPageInfo();
+                
+                case 'capabilities':
+                    return await this.getPythonBrowserCapabilities();
+                
+                case 'bridge-debug':
+                    return await this.debugBridge();
                 
                 case 'help':
                     this.addSystemMessage(`🔧 Available browser automation commands:
                     
 /test-drivers - List available Puter.js drivers
-/test-automation - Test browser automation capabilities  
-/navigate <url> - Navigate to URL
+/test-automation - Test browser automation capabilities
+/test-python-bridge - Test Python bridge automation
+/navigate <url> - Navigate to URL (via Python)
 /click <selector> - Click element by CSS selector
 /type <selector> <text> - Type text into element
 /screenshot - Take page screenshot
 /get-text <selector> - Get text from element
 /get-source - Get page HTML source
+/get-page-info - Get current page information
+/capabilities - Show browser automation capabilities
 /help - Show this help`);
                     return null;
                 
@@ -791,6 +827,227 @@ ${JSON.stringify(tests, null, 2)}`);
         } catch (error) {
             console.error(`Error processing browser command ${command}:`, error);
             this.addSystemMessage(`❌ Error processing command "${command}": ${error.message}`);
+            return null;
+        }
+    }
+    
+    // ==============================================
+    // BRIDGE DEBUGGING
+    // ==============================================
+    
+    async debugBridge() {
+        try {
+            console.log('Debugging bridge methods...');
+            
+            if (!this.bridge) {
+                this.addSystemMessage('❌ Bridge not available');
+                return null;
+            }
+            
+            // Получаем все методы bridge
+            const bridgeMethods = [];
+            for (let prop in this.bridge) {
+                if (typeof this.bridge[prop] === 'function') {
+                    bridgeMethods.push(prop);
+                }
+            }
+            
+            console.log('Available bridge methods:', bridgeMethods);
+            
+            const methodsList = bridgeMethods.join(', ');
+            this.addSystemMessage(`🔍 Bridge methods (${bridgeMethods.length}): ${methodsList}`);
+            
+            // Проверяем наличие наших новых методов
+            const ourMethods = [
+                'get_browser_automation_capabilities',
+                'execute_browser_action', 
+                'get_browser_page_info',
+                'browser_automation_result'
+            ];
+            
+            const missingMethods = ourMethods.filter(method => !bridgeMethods.includes(method));
+            const availableMethods = ourMethods.filter(method => bridgeMethods.includes(method));
+            
+            if (availableMethods.length > 0) {
+                this.addSystemMessage(`✅ Available automation methods: ${availableMethods.join(', ')}`);
+            }
+            
+            if (missingMethods.length > 0) {
+                this.addSystemMessage(`❌ Missing automation methods: ${missingMethods.join(', ')}`);
+                this.addSystemMessage('💡 Tip: Restart the application to load new methods');
+            }
+            
+            return {
+                total_methods: bridgeMethods.length,
+                available_automation: availableMethods,
+                missing_automation: missingMethods,
+                bridge_available: true
+            };
+            
+        } catch (error) {
+            console.error('Error debugging bridge:', error);
+            this.addSystemMessage(`❌ Error debugging bridge: ${error.message}`);
+            return null;
+        }
+    }
+    
+    // ==============================================
+    // PYTHON BRIDGE BROWSER AUTOMATION
+    // ==============================================
+    
+    async testPythonBridgeAutomation() {
+        try {
+            console.log('Testing Python bridge browser automation...');
+            
+            // Проверяем доступность bridge
+            if (!this.bridge) {
+                this.addSystemMessage('❌ Python bridge not available');
+                return null;
+            }
+            
+            // Тест 1: Получение capabilities
+            let capabilities = null;
+            try {
+                const capResult = this.bridge.get_browser_automation_capabilities();
+                // Проверяем, является ли результат Promise
+                const capResultStr = (capResult && typeof capResult.then === 'function') ? 
+                    await capResult : capResult;
+                capabilities = JSON.parse(capResultStr);
+                this.addSystemMessage(`✅ Browser capabilities available: ${capabilities.functions ? capabilities.functions.length : 'unknown'} actions`);
+            } catch (error) {
+                this.addSystemMessage(`❌ Error getting capabilities: ${error.message}`);
+                console.error('Capabilities error:', error, 'Raw result:', this.bridge.get_browser_automation_capabilities());
+            }
+            
+            // Тест 2: Получение информации о странице
+            try {
+                const pageResult = this.bridge.get_browser_page_info();
+                const pageResultStr = (pageResult && typeof pageResult.then === 'function') ? 
+                    await pageResult : pageResult;
+                const pageInfo = JSON.parse(pageResultStr);
+                this.addSystemMessage(`✅ Page info: ${pageInfo.url || 'unknown'}`);
+            } catch (error) {
+                this.addSystemMessage(`❌ Error getting page info: ${error.message}`);
+                console.error('Page info error:', error, 'Raw result:', this.bridge.get_browser_page_info());
+            }
+            
+            // Тест 3: Выполнение тестового действия
+            try {
+                const testResult = this.bridge.execute_browser_action('get_page_info', '{}');
+                const testResultStr = (testResult && typeof testResult.then === 'function') ? 
+                    await testResult : testResult;
+                const result = JSON.parse(testResultStr);
+                this.addSystemMessage(`✅ Test action result: ${result.success ? 'success' : result.status}`);
+            } catch (error) {
+                this.addSystemMessage(`❌ Error executing test action: ${error.message}`);
+                console.error('Test action error:', error, 'Raw result:', this.bridge.execute_browser_action('get_page_info', '{}'));
+            }
+            
+            const summary = {
+                bridge_available: !!this.bridge,
+                capabilities: capabilities,
+                test_completed: true
+            };
+            
+            console.log('Python bridge automation test results:', summary);
+            this.addSystemMessage(`🔧 Python bridge automation test completed. Bridge available: ${summary.bridge_available ? '✅' : '❌'}`);
+            
+            return summary;
+        } catch (error) {
+            console.error('Error testing Python bridge automation:', error);
+            this.addSystemMessage(`❌ Error testing Python bridge automation: ${error.message}`);
+            return null;
+        }
+    }
+    
+    async executePythonBrowserAction(action, params = {}) {
+        try {
+            if (!this.bridge) {
+                this.addSystemMessage('❌ Python bridge not available');
+                return null;
+            }
+            
+            console.log(`Executing Python browser action: ${action}`, params);
+            
+            const paramsJson = JSON.stringify(params);
+            const resultJson = this.bridge.execute_browser_action(action, paramsJson);
+            const resultJsonStr = (resultJson && typeof resultJson.then === 'function') ? 
+                await resultJson : resultJson;
+            const result = JSON.parse(resultJsonStr);
+            
+            console.log(`Python browser action ${action} result:`, result);
+            
+            if (result.status === 'error') {
+                this.addSystemMessage(`❌ Browser action "${action}" failed: ${result.error}`);
+            } else {
+                this.addSystemMessage(`✅ Browser action "${action}" completed: ${result.message || result.status}`);
+            }
+            
+            // Уведомление bridge о результате
+            if (typeof this.bridge.browser_automation_result === 'function') {
+                this.bridge.browser_automation_result(action, resultJson);
+            }
+            
+            return result;
+        } catch (error) {
+            console.error(`Error executing Python browser action ${action}:`, error);
+            this.addSystemMessage(`❌ Error executing browser action "${action}": ${error.message}`);
+            return null;
+        }
+    }
+    
+    async getPythonBrowserPageInfo() {
+        try {
+            if (!this.bridge) {
+                this.addSystemMessage('❌ Python bridge not available');
+                return null;
+            }
+            
+            // Вызываем метод без параметров, так как он не принимает их
+            const resultJson = this.bridge.get_browser_page_info();
+            console.log('Raw page info result:', resultJson, 'Type:', typeof resultJson);
+            
+            const resultJsonStr = (resultJson && typeof resultJson.then === 'function') ? 
+                await resultJson : resultJson;
+            console.log('Page info result after await:', resultJsonStr, 'Type:', typeof resultJsonStr);
+            
+            if (!resultJsonStr || resultJsonStr.trim() === '') {
+                throw new Error('Empty response from get_browser_page_info');
+            }
+            
+            const result = JSON.parse(resultJsonStr);
+            
+            console.log('Python browser page info:', result);
+            this.addSystemMessage(`📄 Page info: URL: ${result.url}, Title: ${result.title}`);
+            
+            return result;
+        } catch (error) {
+            console.error('Error getting Python browser page info:', error);
+            this.addSystemMessage(`❌ Error getting page info: ${error.message}`);
+            return null;
+        }
+    }
+    
+    async getPythonBrowserCapabilities() {
+        try {
+            if (!this.bridge) {
+                this.addSystemMessage('❌ Python bridge not available');
+                return null;
+            }
+            
+            const resultJson = this.bridge.get_browser_automation_capabilities();
+            const resultJsonStr = (resultJson && typeof resultJson.then === 'function') ? 
+                await resultJson : resultJson;
+            const result = JSON.parse(resultJsonStr);
+            
+            console.log('Python browser capabilities:', result);
+            this.addSystemMessage(`🔧 Browser automation capabilities:
+${JSON.stringify(result, null, 2)}`);
+            
+            return result;
+        } catch (error) {
+            console.error('Error getting Python browser capabilities:', error);
+            this.addSystemMessage(`❌ Error getting capabilities: ${error.message}`);
             return null;
         }
     }

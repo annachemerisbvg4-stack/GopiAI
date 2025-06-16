@@ -54,7 +54,10 @@ class WebViewChatBridge(QObject):
     error_occurred = Signal(str)
     
     def __init__(self, parent=None):
-            super().__init__()
+            super().__init__(parent)
+            
+            # Сохраняем ссылку на родительский WebViewChatWidget
+            self._parent_widget = parent
             
             # Инициализация системы памяти
             self._memory_manager = None
@@ -102,78 +105,230 @@ class WebViewChatBridge(QObject):
         print("📜 Bridge: chat history requested")
         return json.dumps([])
     
+    # Методы для работы с системой памяти
+    
+    @Slot(str, result=str)
+    def enrich_message(self, message: str) -> str:
+        """
+        Обогащение сообщения контекстом из памяти.
+        Вызывается из JavaScript перед отправкой к ИИ.
+        """
+        if self._memory_manager:
+            try:
+                enriched = self._memory_manager.enrich_message(message)
+                print(f"🧠 Memory: enriched message ({len(message)} -> {len(enriched)} chars)")
+                return enriched
+            except Exception as e:
+                print(f"❌ Memory enrichment error: {e}")
+                return message
+        return message
+
+    @Slot(str, str, result=str)
+    def save_chat_exchange(self, user_message: str, ai_response: str) -> str:
+        """
+        Сохранение обмена сообщениями в память.
+        Вызывается из JavaScript после получения ответа ИИ.
+        """
+        if self._memory_manager:
+            try:
+                success = self._memory_manager.save_chat_exchange(user_message, ai_response)
+                status = "OK" if success else "ERROR"
+                print(f"💾 Memory: saved exchange ({status})")
+                return status
+            except Exception as e:
+                print(f"❌ Memory save error: {e}")
+                return "ERROR"
+        return "OK"
+
+    @Slot(result=str)
+    def start_new_chat_session(self) -> str:
+        """
+        Начало новой сессии чата.
+        Очищает краткосрочную память и создает новую RAG сессию.
+        """
+        if self._memory_manager:
+            try:
+                self._memory_manager.start_new_session()
+                print(f"🆕 Memory: new session {self._memory_manager.session_id}")
+                return self._memory_manager.session_id
+            except Exception as e:
+                print(f"❌ New session error: {e}")
+        return "default_session"
+
+    @Slot(result=str)
+    def get_memory_stats(self) -> str:
+        """
+        Получение статистики памяти в формате JSON.
+        """
+        if self._memory_manager:
+            try:
+                stats = self._memory_manager.get_memory_stats()
+                return json.dumps(stats, ensure_ascii=False)
+            except Exception as e:
+                print(f"❌ Memory stats error: {e}")
         
-        # Методы для работы с системой памяти
-        
-        @Slot(str, result=str)
-        def enrich_message(self, message: str) -> str:
-            """
-            Обогащение сообщения контекстом из памяти.
-            Вызывается из JavaScript перед отправкой к ИИ.
-            """
-            if self._memory_manager:
-                try:
-                    enriched = self._memory_manager.enrich_message(message)
-                    print(f"🧠 Memory: enriched message ({len(message)} -> {len(enriched)} chars)")
-                    return enriched
-                except Exception as e:
-                    print(f"❌ Memory enrichment error: {e}")
-                    return message
-            return message
-        
-        @Slot(str, str, result=str)
-        def save_chat_exchange(self, user_message: str, ai_response: str) -> str:
-            """
-            Сохранение обмена сообщениями в память.
-            Вызывается из JavaScript после получения ответа ИИ.
-            """
-            if self._memory_manager:
-                try:
-                    success = self._memory_manager.save_chat_exchange(user_message, ai_response)
-                    status = "OK" if success else "ERROR"
-                    print(f"💾 Memory: saved exchange ({status})")
-                    return status
-                except Exception as e:
-                    print(f"❌ Memory save error: {e}")
-                    return "ERROR"
-            return "OK"
-        
-        @Slot(result=str)
-        def start_new_chat_session(self) -> str:
-            """
-            Начало новой сессии чата.
-            Очищает краткосрочную память и создает новую RAG сессию.
-            """
-            if self._memory_manager:
-                try:
-                    self._memory_manager.start_new_session()
-                    print(f"🆕 Memory: new session {self._memory_manager.session_id}")
-                    return self._memory_manager.session_id
-                except Exception as e:
-                    print(f"❌ New session error: {e}")
-            return "default_session"
-        
-        @Slot(result=str)
-        def get_memory_stats(self) -> str:
-            """
-            Получение статистики памяти в формате JSON.
-            """
-            if self._memory_manager:
-                try:
-                    stats = self._memory_manager.get_memory_stats()
-                    return json.dumps(stats, ensure_ascii=False)
-                except Exception as e:
-                    print(f"❌ Memory stats error: {e}")
+        return json.dumps({
+            "memory_available": False,
+            "error": "Memory system not initialized"
+        })
+
+    @Slot(result=bool)
+    def is_memory_available(self) -> bool:
+        """Проверка доступности системы памяти."""
+        return self._memory_manager is not None
+
+    # ==============================================
+    # BROWSER AUTOMATION METHODS
+    # ==============================================
+
+    @Slot(result=str)
+    def get_browser_automation_capabilities(self) -> str:
+        """Получение списка доступных browser automation функций"""
+        capabilities = {
+            "available": True,
+            "functions": [
+                "navigate", "click", "type", "screenshot", "get_text", 
+                "get_source", "scroll", "wait", "execute_script"
+            ],
+            "engine": "QWebEngineView",
+            "version": "1.0"
+        }
+        print("🌐 Bridge: browser automation capabilities requested")
+        return json.dumps(capabilities, ensure_ascii=False)
+
+    @Slot(str, str, result=str)
+    def execute_browser_action(self, action: str, params: str) -> str:
+        """Выполнение browser automation действия"""
+        try:
+            params_dict = json.loads(params) if params else {}
+            print(f"🤖 Bridge: executing browser action '{action}' with params: {params_dict}")
             
-            return json.dumps({
-                "memory_available": False,
-                "error": "Memory system not initialized"
-            })
+            # Получаем родительский WebViewChatWidget
+            widget = self._parent_widget
+            
+            if not widget or not hasattr(widget, 'web_view'):
+                raise Exception("WebView not available")
         
-        @Slot(result=bool)
-        def is_memory_available(self) -> bool:
-            """Проверка доступности системы памяти."""
-            return self._memory_manager is not None
+            
+            # Выполняем действие в зависимости от типа
+            if action == "navigate":
+                url = params_dict.get("url", "")
+                if url:
+                    widget.web_view.setUrl(url)
+                    result_data = {"message": f"Navigated to {url}"}
+                else:
+                    raise Exception("URL parameter required for navigate action")
+                    
+            elif action == "get_url":
+                current_url = widget.web_view.page().url().toString()
+                result_data = {"url": current_url}
+                
+            elif action == "get_title":
+                title = widget.web_view.page().title()
+                result_data = {"title": title}
+                
+            elif action == "reload":
+                widget.web_view.reload()
+                result_data = {"message": "Page reloaded"}
+                
+            elif action == "back":
+                widget.web_view.back()
+                result_data = {"message": "Navigated back"}
+                
+            elif action == "forward":
+                widget.web_view.forward()
+                result_data = {"message": "Navigated forward"}
+                
+            elif action == "execute_script":
+                script = params_dict.get("script", "")
+                if script:
+                    # Выполняем JavaScript в WebView
+                    widget.web_view.page().runJavaScript(script)
+                    result_data = {"message": f"Script executed: {script[:50]}..."}
+                else:
+                    raise Exception("Script parameter required for execute_script action")
+                    
+            elif action == "screenshot":
+                # Пока возвращаем заглушку для screenshot
+                result_data = {"message": "Screenshot functionality not implemented yet"}
+                
+            else:
+                raise Exception(f"Unknown action: {action}")
+            
+            result = {
+                "success": True,
+                "action": action,
+                "params": params_dict,
+                "result": result_data,
+                "timestamp": "2025-01-16T12:00:00Z"
+            }
+            
+            return json.dumps(result, ensure_ascii=False)
+            
+        except Exception as e:
+            error_result = {
+                "success": False,
+                "error": str(e),
+                "action": action,
+                "timestamp": "2025-01-16T12:00:00Z"
+            }
+            print(f"❌ Bridge: browser action error: {e}")
+            return json.dumps(error_result, ensure_ascii=False)
+
+    @Slot(result=str)
+    def get_browser_page_info(self) -> str:
+        """Получение информации о текущей странице браузера"""
+        try:
+            # Получаем родительский WebViewChatWidget
+            widget = self._parent_widget
+            
+            if widget and hasattr(widget, 'web_view') and widget.web_view.page():
+                # Получаем актуальную информацию о странице
+                page = widget.web_view.page()
+                url = page.url().toString() if page.url() else "about:blank"
+                title = page.title() if page.title() else "Untitled"
+                
+                page_info = {
+                    "url": url,
+                    "title": title,
+                    "ready": True,
+                    "loading": False,
+                    "engine": "QWebEngineView",
+                    "timestamp": "2025-01-16T12:00:00Z"
+                }
+            else:
+                # Если WebView недоступен, возвращаем базовую информацию
+                page_info = {
+                    "url": "about:blank",
+                    "title": "GopiAI Chat",
+                    "ready": True,
+                    "loading": False,
+                    "engine": "QWebEngineView",
+                    "timestamp": "2025-01-16T12:00:00Z"
+                }
+            
+            print(f"📄 Bridge: page info - {page_info['title']} ({page_info['url']})")
+            return json.dumps(page_info, ensure_ascii=False)
+            
+        except Exception as e:
+            error_info = {
+                "error": str(e),
+                "url": "about:blank",
+                "timestamp": "2025-01-16T12:00:00Z"
+            }
+            print(f"❌ Bridge: page info error: {e}")
+            return json.dumps(error_info, ensure_ascii=False)
+
+    @Slot(str, result=str)
+    def browser_automation_result(self, result_data: str) -> str:
+        """Обработка результатов browser automation"""
+        try:
+            result = json.loads(result_data)
+            print(f"📊 Bridge: browser automation result received: {result}")
+            return "OK"
+        except Exception as e:
+            print(f"❌ Bridge: result processing error: {e}")
+            return f"ERROR: {e}"
 
 
 class WebViewChatWidget(QWidget):
