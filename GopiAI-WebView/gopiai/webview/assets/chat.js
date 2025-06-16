@@ -31,14 +31,14 @@ class GopiAIChatInterface {
         this.theme = 'dark';
         this.chatHistory = [];
         this.memoryEnabled = false; // Флаг доступности памяти
-        
+
         this.initializeElements();
         this.initializeWebChannel();
         this.setupEventListeners();
         this.loadSettings();
         this.initializePuter();
     }
-    
+
     initializeElements() {
         // Основные элементы
         this.messagesContainer = document.getElementById('chat-messages');
@@ -46,59 +46,59 @@ class GopiAIChatInterface {
         this.sendButton = document.getElementById('send-btn');
         this.modelSelect = document.getElementById('model-select');
         this.typingIndicator = document.getElementById('typing-indicator');
-        
+
         // Кнопки заголовка
         this.clearButton = document.getElementById('clear-btn');
         this.exportButton = document.getElementById('export-btn');
         this.historyButton = document.getElementById('history-btn');
-        
+
         // Модальные окна
         this.historyModal = document.getElementById('history-modal');
         this.exportModal = document.getElementById('export-modal');
         this.closeHistoryBtn = document.getElementById('close-settings'); // Переиспользуем тот же ID
         this.closeExportBtn = document.getElementById('close-export');
-        
+
         // Настройки
         this.streamToggle = document.getElementById('stream-toggle');
         this.autoScrollToggle = document.getElementById('auto-scroll-toggle');
         this.themeSelect = document.getElementById('theme-select');
-        
+
         // Экспорт
         this.exportFormatSelect = document.getElementById('export-format');
         this.downloadBtn = document.getElementById('download-btn');
         this.copyBtn = document.getElementById('copy-btn');
         this.exportContent = document.getElementById('export-content');
     }
-    
+
     async initializePuter() {
         try {
             await waitForPuter();
             console.log('puter.js loaded successfully');
-            
+
             // Показываем приветственное сообщение
             this.addAIMessage('Welcome to GopiAI WebView Chat! I\'m powered by puter.js and ready to help you. You can switch between Claude Sonnet 4 and Claude Opus 4 models using the dropdown above.');
-            
+
         } catch (error) {
             console.error('Failed to load puter.js:', error);
             this.addSystemMessage('⚠️ Error: Failed to load puter.js. Please check your internet connection and refresh the page.');
         }
     }
-    
+
     async checkMemoryAvailability() {
         try {
             if (!this.bridge) {
                 console.log('Bridge not available for memory check');
                 return false;
             }
-            
+
             if (typeof this.bridge.execute_claude_tool === 'function') {
                 const toolsList = await this.getClaudeToolsList(true);
                 console.log('Tools list received for memory check:', toolsList);
-                
+
                 if (toolsList && toolsList.success) {
                     // Проверяем разные возможные структуры ответа
                     let tools = null;
-                    
+
                     if (Array.isArray(toolsList.tools)) {
                         tools = toolsList.tools;
                         console.log('Found tools array in toolsList.tools');
@@ -126,7 +126,7 @@ class GopiAIChatInterface {
                         }
                     } else {
                         console.log('Could not extract tools array from response structure:', Object.keys(toolsList));
-                        
+
                         // Последняя попытка - поиск любого свойства, которое содержит массив
                         for (const [key, value] of Object.entries(toolsList)) {
                             if (Array.isArray(value) && value.length > 0) {
@@ -136,26 +136,26 @@ class GopiAIChatInterface {
                             }
                         }
                     }
-                    
+
                     console.log('Final parsed tools array:', tools);
-                    
+
                     if (Array.isArray(tools) && tools.length > 0) {
                         const memoryTool = tools.find(t => {
                             // Проверяем разные возможные структуры элемента tool
                             const name = t?.name || t?.tool_name || t?.id || t?.function_name || String(t);
                             return name === 'search_memory';
                         });
-                        
+
                         this.memoryEnabled = !!memoryTool;
                         console.log('Memory tool search result:', memoryTool);
                         console.log('Memory availability set to:', this.memoryEnabled);
-                        
+
                         if (this.memoryEnabled) {
                             console.log('🧠 Memory system is available');
                         } else {
                             console.log('⚠️ search_memory tool not found in tools list');
                         }
-                        
+
                         return this.memoryEnabled;
                     } else {
                         console.log('No valid tools array found. Tools value:', tools, 'Type:', typeof tools);
@@ -166,7 +166,7 @@ class GopiAIChatInterface {
             } else {
                 console.log('execute_claude_tool method not available in bridge');
             }
-            
+
             this.memoryEnabled = false;
             console.log('Memory availability set to false (fallback)');
             return false;
@@ -176,7 +176,6 @@ class GopiAIChatInterface {
             return false;
         }
     }
-    }
 
     async searchMemory(query, limit = 10) {
         try {
@@ -184,16 +183,16 @@ class GopiAIChatInterface {
                 console.log('Memory not available');
                 return null;
             }
-            
+
             const result = await this.executeClaudeTool('search_memory', {
                 query: query,
                 limit: limit
             });
-            
+
             if (result && result.success) {
                 return result.results || [];
             }
-            
+
             return [];
         } catch (error) {
             console.error('Error searching memory:', error);
@@ -207,12 +206,12 @@ class GopiAIChatInterface {
                 console.log('Memory not available for history');
                 return [];
             }
-            
+
             const result = await this.searchMemory('', 50);
-            
+
             if (result && Array.isArray(result)) {
                 const sessionMap = new Map();
-                
+
                 result.forEach(item => {
                     if (item.metadata && item.metadata.session_id) {
                         const sessionId = item.metadata.session_id;
@@ -226,13 +225,13 @@ class GopiAIChatInterface {
                         sessionMap.get(sessionId).messages.push(item);
                     }
                 });
-                
+
                 const sessions = Array.from(sessionMap.values());
                 sessions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                
+
                 return sessions;
             }
-            
+
             return [];
         } catch (error) {
             console.error('Error loading chat history:', error);
@@ -247,16 +246,16 @@ class GopiAIChatInterface {
                 console.error('History container not found');
                 return;
             }
-            
+
             historyContainer.innerHTML = '<div class="loading">📚 Загрузка истории чатов...</div>';
-            
+
             const sessions = await this.loadChatHistory();
-            
+
             if (!sessions || sessions.length === 0) {
                 historyContainer.innerHTML = '<div class="no-history">📝 История чатов пуста</div>';
                 return;
             }
-            
+
             const dateGroups = new Map();
             sessions.forEach(session => {
                 const date = new Date(session.timestamp).toDateString();
@@ -265,17 +264,17 @@ class GopiAIChatInterface {
                 }
                 dateGroups.get(date).push(session);
             });
-            
+
             let html = '';
             for (const [date, dateSessions] of dateGroups) {
                 html += '<div class="history-date-group"><h3 class="history-date">' + date + '</h3>';
-                
+
                 dateSessions.forEach(session => {
                     const firstMessage = session.messages[0];
-                    const preview = firstMessage ? 
-                        (firstMessage.content || firstMessage.text || 'Пустое сообщение').substring(0, 100) + '...' : 
+                    const preview = firstMessage ?
+                        (firstMessage.content || firstMessage.text || 'Пустое сообщение').substring(0, 100) + '...' :
                         'Нет сообщений';
-                    
+
                     html += '<div class="history-session" data-session-id="' + session.session_id + '">';
                     html += '<div class="history-session-header">';
                     html += '<span class="history-session-time">' + new Date(session.timestamp).toLocaleTimeString() + '</span>';
@@ -284,19 +283,19 @@ class GopiAIChatInterface {
                     html += '<div class="history-session-preview">' + preview + '</div>';
                     html += '</div>';
                 });
-                
+
                 html += '</div>';
             }
-            
+
             historyContainer.innerHTML = html;
-            
+
             historyContainer.querySelectorAll('.history-session').forEach(sessionEl => {
                 sessionEl.addEventListener('click', (e) => {
                     const sessionId = e.currentTarget.dataset.sessionId;
                     this.loadChatSession(sessionId);
                 });
             });
-            
+
         } catch (error) {
             console.error('Error displaying chat history:', error);
             const historyContainer = document.getElementById('history-list');
@@ -312,30 +311,30 @@ class GopiAIChatInterface {
                 await this.displayChatHistory();
                 return;
             }
-            
+
             const historyContainer = document.getElementById('history-list');
             if (!historyContainer) return;
-            
+
             historyContainer.innerHTML = '<div class="loading">🔍 Поиск в истории...</div>';
-            
+
             const results = await this.searchMemory(query, 20);
-            
+
             if (!results || results.length === 0) {
                 historyContainer.innerHTML = '<div class="no-results">🔍 Результаты не найдены</div>';
                 return;
             }
-            
+
             let html = '<div class="search-results-header">🔍 Результаты поиска:</div>';
-            
+
             results.forEach((result, index) => {
                 const relevance = Math.round((result.score || 0) * 100);
                 const content = result.content || result.text || 'Нет содержимого';
-                const timestamp = result.metadata && result.metadata.timestamp ? 
-                    new Date(result.metadata.timestamp).toLocaleString() : 
+                const timestamp = result.metadata && result.metadata.timestamp ?
+                    new Date(result.metadata.timestamp).toLocaleString() :
                     'Неизвестно';
-                
+
                 const highlightedContent = this.highlightSearchTerms(content, query);
-                
+
                 html += '<div class="search-result">';
                 html += '<div class="search-result-header">';
                 html += '<span class="search-result-time">' + timestamp + '</span>';
@@ -344,9 +343,9 @@ class GopiAIChatInterface {
                 html += '<div class="search-result-content">' + highlightedContent + '</div>';
                 html += '</div>';
             });
-            
+
             historyContainer.innerHTML = html;
-            
+
         } catch (error) {
             console.error('Error searching chat history:', error);
             const historyContainer = document.getElementById('history-list');
@@ -358,17 +357,17 @@ class GopiAIChatInterface {
 
     highlightSearchTerms(content, query) {
         if (!query || query.trim() === '') return content;
-        
+
         const terms = query.toLowerCase().split(/\s+/);
         let highlighted = content;
-        
+
         terms.forEach(term => {
             if (term.length > 2) {
                 const regex = new RegExp('(' + term + ')', 'gi');
                 highlighted = highlighted.replace(regex, '<mark>$1</mark>');
             }
         });
-        
+
         return highlighted;
     }
 
@@ -379,9 +378,9 @@ class GopiAIChatInterface {
             if (modal) {
                 modal.style.display = 'none';
             }
-            
+
             this.addSystemMessage('📂 Загружена сессия: ' + sessionId);
-            
+
         } catch (error) {
             console.error('Error loading chat session:', error);
         }
@@ -390,51 +389,51 @@ class GopiAIChatInterface {
     async exportChatHistory(format = 'txt') {
         try {
             const sessions = await this.loadChatHistory();
-            
+
             if (!sessions || sessions.length === 0) {
                 this.addSystemMessage('📝 История чатов пуста');
                 return;
             }
-            
+
             let content = '';
             const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-            
+
             if (format === 'md') {
                 content = '# История чатов GopiAI\n\n';
                 content += 'Экспортировано: ' + new Date().toLocaleString() + '\n\n';
-                
+
                 sessions.forEach(session => {
                     content += '## Сессия ' + session.session_id + '\n';
                     content += '**Время:** ' + new Date(session.timestamp).toLocaleString() + '\n';
                     content += '**Сообщений:** ' + session.messages.length + '\n\n';
-                    
+
                     session.messages.forEach(msg => {
                         const msgContent = msg.content || msg.text || 'Пустое сообщение';
                         content += '### Сообщение\n' + msgContent + '\n\n';
                     });
-                    
+
                     content += '---\n\n';
                 });
             } else {
                 content = 'История чатов GopiAI\n';
                 content += '='.repeat(50) + '\n\n';
                 content += 'Экспортировано: ' + new Date().toLocaleString() + '\n\n';
-                
+
                 sessions.forEach(session => {
                     content += 'Сессия: ' + session.session_id + '\n';
                     content += 'Время: ' + new Date(session.timestamp).toLocaleString() + '\n';
                     content += 'Сообщений: ' + session.messages.length + '\n';
                     content += '-'.repeat(30) + '\n';
-                    
+
                     session.messages.forEach(msg => {
                         const msgContent = msg.content || msg.text || 'Пустое сообщение';
                         content += msgContent + '\n\n';
                     });
-                    
+
                     content += '='.repeat(50) + '\n\n';
                 });
             }
-            
+
             const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -444,9 +443,9 @@ class GopiAIChatInterface {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            
+
             this.addSystemMessage('📥 История экспортирована в ' + format.toUpperCase());
-            
+
         } catch (error) {
             console.error('Error exporting chat history:', error);
             this.addSystemMessage('❌ Ошибка экспорта истории');
@@ -464,11 +463,11 @@ class GopiAIChatInterface {
             }
 
             const result = await this.bridge.get_claude_tools_list();
-            
+
             if (!silent) {
                 console.log('🔧 Claude tools list received:', result);
             }
-            
+
             // Обрабатываем разные возможные структуры ответа
             if (typeof result === 'string') {
                 try {
@@ -481,21 +480,343 @@ class GopiAIChatInterface {
                     return { success: false, tools: [], error: 'JSON parse error' };
                 }
             }
-            
+
             if (result && typeof result === 'object') {
-                return { 
-                    success: true, 
+                return {
+                    success: true,
                     tools: result.tools || result.result || result.data || (Array.isArray(result) ? result : [])
                 };
             }
-            
+
             return { success: false, tools: [], error: 'Invalid response format' };
-            
+
         } catch (error) {
             if (!silent) {
                 console.error('❌ Error getting Claude tools list:', error);
             }
             return { success: false, tools: [], error: error.message };
+        }
+    }
+
+    setupEventListeners() {
+        // Кнопка отправки
+        this.sendButton?.addEventListener('click', () => this.sendMessage());
+
+        // Поле ввода
+        this.messageInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+            }
+        });
+
+        this.messageInput?.addEventListener('input', () => this.autoResizeTextarea());
+
+        // Кнопки заголовка
+        this.historyButton?.addEventListener('click', () => this.showHistoryModal());
+        this.exportButton?.addEventListener('click', () => this.showExportModal());
+
+        // Модальное окно истории
+        this.closeHistoryBtn?.addEventListener('click', () => this.hideHistoryModal());
+
+        // Модальное окно экспорта
+        this.closeExportBtn?.addEventListener('click', () => this.hideExportModal());
+
+        // Кнопки в модальном окне истории
+        document.getElementById('new-chat-btn')?.addEventListener('click', () => this.clearChat());
+        document.getElementById('export-history-btn')?.addEventListener('click', () => this.exportCurrentChat());
+        document.getElementById('history-search')?.addEventListener('input', (e) => this.searchChatHistory(e.target.value));
+
+        // Кнопки экспорта
+        this.downloadBtn?.addEventListener('click', () => this.downloadChatHistory());
+        this.copyBtn?.addEventListener('click', () => this.copyChatHistory());
+
+        // Закрытие модальных окон по клику вне них
+        this.historyModal?.addEventListener('click', (e) => {
+            if (e.target === this.historyModal) {
+                this.hideHistoryModal();
+            }
+        });
+
+        this.exportModal?.addEventListener('click', (e) => {
+            if (e.target === this.exportModal) {
+                this.hideExportModal();
+            }
+        });
+
+        // Селектор модели
+        this.modelSelect?.addEventListener('change', (e) => {
+            this.currentModel = e.target.value;
+            this.saveSettings();
+        });
+    }
+
+    showHistoryModal() {
+        if (this.historyModal) {
+            this.historyModal.style.display = 'flex';
+            this.displayChatHistory();
+        }
+    }
+
+    hideHistoryModal() {
+        if (this.historyModal) {
+            this.historyModal.style.display = 'none';
+        }
+    }
+
+    showExportModal() {
+        if (this.exportModal) {
+            this.exportModal.style.display = 'flex';
+            this.updateExportPreview();
+        }
+    }
+
+    hideExportModal() {
+        if (this.exportModal) {
+            this.exportModal.style.display = 'none';
+        }
+    }
+
+    autoResizeTextarea() {
+        if (this.messageInput) {
+            this.messageInput.style.height = 'auto';
+            this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
+        }
+    }
+
+    updateExportPreview() {
+        // Обновление превью экспорта
+        const format = document.getElementById('export-format')?.value || 'json';
+        const content = this.exportContent;
+
+        if (content) {
+            const exportData = this.formatChatHistory(format);
+            content.textContent = exportData.substring(0, 500) + (exportData.length > 500 ? '...' : '');
+        }
+    }
+
+    formatChatHistory(format) {
+        const messages = this.chatHistory;
+
+        switch (format) {
+            case 'txt':
+                return messages.map(msg => `${msg.sender}: ${msg.content}`).join('\n\n');
+            case 'md':
+                return messages.map(msg => `**${msg.sender}:**\n${msg.content}\n`).join('\n');
+            case 'json':
+            default:
+                return JSON.stringify(messages, null, 2);
+        }
+    }
+
+    downloadChatHistory() {
+        const format = document.getElementById('export-format')?.value || 'json';
+        const content = this.formatChatHistory(format);
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gopiai_chat_history_${timestamp}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.addSystemMessage(`📁 История экспортирована в ${format.toUpperCase()} формате`);
+    }
+
+    copyChatHistory() {
+        const format = document.getElementById('export-format')?.value || 'json';
+        const content = this.formatChatHistory(format);
+
+        navigator.clipboard.writeText(content).then(() => {
+            this.addSystemMessage('📋 История скопирована в буфер обмена');
+        }).catch(error => {
+            console.error('Error copying to clipboard:', error);
+            this.addSystemMessage('❌ Ошибка копирования в буфер обмена');
+        });
+    }
+
+    clearChat() {
+        this.chatHistory = [];
+        this.messagesContainer.innerHTML = '';
+        this.hideHistoryModal();
+        this.addSystemMessage('🧹 Чат очищен');
+    }
+
+    saveSettings() {
+        const settings = {
+            currentModel: this.currentModel,
+            isStreaming: this.isStreaming,
+            autoScroll: this.autoScroll,
+            theme: this.theme
+        };
+        localStorage.setItem('gopiaiChatSettings', JSON.stringify(settings));
+    }
+
+    loadSettings() {
+        try {
+            const settings = JSON.parse(localStorage.getItem('gopiaiChatSettings') || '{}');
+            this.currentModel = settings.currentModel || 'claude-sonnet-4';
+            this.isStreaming = settings.isStreaming !== false;
+            this.autoScroll = settings.autoScroll !== false;
+            this.theme = settings.theme || 'dark';
+
+            // Применяем настройки к элементам
+            if (this.modelSelect) {
+                this.modelSelect.value = this.currentModel;
+            }
+        } catch (error) {
+            console.warn('Failed to load settings:', error);
+        }
+    }
+
+    async sendMessage() {
+        const message = this.messageInput?.value.trim();
+        if (!message) return;
+
+        // Очистка поля ввода
+        this.messageInput.value = '';
+        this.autoResizeTextarea();
+
+        // Добавление сообщения пользователя
+        this.addUserMessage(message);
+
+        // Показываем индикатор набора
+        this.showTypingIndicator();
+
+        try {
+            // Проверяем доступность puter.js
+            if (typeof puter === 'undefined') {
+                throw new Error('puter.js is not available');
+            }
+
+            // Отправляем сообщение через puter.js
+            const response = await puter.ai.chat([
+                { role: 'user', content: message }
+            ], {
+                model: this.currentModel,
+                stream: this.isStreaming
+            });
+
+            this.hideTypingIndicator();
+            this.addAIMessage(response.message || response.content || 'No response');
+
+            // Сохраняем в историю
+            this.chatHistory.push({
+                timestamp: new Date().toISOString(),
+                sender: 'User',
+                content: message
+            });
+            this.chatHistory.push({
+                timestamp: new Date().toISOString(),
+                sender: 'AI',
+                content: response.message || response.content,
+                model: this.currentModel
+            });
+
+        } catch (error) {
+            this.hideTypingIndicator();
+            console.error('Error sending message:', error);
+            this.addSystemMessage('❌ Error: ' + error.message);
+        }
+    }
+
+    addUserMessage(message) {
+        const messageDiv = this.createMessageElement('user', 'You', message);
+        this.messagesContainer?.appendChild(messageDiv);
+        this.scrollToBottom();
+    }
+
+    addAIMessage(message) {
+        const messageDiv = this.createMessageElement('ai', '🤖 GopiAI Assistant', message, this.currentModel);
+        this.messagesContainer?.appendChild(messageDiv);
+        this.scrollToBottom();
+    }
+
+    addSystemMessage(message) {
+        const messageDiv = this.createMessageElement('system', '🔧 System', message);
+        this.messagesContainer?.appendChild(messageDiv);
+        this.scrollToBottom();
+    }
+
+    createMessageElement(type, sender, content, model = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}-message`;
+
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'message-bubble';
+
+        // Заголовок сообщения
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'message-header';
+
+        const senderSpan = document.createElement('span');
+        senderSpan.className = 'sender';
+        senderSpan.textContent = sender;
+        headerDiv.appendChild(senderSpan);
+
+        if (model) {
+            const modelBadge = document.createElement('span');
+            modelBadge.className = 'model-badge';
+            modelBadge.textContent = model;
+            headerDiv.appendChild(modelBadge);
+        }
+
+        // Содержимое сообщения
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        contentDiv.textContent = content;
+
+        // Время сообщения
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        timeDiv.textContent = new Date().toLocaleTimeString();
+
+        bubbleDiv.appendChild(headerDiv);
+        bubbleDiv.appendChild(contentDiv);
+        bubbleDiv.appendChild(timeDiv);
+        messageDiv.appendChild(bubbleDiv);
+
+        return messageDiv;
+    }
+
+    showTypingIndicator() {
+        if (this.typingIndicator) {
+            this.typingIndicator.style.display = 'flex';
+        }
+    }
+
+    hideTypingIndicator() {
+        if (this.typingIndicator) {
+            this.typingIndicator.style.display = 'none';
+        }
+    }
+
+    scrollToBottom() {
+        if (this.autoScroll && this.messagesContainer) {
+            setTimeout(() => {
+                this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+            }, 100);
+        }
+    }
+
+    initializeWebChannel() {
+        // Инициализация WebChannel для связи с Python
+        if (typeof QWebChannel !== 'undefined') {
+            new QWebChannel(qt.webChannelTransport, (channel) => {
+                this.bridge = channel.objects.bridge;
+                console.log('✅ WebChannel bridge initialized');
+
+                // Проверяем доступность памяти после инициализации моста
+                this.checkMemoryAvailability().then(() => {
+                    console.log('Memory availability check completed');
+                });
+            });
+        } else {
+            console.warn('⚠️ QWebChannel not available');
         }
     }
 }
