@@ -151,23 +151,131 @@ class TabDocumentWidget(QWidget):
         """Добавление новой вкладки с браузером"""
         print(f"Создаем встроенный браузер...")
         try:
-            # Создаем простейший браузер прямо тут
+            from PySide6.QtWidgets import QHBoxLayout, QPushButton, QLineEdit
+            from PySide6.QtCore import QUrl
+            
+            # Создаем главный виджет браузера
             browser_widget = QWidget()
             browser_layout = QVBoxLayout(browser_widget)
-            browser_layout.setContentsMargins(0, 0, 0, 0)
+            browser_layout.setContentsMargins(5, 5, 5, 5)
+            browser_layout.setSpacing(2)
             
-            # Создаем сам браузер
+            # ==============================================
+            # Панель навигации с адресной строкой
+            # ==============================================
+            nav_layout = QHBoxLayout()
+            nav_layout.setContentsMargins(0, 0, 0, 0)
+            nav_layout.setSpacing(5)
+            
+            # Кнопка "Назад"
+            back_btn = QPushButton("←")
+            back_btn.setFixedSize(30, 30)
+            back_btn.setToolTip("Назад")
+            back_btn.setObjectName("browserBackBtn")
+            
+            # Кнопка "Вперед"  
+            forward_btn = QPushButton("→")
+            forward_btn.setFixedSize(30, 30)
+            forward_btn.setToolTip("Вперед")
+            forward_btn.setObjectName("browserForwardBtn")
+            
+            # Кнопка "Обновить"
+            refresh_btn = QPushButton("↻")
+            refresh_btn.setFixedSize(30, 30)
+            refresh_btn.setToolTip("Обновить")
+            refresh_btn.setObjectName("browserRefreshBtn")
+            
+            # Адресная строка
+            address_bar = QLineEdit()
+            address_bar.setPlaceholderText("Введите URL или поисковый запрос...")
+            address_bar.setObjectName("browserAddressBar")
+            
+            # Кнопка "Перейти"
+            go_btn = QPushButton("➤")
+            go_btn.setFixedSize(30, 30)
+            go_btn.setToolTip("Перейти")
+            go_btn.setObjectName("browserGoBtn")
+            
+            # Добавляем элементы в панель навигации
+            nav_layout.addWidget(back_btn)
+            nav_layout.addWidget(forward_btn)
+            nav_layout.addWidget(refresh_btn)
+            nav_layout.addWidget(address_bar)
+            nav_layout.addWidget(go_btn)
+            
+            # ==============================================
+            # Веб-браузер
+            # ==============================================
             web_view = QWebEngineView()
-            
-            # Устанавливаем стили и размеры
             web_view.setMinimumSize(800, 600)
             
             # Принудительно показываем
             web_view.show()
             web_view.setVisible(True)
             
-            # Добавляем в лейаут
+            # ==============================================
+            # Подключение сигналов навигации
+            # ==============================================
+            def navigate_back():
+                if web_view.history().canGoBack():
+                    web_view.back()
+                    
+            def navigate_forward():
+                if web_view.history().canGoForward():
+                    web_view.forward()
+                    
+            def refresh_page():
+                web_view.reload()
+                
+            def navigate_to_url():
+                url_text = address_bar.text().strip()
+                if not url_text:
+                    return
+                    
+                # Если не содержит протокол, добавляем https://
+                if not url_text.startswith(('http://', 'https://', 'file://', 'about:')):
+                    # Проверяем, выглядит ли это как URL
+                    if '.' in url_text and ' ' not in url_text:
+                        url_text = 'https://' + url_text
+                    else:
+                        # Выглядит как поисковый запрос
+                        url_text = f'https://google.com/search?q={url_text}'
+                
+                print(f"📡 Переходим к URL: {url_text}")
+                web_view.load(QUrl(url_text))
+                
+            def update_address_bar(qurl):
+                """Обновление адресной строки при изменении URL"""
+                address_bar.setText(qurl.toString())
+                
+            def update_navigation_buttons():
+                """Обновление состояния кнопок навигации"""
+                back_btn.setEnabled(web_view.history().canGoBack())
+                forward_btn.setEnabled(web_view.history().canGoForward())
+            
+            # Подключаем сигналы
+            back_btn.clicked.connect(navigate_back)
+            forward_btn.clicked.connect(navigate_forward)
+            refresh_btn.clicked.connect(refresh_page)
+            go_btn.clicked.connect(navigate_to_url)
+            address_bar.returnPressed.connect(navigate_to_url)
+            
+            # Обновляем адресную строку при изменении URL
+            web_view.urlChanged.connect(update_address_bar)
+            web_view.loadFinished.connect(lambda: update_navigation_buttons())
+            
+            # ==============================================
+            # Сборка интерфейса
+            # ==============================================
+            browser_layout.addLayout(nav_layout)
             browser_layout.addWidget(web_view)
+            
+            # Сохраняем ссылки на компоненты для доступа извне
+            browser_widget._web_view = web_view
+            browser_widget._address_bar = address_bar
+            browser_widget._back_btn = back_btn
+            browser_widget._forward_btn = forward_btn
+            browser_widget._refresh_btn = refresh_btn
             
             # Добавляем вкладку
             index = self.tab_widget.addTab(browser_widget, title)
@@ -176,14 +284,16 @@ class TabDocumentWidget(QWidget):
             # Загружаем URL
             if url and url != "about:blank":
                 print(f"📡 Загружаем URL: {url}")
+                address_bar.setText(url)
             else:
                 # Загрузка Google
                 url = "https://google.com"
                 print(f"📡 Загружаем Google")
+                address_bar.setText(url)
                 
             web_view.load(QUrl(url))
             
-            print(f"Веб-страница загружена: {url}")
+            print(f"Веб-страница с навигацией загружена: {url}")
             return browser_widget
             
         except Exception as e:

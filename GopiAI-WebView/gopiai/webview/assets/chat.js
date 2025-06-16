@@ -182,6 +182,18 @@ class GopiAIChatInterface {
         // Добавление сообщения пользователя
         this.addUserMessage(message);
         
+        // Проверка на browser automation команды
+        if (message.startsWith('/')) {
+            const parts = message.slice(1).split(' ');
+            const command = parts[0];
+            const args = parts.slice(1);
+            
+            const result = await this.processBrowserCommand(command, args);
+            if (result !== null) {
+                return; // Команда обработана, не отправляем в AI
+            }
+        }
+        
         // Уведомление Python через bridge
         if (this.bridge) {
             this.bridge.send_message(message);
@@ -564,6 +576,223 @@ class GopiAIChatInterface {
         badges.forEach(badge => {
             badge.textContent = this.currentModel === 'claude-sonnet-4' ? 'Claude Sonnet 4' : 'Claude Opus 4';
         });
+    }
+    
+    // ==============================================
+    // BROWSER AUTOMATION FUNCTIONS via Puter.js
+    // ==============================================
+    
+    async testPuterDrivers() {
+        try {
+            console.log('Testing Puter.js drivers...');
+            
+            // Список доступных драйверов
+            const drivers = await puter.drivers.list();
+            console.log('Available drivers:', drivers);
+            
+            this.addSystemMessage(`🔍 Available Puter.js drivers: ${JSON.stringify(drivers, null, 2)}`);
+            
+            return drivers;
+        } catch (error) {
+            console.error('Error testing Puter drivers:', error);
+            this.addSystemMessage(`❌ Error testing Puter drivers: ${error.message}`);
+            return null;
+        }
+    }
+    
+    async testBrowserAutomation() {
+        try {
+            console.log('Testing browser automation capabilities...');
+            
+            // Тестируем базовые browser operations
+            const tests = [];
+            
+            // Тест 1: Проверка доступных интерфейсов
+            try {
+                const result = await puter.drivers.call('browser', 'chrome', 'getCapabilities', {});
+                tests.push({ test: 'Browser capabilities', success: true, result });
+            } catch (error) {
+                tests.push({ test: 'Browser capabilities', success: false, error: error.message });
+            }
+            
+            // Тест 2: Проверка возможности навигации
+            try {
+                const result = await puter.drivers.call('browser', 'chrome', 'navigate', { url: 'about:blank' });
+                tests.push({ test: 'Navigate to blank page', success: true, result });
+            } catch (error) {
+                tests.push({ test: 'Navigate to blank page', success: false, error: error.message });
+            }
+            
+            // Тест 3: Проверка получения информации о странице
+            try {
+                const result = await puter.drivers.call('browser', 'chrome', 'getPageInfo', {});
+                tests.push({ test: 'Get page info', success: true, result });
+            } catch (error) {
+                tests.push({ test: 'Get page info', success: false, error: error.message });
+            }
+            
+            console.log('Browser automation test results:', tests);
+            this.addSystemMessage(`🔧 Browser automation test results:
+${JSON.stringify(tests, null, 2)}`);
+            
+            return tests;
+        } catch (error) {
+            console.error('Error testing browser automation:', error);
+            this.addSystemMessage(`❌ Error testing browser automation: ${error.message}`);
+            return null;
+        }
+    }
+    
+    async performBrowserAction(action, params = {}) {
+        try {
+            console.log(`Performing browser action: ${action}`, params);
+            
+            let result;
+            
+            switch (action) {
+                case 'navigate':
+                    result = await puter.drivers.call('browser', 'chrome', 'navigate', { url: params.url });
+                    break;
+                
+                case 'click':
+                    result = await puter.drivers.call('browser', 'chrome', 'click', { 
+                        selector: params.selector,
+                        x: params.x,
+                        y: params.y
+                    });
+                    break;
+                
+                case 'type':
+                    result = await puter.drivers.call('browser', 'chrome', 'type', {
+                        selector: params.selector,
+                        text: params.text
+                    });
+                    break;
+                
+                case 'getText':
+                    result = await puter.drivers.call('browser', 'chrome', 'getText', {
+                        selector: params.selector
+                    });
+                    break;
+                
+                case 'getPageSource':
+                    result = await puter.drivers.call('browser', 'chrome', 'getPageSource', {});
+                    break;
+                
+                case 'screenshot':
+                    result = await puter.drivers.call('browser', 'chrome', 'screenshot', {});
+                    break;
+                
+                default:
+                    throw new Error(`Unknown browser action: ${action}`);
+            }
+            
+            console.log(`Browser action ${action} result:`, result);
+            this.addSystemMessage(`✅ Browser action "${action}" completed: ${JSON.stringify(result)}`);
+            
+            // Уведомление Python через bridge
+            if (this.bridge) {
+                this.bridge.browser_automation_result(action, result);
+            }
+            
+            return result;
+        } catch (error) {
+            console.error(`Error performing browser action ${action}:`, error);
+            this.addSystemMessage(`❌ Error performing browser action "${action}": ${error.message}`);
+            return null;
+        }
+    }
+    
+    async getBrowserState() {
+        try {
+            const state = {
+                url: await this.performBrowserAction('getPageInfo'),
+                title: document.title,
+                timestamp: new Date().toISOString()
+            };
+            
+            console.log('Current browser state:', state);
+            return state;
+        } catch (error) {
+            console.error('Error getting browser state:', error);
+            return null;
+        }
+    }
+    
+    // Команды для тестирования из chat интерфейса
+    async processBrowserCommand(command, args = []) {
+        try {
+            switch (command.toLowerCase()) {
+                case 'test-drivers':
+                    return await this.testPuterDrivers();
+                
+                case 'test-automation':
+                    return await this.testBrowserAutomation();
+                
+                case 'navigate':
+                    if (args[0]) {
+                        return await this.performBrowserAction('navigate', { url: args[0] });
+                    } else {
+                        this.addSystemMessage('❌ Usage: /navigate <url>');
+                        return null;
+                    }
+                
+                case 'click':
+                    if (args[0]) {
+                        return await this.performBrowserAction('click', { selector: args[0] });
+                    } else {
+                        this.addSystemMessage('❌ Usage: /click <selector>');
+                        return null;
+                    }
+                
+                case 'type':
+                    if (args[0] && args[1]) {
+                        return await this.performBrowserAction('type', { 
+                            selector: args[0], 
+                            text: args.slice(1).join(' ') 
+                        });
+                    } else {
+                        this.addSystemMessage('❌ Usage: /type <selector> <text>');
+                        return null;
+                    }
+                
+                case 'screenshot':
+                    return await this.performBrowserAction('screenshot');
+                
+                case 'get-text':
+                    if (args[0]) {
+                        return await this.performBrowserAction('getText', { selector: args[0] });
+                    } else {
+                        this.addSystemMessage('❌ Usage: /get-text <selector>');
+                        return null;
+                    }
+                
+                case 'get-source':
+                    return await this.performBrowserAction('getPageSource');
+                
+                case 'help':
+                    this.addSystemMessage(`🔧 Available browser automation commands:
+                    
+/test-drivers - List available Puter.js drivers
+/test-automation - Test browser automation capabilities  
+/navigate <url> - Navigate to URL
+/click <selector> - Click element by CSS selector
+/type <selector> <text> - Type text into element
+/screenshot - Take page screenshot
+/get-text <selector> - Get text from element
+/get-source - Get page HTML source
+/help - Show this help`);
+                    return null;
+                
+                default:
+                    this.addSystemMessage(`❌ Unknown browser command: ${command}. Type /help for available commands.`);
+                    return null;
+            }
+        } catch (error) {
+            console.error(`Error processing browser command ${command}:`, error);
+            this.addSystemMessage(`❌ Error processing command "${command}": ${error.message}`);
+            return null;
+        }
     }
 }
 
