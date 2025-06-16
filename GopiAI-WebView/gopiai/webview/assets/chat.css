@@ -145,21 +145,81 @@ body {
     background: var(--bg-primary);
 }
 
+/* Улучшенные стили для широкого скроллбара */
 .chat-messages::-webkit-scrollbar {
-    width: 6px;
+    width: 18px; /* Увеличиваем ширину для удобства */
 }
 
 .chat-messages::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
+    border-radius: 9px;
+    margin: 2px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 3px;
+    background: linear-gradient(180deg, #666 0%, #555 50%, #444 100%);
+    border-radius: 9px;
+    border: 3px solid var(--bg-primary);
+    transition: background-color 0.2s ease;
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #888 0%, #777 50%, #666 100%);
+    cursor: pointer;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(180deg, #999 0%, #888 50%, #777 100%);
+}
+
+/* Общие улучшения скроллбара для всех элементов */
+::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 8px;
+    margin: 2px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 8px;
+    border: 2px solid var(--scrollbar-track);
+    transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
+    cursor: pointer;
+}
+
+/* Для модального окна истории */
+.history-list::-webkit-scrollbar {
+    width: 16px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border: 2px solid var(--modal-bg);
+    border-radius: 8px;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-secondary);
+}
+
+/* Стили для Firefox */
+.chat-messages {
+    scrollbar-width: thick;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.history-list {
+    scrollbar-width: thick;
+    scrollbar-color: var(--accent-primary) var(--modal-bg);
 }
 
 .message {
@@ -609,4 +669,274 @@ option {
 ::selection {
     background: var(--accent-primary);
     color: var(--button-text);
+}
+
+/* ===== ИСТОРИЯ ЧАТОВ - БОЛЬШОЕ МОДАЛЬНОЕ ОКНО ===== */
+
+/* Большое модальное окно для истории */
+.modal-large {
+    max-width: 900px;
+    width: 95%;
+    max-height: 90vh;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-icon {
+    color: var(--accent-primary);
+}
+
+/* Панель управления истории */
+.history-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 20px;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.export-format-group select {
+    width: auto;
+    min-width: 140px;
+}
+
+.search-group {
+    position: relative;
+    flex: 1;
+    max-width: 300px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background: var(--input-bg);
+    color: var(--input-text);
+    font-size: 0.9rem;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+/* Список чатов */
+.history-list {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+}
+
+.history-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.history-list::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 3px;
+}
+
+/* Элемент чата */
+.chat-item {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.chat-item:last-child {
+    border-bottom: none;
+}
+
+.chat-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.chat-item.current {
+    background: rgba(0, 122, 204, 0.1);
+    border-left: 3px solid var(--accent-primary);
+}
+
+.chat-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.chat-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.chat-date {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.chat-preview {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.chat-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.message-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.chat-status {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.chat-status.current {
+    background: var(--accent-primary);
+    color: var(--button-text);
+}
+
+.delete-chat-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    opacity: 0;
+}
+
+.chat-item:hover .delete-chat-btn {
+    opacity: 1;
+}
+
+.delete-chat-btn:hover {
+    background: var(--error-color);
+    color: white;
+}
+
+/* Состояние загрузки */
+.loading-placeholder {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Пустое состояние */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.empty-icon {
+    margin-bottom: 16px;
+    opacity: 0.6;
+}
+
+.empty-state h3 {
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.empty-state p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .modal-large {
+        width: 100%;
+        max-width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+    
+    .history-controls {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .control-group {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .search-group {
+        max-width: 100%;
+    }
+    
+    .chat-item {
+        padding: 12px;
+    }
+    
+    .history-list {
+        max-height: 60vh;
+    }
 }

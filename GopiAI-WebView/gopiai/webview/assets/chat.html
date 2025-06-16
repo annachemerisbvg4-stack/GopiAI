@@ -36,10 +36,26 @@
                 </div>
             </div>
             <div class="header-right">
-                <button id="test-automation-btn" class="header-btn" title="Test Browser Automation">🤖</button>
-                <button id="export-btn" class="header-btn" title="Export Chat">📥</button>
-                <button id="clear-btn" class="header-btn" title="Clear Chat">🗑️</button>
-                <button id="settings-btn" class="header-btn" title="Settings">⚙️</button>
+                <button id="test-automation-btn" class="header-btn" title="Test Browser Automation">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                </button>
+                <button id="export-btn" class="header-btn" title="Export Chat">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7,10 12,15 17,10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
+                <button id="history-btn" class="header-btn" title="Chat History & Memory">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12,6 12,12 16,14"></polyline>
+                    </svg>
+                </button>
             </div>
         </div>
 
@@ -93,28 +109,118 @@
         </div>
     </div>
 
-    <!-- Модальное окно настроек -->
-    <div class="modal" id="settings-modal" style="display: none;">
-        <div class="modal-content">
+    <!-- Модальное окно истории чатов -->
+    <div class="modal" id="history-modal" style="display: none;">
+        <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>Settings</h2>
-                <button class="close-btn" id="close-settings">&times;</button>
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="modal-icon">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12,6 12,12 16,14"></polyline>
+                    </svg>
+                    Chat History
+                </h2>
+                <button class="close-btn" id="close-history">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="setting-group">
-                    <label for="stream-toggle">Enable Streaming:</label>
-                    <input type="checkbox" id="stream-toggle" checked>
+                <!-- Панель управления -->
+                <div class="history-controls">
+                    <div class="control-group">
+                        <button id="new-chat-btn" class="primary-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            New Chat
+                        </button>
+                        <button id="export-history-btn" class="secondary-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7,10 12,15 17,10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Export Current
+                        </button>
+                        <div class="export-format-group">
+                            <select id="export-format-select">
+                                <option value="txt">Text (.txt)</option>
+                                <option value="md">Markdown (.md)</option>
+                                <option value="json">JSON (.json)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="search-group">
+                        <input type="text" id="history-search" placeholder="Search chat history..." class="search-input">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="M21 21L16.65 16.65"></path>
+                        </svg>
+                    </div>
                 </div>
-                <div class="setting-group">
-                    <label for="auto-scroll-toggle">Auto-scroll to new messages:</label>
-                    <input type="checkbox" id="auto-scroll-toggle" checked>
-                </div>
-                <div class="setting-group">
-                    <label for="theme-select">Theme:</label>
-                    <select id="theme-select">
-                        <option value="light">Light</option>
-                        <option value="dark" selected>Dark</option>
-                    </select>
+
+                <!-- Список чатов -->
+                <div class="history-list" id="history-list">
+                    <div class="loading-placeholder" id="history-loading">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spinner">
+                            <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+                        </svg>
+                        Loading chat history...
+                    </div>
+                    
+                    <!-- Примеры чатов (будут заменены динамически) -->
+                    <div class="chat-item" data-chat-id="current">
+                        <div class="chat-item-header">
+                            <h3 class="chat-title">Current Chat Session</h3>
+                            <span class="chat-date">Today</span>
+                        </div>
+                        <div class="chat-preview">Welcome to GopiAI WebView Chat...</div>
+                        <div class="chat-meta">
+                            <span class="message-count">1 message</span>
+                            <span class="chat-status current">Active</span>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-item" data-chat-id="example-1">
+                        <div class="chat-item-header">
+                            <h3 class="chat-title">RAG Integration Discussion</h3>
+                            <span class="chat-date">Yesterday</span>
+                        </div>
+                        <div class="chat-preview">Let's integrate RAG with Claude Tools...</div>
+                        <div class="chat-meta">
+                            <span class="message-count">15 messages</span>
+                            <button class="delete-chat-btn" title="Delete Chat">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3,6 5,6 21,6"></polyline>
+                                    <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-item" data-chat-id="example-2">
+                        <div class="chat-item-header">
+                            <h3 class="chat-title">UI Component Development</h3>
+                            <span class="chat-date">2 days ago</span>
+                        </div>
+                        <div class="chat-preview">Working on WebView chat components...</div>
+                        <div class="chat-meta">
+                            <span class="message-count">8 messages</span>
+                            <button class="delete-chat-btn" title="Delete Chat">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3,6 5,6 21,6"></polyline>
+                                    <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="empty-state" id="empty-history" style="display: none;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                        <h3>No chat history</h3>
+                        <p>Start a conversation to see your chat history here</p>
+                    </div>
                 </div>
             </div>
         </div>

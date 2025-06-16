@@ -124,18 +124,117 @@ class WebViewChatBridge(QObject):
     @Slot(str, result=str)
     def enrich_message(self, message: str) -> str:
         """
-        Обогащение сообщения контекстом из памяти.
-        Вызывается из JavaScript перед отправкой к ИИ.
+        Обогащение сообщения контекстом из памяти и последних сообщений.
+        Оптимизировано для управления токенами Claude.
         """
-        if self._memory_manager:
-            try:
-                enriched = self._memory_manager.enrich_message(message)
-                print(f"🧠 Memory: enriched message ({len(message)} -> {len(enriched)} chars)")
-                return enriched
-            except Exception as e:
-                print(f"❌ Memory enrichment error: {e}")
-                return message
-        return message
+        try:
+            # Импортируем TokenManager для управления контекстом
+            from .token_manager import TokenManager
+            token_manager = TokenManager()
+            
+            # Получаем последние сообщения из текущей сессии
+            recent_messages = self._get_recent_messages_for_context()
+            
+            # Получаем релевантную информацию из RAG
+            rag_results = []
+            if self._memory_manager:
+                try:
+                    # Используем существующий RAG поиск
+                    rag_search_results = self._memory_manager.search_conversations(message, 3)
+                    rag_results = [
+                        {
+                            'title': result.title,
+                            'context_preview': result.context_preview,
+                            'relevance_score': result.relevance_score,
+                            'timestamp': result.timestamp.strftime('%Y-%m-%d %H:%M') if result.timestamp else '',
+                            'tags': result.tags
+                        }
+                        for result in rag_search_results
+                    ]
+                except Exception as e:
+                    print(f"⚠️ RAG search failed in enrich_message: {e}")
+            
+            # Строим обогащенный контекст с оптимальным использованием токенов
+            enhanced_context = token_manager.build_enhanced_context(
+                current_message=message,
+                recent_messages=recent_messages,
+                rag_results=rag_results
+            )
+            
+            # Получаем статистику токенов для логирования
+            token_stats = token_manager.get_token_usage_stats(enhanced_context)
+            
+            print(f"🧠 Enhanced context: {len(message)} -> {len(enhanced_context)} chars")
+            print(f"📊 Token usage: {token_stats['total_tokens']} tokens ({token_stats['usage_percentage']}%)")
+            
+            return enhanced_context
+            
+        except Exception as e:
+            print(f"❌ Context enrichment error: {e}")
+            # Возвращаем оригинальное сообщение если что-то пошло не так
+            return message
+
+    def _get_recent_messages_for_context(self, max_messages: int = 10) -> list[dict[str, any]]:
+        """
+        Получение последних сообщений из текущей сессии чата для контекста.
+        Возвращает список последних сообщений в формате для TokenManager.
+        """
+        try:
+            # Пытаемся получить историю через JavaScript
+            if hasattr(self, '_parent_widget') and self._parent_widget and hasattr(self._parent_widget, 'web_view'):
+                # Создаем callback для получения истории
+                recent_messages = []
+                history_received = False
+                
+                def history_callback(result):
+                    nonlocal recent_messages, history_received
+                    try:
+                        if result and isinstance(result, list):
+                            # Берем последние max_messages сообщений
+                            recent_messages = result[-max_messages:] if len(result) > max_messages else result
+                        history_received = True
+                    except Exception as e:
+                        print(f"⚠️ History callback error: {e}")
+                        history_received = True
+                
+                # Запрашиваем историю через JavaScript
+                script = """
+                (function() {
+                    try {
+                        if (window.chatHistory && Array.isArray(window.chatHistory)) {
+                            return window.chatHistory.map(msg => ({
+                                role: msg.role || 'user',
+                                content: msg.content || '',
+                                timestamp: msg.timestamp || new Date().toISOString()
+                            }));
+                        }
+                        return [];
+                    } catch (e) {
+                        console.error('Error getting chat history:', e);
+                        return [];
+                    }
+                })();
+                """
+                
+                self._parent_widget.web_view.page().runJavaScript(script, history_callback)
+                
+                # Ждем результат (но не блокируем надолго)
+                import time
+                timeout = 0.5  # 500ms максимум
+                start_time = time.time()
+                while not history_received and (time.time() - start_time) < timeout:
+                    time.sleep(0.01)
+                
+                if recent_messages:
+                    print(f"📜 Retrieved {len(recent_messages)} recent messages for context")
+                    return recent_messages
+            
+            # Fallback: возвращаем пустой список если не удалось получить историю
+            return []
+            
+        except Exception as e:
+            print(f"⚠️ Failed to get recent messages: {e}")
+            return []
 
     @Slot(str, str, result=str)
     def save_chat_exchange(self, user_message: str, ai_response: str) -> str:
@@ -458,13 +557,18 @@ class WebViewChatBridge(QObject):
                     )
                 elif tool_name == "run_script":
                     return self._claude_tools_handler.run_script(params_dict.get('command', ''))
+                elif tool_name == "search_memory":
+                    return self._claude_tools_handler.search_memory(
+                        params_dict.get('query', ''), 
+                        params_dict.get('limit', 5)
+                    )
                 else:
                     error_result = {
                         "success": False,
                         "error": f"Unknown Claude tool: {tool_name}",
                         "available_tools": ["navigate_to_url", "get_current_url", "get_page_title", 
                                           "execute_javascript", "get_page_source", "wait_for_element",
-                                          "read_file", "write_file", "run_script"]
+                                          "read_file", "write_file", "run_script", "search_memory"]
                     }
                     return json.dumps(error_result)
                     
