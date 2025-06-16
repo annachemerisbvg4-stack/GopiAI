@@ -15,6 +15,11 @@
 
 import sys
 import os
+
+# Добавляем пути для модулей
+sys.path.append('.')
+sys.path.append('rag_memory_system')
+sys.path.append('GopiAI-UI')
 import json
 import asyncio
 import subprocess
@@ -99,10 +104,10 @@ def test_rag_imports():
     
     errors = []
     
-    # Тест базовых зависимостей
+    # Тест базовых зависимостей (убрали langchain_community)
     dependencies = [
         "fastapi", "uvicorn", "chromadb", 
-        "langchain", "langchain_community", "sentence_transformers"
+        "langchain", "sentence_transformers"
     ]
     
     for dep in dependencies:
@@ -116,7 +121,7 @@ def test_rag_imports():
     
     # Тест импорта модулей RAG
     try:
-        from rag_memory_system.models import ChatMessage, SearchResult, MemoryStats
+        from rag_memory_system.models import ConversationMessage, SearchResult, MemoryStats
         print("✅ rag_memory_system.models - импорт OK")
     except ImportError as e:
         error_msg = f"❌ rag_memory_system.models - ошибка импорта: {e}"
@@ -124,7 +129,7 @@ def test_rag_imports():
         errors.append(error_msg)
     
     try:
-        from rag_memory_system.memory_manager import MemoryManager
+        from rag_memory_system.memory_manager import RAGMemoryManager
         print("✅ rag_memory_system.memory_manager - импорт OK")
     except ImportError as e:
         error_msg = f"❌ rag_memory_system.memory_manager - ошибка импорта: {e}"
@@ -140,7 +145,7 @@ def test_claude_tools_handler():
     errors = []
     
     try:
-        from GopiAI.UI.gopiai.ui.components.claude_tools_handler import ClaudeToolsHandler
+        from gopiai.ui.components.claude_tools_handler import ClaudeToolsHandler
         print("✅ ClaudeToolsHandler - импорт OK")
         
         # Проверяем наличие метода search_memory
@@ -165,7 +170,7 @@ def test_webview_widget():
     errors = []
     
     try:
-        from GopiAI.UI.gopiai.ui.components.webview_chat_widget import WebViewChatWidget, WebViewChatBridge
+        from gopiai.ui.components.webview_chat_widget import WebViewChatWidget, WebViewChatBridge
         print("✅ WebViewChatWidget - импорт OK")
         print("✅ WebViewChatBridge - импорт OK")
         

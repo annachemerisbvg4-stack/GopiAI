@@ -21,7 +21,7 @@ def test_javascript_syntax():
     try:
         # Проверяем синтаксис через Node.js
         result = subprocess.run(
-            ['node', '-c', f'require("fs").readFileSync("{js_file}", "utf8")'],
+            ['node', '-c', js_file],
             capture_output=True,
             text=True,
             cwd='.'
