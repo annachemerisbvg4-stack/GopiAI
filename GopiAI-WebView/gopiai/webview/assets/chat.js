@@ -209,6 +209,179 @@ class GopiAIChatInterface {
                 return;
             }
             
+
+            
+            // Команды для работы с текущей страницей
+            if (command === 'search' && args[0]) {
+                const searchQuery = args.join(' ');
+                await this.executeClaudeTool('execute_javascript', { 
+                    script: `
+                        const searchBox = document.querySelector('input[name="q"], input[type="search"], textarea[name="q"]');
+                        if (searchBox) {
+                            searchBox.focus();
+                            searchBox.value = '${searchQuery}';
+                            searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+                            const form = searchBox.closest('form');
+                            if (form) {
+                                form.submit();
+                            } else {
+                                searchBox.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter', bubbles: true }));
+                            }
+                            return 'Search executed: ${searchQuery}';
+                        } else {
+                            return 'Search box not found on this page';
+                        }
+                    `
+                });
+                return;
+            }
+            
+            if (command === 'click' && args[0]) {
+                await this.executeClaudeTool('execute_javascript', { 
+                    script: `
+                        const element = document.querySelector('${args[0]}');
+                        if (element) {
+                            element.click();
+                            return 'Clicked element: ${args[0]}';
+                        } else {
+                            return 'Element not found: ${args[0]}';
+                        }
+                    `
+                });
+                return;
+            }
+            
+            if (command === 'weather-ny') {
+                // Полный цикл: открыть Google -> найти погоду -> извлечь результат
+                this.addSystemMessage('🌤️ Checking New York weather...');
+                
+                // Шаг 1: Открыть Google если не на нем
+                await this.executeClaudeTool('navigate_to_url', { url: 'https://www.google.com' });
+                
+                // Шаг 2: Подождать немного для загрузки
+                setTimeout(async () => {
+                    // Шаг 3: Поиск погоды
+                    await this.executeClaudeTool('execute_javascript', { 
+                        script: `
+                            const searchBox = document.querySelector('input[name="q"], textarea[name="q"]');
+                            if (searchBox) {
+                                searchBox.focus();
+                                searchBox.value = 'weather New York tomorrow';
+                                searchBox.form.submit();
+                                return 'Searching for New York weather...';
+                            }
+                            return 'Search box not found';
+                        `
+                    });
+                    
+                    // Шаг 4: Извлечь результаты через несколько секунд
+                    setTimeout(async () => {
+                        await this.executeClaudeTool('execute_javascript', { 
+                            script: `
+                                const weatherInfo = [];
+                                
+                                // Ищем виджет погоды Google
+                                const weatherWidget = document.querySelector('[data-attrid="hw_date"], .wob_t, .wob_tm');
+                                if (weatherWidget) {
+                                    const temp = document.querySelector('.wob_t')?.textContent;
+                                    const desc = document.querySelector('.wob_dcp')?.textContent;
+                                    const location = document.querySelector('.wob_loc')?.textContent;
+                                    weatherInfo.push(\`📍 \${location || 'New York'}: \${temp || 'N/A'}°, \${desc || 'N/A'}\`);
+                                }
+                                
+                                // Ищем обычные результаты поиска
+                                const results = document.querySelectorAll('.g h3, .BNeawe');
+                                for (let i = 0; i < Math.min(3, results.length); i++) {
+                                    const text = results[i].textContent;
+                                    if (text.includes('°') || text.toLowerCase().includes('weather')) {
+                                        weatherInfo.push(\`🔍 \${text}\`);
+                                    }
+                                }
+                                
+                                return weatherInfo.length > 0 ? 
+                                    '🌤️ New York Weather:\n' + weatherInfo.join('\n') : 
+                                    '❌ Weather information not found';
+                            `
+                        });
+                    }, 3000);
+                }, 2000);
+                
+                return;
+            }
+            
+            if (command === 'get-weather-ny') {
+                await this.executeClaudeTool('execute_javascript', { 
+                    script: `
+                        // Ищем информацию о погоде на странице
+                        const weatherElements = [
+                            ...document.querySelectorAll('*')
+                        ].filter(el => {
+                            const text = el.textContent.toLowerCase();
+                            return text.includes('new york') && 
+                                   (text.includes('weather') || text.includes('temperature') || text.includes('°'));
+                        });
+                        
+                        if (weatherElements.length > 0) {
+                            return weatherElements.slice(0, 3).map(el => el.textContent.trim()).join(' | ');
+                        } else {
+                            return 'Weather info for New York not found on current page';
+                        }
+                    `
+                });
+                return;
+            }
+            
+            // Claude Tools команды
+            if (command === 'claude-tools') {
+                await this.getClaudeToolsList();
+                return;
+            }
+            
+            if (command === 'test-claude-tools') {
+                await this.testClaudeTools();
+                return;
+            }
+            
+            // Исполнение Claude tools через команды
+            if (command === 'claude-navigate') {
+                if (args[0]) {
+                    await this.executeClaudeTool('navigate_to_url', { url: args[0] });
+                } else {
+                    this.addSystemMessage('❌ Usage: /claude-navigate <url>');
+                }
+                return;
+            }
+            
+            if (command === 'claude-script') {
+                if (args.length > 0) {
+                    const script = args.join(' ');
+                    await this.executeClaudeTool('execute_javascript', { script: script });
+                } else {
+                    this.addSystemMessage('❌ Usage: /claude-script <javascript_code>');
+                }
+                return;
+            }
+            
+            if (command === 'claude-read') {
+                if (args[0]) {
+                    await this.executeClaudeTool('read_file', { file_path: args[0] });
+                } else {
+                    this.addSystemMessage('❌ Usage: /claude-read <file_path>');
+                }
+                return;
+            }
+            
+            if (command === 'claude-write') {
+                if (args.length >= 2) {
+                    const filePath = args[0];
+                    const content = args.slice(1).join(' ');
+                    await this.executeClaudeTool('write_file', { file_path: filePath, content: content });
+                } else {
+                    this.addSystemMessage('❌ Usage: /claude-write <file_path> <content>');
+                }
+                return;
+            }
+            
             const result = await this.processBrowserCommand(command, args);
             if (result !== null) {
                 return; // Команда обработана, не отправляем в AI
@@ -817,6 +990,7 @@ ${JSON.stringify(tests, null, 2)}`);
 /get-source - Get page HTML source
 /get-page-info - Get current page information
 /capabilities - Show browser automation capabilities
+
 /help - Show this help`);
                     return null;
                 
@@ -1051,9 +1225,269 @@ ${JSON.stringify(result, null, 2)}`);
             return null;
         }
     }
+    
+    /**
+     * Асинхронное выполнение JavaScript с получением результата
+     * Использует новый метод execute_script_async согласно Qt документации
+     */
+    async executeScriptAsync(script, timeout = 5000) {
+        try {
+            if (!this.bridge) {
+                throw new Error('Python bridge not available');
+            }
+            
+            // Генерируем уникальный ID для действия
+            const actionId = 'script_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            console.log(`🚀 Executing async script with ID: ${actionId}`);
+            console.log(`📜 Script: ${script.substr(0, 100)}...`);
+            
+            // Создаем Promise для ожидания результата
+            const resultPromise = new Promise((resolve, reject) => {
+                // Устанавливаем timeout
+                const timeoutId = setTimeout(() => {
+                    reject(new Error(`Script execution timeout after ${timeout}ms`));
+                }, timeout);
+                
+                // Создаем временный обработчик результата
+                const originalHandler = this.onBrowserActionCompleted;
+                this.onBrowserActionCompleted = (receivedActionId, action, resultJson) => {
+                    // Проверяем, что это наш результат
+                    if (receivedActionId === actionId) {
+                        clearTimeout(timeoutId);
+                        // Восстанавливаем оригинальный обработчик
+                        this.onBrowserActionCompleted = originalHandler;
+                        
+                        try {
+                            const result = JSON.parse(resultJson);
+                            if (result.success) {
+                                resolve(result.result);
+                            } else {
+                                reject(new Error(result.error || 'Script execution failed'));
+                            }
+                        } catch (e) {
+                            reject(new Error('Failed to parse result JSON: ' + e.message));
+                        }
+                    } else if (originalHandler) {
+                        // Передаем другие результаты оригинальному обработчику
+                        originalHandler(receivedActionId, action, resultJson);
+                    }
+                };
+            });
+            
+            // Вызываем асинхронный метод
+            this.bridge.execute_script_async(actionId, script, "true");
+            
+            // Ждем результат
+            const result = await resultPromise;
+            console.log(`✅ Script ${actionId} completed:`, result);
+            
+            return result;
+            
+        } catch (error) {
+            console.error('Error in executeScriptAsync:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Обработчик результатов browser automation
+     * Вызывается из Python когда асинхронное действие завершено
+     */
+    onBrowserActionCompleted(actionId, action, resultJson) {
+        try {
+            console.log(`📨 Browser action completed: ${actionId} (${action})`);
+            console.log('Result:', resultJson);
+            
+            const result = JSON.parse(resultJson);
+            
+            if (result.success) {
+                this.addSystemMessage(`✅ Browser action ${actionId} completed successfully`);
+            } else {
+                this.addSystemMessage(`❌ Browser action ${actionId} failed: ${result.error}`);
+            }
+            
+        } catch (error) {
+            console.error('Error in onBrowserActionCompleted:', error);
+            this.addSystemMessage(`❌ Error processing browser action result: ${error.message}`);
+        }
+    }
+    
+    /**
+     * Обработчик результатов Claude tools
+     * Вызывается из Python когда Claude tool завершен
+     */
+    onClaudeToolResult(requestId, toolName, resultData) {
+        try {
+            console.log(`🔧 Claude tool completed: ${requestId} (${toolName})`);
+            console.log('Tool result:', resultData);
+            
+            // resultData уже является объектом, не нужно парсить JSON
+            const result = resultData;
+            
+            if (result.success) {
+                this.addSystemMessage(`✅ Claude tool "${toolName}" [${requestId}] completed successfully`);
+                
+                // Специальная обработка для разных типов инструментов
+                if (toolName === 'get_page_source' && result.result) {
+                    const sourcePreview = result.result.substr(0, 200) + (result.result.length > 200 ? '...' : '');
+                    this.addSystemMessage(`📄 Page source preview: ${sourcePreview}`);
+                }
+                else if (toolName === 'read_file' && result.content) {
+                    const contentPreview = result.content.substr(0, 300) + (result.content.length > 300 ? '...' : '');
+                    this.addSystemMessage(`📂 File content preview: ${contentPreview}`);
+                }
+                else if (toolName === 'execute_javascript' && result.result) {
+                    this.addSystemMessage(`📜 JavaScript result: ${JSON.stringify(result.result)}`);
+                }
+                else if (result.message || result.result) {
+                    this.addSystemMessage(`📋 Tool result: ${result.message || JSON.stringify(result.result)}`);
+                }
+            } else {
+                this.addSystemMessage(`❌ Claude tool "${toolName}" [${requestId}] failed: ${result.error}`);
+            }
+            
+        } catch (error) {
+            console.error('Error in onClaudeToolResult:', error);
+            this.addSystemMessage(`❌ Error processing Claude tool result: ${error.message}`);
+        }
+    }
+    
+    /**
+     * Выполнение Claude tool
+     */
+    async executeClaudeTool(toolName, params = {}) {
+        try {
+            if (!this.bridge) {
+                throw new Error('Python bridge not available');
+            }
+            
+            console.log(`🔧 Executing Claude tool: ${toolName}`, params);
+            
+            const paramsJson = JSON.stringify(params);
+            
+            // Проверяем доступность нового метода
+            if (typeof this.bridge.execute_claude_tool === 'function') {
+                const resultJson = this.bridge.execute_claude_tool(toolName, paramsJson);
+                const resultJsonStr = (resultJson && typeof resultJson.then === 'function') ? 
+                    await resultJson : resultJson;
+                const result = JSON.parse(resultJsonStr);
+                
+                console.log(`Claude tool ${toolName} result:`, result);
+                
+                return result;
+            } else {
+                throw new Error('execute_claude_tool method not available in bridge');
+            }
+            
+        } catch (error) {
+            console.error(`Error executing Claude tool ${toolName}:`, error);
+            this.addSystemMessage(`❌ Error executing Claude tool "${toolName}": ${error.message}`);
+            return null;
+        }
+    }
+    
+    /**
+     * Получение списка доступных Claude tools
+     */
+    async getClaudeToolsList() {
+        try {
+            if (!this.bridge) {
+                throw new Error('Python bridge not available');
+            }
+            
+            if (typeof this.bridge.get_claude_tools_list === 'function') {
+                const resultJson = this.bridge.get_claude_tools_list();
+                const resultJsonStr = (resultJson && typeof resultJson.then === 'function') ? 
+                    await resultJson : resultJson;
+                const result = JSON.parse(resultJsonStr);
+                
+                console.log('Claude tools list:', result);
+                this.addSystemMessage(`🔧 Claude Tools available:
+${JSON.stringify(result, null, 2)}`);
+                return result;
+            } else {
+                throw new Error('get_claude_tools_list method not available in bridge');
+            }
+            
+        } catch (error) {
+            console.error('Error getting Claude tools list:', error);
+            this.addSystemMessage(`❌ Error getting Claude tools: ${error.message}`);
+            return null;
+        }
+    }
+    
+    /**
+     * Тестирование Claude tools
+     */
+    async testClaudeTools() {
+        try {
+            console.log('Testing Claude tools...');
+            this.addSystemMessage('🧪 Testing Claude tools integration...');
+            
+            // Тест 1: Получение списка инструментов
+            const toolsList = await this.getClaudeToolsList();
+            if (!toolsList || !toolsList.success) {
+                this.addSystemMessage('❌ Failed to get Claude tools list');
+                return null;
+            }
+            
+            // Тест 2: Тестирование get_current_url
+            try {
+                const urlResult = await this.executeClaudeTool('get_current_url');
+                if (urlResult && urlResult.success) {
+                    this.addSystemMessage(`✅ get_current_url test passed: ${urlResult.url}`);
+                } else {
+                    this.addSystemMessage('❌ get_current_url test failed');
+                }
+            } catch (error) {
+                this.addSystemMessage(`❌ get_current_url test error: ${error.message}`);
+            }
+            
+            // Тест 3: Тестирование get_page_title
+            try {
+                const titleResult = await this.executeClaudeTool('get_page_title');
+                if (titleResult && titleResult.success) {
+                    this.addSystemMessage(`✅ get_page_title test passed: ${titleResult.title}`);
+                } else {
+                    this.addSystemMessage('❌ get_page_title test failed');
+                }
+            } catch (error) {
+                this.addSystemMessage(`❌ get_page_title test error: ${error.message}`);
+            }
+            
+            // Тест 4: Тестирование simple JavaScript
+            try {
+                const jsResult = await this.executeClaudeTool('execute_javascript', {
+                    script: 'document.title'
+                });
+                if (jsResult) {
+                    this.addSystemMessage(`✅ execute_javascript test initiated`);
+                } else {
+                    this.addSystemMessage('❌ execute_javascript test failed');
+                }
+            } catch (error) {
+                this.addSystemMessage(`❌ execute_javascript test error: ${error.message}`);
+            }
+            
+            this.addSystemMessage('🧪 Claude tools testing completed. Check results above.');
+            
+            return {
+                tools_available: !!toolsList,
+                test_completed: true
+            };
+            
+        } catch (error) {
+            console.error('Error testing Claude tools:', error);
+            this.addSystemMessage(`❌ Error testing Claude tools: ${error.message}`);
+            return null;
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     window.gopiaiChat = new GopiAIChatInterface();
+    // Создаем глобальную ссылку для Python bridge
+    window.chat = window.gopiaiChat;
     console.log('GopiAI Chat Interface initialized');
 });

@@ -15,6 +15,15 @@ from PySide6.QtWebChannel import QWebChannel
 from pathlib import Path
 import json
 
+# Импорт ClaudeToolsHandler
+try:
+    from .claude_tools_handler import ClaudeToolsHandler
+    CLAUDE_TOOLS_AVAILABLE = True
+    print("✅ ClaudeToolsHandler imported successfully")
+except ImportError as e:
+    CLAUDE_TOOLS_AVAILABLE = False
+    print(f"⚠️ ClaudeToolsHandler not available: {e}")
+
 # Импорт системы памяти
 try:
     import sys
@@ -52,6 +61,8 @@ class WebViewChatBridge(QObject):
     ai_response_received = Signal(str, str)  # model, response
     model_changed = Signal(str)
     error_occurred = Signal(str)
+    # Новый signal для результатов browser automation
+    browser_action_completed = Signal(str, str, str)  # action_id, action, result_json
     
     def __init__(self, parent=None):
             super().__init__(parent)
@@ -68,6 +79,9 @@ class WebViewChatBridge(QObject):
                 except Exception as e:
                     print(f"⚠️ Failed to initialize memory system: {e}")
                     self._memory_manager = None
+            
+            # Инициализация ClaudeToolsHandler (будет установлен позже)
+            self._claude_tools_handler = None
 
     
     @Slot(str)
@@ -242,9 +256,13 @@ class WebViewChatBridge(QObject):
             elif action == "execute_script":
                 script = params_dict.get("script", "")
                 if script:
-                    # Выполняем JavaScript в WebView
-                    widget.web_view.page().runJavaScript(script)
-                    result_data = {"message": f"Script executed: {script[:50]}..."}
+                    # Выполняем JavaScript в WebView с callback согласно Qt документации
+                    def script_callback(result):
+                        print(f"📜 JavaScript result: {result}")
+                        # Результат будет обработан асинхронно
+                        
+                    widget.web_view.page().runJavaScript(script, script_callback)
+                    result_data = {"message": f"Script executed: {script[:50]}...", "note": "Result will be available asynchronously"}
                 else:
                     raise Exception("Script parameter required for execute_script action")
                     
@@ -319,6 +337,73 @@ class WebViewChatBridge(QObject):
             print(f"❌ Bridge: page info error: {e}")
             return json.dumps(error_info, ensure_ascii=False)
 
+    @Slot(str, str, str)
+    def execute_script_async(self, action_id: str, script: str, return_result: str = "true") -> None:
+        """
+        Асинхронное выполнение JavaScript с правильной обработкой результата
+        согласно официальной документации Qt
+        """
+        try:
+            widget = self._parent_widget
+            
+            if not widget or not hasattr(widget, 'web_view'):
+                raise Exception("WebView not available")
+            
+            print(f"🚀 Bridge: executing async script with ID {action_id}")
+            print(f"📜 Script: {script[:100]}...")
+            
+            # Создаем callback функцию согласно Qt документации
+            def script_result_callback(result):
+                """
+                Callback функция для получения результата JavaScript
+                Вызывается асинхронно согласно Qt runJavaScript документации
+                """
+                try:
+                    print(f"📨 Script callback for {action_id}: {result}")
+                    
+                    # Формируем результат согласно Qt документации:
+                    # Поддерживаются: JSON types, Date, ArrayBuffer
+                    # НЕ поддерживаются: Function, Promise
+                    result_data = {
+                        "success": True,
+                        "action_id": action_id,
+                        "result": result,
+                        "type": type(result).__name__,
+                        "timestamp": "2025-01-16T12:00:00Z"
+                    }
+                    
+                    # Передаем результат через signal (НЕ блокируем callback)
+                    result_json = json.dumps(result_data, ensure_ascii=False)
+                    self.browser_action_completed.emit(action_id, "execute_script", result_json)
+                    
+                except Exception as e:
+                    print(f"❌ Script callback error for {action_id}: {e}")
+                    error_data = {
+                        "success": False,
+                        "action_id": action_id,
+                        "error": str(e),
+                        "timestamp": "2025-01-16T12:00:00Z"
+                    }
+                    error_json = json.dumps(error_data, ensure_ascii=False)
+                    self.browser_action_completed.emit(action_id, "execute_script", error_json)
+            
+            # Выполняем JavaScript с callback согласно Qt документации
+            # Пример из документации: page.runJavaScript("document.title", [](const QVariant &v) { qDebug() << v.toString(); });
+            widget.web_view.page().runJavaScript(script, script_result_callback)
+            
+            print(f"✅ Bridge: script {action_id} submitted for async execution")
+            
+        except Exception as e:
+            print(f"❌ Bridge: execute_script_async error: {e}")
+            error_data = {
+                "success": False,
+                "action_id": action_id,
+                "error": str(e),
+                "timestamp": "2025-01-16T12:00:00Z"
+            }
+            error_json = json.dumps(error_data, ensure_ascii=False)
+            self.browser_action_completed.emit(action_id, "execute_script", error_json)
+
     @Slot(str, result=str)
     def browser_automation_result(self, result_data: str) -> str:
         """Обработка результатов browser automation"""
@@ -329,6 +414,98 @@ class WebViewChatBridge(QObject):
         except Exception as e:
             print(f"❌ Bridge: result processing error: {e}")
             return f"ERROR: {e}"
+    
+    # ==============================================
+    # CLAUDE TOOLS INTEGRATION METHODS
+    # ==============================================
+    
+    @Slot(str, str, result=str)
+    def execute_claude_tool(self, tool_name: str, params: str) -> str:
+        """Выполнение Claude tool через ClaudeToolsHandler"""
+        if self._claude_tools_handler:
+            try:
+                # Генерируем request_id
+                request_id = self._claude_tools_handler._generate_request_id()
+                
+                # Парсим параметры
+                params_dict = json.loads(params) if params else {}
+                
+                print(f"🔧 Bridge: executing Claude tool '{tool_name}' with params: {params_dict}")
+                
+                # Выполняем инструмент в зависимости от типа
+                if tool_name == "navigate_to_url":
+                    return self._claude_tools_handler.navigate_to_url(params_dict.get('url', ''), request_id)
+                elif tool_name == "get_current_url":
+                    return self._claude_tools_handler.get_current_url()
+                elif tool_name == "get_page_title":
+                    return self._claude_tools_handler.get_page_title()
+                elif tool_name == "execute_javascript":
+                    return self._claude_tools_handler.execute_javascript(params_dict.get('script', ''), request_id)
+                elif tool_name == "get_page_source":
+                    return self._claude_tools_handler.get_page_source(request_id)
+                elif tool_name == "wait_for_element":
+                    return self._claude_tools_handler.wait_for_element(
+                        params_dict.get('selector', ''), 
+                        params_dict.get('timeout', 5000), 
+                        request_id
+                    )
+                elif tool_name == "read_file":
+                    return self._claude_tools_handler.read_file(params_dict.get('file_path', ''))
+                elif tool_name == "write_file":
+                    return self._claude_tools_handler.write_file(
+                        params_dict.get('file_path', ''), 
+                        params_dict.get('content', '')
+                    )
+                elif tool_name == "run_script":
+                    return self._claude_tools_handler.run_script(params_dict.get('command', ''))
+                else:
+                    error_result = {
+                        "success": False,
+                        "error": f"Unknown Claude tool: {tool_name}",
+                        "available_tools": ["navigate_to_url", "get_current_url", "get_page_title", 
+                                          "execute_javascript", "get_page_source", "wait_for_element",
+                                          "read_file", "write_file", "run_script"]
+                    }
+                    return json.dumps(error_result)
+                    
+            except Exception as e:
+                error_result = {
+                    "success": False,
+                    "error": str(e),
+                    "tool_name": tool_name
+                }
+                print(f"❌ Bridge: Claude tool execution error: {e}")
+                return json.dumps(error_result)
+        else:
+            error_result = {
+                "success": False,
+                "error": "ClaudeToolsHandler not available"
+            }
+            return json.dumps(error_result)
+    
+    @Slot(result=str)
+    def get_claude_tools_list(self) -> str:
+        """Получение списка доступных Claude tools"""
+        if self._claude_tools_handler:
+            return self._claude_tools_handler.get_available_tools()
+        else:
+            result = {
+                "success": False,
+                "error": "ClaudeToolsHandler not available"
+            }
+            return json.dumps(result)
+    
+    @Slot(result=str)
+    def get_pending_claude_requests(self) -> str:
+        """Получение информации о ожидающих Claude запросах"""
+        if self._claude_tools_handler:
+            return self._claude_tools_handler.get_pending_requests()
+        else:
+            result = {
+                "success": False,
+                "error": "ClaudeToolsHandler not available"
+            }
+            return json.dumps(result)
 
 
 class WebViewChatWidget(QWidget):
@@ -347,6 +524,7 @@ class WebViewChatWidget(QWidget):
         
         self._setup_ui()
         self._setup_web_engine()
+        self._setup_claude_tools()
         self._setup_connections()
         self._load_chat_interface()
     
@@ -383,11 +561,110 @@ class WebViewChatWidget(QWidget):
         self.channel.registerObject("bridge", self.bridge)
         page.setWebChannel(self.channel)
     
+    def _setup_claude_tools(self):
+        """Настройка ClaudeToolsHandler"""
+        if CLAUDE_TOOLS_AVAILABLE and hasattr(self, 'web_view'):
+            try:
+                # Создаем ClaudeToolsHandler
+                self.claude_tools_handler = ClaudeToolsHandler(self.web_view, self)
+                
+                # Связываем с bridge
+                self.bridge._claude_tools_handler = self.claude_tools_handler
+                
+                # Подключаем сигналы для интеграции с bridge
+                self.claude_tools_handler.tool_executed.connect(self._on_claude_tool_executed)
+                self.claude_tools_handler.tool_error.connect(self._on_claude_tool_error)
+                
+                # Регистрируем в WebChannel
+                self.channel.registerObject("claudeTools", self.claude_tools_handler)
+                
+                print("✅ ClaudeToolsHandler initialized and registered")
+                
+            except Exception as e:
+                print(f"⚠️ Failed to initialize ClaudeToolsHandler: {e}")
+                self.claude_tools_handler = None
+        else:
+            print("⚠️ ClaudeToolsHandler not available or WebView not ready")
+            self.claude_tools_handler = None
+    
+    def _on_claude_tool_executed(self, request_id: str, tool_name: str, result_json: str):
+        """Обработчик успешного выполнения Claude tool"""
+        print(f"✅ Claude tool executed: {tool_name} ({request_id})")
+        
+        # Отправляем результат обратно в JavaScript с правильным экранированием
+        # Экранируем JSON для безопасной вставки в JavaScript
+        escaped_json = result_json.replace('\\', '\\\\').replace("'", "\'").replace('\n', '\\n').replace('\r', '\\r')
+        
+        script = f"""
+        if (window.chat && typeof window.chat.onClaudeToolResult === 'function') {{
+            try {{
+                const resultData = JSON.parse('{escaped_json}');
+                window.chat.onClaudeToolResult('{request_id}', '{tool_name}', resultData);
+            }} catch (e) {{
+                console.error('JSON parse error:', e, 'Raw JSON:', '{escaped_json}');
+                window.chat.onClaudeToolResult('{request_id}', '{tool_name}', {{success: false, error: 'JSON parse error'}});
+            }}
+        }} else {{
+            console.log('Claude tool result:', '{request_id}', '{tool_name}', '{escaped_json}');
+        }}
+        """
+        
+        self.web_view.page().runJavaScript(script)
+    
+    def _on_claude_tool_error(self, request_id: str, tool_name: str, error_message: str):
+        """Обработчик ошибки выполнения Claude tool"""
+        print(f"❌ Claude tool error: {tool_name} ({request_id}): {error_message}")
+        
+        # Отправляем ошибку обратно в JavaScript
+        error_data = {
+            "success": False,
+            "error": error_message,
+            "tool_name": tool_name,
+            "request_id": request_id
+        }
+        
+        script = f"""
+        if (window.chat && typeof window.chat.onClaudeToolResult === 'function') {{
+            window.chat.onClaudeToolResult('{request_id}', '{tool_name}', {json.dumps(error_data)});
+        }} else {{
+            console.log('Claude tool error:', '{request_id}', '{tool_name}', {json.dumps(error_data)});
+        }}
+        """
+        
+        self.web_view.page().runJavaScript(script)
+    
     def _setup_connections(self):
         """Настройка соединений сигналов"""
         # Пробрасываем сигналы от bridge
         self.bridge.message_sent.connect(self.message_sent.emit)
         self.bridge.ai_response_received.connect(self.response_received.emit)
+        
+        # Подключаем signal для результатов browser automation
+        self.bridge.browser_action_completed.connect(self._on_browser_action_completed)
+    
+    def _on_browser_action_completed(self, action_id: str, action: str, result_json: str):
+        """
+        Обработчик завершения browser automation действия
+        Отправляет результат обратно в JavaScript
+        """
+        try:
+            print(f"🎯 Browser action completed: {action_id} ({action})")
+            
+            # Отправляем результат обратно в JavaScript через runJavaScript
+            # Это безопасно, так как мы НЕ в callback функции runJavaScript
+            script = f"""
+            if (window.chat && typeof window.chat.onBrowserActionCompleted === 'function') {{
+                window.chat.onBrowserActionCompleted('{action_id}', '{action}', {result_json});
+            }} else {{
+                console.log('Browser action completed:', '{action_id}', '{action}', {result_json});
+            }}
+            """
+            
+            # Выполняем JavaScript без callback (не нужен результат)
+            self.web_view.page().runJavaScript(script)
+            
+        except Exception as e:
+            print(f"❌ Error in _on_browser_action_completed: {e}")
     
     def _load_chat_interface(self):
             """Загрузка HTML интерфейса чата"""
