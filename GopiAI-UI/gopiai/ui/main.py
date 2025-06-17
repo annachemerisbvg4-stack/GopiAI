@@ -273,8 +273,9 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self.chat_widget.setSizePolicy(chat_size_policy)
         center_splitter.addWidget(self.chat_widget)
 
-        if EXTENSIONS_AVAILABLE:
-            self.chat_widget.setVisible(False)
+        # ИСПРАВЛЕНИЕ: НЕ скрываем чат, даже если расширения доступны
+        # if EXTENSIONS_AVAILABLE:
+        #     self.chat_widget.setVisible(False)
 
         # Нижняя панель - терминал (модульный)
         self.terminal_widget = TerminalWidget()

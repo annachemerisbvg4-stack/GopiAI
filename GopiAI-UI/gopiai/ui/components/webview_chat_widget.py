@@ -977,10 +977,8 @@ class WebViewChatWidget(QWidget):
                     async function checkMemoryAvailability() {
                         if (bridge && typeof bridge.is_memory_available === 'function') {
                             try {
-                                bridge.is_memory_available((available) => {
-                                    memoryAvailable = available;
-                                    updateMemoryStatus();
-                                });
+                                memoryAvailable = bridge.is_memory_available();
+                                updateMemoryStatus();
                             } catch (error) {
                                 console.warn('⚠️ Memory check failed:', error);
                                 updateMemoryStatus();
@@ -1075,17 +1073,12 @@ class WebViewChatWidget(QWidget):
                                 // Шаг 1: Обогащаем сообщение контекстом из памяти
                                 if (memoryAvailable && bridge && typeof bridge.enrich_message === 'function') {
                                     try {
-                                        bridge.enrich_message(message, (enriched) => {
-                                            if (enriched && enriched !== message) {
-                                                // Показываем что сообщение обогащено памятью
-                                                addMemoryContext(enriched);
-                                                finalMessage = enriched;
-                                            }
-                                            
-                                            // Продолжаем отправку к ИИ
-                                            sendToAI(finalMessage, message);
-                                        });
-                                        return; // Ждем callback
+                                        const enriched = bridge.enrich_message(message);
+                                        if (enriched && enriched !== message) {
+                                            // Показываем что сообщение обогащено памятью
+                                            addMemoryContext(enriched);
+                                            finalMessage = enriched;
+                                        }
                                     } catch (error) {
                                         console.warn('⚠️ Memory enrichment failed:', error);
                                     }
@@ -1128,13 +1121,12 @@ class WebViewChatWidget(QWidget):
                                 // Шаг 2: Сохраняем обмен сообщениями в память
                                 if (memoryAvailable && bridge && fullResponse && typeof bridge.save_chat_exchange === 'function') {
                                     try {
-                                        bridge.save_chat_exchange(originalMessage, fullResponse, (status) => {
-                                            if (status === 'OK') {
-                                                console.log('💾 Chat exchange saved to memory');
-                                            } else {
-                                                console.warn('⚠️ Failed to save to memory:', status);
-                                            }
-                                        });
+                                        const status = bridge.save_chat_exchange(originalMessage, fullResponse);
+                                        if (status === 'OK') {
+                                            console.log('💾 Chat exchange saved to memory');
+                                        } else {
+                                            console.warn('⚠️ Failed to save to memory:', status);
+                                        }
                                     } catch (error) {
                                         console.warn('⚠️ Memory save failed:', error);
                                     }

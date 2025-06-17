@@ -1,15 +1,15 @@
 {
-  "main_color": "#333333",
-  "header_color": "#414848",
-  "control_color": "#c1c8c7",
-  "accent_color": "#cac5cd",
-  "titlebar_background": "#414848",
-  "button_color": "#c5c7c6",
-  "button_hover_color": "#444747",
-  "button_active_color": "#2b3232",
-  "text_color": "#e5e2e1",
-  "border_color": "#8e9192",
-  "titlebar_text": "#dde4e3",
-  "name": "Graphite Night",
-  "variant": "dark"
+  "main_color": "#ffffff",
+  "header_color": "#ffdad5",
+  "control_color": "#c00007",
+  "accent_color": "#875203",
+  "titlebar_background": "#ffdad5",
+  "button_color": "#884f46",
+  "button_hover_color": "#ffb4a9",
+  "button_active_color": "#c00007",
+  "text_color": "#1e1b1a",
+  "border_color": "#817472",
+  "titlebar_text": "#410001",
+  "name": "Scarlet Fire",
+  "variant": "light"
 }
