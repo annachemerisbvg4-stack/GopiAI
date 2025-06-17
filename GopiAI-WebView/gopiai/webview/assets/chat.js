@@ -55,7 +55,7 @@ class GopiAIChatInterface {
         // Модальные окна
         this.historyModal = document.getElementById('history-modal');
         this.exportModal = document.getElementById('export-modal');
-        this.closeHistoryBtn = document.getElementById('close-settings'); // Переиспользуем тот же ID
+        this.closeHistoryBtn = document.getElementById('close-history'); // Исправлено
         this.closeExportBtn = document.getElementById('close-export');
 
         // Настройки
@@ -113,8 +113,8 @@ class GopiAIChatInterface {
                         console.log('toolsList itself is an array');
                     } else if (toolsList.tools && typeof toolsList.tools === 'object') {
                         // Если tools - это объект, пытаемся найти массив внутри
-                        if (Array.isArray(Object.values(toolsList.tools))) {
-                            tools = Object.values(toolsList.tools);
+                        if (Array.isArray(Object.values(toolsList.tools)[0])) {
+                            tools = Object.values(toolsList.tools)[0]; // Исправлено
                             console.log('Converted tools object to array');
                         } else {
                             // Возможно, это объект с ключами-именами инструментов
@@ -197,6 +197,21 @@ class GopiAIChatInterface {
         } catch (error) {
             console.error('Error searching memory:', error);
             return [];
+        }
+    }
+
+    async executeClaudeTool(toolName, parameters) {
+        try {
+            if (!this.bridge || typeof this.bridge.execute_claude_tool !== 'function') {
+                console.error('Bridge or execute_claude_tool method not available');
+                return { success: false, error: 'Bridge not available' };
+            }
+
+            const result = await this.bridge.execute_claude_tool(toolName, parameters);
+            return result;
+        } catch (error) {
+            console.error('Error executing Claude tool:', error);
+            return { success: false, error: error.message };
         }
     }
 
@@ -644,6 +659,30 @@ class GopiAIChatInterface {
         this.messagesContainer.innerHTML = '';
         this.hideHistoryModal();
         this.addSystemMessage('🧹 Чат очищен');
+    }
+
+    exportCurrentChat() {
+        // Экспорт текущего чата в формате JSON
+        const format = 'json';
+        const content = this.formatChatHistory(format);
+        
+        if (this.chatHistory.length === 0) {
+            this.addSystemMessage('📝 Текущий чат пуст');
+            return;
+        }
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gopiai_current_chat_${timestamp}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.addSystemMessage(`📁 Текущий чат экспортирован`);
     }
 
     saveSettings() {
