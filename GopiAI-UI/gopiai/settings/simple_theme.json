@@ -1,15 +1,15 @@
 {
-  "main_color": "#ffffff",
-  "header_color": "#ffdad5",
-  "control_color": "#c00007",
-  "accent_color": "#875203",
-  "titlebar_background": "#ffdad5",
-  "button_color": "#884f46",
-  "button_hover_color": "#ffb4a9",
-  "button_active_color": "#c00007",
-  "text_color": "#1e1b1a",
-  "border_color": "#817472",
-  "titlebar_text": "#410001",
+  "main_color": "#333333",
+  "header_color": "#930004",
+  "control_color": "#ffb4a9",
+  "accent_color": "#ffb867",
+  "titlebar_background": "#930004",
+  "button_color": "#ffb4a9",
+  "button_hover_color": "#6c3831",
+  "button_active_color": "#690002",
+  "text_color": "#e8e1e0",
+  "border_color": "#9c8d8b",
+  "titlebar_text": "#ffdad5",
   "name": "Scarlet Fire",
-  "variant": "light"
+  "variant": "dark"
 }

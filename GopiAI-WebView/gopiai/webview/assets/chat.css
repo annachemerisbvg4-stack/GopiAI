@@ -96,7 +96,7 @@ body {
 .model-selector select {
     padding: 6px 12px;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 1px;
     background: var(--bg-tertiary);
     color: var(--text-primary);
     font-size: 0.9rem;
@@ -116,7 +116,7 @@ body {
 .header-btn {
     padding: 8px 12px;
     border: none;
-    border-radius: 6px;
+    border-radius: 1px;
     background: var(--button-bg);
     color: var(--button-text);
     cursor: pointer;
@@ -152,13 +152,13 @@ body {
 
 .chat-messages::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
-    border-radius: 9px;
+    border-radius: 1px;
     margin: 2px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, #666 0%, #555 50%, #444 100%);
-    border-radius: 9px;
+    border-radius: 1px;
     border: 3px solid var(--bg-primary);
     transition: background-color 0.2s ease;
 }
@@ -180,13 +180,13 @@ body {
 
 ::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
-    border-radius: 8px;
+    border-radius: 1px;
     margin: 2px;
 }
 
 ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
-    border-radius: 8px;
+    border-radius: 1px;
     border: 2px solid var(--scrollbar-track);
     transition: background-color 0.2s ease;
 }
@@ -204,7 +204,7 @@ body {
 .history-list::-webkit-scrollbar-thumb {
     background: var(--accent-primary);
     border: 2px solid var(--modal-bg);
-    border-radius: 8px;
+    border-radius: 1px;
 }
 
 .history-list::-webkit-scrollbar-thumb:hover {
@@ -250,7 +250,7 @@ body {
 .message-bubble {
     max-width: 70%;
     padding: 12px 16px;
-    border-radius: 18px;
+    border-radius: 1px;
     position: relative;
     word-wrap: break-word;
 }
@@ -285,7 +285,7 @@ body {
     background: var(--accent-primary);
     color: var(--button-text);
     padding: 2px 8px;
-    border-radius: 12px;
+    border-radius: 1px;
     font-size: 0.75rem;
     font-weight: 500;
 }
@@ -299,7 +299,7 @@ body {
     background: var(--bg-tertiary);
     color: var(--text-primary);
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 1px;
     margin: 8px 0;
     overflow-x: auto;
     font-family: 'Courier New', monospace;
@@ -311,7 +311,7 @@ body {
     background: var(--bg-tertiary);
     color: var(--text-primary);
     padding: 2px 4px;
-    border-radius: 4px;
+    border-radius: 1px;
     font-family: 'Courier New', monospace;
     font-size: 0.9rem;
 }
@@ -342,7 +342,7 @@ body {
     width: 6px;
     height: 6px;
     background: var(--typing-indicator-color);
-    border-radius: 50%;
+    border-radius: 0%;
     animation: pulse 1.4s infinite ease-in-out;
 }
 
@@ -378,7 +378,7 @@ body {
     flex: 1;
     padding: 12px 16px;
     border: 1px solid var(--border-color);
-    border-radius: 24px;
+    border-radius: 1px;
     background: var(--input-bg);
     color: var(--input-text);
     font-size: 1rem;
@@ -403,7 +403,7 @@ body {
     width: 48px;
     height: 48px;
     border: none;
-    border-radius: 50%;
+    border-radius: 0%;
     background: var(--button-bg);
     color: var(--button-text);
     cursor: pointer;
@@ -447,7 +447,7 @@ body {
 .modal-content {
     background: var(--modal-bg);
     color: var(--text-primary);
-    border-radius: 12px;
+    border-radius: 1px;
     box-shadow: var(--shadow-medium);
     max-width: 500px;
     width: 90%;
@@ -478,7 +478,7 @@ body {
     color: var(--text-muted);
     cursor: pointer;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: 1px;
     transition: all 0.2s ease;
 }
 
@@ -507,7 +507,7 @@ body {
     width: 100%;
     padding: 8px 12px;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 1px;
     background: var(--input-bg);
     color: var(--input-text);
     font-family: inherit;
@@ -527,7 +527,7 @@ body {
 .primary-btn, .secondary-btn {
     padding: 10px 20px;
     border: none;
-    border-radius: 6px;
+    border-radius: 1px;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
@@ -573,7 +573,7 @@ body {
     background: var(--bg-tertiary);
     color: var(--text-primary);
     padding: 12px;
-    border-radius: 6px;
+    border-radius: 1px;
     border: 1px solid var(--border-color);
     max-height: 200px;
     overflow-y: auto;
@@ -588,7 +588,7 @@ body {
     color: white !important;
     padding: 10px;
     margin: 10px;
-    border-radius: 5px;
+    border-radius: 1px;
     border: none !important;
 }
 
@@ -722,7 +722,7 @@ option {
     width: 100%;
     padding: 8px 12px 8px 36px;
     border: 1px solid var(--border-color);
-    border-radius: 20px;
+    border-radius: 1px;
     background: var(--input-bg);
     color: var(--input-text);
     font-size: 0.9rem;
@@ -748,7 +748,7 @@ option {
     max-height: 500px;
     overflow-y: auto;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 1px;
     background: var(--bg-secondary);
 }
 
@@ -762,7 +762,7 @@ option {
 
 .history-list::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
-    border-radius: 3px;
+    border-radius: 1px;
 }
 
 /* Элемент чата */
@@ -829,13 +829,13 @@ option {
     color: var(--text-muted);
     background: var(--bg-tertiary);
     padding: 2px 8px;
-    border-radius: 12px;
+    border-radius: 1px;
 }
 
 .chat-status {
     font-size: 0.8rem;
     padding: 2px 8px;
-    border-radius: 12px;
+    border-radius: 1px;
     font-weight: 500;
 }
 
@@ -850,7 +850,7 @@ option {
     color: var(--text-muted);
     cursor: pointer;
     padding: 4px;
-    border-radius: 4px;
+    border-radius: 1px;
     transition: all 0.2s ease;
     opacity: 0;
 }

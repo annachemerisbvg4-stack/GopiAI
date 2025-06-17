@@ -88,7 +88,7 @@ try:
                         # Проверим версию Python в __init__.py
                         init_path = os.path.join(cef_path, "__init__.py")
                         if os.path.exists(init_path):
-                            with open(init_path, 'r') as f:
+                            with open(init_path, 'r', encoding='utf-8') as f:
                                 init_content = f.read()
                                 print(f"  Анализ {init_path}:")
                                 # Поиск проверки версии Python
@@ -111,7 +111,7 @@ try:
                 # Проверим версию Python в __init__.py
                 init_path = os.path.join(cef_path, "__init__.py")
                 if os.path.exists(init_path):
-                    with open(init_path, 'r') as f:
+                    with open(init_path, 'r', encoding='utf-8') as f:
                         init_content = f.read()
                         print(f"  Анализ {init_path}:")
                         # Поиск проверки версии Python
@@ -130,7 +130,7 @@ print("Анализ autorun.bat:")
 try:
     bat_path = os.path.join(os.getcwd(), "autorun.bat")
     if os.path.exists(bat_path):
-        with open(bat_path, 'r') as f:
+        with open(bat_path, 'r', encoding='utf-8') as f:
             bat_content = f.read()
             print(f"  Содержимое {bat_path}:")
             print(bat_content)
