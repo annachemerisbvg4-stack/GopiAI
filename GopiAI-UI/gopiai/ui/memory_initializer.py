@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def init_memory_system(silent: bool = True, port: int = 8080) -> bool:
     """
-    Инициализация системы памяти GopiAI с автозапуском RAG сервера
+    Инициализация системы памяти GopiAI с автозапуском простого RAG сервера
     
     Args:
         silent: Тихий режим (без лишних выводов в консоль)
@@ -33,15 +33,79 @@ def init_memory_system(silent: bool = True, port: int = 8080) -> bool:
     Returns:
         True если система памяти успешно инициализирована
     """
+    import subprocess
+    import requests
+    import time
+    import os
+    
     try:
-        # Определяем путь к RAG системе относительно текущего файла
-        current_dir = Path(__file__).parent.parent.parent.parent  # GopiAI-UI/gopiai/ui/ -> корень проекта
-        rag_system_path = current_dir / "rag_memory_system"
+        # Проверяем, не запущен ли уже сервер
+        try:
+            response = requests.get(f"http://127.0.0.1:{port}/health", timeout=2)
+            if response.status_code == 200:
+                if not silent:
+                    print(f"✅ RAG сервер уже запущен на порту {port}")
+                return True
+        except:
+            pass  # Сервер не запущен, продолжаем
         
-        if not rag_system_path.exists():
+        # Определяем путь к RAG системе
+        current_dir = Path(__file__).parent.parent.parent.parent  # Корень проекта
+        rag_system_path = current_dir / "rag_memory_system"
+        simple_server_path = rag_system_path / "simple_rag_server.py"
+        
+        if not simple_server_path.exists():
             if not silent:
-                print("⚠️ RAG система памяти не найдена, пропускаем инициализацию")
+                print("⚠️ simple_rag_server.py не найден, пропускаем инициализацию")
             return False
+        
+        if not silent:
+            print("🧠 Запуск системы памяти GopiAI...")
+        
+        # Запускаем сервер в фоновом режиме
+        try:
+            # Используем python для запуска сервера
+            cmd = [
+                "python", str(simple_server_path)
+            ]
+            
+            # Запускаем в фоновом режиме (без ожидания завершения)
+            process = subprocess.Popen(
+                cmd,
+                cwd=str(rag_system_path),
+                stdout=subprocess.PIPE if silent else None,
+                stderr=subprocess.PIPE if silent else None,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
+            )
+            
+            # Ждем немного чтобы сервер запустился
+            time.sleep(2)
+            
+            # Проверяем что сервер действительно запустился
+            for attempt in range(5):
+                try:
+                    response = requests.get(f"http://127.0.0.1:{port}/health", timeout=1)
+                    if response.status_code == 200:
+                        if not silent:
+                            print(f"✅ Система памяти запущена на http://127.0.0.1:{port}")
+                        return True
+                except:
+                    time.sleep(1)
+            
+            if not silent:
+                print("⚠️ Система памяти не отвечает после запуска")
+            return False
+            
+        except Exception as e:
+            if not silent:
+                print(f"⚠️ Ошибка запуска RAG сервера: {e}")
+            return False
+            
+    except Exception as e:
+        logger.warning(f"Ошибка инициализации системы памяти: {e}")
+        if not silent:
+            print(f"⚠️ Ошибка инициализации системы памяти: {e}")
+        return False
         
         # Добавляем путь к RAG системе в sys.path если его там нет
         rag_system_str = str(rag_system_path)
@@ -86,17 +150,34 @@ def get_memory_status() -> dict:
     Returns:
         Статус системы памяти
     """
+    import requests
+    
     try:
-        # Пытаемся получить статус через server_manager
-        current_dir = Path(__file__).parent.parent.parent.parent
-        rag_system_path = current_dir / "rag_memory_system"
-        rag_system_str = str(rag_system_path)
-        
-        if rag_system_str not in sys.path:
-            sys.path.insert(0, rag_system_str)
-        
-        from server_manager import get_rag_server_status
-        return get_rag_server_status()
+        # Проверяем статус через HTTP API
+        response = requests.get("http://127.0.0.1:8080/health", timeout=2)
+        if response.status_code == 200:
+            # Получаем статистику
+            stats_response = requests.get("http://127.0.0.1:8080/stats", timeout=2)
+            if stats_response.status_code == 200:
+                stats = stats_response.json()
+                return {
+                    "running": True,
+                    "port": 8080,
+                    "conversations": stats.get("conversations", 0),
+                    "chunks": stats.get("chunks", 0),
+                    "total_content_size": stats.get("total_content_size", 0)
+                }
+            else:
+                return {
+                    "running": True,
+                    "port": 8080,
+                    "stats_error": "Could not get stats"
+                }
+        else:
+            return {
+                "running": False,
+                "error": f"Health check failed with status {response.status_code}"
+            }
         
     except Exception as e:
         return {
@@ -107,21 +188,50 @@ def get_memory_status() -> dict:
 
 def stop_memory_system():
     """
-    Остановка системы памяти
+    Остановка системы памяти (убивает процесс на порту 8080)
     """
+    import subprocess
+    
     try:
-        current_dir = Path(__file__).parent.parent.parent.parent
-        rag_system_path = current_dir / "rag_memory_system"
-        rag_system_str = str(rag_system_path)
+        # Для Windows используем taskkill для остановки процесса на порту
+        if os.name == 'nt':
+            # Находим PID процесса на порту 8080
+            result = subprocess.run(
+                ["netstat", "-ano"], 
+                capture_output=True, 
+                text=True
+            )
+            
+            for line in result.stdout.split('\n'):
+                if ':8080 ' in line and 'LISTENING' in line:
+                    parts = line.split()
+                    if len(parts) >= 5:
+                        pid = parts[-1]
+                        try:
+                            subprocess.run(["taskkill", "/F", "/PID", pid], check=True)
+                            print(f"✅ Остановлен процесс RAG сервера (PID: {pid})")
+                            return
+                        except:
+                            pass
+        else:
+            # Для Linux/MacOS используем lsof и kill
+            result = subprocess.run(
+                ["lsof", "-ti:8080"], 
+                capture_output=True, 
+                text=True
+            )
+            
+            if result.stdout.strip():
+                pid = result.stdout.strip()
+                subprocess.run(["kill", "-9", pid], check=True)
+                print(f"✅ Остановлен процесс RAG сервера (PID: {pid})")
+                return
         
-        if rag_system_str not in sys.path:
-            sys.path.insert(0, rag_system_str)
-        
-        from server_manager import stop_rag_server
-        stop_rag_server()
+        print("⚠️ Процесс RAG сервера не найден")
         
     except Exception as e:
         logger.warning(f"Ошибка остановки системы памяти: {e}")
+        print(f"⚠️ Ошибка остановки системы памяти: {e}")
 
 
 # Автоматическая инициализация при импорте (опционально)

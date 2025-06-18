@@ -77,12 +77,6 @@ def init_all_extensions(main_window):
     except Exception as e:
         logger.error(f"Ошибка при инициализации центра уведомлений: {e}")
 
-    # Инициализируем AutoGen расширение
-    try:
-        logger.info("Инициализация AutoGen расширения...")
-        init_autogen_extension(main_window)
-    except Exception as e:
-        logger.error(f"Ошибка при инициализации AutoGen: {e}")
 
     logger.info("Инициализация расширений завершена")
 
@@ -177,30 +171,7 @@ def init_notification_center_extension(main_window):
         logger.error(f"Ошибка при инициализации центра уведомлений: {e}")
     return None
 
-def init_autogen_extension(main_window):
-    """Инициализирует AutoGen расширение."""
-    try:
-        # Ищем AutoGen extension в разных возможных местах
-        autogen_module = None
-        
-        # Пробуем импортировать из autogen пакета
-        try:
-            import sys
-            import os
-            autogen_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'autogen')
-            if autogen_path not in sys.path:
-                sys.path.insert(0, autogen_path)
-            
-            from autogen.autogen_extension import add_autogen_dock
-            autogen_module = True
-        except ImportError:
-            # Пробуем альтернативный импорт
-            try:
-                from autogen_extension import add_autogen_dock
-                autogen_module = True
-            except ImportError:
-                logger.warning("AutoGen extension модуль не найден")
-                return None
+
         
         if autogen_module:
             logger.info("✅ AutoGen extension найден, добавляем dock...")

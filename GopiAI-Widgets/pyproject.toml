@@ -9,7 +9,7 @@ description = "Модуль пользовательских виджетов д
 requires-python = ">=3.8"
 dependencies = [
     "PySide6>=6.5.0",
-    "gopiai-core>=0.1.0",
+    "gopiai-core"
 ]
 
 [tool.setuptools]

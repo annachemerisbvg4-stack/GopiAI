@@ -9,9 +9,11 @@ description = "Основной модуль приложения GopiAI"
 requires-python = ">=3.8"
 dependencies = [
     "PySide6>=6.5.0",
-    "gopiai-core>=0.1.0",
-    "gopiai-widgets>=0.1.0",
-    "gopiai-extensions>=0.1.0",
+    "gopiai-core",
+    "gopiai-widgets",
+    "gopiai-ui",
+    "gopiai-webview",
+    "gopiai-extensions",
 ]
 
 [tool.setuptools]
