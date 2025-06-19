@@ -268,9 +268,9 @@ def main():
     print("=" * 60)
     
     # Анализируем компоненты
-    chat_issues = analyze_chat_js_issues()
-    bridge_issues = analyze_webview_bridge()
-    tools_issues = analyze_claude_tools()
+    chat_issues = analyze_chat_js_issues() or []
+    bridge_issues = analyze_webview_bridge() or []
+    tools_issues = analyze_claude_tools() or []
     
     # Создаем диагностический скрипт
     create_diagnostic_script()

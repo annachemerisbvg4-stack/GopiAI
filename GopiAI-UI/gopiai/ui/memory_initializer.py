@@ -39,107 +39,65 @@ def init_memory_system(silent: bool = True, port: int = 8080) -> bool:
     import os
     
     try:
-        # Проверяем, не запущен ли уже сервер
+        # Проверяем не запущен ли уже сервер
         try:
             response = requests.get(f"http://127.0.0.1:{port}/health", timeout=2)
             if response.status_code == 200:
-                if not silent:
-                    print(f"✅ RAG сервер уже запущен на порту {port}")
+                logger.info("✅ RAG сервер уже запущен")
                 return True
         except:
-            pass  # Сервер не запущен, продолжаем
+            pass
         
-        # Определяем путь к RAG системе
+        # Запуск сервера в фоновом режиме
         current_dir = Path(__file__).parent.parent.parent.parent  # Корень проекта
-        rag_system_path = current_dir / "rag_memory_system"
-        simple_server_path = rag_system_path / "simple_rag_server.py"
+        rag_path = current_dir / "rag_memory_system" / "simple_rag_server.py"
         
-        if not simple_server_path.exists():
+        if not rag_path.exists():
+            logger.error(f"❌ Файл сервера не найден: {rag_path}")
             if not silent:
-                print("⚠️ simple_rag_server.py не найден, пропускаем инициализацию")
+                print(f"❌ Файл сервера не найден: {rag_path}")
             return False
         
+        # Используем subprocess для запуска в фоне
+        global server_process
+        
+        # Запускаем БЕЗ нового окна терминала, чтобы избежать бесконечного цикла окон
+        server_process = subprocess.Popen(
+            [sys.executable, str(rag_path)], 
+            # creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0,  # Отключено!
+            stdout=subprocess.PIPE if silent else None,
+            stderr=subprocess.PIPE if silent else None
+        )
+        
+        logger.info(f"🚀 Запущен RAG сервер (PID: {server_process.pid})")
         if not silent:
-            print("🧠 Запуск системы памяти GopiAI...")
+            print(f"🚀 Запущен RAG сервер (PID: {server_process.pid})")
         
-        # Запускаем сервер в фоновом режиме
+        time.sleep(2)  # Даем время на запуск
+        
+        # Проверяем запустился ли сервер
         try:
-            # Используем python для запуска сервера
-            cmd = [
-                "python", str(simple_server_path)
-            ]
-            
-            # Запускаем в фоновом режиме (без ожидания завершения)
-            process = subprocess.Popen(
-                cmd,
-                cwd=str(rag_system_path),
-                stdout=subprocess.PIPE if silent else None,
-                stderr=subprocess.PIPE if silent else None,
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
-            )
-            
-            # Ждем немного чтобы сервер запустился
-            time.sleep(2)
-            
-            # Проверяем что сервер действительно запустился
-            for attempt in range(5):
-                try:
-                    response = requests.get(f"http://127.0.0.1:{port}/health", timeout=1)
-                    if response.status_code == 200:
-                        if not silent:
-                            print(f"✅ Система памяти запущена на http://127.0.0.1:{port}")
-                        return True
-                except:
-                    time.sleep(1)
-            
-            if not silent:
-                print("⚠️ Система памяти не отвечает после запуска")
-            return False
-            
-        except Exception as e:
-            if not silent:
-                print(f"⚠️ Ошибка запуска RAG сервера: {e}")
-            return False
-            
-    except Exception as e:
-        logger.warning(f"Ошибка инициализации системы памяти: {e}")
-        if not silent:
-            print(f"⚠️ Ошибка инициализации системы памяти: {e}")
-        return False
-        
-        # Добавляем путь к RAG системе в sys.path если его там нет
-        rag_system_str = str(rag_system_path)
-        if rag_system_str not in sys.path:
-            sys.path.insert(0, rag_system_str)
-        
-        # Импортируем и запускаем RAG сервер
-        try:
-            from server_manager import start_rag_server
-            
-            if not silent:
-                print("🧠 Инициализация системы памяти GopiAI...")
-            
-            # Запускаем RAG сервер в тихом режиме
-            server_manager = start_rag_server(port=port, silent=silent)
-            
-            if server_manager and server_manager.is_running:
+            response = requests.get(f"http://127.0.0.1:{port}/health", timeout=2)
+            if response.status_code == 200:
+                logger.info("✅ RAG сервер успешно запущен")
                 if not silent:
-                    print(f"✅ Система памяти запущена на http://127.0.0.1:{port}")
+                    print("✅ RAG сервер успешно запущен")
                 return True
             else:
+                logger.error(f"❌ RAG сервер вернул код {response.status_code}")
                 if not silent:
-                    print("⚠️ Система памяти не смогла запуститься")
+                    print(f"❌ RAG сервер вернул код {response.status_code}")
                 return False
-                
-        except ImportError as e:
+        except Exception as e:
+            logger.error(f"❌ RAG сервер не отвечает после запуска: {e}")
             if not silent:
-                print(f"⚠️ Не удалось импортировать RAG сервер: {e}")
+                print(f"❌ RAG сервер не отвечает после запуска: {e}")
             return False
             
     except Exception as e:
-        logger.warning(f"Ошибка инициализации системы памяти: {e}")
+        logger.error(f"❌ Ошибка при запуске RAG сервера: {e}")
         if not silent:
-            print(f"⚠️ Ошибка инициализации системы памяти: {e}")
+            print(f"❌ Ошибка при запуске RAG сервера: {e}")
         return False
 
 
@@ -234,11 +192,11 @@ def stop_memory_system():
         print(f"⚠️ Ошибка остановки системы памяти: {e}")
 
 
-# Автоматическая инициализация при импорте (опционально)
-_auto_init = os.environ.get("GOPIAI_AUTO_INIT_MEMORY", "").lower() in ("1", "true", "yes")
-
-if _auto_init:
-    init_memory_system(silent=True)
+# Автоматическая инициализация при импорте отключена
+# ВНИМАНИЕ: Автоинициализация вызывала бесконечный запуск терминалов в VS Code
+# _auto_init = os.environ.get("GOPIAI_AUTO_INIT_MEMORY", "").lower() in ("1", "true", "yes")
+# if _auto_init:
+#     init_memory_system(silent=True)
 
 
 if __name__ == "__main__":

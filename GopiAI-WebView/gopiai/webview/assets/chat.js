@@ -726,40 +726,71 @@ class GopiAIChatInterface {
         // Показываем индикатор набора
         this.showTypingIndicator();
 
-        try {
-            // Проверяем доступность puter.js
-            if (typeof puter === 'undefined') {
-                throw new Error('puter.js is not available');
+        let retryCount = 0;
+        const maxRetries = 3;
+
+        while (retryCount < maxRetries) {
+            try {
+                // Проверяем доступность puter.js
+                if (typeof puter === 'undefined') {
+                    throw new Error('puter.js is not available. Please check your internet connection and refresh the page.');
+                }
+
+                // Проверяем аутентификацию
+                const isSignedIn = await this.checkAndEnsureAuth();
+                if (!isSignedIn) {
+                    throw new Error('Authentication failed. Please sign in to use the chat.');
+                }
+
+                console.log(`Sending message (attempt ${retryCount + 1}/${maxRetries}):`, message);
+
+                // Отправляем сообщение через puter.js
+                const response = await puter.ai.chat([
+                    { role: 'user', content: message }
+                ], {
+                    model: this.currentModel,
+                    stream: this.isStreaming
+                });
+
+                this.hideTypingIndicator();
+
+                if (!response) {
+                    throw new Error('Empty response from AI service');
+                }
+
+                const aiMessage = response.message || response.content || response.text || 'No response content';
+                this.addAIMessage(aiMessage);
+
+                // Сохраняем в историю
+                this.chatHistory.push({
+                    timestamp: new Date().toISOString(),
+                    sender: 'User',
+                    content: message
+                });
+                this.chatHistory.push({
+                    timestamp: new Date().toISOString(),
+                    sender: 'AI',
+                    content: aiMessage,
+                    model: this.currentModel
+                });
+
+                // Успешно отправлено - выходим из цикла
+                return;
+
+            } catch (error) {
+                retryCount++;
+                console.error(`Error sending message (attempt ${retryCount}/${maxRetries}):`, error);
+
+                if (retryCount >= maxRetries) {
+                    this.hideTypingIndicator();
+                    this.handleSendMessageError(error, retryCount);
+                    return;
+                }
+
+                // Ждем перед повтором
+                await this.sleep(1000 * retryCount);
+                console.log(`Retrying in ${1000 * retryCount}ms...`);
             }
-
-            // Отправляем сообщение через puter.js
-            const response = await puter.ai.chat([
-                { role: 'user', content: message }
-            ], {
-                model: this.currentModel,
-                stream: this.isStreaming
-            });
-
-            this.hideTypingIndicator();
-            this.addAIMessage(response.message || response.content || 'No response');
-
-            // Сохраняем в историю
-            this.chatHistory.push({
-                timestamp: new Date().toISOString(),
-                sender: 'User',
-                content: message
-            });
-            this.chatHistory.push({
-                timestamp: new Date().toISOString(),
-                sender: 'AI',
-                content: response.message || response.content,
-                model: this.currentModel
-            });
-
-        } catch (error) {
-            this.hideTypingIndicator();
-            console.error('Error sending message:', error);
-            this.addSystemMessage('❌ Error: ' + error.message);
         }
     }
 
@@ -857,6 +888,105 @@ class GopiAIChatInterface {
         } else {
             console.warn('⚠️ QWebChannel not available');
         }
+    }
+
+    async checkAndEnsureAuth() {
+        try {
+            // Проверяем текущий статус аутентификации
+            if (typeof puter.isSignedIn === 'function') {
+                const isSignedIn = await puter.isSignedIn();
+                console.log('Auth status:', isSignedIn);
+                
+                if (!isSignedIn) {
+                    console.log('User not signed in, attempting to sign in...');
+                    this.addSystemMessage('🔐 Signing in to enable AI chat...');
+                    
+                    if (typeof puter.signIn === 'function') {
+                        await puter.signIn();
+                        return await puter.isSignedIn();
+                    } else {
+                        console.warn('puter.signIn method not available');
+                        return false;
+                    }
+                }
+                
+                return true;
+            } else {
+                console.warn('puter.isSignedIn method not available, assuming signed in');
+                return true; // Fallback - продолжаем работу
+            }
+        } catch (error) {
+            console.error('Error checking auth status:', error);
+            return true; // Fallback - продолжаем работу
+        }
+    }
+
+    handleSendMessageError(error, retryCount) {
+        let errorMessage = '❌ Failed to send message';
+        let userMessage = 'An error occurred while sending your message.';
+
+        // Определяем тип ошибки и даем соответствующее сообщение
+        if (error.message.includes('puter.js is not available')) {
+            errorMessage = '❌ Connection Error';
+            userMessage = 'puter.js is not loaded. Please check your internet connection and refresh the page.';
+        } else if (error.message.includes('Authentication failed')) {
+            errorMessage = '❌ Authentication Error';
+            userMessage = 'Authentication failed. Please try signing in again.';
+        } else if (error.message.includes('Empty response')) {
+            errorMessage = '❌ Empty Response';
+            userMessage = 'Received empty response from AI service. Please try again.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorMessage = '❌ Network Error';
+            userMessage = 'Network connection error. Please check your internet connection and try again.';
+        } else if (error.message.includes('rate limit') || error.message.includes('quota')) {
+            errorMessage = '❌ Rate Limit Error';
+            userMessage = 'AI service rate limit reached. Please wait a moment and try again.';
+        } else {
+            errorMessage = '❌ Unknown Error';
+            userMessage = `An unexpected error occurred: ${error.message}`;
+        }
+
+        console.error(`${errorMessage} after ${retryCount} attempts:`, error);
+        this.addSystemMessage(`${errorMessage}: ${userMessage}`);
+
+        // Добавляем кнопку повтора для пользователя
+        this.addRetryButton();
+    }
+
+    addRetryButton() {
+        const retryDiv = document.createElement('div');
+        retryDiv.className = 'retry-container';
+        retryDiv.innerHTML = `
+            <button class="retry-btn" onclick="window.gopiaiChat.retryLastMessage()">
+                🔄 Retry Last Message
+            </button>
+        `;
+        this.messagesContainer?.appendChild(retryDiv);
+        this.scrollToBottom();
+    }
+
+    retryLastMessage() {
+        // Удаляем кнопку повтора
+        const retryContainer = this.messagesContainer?.querySelector('.retry-container');
+        if (retryContainer) {
+            retryContainer.remove();
+        }
+
+        // Находим последнее сообщение пользователя
+        const userMessages = this.messagesContainer?.querySelectorAll('.user-message');
+        if (userMessages && userMessages.length > 0) {
+            const lastUserMessage = userMessages[userMessages.length - 1];
+            const messageContent = lastUserMessage.querySelector('.message-content')?.textContent;
+            
+            if (messageContent) {
+                this.messageInput.value = messageContent;
+                this.sendMessage();
+            }
+        }
+    }
+
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }
 
