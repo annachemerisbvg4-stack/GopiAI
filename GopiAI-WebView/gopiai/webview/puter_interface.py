@@ -29,7 +29,7 @@ class PuterChatInterface(QObject):
     error_occurred = Signal(str)  # Произошла ошибка
     statistics_updated = Signal(dict)  # Обновлена статистика
     
-    def __init__(self, webview_widget=None, parent: QObject = None):
+    def __init__(self, webview_widget=None, parent: Optional[QObject] = None):
         """
         Инициализация интерфейса чата.
         

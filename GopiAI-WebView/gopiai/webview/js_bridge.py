@@ -6,7 +6,7 @@ JavaScript Bridge для GopiAI WebView
 """
 
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 from PySide6.QtCore import QObject, Signal, Slot
@@ -35,7 +35,7 @@ class JavaScriptBridge(QObject):
     model_changed = Signal(str)  # Изменена модель ИИ
     error_occurred = Signal(str)  # Произошла ошибка
     
-    def __init__(self, parent: QObject = None):
+    def __init__(self, parent: Optional[QObject] = None):
             """
             Инициализация моста.
             
@@ -259,20 +259,17 @@ class JavaScriptBridge(QObject):
     def enrich_message(self, message: str) -> str:
         """
         Слот для обогащения сообщения контекстом из памяти.
-        Вызывается из JavaScript перед отправкой к ИИ.
-        
-        Args:
-            message: Исходное сообщение пользователя
-            
-        Returns:
-            Обогащенное сообщение с контекстом
+        Временно упрощенная версия без поиска.
         """
         if self._memory_manager:
             try:
-                return self._memory_manager.enrich_message(message)
+                # Простое обогащение только краткосрочной памятью
+                recent_context = self._memory_manager._format_recent_context()
+                if recent_context:
+                    enriched = f"Недавний контекст:\n{recent_context}\n\nВопрос: {message}"
+                    return enriched
             except Exception as e:
                 print(f"Memory enrichment error: {e}")
-                return message
         return message
     
     @Slot(str, str, result=str)  

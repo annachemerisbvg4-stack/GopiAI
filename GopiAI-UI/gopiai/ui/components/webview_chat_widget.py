@@ -14,6 +14,7 @@ from PySide6.QtWebEngineCore import QWebEngineSettings, QWebEnginePage
 from PySide6.QtWebChannel import QWebChannel
 from pathlib import Path
 import json
+from typing import Any
 
 # Импорт ClaudeToolsHandler
 try:
@@ -81,7 +82,7 @@ class WebViewChatBridge(QObject):
                     self._memory_manager = None
             
             # Инициализация ClaudeToolsHandler (будет установлен позже)
-            self._claude_tools_handler = None
+            self._claude_tools_handler = None  # type: ClaudeToolsHandler | None
 
     
     @Slot(str)
@@ -173,8 +174,7 @@ class WebViewChatBridge(QObject):
             print(f"❌ Context enrichment error: {e}")
             # Возвращаем оригинальное сообщение если что-то пошло не так
             return message
-
-    def _get_recent_messages_for_context(self, max_messages: int = 10) -> list[dict[str, any]]:
+    def _get_recent_messages_for_context(self, max_messages: int = 10) -> list[dict[str, Any]]:
         """
         Получение последних сообщений из текущей сессии чата для контекста.
         Возвращает список последних сообщений в формате для TokenManager.

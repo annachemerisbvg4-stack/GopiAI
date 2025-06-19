@@ -138,7 +138,7 @@ except ImportError as e:
     TabDocumentWidget = lambda parent=None: SimpleWidget("TabDocument")
     TerminalWidget = lambda parent=None: SimpleWidget("Terminal")
 
-    class FallbackThemeManager:
+    class GlobalFallbackThemeManager:
         def __init__(self):
             self.current_theme = "default"
         
@@ -149,7 +149,7 @@ except ImportError as e:
 
 
     if 'ThemeManager' not in globals() or ThemeManager is None:
-        ThemeManager = FallbackThemeManager
+        ThemeManager = GlobalFallbackThemeManager
 
 # Глобальные переменные для систем
 AutoIconSystem = None
@@ -160,6 +160,16 @@ load_theme = None
 save_theme = None
 MATERIAL_SKY_THEME = {"name": "Material Sky", "primary": "#2196F3"}
 EXTENSIONS_AVAILABLE = True
+
+
+class FallbackThemeManager:
+    """Fallback менеджер тем для случаев, когда основной ThemeManager недоступен"""
+    def __init__(self):
+        self.current_theme = "default"
+    
+    def apply_theme(self, app_or_theme):
+        print(f"Fallback: apply_theme({app_or_theme})")
+        return False
 
 
 class FramelessGopiAIStandaloneWindow(QMainWindow):
@@ -262,9 +272,11 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             import traceback
             print(f"❌ Полная ошибка: {traceback.format_exc()}")
             # Fallback - используем обычный ChatWidget из импорта
-            from gopiai.ui.components.chat_widget import ChatWidget
+            from gopiai.ui.components import ChatWidget
             self.chat_widget = ChatWidget()
-            print("🔄 Fallback: используется обычный ChatWidget")
+            # Fallback - создаем минимальный заглушечный виджет
+            self.chat_widget = SimpleWidget("Chat")
+            print("🔄 Fallback: используется SimpleWidget для чата")
         self.chat_widget.setMinimumWidth(250)
         self.chat_widget.setMaximumWidth(600)
         self.chat_widget.resize(300, 600)
@@ -1076,6 +1088,7 @@ def main():
         import traceback
         traceback.print_exc()
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

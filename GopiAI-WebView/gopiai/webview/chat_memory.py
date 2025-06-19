@@ -163,30 +163,27 @@ class ChatMemoryManager:
         """Поиск релевантных сообщений в RAG памяти"""
         if not self.rag_available:
             return ""
-            
+        
         try:
             response = requests.get(f"{self.rag_api_url}/search", 
-                                  params={"q": query, "limit": max_results},
+                                  params={"q": query, "limit": max_results}, 
                                   timeout=5)
-            
             if response.status_code == 200:
                 results = response.json().get("results", [])
-                
                 relevant_docs = []
                 for result in results:
-                    # Проверяем релевантность
                     if result.get("relevance_score", 0) >= self.similarity_threshold:
-                        # Извлекаем фрагмент текста
                         content = result.get("content", "")[:300]
                         if content:
                             relevant_docs.append(content)
-                
                 return "\n---\n".join(relevant_docs) if relevant_docs else ""
-                
         except Exception as e:
             logger.error(f"Ошибка поиска в RAG памяти: {e}")
-        
         return ""
+
+    def search_conversations(self, query: str) -> str:
+        """Временный метод для совместимости"""
+        return self._search_rag_memory(query)
     
     def _save_to_rag_memory(self, user_message: str, ai_response: str, timestamp: str) -> bool:
         """Сохранение сообщений в RAG память"""
