@@ -181,9 +181,9 @@ class ChatMemoryManager:
             logger.error(f"Ошибка поиска в RAG памяти: {e}")
         return ""
 
-    def search_conversations(self, query: str) -> str:
-        """Временный метод для совместимости"""
-        return self._search_rag_memory(query)
+    def search_conversations(self, query: str, max_results: int = 3) -> str:
+        """Публичный метод для поиска по разговорам - для совместимости"""
+        return self._search_rag_memory(query, max_results)
     
     def _save_to_rag_memory(self, user_message: str, ai_response: str, timestamp: str) -> bool:
         """Сохранение сообщений в RAG память"""

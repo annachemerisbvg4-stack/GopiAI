@@ -265,3 +265,13 @@ if (document.readyState === 'loading') {
 } else {
     chatInterface = new GopiAIChatInterface();
 }
+
+// Инициализация AI Recovery модуля
+if (window.AIRecoveryModule && chatInterface) {
+    const recovery = new AIRecoveryModule(chatInterface, {
+        timeoutSeconds: 45,
+        maxRetries: 2,
+        showNotifications: true
+    });
+    recovery.activate();
+}

@@ -1,0 +1,40 @@
+{
+  "chats": [
+    {
+      "id": "afe84412-3965-448a-a146-1b7765e9c9a4",
+      "session_id": "81965647-21dd-4450-b2b1-bc620589ce75",
+      "role": "user",
+      "content": "Как работает txtai в GopiAI?",
+      "timestamp": "2025-06-20T03:08:58.642917"
+    },
+    {
+      "id": "a252bf77-b855-43e4-91b0-50ed8cb35a12",
+      "session_id": "81965647-21dd-4450-b2b1-bc620589ce75",
+      "role": "assistant",
+      "content": "txtai обеспечивает семантический поиск по истории чатов",
+      "timestamp": "2025-06-20T03:08:58.643917"
+    },
+    {
+      "id": "7dab945e-14c5-45e2-ab50-302ad2d7253d",
+      "session_id": "81965647-21dd-4450-b2b1-bc620589ce75",
+      "role": "user",
+      "content": "А что с интеграцией в веб-интерфейс?",
+      "timestamp": "2025-06-20T03:08:58.643917"
+    },
+    {
+      "id": "e3205cee-6087-4e4e-8444-68384e7edf11",
+      "session_id": "81965647-21dd-4450-b2b1-bc620589ce75",
+      "role": "assistant",
+      "content": "Интеграция происходит через WebViewChatBridge и JavaScript",
+      "timestamp": "2025-06-20T03:08:58.645914"
+    }
+  ],
+  "sessions": {
+    "81965647-21dd-4450-b2b1-bc620589ce75": {
+      "id": "81965647-21dd-4450-b2b1-bc620589ce75",
+      "title": "Тест GopiAI",
+      "created_at": "2025-06-20T03:08:58.641915",
+      "message_count": 4
+    }
+  }
+}

@@ -1,19 +1,18 @@
 """
-Инициализация пакета RAG Memory системы
+GopiAI Memory System - Simple TxtAI Integration
+Простая система памяти на основе txtai
 """
-from .memory_manager import RAGMemoryManager
-from .models import ConversationSession, ConversationMessage, MessageRole, SearchResult, MemoryStats
-from .config import config
-from .client import RAGMemoryClient
 
-__version__ = "1.0.0"
+from .simple_memory_manager import SimpleMemoryManager, get_memory_manager
+from .models import ConversationSession, MessageRole
+
+# Алиас для совместимости
+TxtAIMemoryManager = SimpleMemoryManager
+
 __all__ = [
-    "RAGMemoryManager",
-    "ConversationSession", 
-    "ConversationMessage",
-    "MessageRole",
-    "SearchResult",
-    "MemoryStats",
-    "config",
-    "RAGMemoryClient"
+    "SimpleMemoryManager",
+    "TxtAIMemoryManager", 
+    "get_memory_manager",
+    "ConversationSession",
+    "MessageRole"
 ]

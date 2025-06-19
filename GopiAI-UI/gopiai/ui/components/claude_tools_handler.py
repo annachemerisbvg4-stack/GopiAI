@@ -459,7 +459,7 @@ class ClaudeToolsHandler(QObject):
                         
             except urllib.error.URLError as e:
                 if "Connection refused" in str(e) or "[Errno 10061]" in str(e):
-                    raise Exception("RAG server not running on port 8080. Start with: python start_rag_server.py")
+# Теперь используется txtai - не требует отдельного сервера
                 else:
                     raise Exception(f"RAG API connection error: {e}")
             

@@ -1,0 +1,47 @@
+{
+  "timestamp": "2025-06-05T11:03:59.674715",
+  "project_root": "C:\\Users\\crazy\\GOPI_AI_MODULES",
+  "removed_files": [
+    "GopiAI-App\\gopiai\\app\\utils\\start_mcp_server.js",
+    "rag_memory_system\\project_sync\\main_ui.py",
+    "rag_memory_system\\project_sync\\GopiAI-Core\\gopiai\\__init__.py",
+    "rag_memory_system\\project_sync\\GopiAI-Extensions\\gopiai\\__init__.py",
+    "rag_memory_system\\project_sync\\GopiAI-Extensions\\gopiai\\extensions\\notification_center_extension.py",
+    "rag_memory_system\\project_sync\\GopiAI-Extensions\\gopiai\\extensions\\productivity_extension.py",
+    "rag_memory_system\\project_sync\\GopiAI-Extensions\\gopiai\\extensions\\status_bar_extension.py",
+    "rag_memory_system\\project_sync\\GopiAI-Extensions\\gopiai\\extensions\\__init__.py",
+    "rag_memory_system\\project_sync\\GopiAI-Widgets\\gopiai\\__init__.py",
+    "rag_memory_system\\project_sync\\UI\\components\\chat_widget.py",
+    "rag_memory_system\\project_sync\\UI\\components\\file_explorer.py",
+    "rag_memory_system\\project_sync\\UI\\components\\file_explorer_old.py",
+    "rag_memory_system\\project_sync\\UI\\components\\file_type_detector.py",
+    "rag_memory_system\\project_sync\\UI\\components\\icon_file_system_model.py",
+    "rag_memory_system\\project_sync\\UI\\components\\menu_bar.py",
+    "rag_memory_system\\project_sync\\UI\\components\\tab_widget.py",
+    "rag_memory_system\\project_sync\\UI\\components\\terminal_widget.py",
+    "rag_memory_system\\project_sync\\UI\\components\\titlebar.py",
+    "rag_memory_system\\project_sync\\UI\\components\\__init__.py",
+    "rag_memory_system\\project_sync\\UI\\utils\\icon_manager.py",
+    "rag_memory_system\\project_sync\\UI\\utils\\icon_mapping.py",
+    "rag_memory_system\\project_sync\\UI\\utils\\icon_system.py",
+    "rag_memory_system\\project_sync\\UI\\utils\\simple_theme_manager.py",
+    "rag_memory_system\\project_sync\\UI\\utils\\theme_manager.py",
+    "rag_memory_system\\project_sync\\UI\\utils\\__init__.py"
+  ],
+  "removed_dirs": [
+    "rag_memory_system\\project_sync\\GopiAI-Core\\gopiai",
+    "rag_memory_system\\project_sync\\GopiAI-Widgets\\gopiai",
+    "rag_memory_system\\project_sync\\UI\\components",
+    "rag_memory_system\\project_sync\\UI\\utils",
+    "rag_memory_system\\project_sync\\GopiAI-Core",
+    "rag_memory_system\\project_sync\\GopiAI-Widgets",
+    "rag_memory_system\\project_sync\\UI"
+  ],
+  "summary": {
+    "removed_duplicates": 25,
+    "removed_unsafe": 0,
+    "removed_empty_dirs": 7,
+    "total_files": 50,
+    "total_dirs": 14
+  }
+}

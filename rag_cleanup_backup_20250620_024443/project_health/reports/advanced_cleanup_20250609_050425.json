@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-06-09T05:04:25.767652",
+  "project_root": "c:\\Users\\crazy\\GOPI_AI_MODULES",
+  "removed_files": [
+    "rag_memory_system\\project_sync\\GopiAI-Extensions\\gopiai\\__init__.py",
+    "GopiAI-UI\\gopiai\\ui\\components\\chat_widget_backup.py"
+  ],
+  "removed_dirs": [
+    "rag_memory_system\\project_sync\\GopiAI-Core\\gopiai",
+    "rag_memory_system\\project_sync\\GopiAI-Extensions\\gopiai",
+    "rag_memory_system\\project_sync\\GopiAI-Core",
+    "rag_memory_system\\project_sync\\GopiAI-Extensions",
+    ".serena\\memories"
+  ],
+  "summary": {
+    "removed_duplicates": 2,
+    "removed_unsafe": 0,
+    "removed_empty_dirs": 5,
+    "total_files": 4,
+    "total_dirs": 10
+  }
+}

@@ -1,34 +1,25 @@
 # GopiAI Minimal Dependencies
 # =============================
-
 # UI Framework
 PySide6>=6.5.0
 PyQt5>=5.15.0
-
-# UI Styling  
+# UI Styling
 QStyler>=0.1.0
 qt-style-sheet-inspector>=0.1.0
-
 # Core utilities
 PyYAML>=6.0.0
 requests>=2.32.0
 pytest>=8.0.0
-
-# Simple RAG System (без ChromaDB)
 fastapi>=0.115.0
 uvicorn>=0.34.0
 pydantic>=2.11.0
-
 # Anthropic Claude API (если используется)
 anthropic>=0.54.0
-
-# OpenAI API (если используется)  
+# OpenAI API (если используется)
 openai>=1.86.0
-
 # MCP Protocol (если используется)
 mcp>=1.9.0
-
 # Optional: раскомментировать если нужен семантический поиск
- sentence-transformers>=4.1.0
- torch>=2.7.0
- scikit-learn>=1.7.0
+torch>=2.7.0
+scikit-learn>=1.7.0
+txtai>=7.0.0

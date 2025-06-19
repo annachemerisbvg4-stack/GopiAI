@@ -5,8 +5,11 @@ Terminal Widget Component для GopiAI Standalone Interface
 Виджет терминала с вкладками.
 """
 
+import subprocess
+import threading
 from typing import Optional
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QTextEdit
+from PySide6.QtCore import QTimer
 
 
 class TerminalWidget(QWidget):
@@ -30,12 +33,6 @@ class TerminalWidget(QWidget):
 
     def _setup_ui(self):
         """Настройка интерфейса терминала"""
-        try:
-            from .terminal_widget import TerminalWidget 
-            print("[OK] Terminal: Импортирован TerminalWidget")
-        except ImportError:
-            print("[ERROR] Terminal: Не удалось импортировать TerminalWidget")
-            return  
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         
@@ -112,6 +109,7 @@ PS C:\\Users\\crazy\\GOPI_AI_MODULES>
     def get_current_terminal(self):
         """Получение текущего терминала"""
         return self.terminal_tabs.currentWidget()
+
     def add_new_terminal(self, name: Optional[str] = None):
         """Добавление нового терминала"""
         if name is None:
@@ -119,17 +117,62 @@ PS C:\\Users\\crazy\\GOPI_AI_MODULES>
         self._add_terminal_tab()
         current_index = self.terminal_tabs.currentIndex()
         self.terminal_tabs.setTabText(current_index, name)
-        self.terminal_tabs.setTabText(current_index, name)
 
     def execute_command(self, command: str):
-        """Выполнение команды в текущем терминале (заглушка)"""
+        """Выполнение команды в текущем терминале"""
         terminal = self.get_current_terminal()
         if terminal and isinstance(terminal, QTextEdit):
             current_text = terminal.toPlainText()
-            new_text = f"{current_text}\nPS C:\\Users\\crazy\\GOPI_AI_MODULES> {command}\n# Команда выполнена (заглушка)\nPS C:\\Users\\crazy\\GOPI_AI_MODULES> "
-            terminal.setPlainText(new_text)
             
-            # Прокручиваем вниз
-            cursor = terminal.textCursor()
-            cursor.movePosition(cursor.MoveOperation.End)
-            terminal.setTextCursor(cursor)
+            # Добавляем команду в терминал
+            terminal.setPlainText(f"{current_text}\nPS C:\\Users\\crazy\\GOPI_AI_MODULES> {command}")
+            
+            # Выполняем команду в отдельном потоке
+            def run_command():
+                try:
+                    # Выполняем команду через PowerShell
+                    result = subprocess.run(
+                        ["powershell", "-Command", command],
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                        cwd="C:\\Users\\crazy\\GOPI_AI_MODULES"
+                    )
+                    
+                    output = result.stdout if result.stdout else ""
+                    error = result.stderr if result.stderr else ""
+                    
+                    # Обновляем терминал в главном потоке
+                    def update_terminal():
+                        current_text = terminal.toPlainText()
+                        if output:
+                            terminal.setPlainText(f"{current_text}\n{output}")
+                        if error:
+                            terminal.setPlainText(f"{terminal.toPlainText()}\n{error}")
+                        
+                        # Добавляем новую строку приглашения
+                        terminal.setPlainText(f"{terminal.toPlainText()}\nPS C:\\Users\\crazy\\GOPI_AI_MODULES> ")
+                        
+                        # Прокручиваем вниз
+                        cursor = terminal.textCursor()
+                        cursor.movePosition(cursor.MoveOperation.End)
+                        terminal.setTextCursor(cursor)
+                    
+                    # Используем QTimer для обновления UI в главном потоке
+                    QTimer.singleShot(0, update_terminal)
+                    
+                except subprocess.TimeoutExpired:
+                    def show_timeout():
+                        current_text = terminal.toPlainText()
+                        terminal.setPlainText(f"{current_text}\nОшибка: Команда превысила время ожидания (30 сек)\nPS C:\\Users\\crazy\\GOPI_AI_MODULES> ")
+                    QTimer.singleShot(0, show_timeout)
+                    
+                except Exception as e:
+                    def show_error():
+                        current_text = terminal.toPlainText()
+                        terminal.setPlainText(f"{current_text}\nОшибка: {str(e)}\nPS C:\\Users\\crazy\\GOPI_AI_MODULES> ")
+                    QTimer.singleShot(0, show_error)
+            
+            # Запускаем команду в отдельном потоке
+            thread = threading.Thread(target=run_command, daemon=True)
+            thread.start()
