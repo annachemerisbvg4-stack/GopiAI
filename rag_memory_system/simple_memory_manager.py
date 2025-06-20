@@ -18,10 +18,7 @@ except ImportError:
     print("⚠️ txtai не установлен. Установите: pip install txtai sentence-transformers")
 
 class SimpleMemoryManager:
-    """
-    Простейший менеджер памяти на txtai
-    По мотивам similarity.py - работает из коробки!
-    """
+    """Простой менеджер памяти на основе txtai"""
     
     def __init__(self, data_dir: str = "conversations"):
         """Инициализация"""
@@ -46,7 +43,10 @@ class SimpleMemoryManager:
         
         # Загружаем сохраненные данные
         self._load_data()
-    
+        
+        # Добавляем атрибут для совместимости
+        self.session_id = "default_session"  # Текущая сессия
+
     def _load_data(self):
         """Загрузка данных из JSON"""
         if self.chats_file.exists():
@@ -180,11 +180,61 @@ class SimpleMemoryManager:
         except:
             return message
     
-    def save_chat_exchange(self, session_id: str, user_msg: str, ai_response: str) -> bool:
-        """Сохранение обмена сообщениями"""
+    def _format_recent_context(self, limit: int = 3) -> str:
+        """Форматирование недавнего контекста (для совместимости с js_bridge)"""
         try:
-            self.add_message(session_id, "user", user_msg)
-            self.add_message(session_id, "assistant", ai_response)
+            recent_messages = self.get_session_messages(self.session_id, limit=limit)
+            if not recent_messages:
+                return ""
+            
+            context_lines = []
+            for msg in recent_messages[-limit:]:
+                role = "👤" if msg['role'] == 'user' else "🤖"
+                content = msg['content'][:100] + "..." if len(msg['content']) > 100 else msg['content']
+                context_lines.append(f"{role} {content}")
+            
+            return "\n".join(context_lines)
+        except Exception as e:
+            print(f"❌ Ошибка форматирования контекста: {e}")
+            return ""
+
+    def start_new_session(self, title: str = "Новый чат") -> str:
+        """Начать новую сессию (для совместимости с js_bridge)"""
+        self.session_id = self.create_session(title)
+        return self.session_id
+
+    def get_memory_stats(self) -> Dict[str, Any]:
+        """Получить статистику памяти (алиас для get_stats)"""
+        stats = self.get_stats()
+        # Добавляем дополнительные поля для совместимости
+        stats.update({
+            'current_session': self.session_id,
+            'memory_available': True,
+            'recent_messages': len(self.get_session_messages(self.session_id, limit=10))
+        })
+        return stats
+
+    def save_chat_exchange(self, user_msg_or_session: str, ai_response_or_user: str, ai_response: Optional[str] = None) -> bool:
+        """
+        Сохранение обмена сообщениями (с поддержкой двух сигнатур для совместимости)
+        
+        Если 3 параметра: save_chat_exchange(session_id, user_msg, ai_response) - новый API
+        Если 2 параметра: save_chat_exchange(user_msg, ai_response) - старый API для js_bridge
+        """
+        try:
+            if ai_response is None:
+                # Старая сигнатура: save_chat_exchange(user_msg, ai_response)
+                user_message = user_msg_or_session
+                ai_message = ai_response_or_user
+                session_id = self.session_id  # Используем текущую сессию
+            else:
+                # Новая сигнатура: save_chat_exchange(session_id, user_msg, ai_response)  
+                session_id = user_msg_or_session
+                user_message = ai_response_or_user
+                ai_message = ai_response
+            
+            self.add_message(session_id, "user", user_message)
+            self.add_message(session_id, "assistant", ai_message)
             return True
         except Exception as e:
             print(f"❌ Ошибка сохранения обмена: {e}")

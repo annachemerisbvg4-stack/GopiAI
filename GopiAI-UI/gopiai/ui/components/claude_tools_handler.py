@@ -28,6 +28,19 @@ from PySide6.QtWebEngineCore import QWebEngineSettings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Импорт нового txtai менеджера памяти
+try:
+    import sys
+    from pathlib import Path
+    project_root = Path(__file__).parent.parent.parent.parent
+    sys.path.insert(0, str(project_root))
+    from rag_memory_system import get_memory_manager
+    MEMORY_AVAILABLE = True
+    logger.info("✅ TxtAI memory system imported successfully")
+except ImportError as e:
+    MEMORY_AVAILABLE = False
+    logger.warning(f"⚠️ TxtAI memory system not available: {e}")
+
 
 class ClaudeToolsHandler(QObject):
     """
@@ -91,7 +104,7 @@ class ClaudeToolsHandler(QObject):
     # ==============================================
     
     @Slot(str, str, result=str)
-    def navigate_to_url(self, url: str, request_id: str = None) -> str:
+    def navigate_to_url(self, url: str, request_id: Optional[str] = None) -> str:
         """Навигация по URL с проверкой безопасности"""
         if not request_id:
             request_id = self._generate_request_id()
@@ -163,7 +176,7 @@ class ClaudeToolsHandler(QObject):
             return json.dumps(error_result)
     
     @Slot(str, str, result=str)
-    def execute_javascript(self, script: str, request_id: str = None) -> str:
+    def execute_javascript(self, script: str, request_id: Optional[str] = None) -> str:
         """Выполнение JavaScript в браузере"""
         if not request_id:
             request_id = self._generate_request_id()
@@ -238,7 +251,7 @@ class ClaudeToolsHandler(QObject):
             return json.dumps(error_result)
     
     @Slot(str, result=str)
-    def get_page_source(self, request_id: str = None) -> str:
+    def get_page_source(self, request_id: Optional[str] = None) -> str:
         """Получение HTML источника страницы"""
         if not request_id:
             request_id = self._generate_request_id()
@@ -247,7 +260,7 @@ class ClaudeToolsHandler(QObject):
         return self.execute_javascript(script, request_id)
     
     @Slot(str, int, result=str)
-    def wait_for_element(self, selector: str, timeout: int = 5000, request_id: str = None) -> str:
+    def wait_for_element(self, selector: str, timeout: int = 5000, request_id: Optional[str] = None) -> str:
         """Ожидание появления элемента на странице"""
         if not request_id:
             request_id = self._generate_request_id()
@@ -420,7 +433,7 @@ class ClaudeToolsHandler(QObject):
     @Slot(str, int, result=str)
     def search_memory(self, query: str, limit: int = 5) -> str:
         """
-        Поиск в RAG памяти через HTTP API.
+        Поиск в памяти через новую txtai систему.
         Интегрирует Claude Tools с системой памяти GopiAI.
         """
         try:
@@ -431,85 +444,81 @@ class ClaudeToolsHandler(QObject):
             if limit < 1 or limit > 20:
                 limit = 5  # Безопасное значение по умолчанию
             
-            # Подготовка URL для RAG API
-            rag_api_url = "http://127.0.0.1:8080"
-            search_endpoint = f"{rag_api_url}/search"
+            logger.info(f"Searching txtai memory: {query} (limit: {limit})")
             
-            # Кодирование параметров
-            params = urllib.parse.urlencode({
-                'q': query.strip(),
-                'limit': limit
-            })
-            
-            full_url = f"{search_endpoint}?{params}"
-            
-            logger.info(f"Searching RAG memory: {query} (limit: {limit})")
-            
-            # HTTP запрос к RAG API
-            try:
-                request = urllib.request.Request(full_url)
-                request.add_header('Content-Type', 'application/json')
-                request.add_header('User-Agent', 'GopiAI-ClaudeTools/1.0')
-                
-                with urllib.request.urlopen(request, timeout=10) as response:
-                    if response.status == 200:
-                        search_results = json.loads(response.read().decode('utf-8'))
-                    else:
-                        raise Exception(f"RAG API returned status {response.status}")
-                        
-            except urllib.error.URLError as e:
-                if "Connection refused" in str(e) or "[Errno 10061]" in str(e):
-# Теперь используется txtai - не требует отдельного сервера
-                else:
-                    raise Exception(f"RAG API connection error: {e}")
-            
-            # Обработка результатов поиска
-            if not search_results:
+            # Используем новый txtai менеджер памяти
+            if not MEMORY_AVAILABLE:
                 result = {
-                    "success": True,
+                    "success": False,
                     "query": query,
                     "results": [],
                     "total_found": 0,
-                    "message": "No results found in memory"
+                    "error": "TxtAI memory system not available"
                 }
-            else:
-                # Форматирование результатов для Claude
-                formatted_results = []
-                for item in search_results:
-                    formatted_item = {
-                        "session_id": item.get("session_id", ""),
-                        "title": item.get("title", "Untitled"),
-                        "relevance_score": item.get("relevance_score", 0.0),
-                        "matched_content": item.get("matched_content", ""),
-                        "context_preview": item.get("context_preview", ""),
-                        "timestamp": item.get("timestamp", ""),
-                        "tags": item.get("tags", [])
-                    }
-                    formatted_results.append(formatted_item)
+                return json.dumps(result, ensure_ascii=False)
+            
+            try:
+                # Получаем менеджер памяти
+                memory_manager = get_memory_manager()
                 
+                # Выполняем поиск через txtai
+                search_results = memory_manager.search_memory(query, limit=limit)
+                
+                # Обработка результатов поиска
+                if not search_results:
+                    result = {
+                        "success": True,
+                        "query": query,
+                        "results": [],
+                        "total_found": 0,
+                        "message": "No results found in memory"
+                    }
+                else:
+                    # Форматирование результатов для Claude
+                    formatted_results = []
+                    for item in search_results:
+                        formatted_item = {
+                            "session_id": item.get("session_id", ""),
+                            "content": item.get("content", ""),
+                            "role": item.get("role", ""),
+                            "relevance_score": item.get("score", 0.0),
+                            "timestamp": item.get("timestamp", ""),
+                            "matched_content": item.get("content", "")[:200] + "..." if len(item.get("content", "")) > 200 else item.get("content", "")
+                        }
+                        formatted_results.append(formatted_item)
+                    
+                    result = {
+                        "success": True,
+                        "query": query,
+                        "results": formatted_results,
+                        "total_found": len(formatted_results),
+                        "memory_system": "txtai"
+                    }
+                
+                logger.info(f"TxtAI search completed: {len(search_results)} results for '{query}'")
+                return json.dumps(result, ensure_ascii=False)
+                
+            except Exception as e:
+                logger.error(f"TxtAI search error: {e}")
                 result = {
-                    "success": True,
+                    "success": False,
                     "query": query,
-                    "results": formatted_results,
-                    "total_found": len(formatted_results),
-                    "rag_api_url": rag_api_url
+                    "results": [],
+                    "total_found": 0,
+                    "error": f"Search failed: {str(e)}"
                 }
-            
-            logger.info(f"RAG search completed: {len(search_results)} results for '{query}'")
-            return json.dumps(result, ensure_ascii=False)
-            
+                return json.dumps(result, ensure_ascii=False)
+                
         except Exception as e:
-            error_msg = str(e)
-            logger.error(f"RAG search error: {error_msg}")
-            
-            error_result = {
+            logger.error(f"Memory search failed: {e}")
+            result = {
                 "success": False,
-                "error": error_msg,
                 "query": query,
-                "rag_status": "error"
+                "results": [],
+                "total_found": 0,
+                "error": str(e)
             }
-            
-            return json.dumps(error_result, ensure_ascii=False)
+            return json.dumps(result, ensure_ascii=False)
     
     # ==============================================
     # INTEGRATION METHODS
@@ -571,7 +580,7 @@ class AdvancedClaudeToolsHandler(ClaudeToolsHandler):
         logger.info("AdvancedClaudeToolsHandler initialized")
     
     # Здесь будут дополнительные методы для Selenium и других инструментов
-    # TODO: Selenium WebDriver integration
+    # TODO: Integrate Selenium WebDriver for advanced browser automation (see issue #123 or project roadmap)
     # TODO: Advanced screenshot capabilities  
     # TODO: File upload/download automation
     # TODO: Form automation

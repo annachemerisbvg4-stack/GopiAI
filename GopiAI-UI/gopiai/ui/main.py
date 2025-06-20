@@ -271,9 +271,6 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             print(f"❌ Тип ошибки: {type(e).__name__}")
             import traceback
             print(f"❌ Полная ошибка: {traceback.format_exc()}")
-            # Fallback - используем обычный ChatWidget из импорта
-            from gopiai.ui.components import ChatWidget
-            self.chat_widget = ChatWidget()
             # Fallback - создаем минимальный заглушечный виджет
             self.chat_widget = SimpleWidget("Chat")
             print("🔄 Fallback: используется SimpleWidget для чата")

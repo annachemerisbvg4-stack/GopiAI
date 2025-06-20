@@ -31,12 +31,17 @@ try:
     webview_path = Path(__file__).parent.parent.parent.parent / "GopiAI-WebView"
     if webview_path.exists():
         sys.path.insert(0, str(webview_path))
-    from gopiai.webview.chat_memory import create_memory_manager
+    
+    # ОБНОВЛЕНО: Используем новый txtai менеджер вместо старого RAG API
+    project_root = Path(__file__).parent.parent.parent.parent
+    sys.path.insert(0, str(project_root))
+    from rag_memory_system import get_memory_manager
+    
     MEMORY_AVAILABLE = True
-    print("✅ Chat memory system imported successfully")
+    print("✅ TxtAI memory system imported successfully")
 except ImportError as e:
     MEMORY_AVAILABLE = False
-    print(f"⚠️ Chat memory system not available: {e}")
+    print(f"⚠️ TxtAI memory system not available: {e}")
 
 
 class PuterWebEnginePage(QWebEnginePage):
@@ -75,7 +80,7 @@ class WebViewChatBridge(QObject):
             self._memory_manager = None
             if MEMORY_AVAILABLE:
                 try:
-                    self._memory_manager = create_memory_manager()
+                    self._memory_manager = get_memory_manager()  # ИЗМЕНЕНО: используем новую функцию
                     print("✅ Memory system initialized in WebViewChatBridge")
                 except Exception as e:
                     print(f"⚠️ Failed to initialize memory system: {e}")
@@ -129,50 +134,40 @@ class WebViewChatBridge(QObject):
         Оптимизировано для управления токенами Claude.
         """
         try:
-            # Импортируем TokenManager для управления контекстом
-            from .token_manager import TokenManager
-            token_manager = TokenManager()
-            
-            # Получаем последние сообщения из текущей сессии
-            recent_messages = self._get_recent_messages_for_context()
-            
-            # Получаем релевантную информацию из RAG
+            # Получаем релевантную информацию из памяти
             rag_results = []
-            if self._memory_manager:
+            if MEMORY_AVAILABLE and self._memory_manager:
                 try:
-                    # Используем существующий RAG поиск
-                    rag_search_results = self._memory_manager.search_conversations(message, 3)
-                    rag_results = [
-                        {
-                            'title': result.title,
-                            'context_preview': result.context_preview,
-                            'relevance_score': result.relevance_score,
-                            'timestamp': result.timestamp.strftime('%Y-%m-%d %H:%M') if result.timestamp else '',
-                            'tags': result.tags
-                        }
-                        for result in rag_search_results
-                    ]
+                    # SimpleMemoryManager имеет метод search_memory
+                    search_results = self._memory_manager.search_memory(message, 3)
+                    
+                    # Обрабатываем результаты из SimpleMemoryManager
+                    for result in search_results:
+                        rag_results.append({
+                            'title': f"Сообщение из {result.get('session_id', 'unknown')}",
+                            'context_preview': result.get('content', '')[:200] + "...",
+                            'relevance_score': result.get('score', 0.0),
+                            'timestamp': result.get('timestamp', ''),
+                            'tags': []
+                        })
+                        
                 except Exception as e:
-                    print(f"⚠️ RAG search failed in enrich_message: {e}")
+                    print(f"⚠️ Memory search failed: {e}")
+        
+            # Если есть результаты памяти, добавляем их как контекст
+            if rag_results:
+                context_lines = []
+                for result in rag_results:
+                    context_lines.append(f"📋 {result['context_preview']}")
+                
+                enhanced_message = f"{message}\n\n🧠 Контекст из памяти:\n" + "\n".join(context_lines)
+                print(f"🧠 Enhanced message with {len(rag_results)} memory results")
+                return enhanced_message
             
-            # Строим обогащенный контекст с оптимальным использованием токенов
-            enhanced_context = token_manager.build_enhanced_context(
-                current_message=message,
-                recent_messages=recent_messages,
-                rag_results=rag_results
-            )
-            
-            # Получаем статистику токенов для логирования
-            token_stats = token_manager.get_token_usage_stats(enhanced_context)
-            
-            print(f"🧠 Enhanced context: {len(message)} -> {len(enhanced_context)} chars")
-            print(f"📊 Token usage: {token_stats['total_tokens']} tokens ({token_stats['usage_percentage']}%)")
-            
-            return enhanced_context
-            
+            return message
+        
         except Exception as e:
             print(f"❌ Context enrichment error: {e}")
-            # Возвращаем оригинальное сообщение если что-то пошло не так
             return message
     def _get_recent_messages_for_context(self, max_messages: int = 10) -> list[dict[str, Any]]:
         """
@@ -289,328 +284,6 @@ class WebViewChatBridge(QObject):
     def is_memory_available(self) -> bool:
         """Проверка доступности системы памяти."""
         return self._memory_manager is not None
-
-    # ==============================================
-    # BROWSER AUTOMATION METHODS
-    # ==============================================
-
-    @Slot(result=str)
-    def get_browser_automation_capabilities(self) -> str:
-        """Получение списка доступных browser automation функций"""
-        capabilities = {
-            "available": True,
-            "functions": [
-                "navigate", "click", "type", "screenshot", "get_text", 
-                "get_source", "scroll", "wait", "execute_script"
-            ],
-            "engine": "QWebEngineView",
-            "version": "1.0"
-        }
-        print("🌐 Bridge: browser automation capabilities requested")
-        return json.dumps(capabilities, ensure_ascii=False)
-
-    @Slot(str, str, result=str)
-    def execute_browser_action(self, action: str, params: str) -> str:
-        """Выполнение browser automation действия"""
-        try:
-            params_dict = json.loads(params) if params else {}
-            print(f"🤖 Bridge: executing browser action '{action}' with params: {params_dict}")
-            
-            # Получаем родительский WebViewChatWidget
-            widget = self._parent_widget
-            
-            if not widget or not hasattr(widget, 'web_view'):
-                raise Exception("WebView not available")
-        
-            
-            # Выполняем действие в зависимости от типа
-            if action == "navigate":
-                url = params_dict.get("url", "")
-                if url:
-                    widget.web_view.setUrl(url)
-                    result_data = {"message": f"Navigated to {url}"}
-                else:
-                    raise Exception("URL parameter required for navigate action")
-                    
-            elif action == "get_url":
-                current_url = widget.web_view.page().url().toString()
-                result_data = {"url": current_url}
-                
-            elif action == "get_title":
-                title = widget.web_view.page().title()
-                result_data = {"title": title}
-                
-            elif action == "reload":
-                widget.web_view.reload()
-                result_data = {"message": "Page reloaded"}
-                
-            elif action == "back":
-                widget.web_view.back()
-                result_data = {"message": "Navigated back"}
-                
-            elif action == "forward":
-                widget.web_view.forward()
-                result_data = {"message": "Navigated forward"}
-                
-            elif action == "execute_script":
-                script = params_dict.get("script", "")
-                if script:
-                    # Выполняем JavaScript в WebView с callback согласно Qt документации
-                    def script_callback(result):
-                        print(f"📜 JavaScript result: {result}")
-                        # Результат будет обработан асинхронно
-                        
-                    widget.web_view.page().runJavaScript(script, script_callback)
-                    result_data = {"message": f"Script executed: {script[:50]}...", "note": "Result will be available asynchronously"}
-                else:
-                    raise Exception("Script parameter required for execute_script action")
-                    
-            elif action == "screenshot":
-                # Пока возвращаем заглушку для screenshot
-                result_data = {"message": "Screenshot functionality not implemented yet"}
-                
-            else:
-                raise Exception(f"Unknown action: {action}")
-            
-            result = {
-                "success": True,
-                "action": action,
-                "params": params_dict,
-                "result": result_data,
-                "timestamp": "2025-01-16T12:00:00Z"
-            }
-            
-            return json.dumps(result, ensure_ascii=False)
-            
-        except Exception as e:
-            error_result = {
-                "success": False,
-                "error": str(e),
-                "action": action,
-                "timestamp": "2025-01-16T12:00:00Z"
-            }
-            print(f"❌ Bridge: browser action error: {e}")
-            return json.dumps(error_result, ensure_ascii=False)
-
-    @Slot(result=str)
-    def get_browser_page_info(self) -> str:
-        """Получение информации о текущей странице браузера"""
-        try:
-            # Получаем родительский WebViewChatWidget
-            widget = self._parent_widget
-            
-            if widget and hasattr(widget, 'web_view') and widget.web_view.page():
-                # Получаем актуальную информацию о странице
-                page = widget.web_view.page()
-                url = page.url().toString() if page.url() else "about:blank"
-                title = page.title() if page.title() else "Untitled"
-                
-                page_info = {
-                    "url": url,
-                    "title": title,
-                    "ready": True,
-                    "loading": False,
-                    "engine": "QWebEngineView",
-                    "timestamp": "2025-01-16T12:00:00Z"
-                }
-            else:
-                # Если WebView недоступен, возвращаем базовую информацию
-                page_info = {
-                    "url": "about:blank",
-                    "title": "GopiAI Chat",
-                    "ready": True,
-                    "loading": False,
-                    "engine": "QWebEngineView",
-                    "timestamp": "2025-01-16T12:00:00Z"
-                }
-            
-            print(f"📄 Bridge: page info - {page_info['title']} ({page_info['url']})")
-            return json.dumps(page_info, ensure_ascii=False)
-            
-        except Exception as e:
-            error_info = {
-                "error": str(e),
-                "url": "about:blank",
-                "timestamp": "2025-01-16T12:00:00Z"
-            }
-            print(f"❌ Bridge: page info error: {e}")
-            return json.dumps(error_info, ensure_ascii=False)
-
-    @Slot(str, str, str)
-    def execute_script_async(self, action_id: str, script: str, return_result: str = "true") -> None:
-        """
-        Асинхронное выполнение JavaScript с правильной обработкой результата
-        согласно официальной документации Qt
-        """
-        try:
-            widget = self._parent_widget
-            
-            if not widget or not hasattr(widget, 'web_view'):
-                raise Exception("WebView not available")
-            
-            print(f"🚀 Bridge: executing async script with ID {action_id}")
-            print(f"📜 Script: {script[:100]}...")
-            
-            # Создаем callback функцию согласно Qt документации
-            def script_result_callback(result):
-                """
-                Callback функция для получения результата JavaScript
-                Вызывается асинхронно согласно Qt runJavaScript документации
-                """
-                try:
-                    print(f"📨 Script callback for {action_id}: {result}")
-                    
-                    # Формируем результат согласно Qt документации:
-                    # Поддерживаются: JSON types, Date, ArrayBuffer
-                    # НЕ поддерживаются: Function, Promise
-                    result_data = {
-                        "success": True,
-                        "action_id": action_id,
-                        "result": result,
-                        "type": type(result).__name__,
-                        "timestamp": "2025-01-16T12:00:00Z"
-                    }
-                    
-                    # Передаем результат через signal (НЕ блокируем callback)
-                    result_json = json.dumps(result_data, ensure_ascii=False)
-                    self.browser_action_completed.emit(action_id, "execute_script", result_json)
-                    
-                except Exception as e:
-                    print(f"❌ Script callback error for {action_id}: {e}")
-                    error_data = {
-                        "success": False,
-                        "action_id": action_id,
-                        "error": str(e),
-                        "timestamp": "2025-01-16T12:00:00Z"
-                    }
-                    error_json = json.dumps(error_data, ensure_ascii=False)
-                    self.browser_action_completed.emit(action_id, "execute_script", error_json)
-            
-            # Выполняем JavaScript с callback согласно Qt документации
-            # Пример из документации: page.runJavaScript("document.title", [](const QVariant &v) { qDebug() << v.toString(); });
-            widget.web_view.page().runJavaScript(script, script_result_callback)
-            
-            print(f"✅ Bridge: script {action_id} submitted for async execution")
-            
-        except Exception as e:
-            print(f"❌ Bridge: execute_script_async error: {e}")
-            error_data = {
-                "success": False,
-                "action_id": action_id,
-                "error": str(e),
-                "timestamp": "2025-01-16T12:00:00Z"
-            }
-            error_json = json.dumps(error_data, ensure_ascii=False)
-            self.browser_action_completed.emit(action_id, "execute_script", error_json)
-
-    @Slot(str, result=str)
-    def browser_automation_result(self, result_data: str) -> str:
-        """Обработка результатов browser automation"""
-        try:
-            result = json.loads(result_data)
-            print(f"📊 Bridge: browser automation result received: {result}")
-            return "OK"
-        except Exception as e:
-            print(f"❌ Bridge: result processing error: {e}")
-            return f"ERROR: {e}"
-    
-    # ==============================================
-    # CLAUDE TOOLS INTEGRATION METHODS
-    # ==============================================
-    
-    @Slot(str, str, result=str)
-    def execute_claude_tool(self, tool_name: str, params: str) -> str:
-        """Выполнение Claude tool через ClaudeToolsHandler"""
-        if self._claude_tools_handler:
-            try:
-                # Генерируем request_id
-                request_id = self._claude_tools_handler._generate_request_id()
-                
-                # Парсим параметры
-                params_dict = json.loads(params) if params else {}
-                
-                print(f"🔧 Bridge: executing Claude tool '{tool_name}' with params: {params_dict}")
-                
-                # Выполняем инструмент в зависимости от типа
-                if tool_name == "navigate_to_url":
-                    return self._claude_tools_handler.navigate_to_url(params_dict.get('url', ''), request_id)
-                elif tool_name == "get_current_url":
-                    return self._claude_tools_handler.get_current_url()
-                elif tool_name == "get_page_title":
-                    return self._claude_tools_handler.get_page_title()
-                elif tool_name == "execute_javascript":
-                    return self._claude_tools_handler.execute_javascript(params_dict.get('script', ''), request_id)
-                elif tool_name == "get_page_source":
-                    return self._claude_tools_handler.get_page_source(request_id)
-                elif tool_name == "wait_for_element":
-                    return self._claude_tools_handler.wait_for_element(
-                        params_dict.get('selector', ''), 
-                        params_dict.get('timeout', 5000), 
-                        request_id
-                    )
-                elif tool_name == "read_file":
-                    return self._claude_tools_handler.read_file(params_dict.get('file_path', ''))
-                elif tool_name == "write_file":
-                    return self._claude_tools_handler.write_file(
-                        params_dict.get('file_path', ''), 
-                        params_dict.get('content', '')
-                    )
-                elif tool_name == "run_script":
-                    return self._claude_tools_handler.run_script(params_dict.get('command', ''))
-                elif tool_name == "search_memory":
-                    return self._claude_tools_handler.search_memory(
-                        params_dict.get('query', ''), 
-                        params_dict.get('limit', 5)
-                    )
-                else:
-                    error_result = {
-                        "success": False,
-                        "error": f"Unknown Claude tool: {tool_name}",
-                        "available_tools": ["navigate_to_url", "get_current_url", "get_page_title", 
-                                          "execute_javascript", "get_page_source", "wait_for_element",
-                                          "read_file", "write_file", "run_script", "search_memory"]
-                    }
-                    return json.dumps(error_result)
-                    
-            except Exception as e:
-                error_result = {
-                    "success": False,
-                    "error": str(e),
-                    "tool_name": tool_name
-                }
-                print(f"❌ Bridge: Claude tool execution error: {e}")
-                return json.dumps(error_result)
-        else:
-            error_result = {
-                "success": False,
-                "error": "ClaudeToolsHandler not available"
-            }
-            return json.dumps(error_result)
-    
-    @Slot(result=str)
-    def get_claude_tools_list(self) -> str:
-        """Получение списка доступных Claude tools"""
-        if self._claude_tools_handler:
-            return self._claude_tools_handler.get_available_tools()
-        else:
-            result = {
-                "success": False,
-                "error": "ClaudeToolsHandler not available"
-            }
-            return json.dumps(result)
-    
-    @Slot(result=str)
-    def get_pending_claude_requests(self) -> str:
-        """Получение информации о ожидающих Claude запросах"""
-        if self._claude_tools_handler:
-            return self._claude_tools_handler.get_pending_requests()
-        else:
-            result = {
-                "success": False,
-                "error": "ClaudeToolsHandler not available"
-            }
-            return json.dumps(result)
-
 
 class WebViewChatWidget(QWidget):
     """
@@ -1361,7 +1034,7 @@ class WebViewChatWidget(QWidget):
             b = int(hex_color[4:6], 16)
             
             # Вычисляем яркость (luminance)
-            luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+            luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
             
             return luminance < 0.5
         except:
@@ -1542,7 +1215,7 @@ class WebViewChatWidget(QWidget):
             b = int(hex_color[4:6], 16)
             
             # Вычисляем яркость (luminance)
-            luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+            luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
             
             # Возвращаем черный или белый в зависимости от яркости
             return '#000000' if luminance > 0.5 else '#ffffff'
