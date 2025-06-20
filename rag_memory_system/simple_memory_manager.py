@@ -122,7 +122,7 @@ class SimpleMemoryManager:
         
         try:
             # Готовим данные для поиска (как в similarity.py)
-            data = [chat['content'] for chat in self.chats]
+            data = [chat['content'] for  chat in self.chats]
             
             if not data:
                 return []
@@ -170,33 +170,109 @@ class SimpleMemoryManager:
     # Методы совместимости с существующим API GopiAI
     
     def enrich_message(self, message: str) -> str:
-        """Обогащение сообщения контекстом"""
-        try:
-            results = self.search_memory(message, limit=2)
-            if results:
-                context = "\n".join([f"• {r['content'][:100]}..." for r in results])
-                return f"{message}\n\n📋 Контекст:\n{context}"
-            return message
-        except:
-            return message
-    
-    def _format_recent_context(self, limit: int = 3) -> str:
-        """Форматирование недавнего контекста (для совместимости с js_bridge)"""
-        try:
-            recent_messages = self.get_session_messages(self.session_id, limit=limit)
-            if not recent_messages:
-                return ""
+        """
+        Обогащает сообщение пользователя контекстом из памяти.
+        
+        Добавляет:
+        1. Недавние сообщения из текущей сессии (контекст разговора)
+        2. Релевантные воспоминания из памяти по запросу
+        
+        Args:
+            message: Исходное сообщение пользователя
             
-            context_lines = []
-            for msg in recent_messages[-limit:]:
-                role = "👤" if msg['role'] == 'user' else "🤖"
-                content = msg['content'][:100] + "..." if len(msg['content']) > 100 else msg['content']
-                context_lines.append(f"{role} {content}")
+        Returns:
+            Обогащенное сообщение с контекстом
+        """
+        try:
+            # Получаем недавние сообщения текущей сессии (до 5)
+            recent_messages = self._format_recent_messages(self.session_id, 5)
             
-            return "\n".join(context_lines)
+            # Поиск релевантных воспоминаний по запросу (до 3 результатов)
+            memory_results = self.search_memory(message, limit=3)
+            memory_context = self._format_memory_results(memory_results)
+            
+            # Собираем все вместе
+            parts = []
+            
+            # Добавляем оригинальное сообщение
+            parts.append(message)
+            
+            # Добавляем контекстную информацию только если она есть
+            context_parts = []
+            
+            if recent_messages:
+                context_parts.append(f"Контекст разговора:\n{recent_messages}")
+            
+            if memory_context:
+                context_parts.append(f"Релевантная информация из памяти:\n{memory_context}")
+            
+            # Добавляем контекст только если он есть
+            if context_parts:
+                parts.append("\n\n--- Дополнительный контекст ---\n" + "\n\n".join(context_parts))
+                
+                # Добавляем мягкую инструкцию, как использовать контекст
+                parts.append("Используй приведенный выше контекст при необходимости, но не упоминай его напрямую в ответе.")
+            
+            # Формируем итоговое обогащенное сообщение
+            enriched_message = "\n\n".join(parts)
+            
+            # Логгируем результат (для отладки)
+            enrichment_stats = {
+                "original_length": len(message),
+                "enriched_length": len(enriched_message),
+                "memory_results": len(memory_results) if memory_results else 0,
+                "has_recent_context": bool(recent_messages)
+            }
+            print(f"🧠 Message enriched: {enrichment_stats}")
+            
+            return enriched_message
+            
         except Exception as e:
-            print(f"❌ Ошибка форматирования контекста: {e}")
+            # В случае любой ошибки возвращаем исходное сообщение
+            print(f"❌ Error enriching message: {e}")
+            return message
+
+    def _format_recent_messages(self, session_id: str, limit: int = 5) -> str:
+        """
+        Форматирует последние сообщения из указанной сессии.
+        
+        Args:
+            session_id: ID сессии
+            limit: Максимальное количество сообщений
+            
+        Returns:
+            Отформатированный текст сообщений
+        """
+        messages = self.get_session_messages(session_id, limit=limit)
+        if not messages:
             return ""
+        
+        formatted = []
+        for msg in messages:
+            role_emoji = "👤" if msg['role'] == 'user' else "🤖"
+            formatted.append(f"{role_emoji} {msg['content']}")
+        
+        return "\n\n".join(formatted)
+
+    def _format_memory_results(self, results: List[Dict]) -> str:
+        """
+        Форматирует результаты поиска в памяти.
+        
+        Args:
+            results: Список результатов поиска
+            
+        Returns:
+            Отформатированный текст результатов
+        """
+        if not results:
+            return ""
+        
+        formatted = []
+        for result in results:
+            content = result.get('content', '')
+            formatted.append(content)
+        
+        return "\n\n---\n\n".join(formatted)
 
     def start_new_session(self, title: str = "Новый чат") -> str:
         """Начать новую сессию (для совместимости с js_bridge)"""
@@ -258,7 +334,7 @@ class TxtAIMemoryManager(SimpleMemoryManager):
     pass
 
 
-if __name__ == "__main__":
+""" if __name__ == "__main__":
     # Быстрый тест
     print("🧪 Тестируем Simple Memory Manager...")
     
@@ -280,4 +356,4 @@ if __name__ == "__main__":
     stats = manager.get_stats()
     print(f"📊 Статистика: {stats}")
     
-    print("🎉 Всё работает!")
+print("🎉 Всё работает!") """
