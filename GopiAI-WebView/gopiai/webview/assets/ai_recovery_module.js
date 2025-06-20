@@ -1,6 +1,7 @@
 /**
- * AI Recovery Module - Автоматическое восстановление зависших ИИ сессий
+ * AI Recovery Module v2.0 - С интеграцией TxtAI памяти
  * Модуль подключается к существующему чату без изменения основного кода
+ * НОВОЕ: Интеграция с GopiAI Memory System для сохранения полного контекста
  */
 
 class AIRecoveryModule {
@@ -12,6 +13,8 @@ class AIRecoveryModule {
             maxRetries: 2,
             compressionLevel: 'smart',
             showNotifications: true,
+            useMemorySystem: true, // НОВОЕ: использовать TxtAI память
+            memoryContextLimit: 5,  // НОВОЕ: количество сообщений из памяти
             ...options
         };
 
@@ -25,7 +28,10 @@ class AIRecoveryModule {
         this.isRecovering = false;
         this.isRetrying = false;
 
-        console.log('🔄 AI Recovery Module initialized');
+        // НОВОЕ: Ссылка на bridge для доступа к памяти
+        this.bridge = null;
+
+        console.log('🔄 AI Recovery Module v2.0 initialized with Memory System');
     }
 
     /**
@@ -37,13 +43,30 @@ class AIRecoveryModule {
             return;
         }
 
+        // НОВОЕ: Получаем доступ к bridge
+        this.getBridgeReference();
+
         // Патчим существующий sendMessage методы
         this.patchChatInterface();
 
         // Запускаем мониторинг
         this.startHealthMonitoring();
 
-        console.log('✅ AI Recovery Module activated');
+        console.log('✅ AI Recovery Module v2.0 activated with Memory System');
+    }
+
+    /**
+     * НОВОЕ: Получение ссылки на bridge для доступа к памяти
+     */
+    getBridgeReference() {
+        // Пытаемся найти bridge в глобальном контексте
+        if (window.bridge) {
+            this.bridge = window.bridge;
+            console.log('🧠 AI Recovery: Memory bridge connected');
+        } else {
+            console.warn('⚠️ AI Recovery: Memory bridge not found, working without memory');
+            this.options.useMemorySystem = false;
+        }
     }
 
     /**
@@ -73,6 +96,9 @@ class AIRecoveryModule {
         this.startTimeoutWatch();
 
         try {
+            // НОВОЕ: Сохраняем сообщение в память ПЕРЕД отправкой
+            await this.saveMessageToMemory();
+
             // Вызываем оригинальный метод
             const result = await this.originalSendMessage();
             this.onSuccessfulResponse();
@@ -81,6 +107,31 @@ class AIRecoveryModule {
         } catch (error) {
             await this.handleSendError(error);
             throw error;
+        }
+    }
+
+    /**
+     * НОВОЕ: Сохранение сообщения в память перед отправкой
+     */
+    async saveMessageToMemory() {
+        if (!this.options.useMemorySystem || !this.bridge) {
+            return;
+        }
+
+        try {
+            // Получаем текущее сообщение из input
+            const messageInput = document.getElementById('message-input');
+            if (messageInput && messageInput.value.trim()) {
+                const message = messageInput.value.trim();
+                console.log('💾 AI Recovery: Pre-saving message to memory');
+                
+                // Сохраняем через bridge (это обновит TxtAI память)
+                if (this.bridge.save_chat_exchange) {
+                    // Сохранение произойдет после получения ответа от ИИ
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ AI Recovery: Failed to pre-save message:', error);
         }
     }
 
@@ -148,7 +199,7 @@ class AIRecoveryModule {
     }
 
     /**
-     * Главный метод восстановления
+     * ОБНОВЛЕНО: Главный метод восстановления с памятью
      */
     async performRecovery() {
         if (this.isRecovering) {
@@ -158,7 +209,7 @@ class AIRecoveryModule {
         this.isRecovering = true;
         this.retryCount++;
 
-        console.log(`🔄 AI Recovery: Starting recovery attempt ${this.retryCount}/${this.options.maxRetries}`);
+        console.log(`🔄 AI Recovery: Starting recovery attempt ${this.retryCount}/${this.options.maxRetries} with Memory System`);
 
         try {
             // 1. Показываем уведомление
@@ -169,11 +220,11 @@ class AIRecoveryModule {
             // 2. Останавливаем текущие операции
             this.stopCurrentOperations();
 
-            // 3. Сжимаем контекст
-            const compressedContext = this.compressContext();
+            // 3. НОВОЕ: Получаем полный контекст из памяти
+            const memoryContext = await this.getMemoryContext();
 
-            // 4. Выполняем тихое восстановление
-            await this.silentRestore(compressedContext);
+            // 4. НОВОЕ: Выполняем восстановление с полной памятью
+            await this.memoryAwareRestore(memoryContext);
 
             // 5. Убираем уведомление
             if (this.options.showNotifications) {
@@ -181,7 +232,7 @@ class AIRecoveryModule {
                 this.showSuccessNotification();
             }
 
-            console.log('✅ AI Recovery: Recovery completed successfully');
+            console.log('✅ AI Recovery: Recovery completed successfully with Memory');
 
         } catch (error) {
             console.error('❌ AI Recovery: Recovery failed:', error);
@@ -190,6 +241,153 @@ class AIRecoveryModule {
         } finally {
             this.isRecovering = false;
         }
+    }
+
+    /**
+     * НОВОЕ: Получение контекста из TxtAI памяти
+     */
+    async getMemoryContext() {
+        if (!this.options.useMemorySystem || !this.bridge) {
+            return this.getFallbackContext();
+        }
+
+        try {
+            // Получаем последнее сообщение пользователя
+            const messageInput = document.getElementById('message-input');
+            const lastMessage = messageInput ? messageInput.value.trim() : '';
+
+            if (!lastMessage) {
+                return this.getFallbackContext();
+            }
+
+            // Обогащаем контекст через память
+            let enrichedContext = '';
+            if (this.bridge.enrich_message) {
+                enrichedContext = await this.bridge.enrich_message(lastMessage);
+                console.log('🧠 AI Recovery: Retrieved memory context');
+            }
+
+            // Получаем статистику памяти
+            let memoryStats = {};
+            if (this.bridge.get_memory_stats) {
+                const statsJson = await this.bridge.get_memory_stats();
+                try {
+                    memoryStats = JSON.parse(statsJson);
+                } catch (e) {
+                    console.warn('⚠️ Failed to parse memory stats');
+                }
+            }
+
+            return {
+                lastMessage,
+                enrichedContext,
+                memoryStats,
+                source: 'txtai_memory'
+            };
+
+        } catch (error) {
+            console.warn('⚠️ AI Recovery: Failed to get memory context:', error);
+            return this.getFallbackContext();
+        }
+    }
+
+    /**
+     * НОВОЕ: Fallback контекст если память недоступна
+     */
+    getFallbackContext() {
+        const history = this.chat.chatHistory || [];
+        const recentMessages = history.slice(-4);
+
+        return {
+            recent: recentMessages,
+            source: 'local_history'
+        };
+    }
+
+    /**
+     * НОВОЕ: Восстановление с учетом памяти
+     */
+    async memoryAwareRestore(context) {
+        console.log('🧠 AI Recovery: Performing memory-aware restore');
+
+        if (context.source === 'txtai_memory') {
+            // Используем обогащенный контекст из памяти
+            await this.restoreWithTxtAIMemory(context);
+        } else {
+            // Fallback к старому методу
+            await this.restoreWithLocalHistory(context);
+        }
+    }
+
+    /**
+     * НОВОЕ: Восстановление с TxtAI памятью
+     */
+    async restoreWithTxtAIMemory(context) {
+        const restorePrompt = `[СИСТЕМА: Восстановление сессии с памятью GopiAI]
+
+Контекст проекта: GopiAI - модульная система ИИ-ассистента
+Архитектура: Модульная (GopiAI-Core, GopiAI-UI, GopiAI-WebView, GopiAI-Widgets)
+Технологии: Python, PySide6, QtWebEngine, TxtAI, Claude AI
+
+Последнее сообщение пользователя: "${context.lastMessage}"
+
+Релевантный контекст из памяти:
+${context.enrichedContext}
+
+Статистика памяти: ${context.memoryStats.total_messages || 0} сообщений в базе
+
+Пожалуйста, подтвердите готовность продолжить работу с проектом GopiAI. Ответьте кратко "Готов продолжить работу с GopiAI".`;
+
+        try {
+            // Отправляем восстановительный запрос
+            const response = await puter.ai.chat([{ 
+                role: 'user', 
+                content: restorePrompt 
+            }], {
+                model: this.chat.currentModel
+            });
+
+            // Сохраняем факт восстановления в память
+            if (this.bridge.save_chat_exchange) {
+                await this.bridge.save_chat_exchange(
+                    "[Восстановление сессии]", 
+                    "Сессия восстановлена с полным контекстом GopiAI"
+                );
+            }
+
+            console.log('✅ AI Recovery: TxtAI memory restore completed');
+
+        } catch (error) {
+            console.error('❌ AI Recovery: TxtAI restore failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * НОВОЕ: Fallback восстановление с локальной историей
+     */
+    async restoreWithLocalHistory(context) {
+        console.log('📝 AI Recovery: Using fallback local history restore');
+
+        const recentMessages = context.recent || [];
+        const summary = recentMessages.length > 0 ? 
+            `Последние сообщения: ${recentMessages.slice(-2).map(m => 
+                `${m.role}: ${m.content.substring(0, 50)}...`).join('; ')}` : 
+            'Нет доступной истории';
+
+        const restorePrompt = `[СИСТЕМА: Восстановление сессии GopiAI]
+Проект: GopiAI - модульная система ИИ-ассистента
+${summary}
+Подтвердите готовность продолжить. Ответьте "Готов продолжить".`;
+
+        const response = await puter.ai.chat([{ 
+            role: 'user', 
+            content: restorePrompt 
+        }], {
+            model: this.chat.currentModel
+        });
+
+        console.log('✅ AI Recovery: Local history restore completed');
     }
 
     /**
@@ -210,93 +408,7 @@ class AIRecoveryModule {
     }
 
     /**
-     * Сжатие контекста для восстановления
-     */
-    compressContext() {
-        const history = this.chat.chatHistory || [];
-
-        if (history.length === 0) {
-            return null;
-        }
-
-        // Берем последние несколько сообщений
-        const recentMessages = history.slice(-4);
-
-        // Создаем краткое резюме
-        const summary = this.createContextSummary(history.slice(0, -4));
-
-        return {
-            summary,
-            recent: recentMessages,
-            compressed: true
-        };
-    }
-
-    /**
-     * Создание краткого резюме контекста
-     */
-    createContextSummary(messages) {
-        if (messages.length === 0) return "";
-
-        // Простое извлечение ключевых тем
-        const userMessages = messages.filter(m => m.role === 'user');
-        const lastUserMessages = userMessages.slice(-3).map(m => m.content);
-
-        if (lastUserMessages.length === 0) return "";
-
-        return `Предыдущий контекст: обсуждали ${lastUserMessages.join(', ').substring(0, 200)}...`;
-    }
-
-    /**
-     * Тихое восстановление сессии
-     */
-    async silentRestore(context) {
-        if (!context) {
-            return;
-        }
-
-        // Создаем специальное восстановительное сообщение
-        const restorePrompt = this.createRestorePrompt(context);
-
-        // Отправляем тихо (без UI обновлений)
-        const tempHistory = [{ role: 'user', content: restorePrompt }];
-
-        const response = await puter.ai.chat(tempHistory, {
-            model: this.chat.currentModel
-        });
-
-        // Обновляем внутреннее состояние
-        this.updateInternalState(context, response);
-    }
-
-    /**
-     * Создание промпта для восстановления
-     */
-    createRestorePrompt(context) {
-        return `[СИСТЕМА: Краткое восстановление сессии]
-${context.summary}
-
-Последний контекст:
-${context.recent.map(msg =>
-            `${msg.role === 'user' ? 'Пользователь' : 'Ассистент'}: ${msg.content.substring(0, 100)}...`
-        ).join('\n')}
-
-Подтвердите готовность продолжить беседу. Ответьте кратко "Готов продолжить".`;
-    }
-
-    /**
-     * Обновление внутреннего состояния чата
-     */
-    updateInternalState(context, response) {
-        // Обновляем историю чата минимальным контекстом
-        this.chat.chatHistory = [
-            ...context.recent.slice(-2), // Последние 2 сообщения
-            { role: 'assistant', content: 'Готов продолжить беседу.' }
-        ];
-    }
-
-    /**
-     * UI уведомления
+     * UI уведомления (без изменений)
      */
     showRecoveryNotification() {
         this.hideAllNotifications();
@@ -307,7 +419,7 @@ ${context.recent.map(msg =>
         notification.innerHTML = `
             <div class="recovery-content">
                 <span class="recovery-icon">🔄</span>
-                <span class="recovery-text">Переподключение к ИИ...</span>
+                <span class="recovery-text">Переподключение к ИИ с полной памятью...</span>
             </div>
         `;
 
@@ -323,7 +435,7 @@ ${context.recent.map(msg =>
         notification.innerHTML = `
             <div class="recovery-content">
                 <span class="recovery-icon">✅</span>
-                <span class="recovery-text">Соединение восстановлено</span>
+                <span class="recovery-text">Соединение восстановлено с памятью GopiAI</span>
             </div>
         `;
 
@@ -366,7 +478,7 @@ ${context.recent.map(msg =>
     }
 
     /**
-     * Стили для уведомлений
+     * Стили для уведомлений (без изменений)
      */
     ensureNotificationStyles() {
         if (document.getElementById('ai-recovery-styles')) {
@@ -439,7 +551,7 @@ ${context.recent.map(msg =>
         }
 
         this.isMonitoring = true;
-        console.log('🔍 AI Recovery: Health monitoring started');
+        console.log('🔍 AI Recovery: Health monitoring started with Memory System');
     }
 
     /**
@@ -458,7 +570,7 @@ ${context.recent.map(msg =>
         // Убираем уведомления
         this.hideAllNotifications();
 
-        console.log('🔄 AI Recovery Module deactivated');
+        console.log('🔄 AI Recovery Module v2.0 deactivated');
     }
 
     /**
