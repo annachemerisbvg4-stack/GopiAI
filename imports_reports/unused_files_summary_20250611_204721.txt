@@ -1,9 +1,0 @@
-Анализ неиспользуемых файлов от 2025-06-11 20:47:21
-Всего проанализировано файлов: 23968
-Найдено неиспользуемых файлов: 4
-
-Список неиспользуемых файлов:
-1. GopiAI-App\gopiai\app\logic\agent_controller.py
-2. GopiAI-UI\gopiai\ui\components\chat_widget.py
-3. GopiAI-UI\gopiai\ui\components\enhanced_browser_widget.py
-4. rag_memory_env\Lib\site-packages\joblib\test\test_func_inspect_special_encoding.py

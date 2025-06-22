@@ -82,8 +82,8 @@ class TerminalWidget(QWidget):
         terminal = QTextEdit()
         terminal.setStyleSheet("""
             QTextEdit {
-                background-color: #1a1a1a;
-                color: #00ff00;
+                main-color: #202020FF;
+                accent-color: #969696FF;
                 font-family: 'Consolas', 'Monaco', monospace;
                 font-size: 12px;
                 border: none;

@@ -1,0 +1,43 @@
+{
+  "notifications": [
+    {
+      "id": 1,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-22T02:20:01.060349",
+      "read": false
+    },
+    {
+      "id": 2,
+      "message": "Тест системы коммуникации",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-22T02:33:32.272830",
+      "read": false
+    },
+    {
+      "id": 3,
+      "message": "Тест системы коммуникации",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-22T02:34:25.015422",
+      "read": false
+    },
+    {
+      "id": 4,
+      "message": "Тест системы коммуникации",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-22T02:36:17.727074",
+      "read": false
+    }
+  ],
+  "metadata": {
+    "created": "2025-06-22T02:20:01.060349"
+  }
+}

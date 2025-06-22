@@ -1,0 +1,16 @@
+{
+  "memories": [
+    {
+      "id": 1,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-22T02:20:01.063364",
+      "rag_stored": true
+    }
+  ],
+  "metadata": {
+    "created": "2025-06-22T02:20:01.063364"
+  }
+}

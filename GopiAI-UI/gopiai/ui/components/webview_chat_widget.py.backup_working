@@ -776,29 +776,29 @@ class WebViewChatWidget(QWidget):
                             typingIndicator.classList.add('active');
                             
                             try {
-                                // ИСПРАВЛЕНО: Используем ТОЧНО такой же формат как в рабочем эталоне
-                                if (typeof puter === 'undefined' || !puter.ai || !puter.ai.chat) {
-                                    throw new Error('Puter.js не загружен или недоступен');
+                                const response = await puter.ai.chat(finalMessage, {
+                                    model: currentModel,
+                                    stream: true
+                                });
+                                
+                                const messageElement = addMessage('ai', '', true);
+                                let fullResponse = '';
+                                
+                                for await (const part of response) {
+                                    if (part?.text) {
+                                        fullResponse += part.text;
+                                        updateMessage(messageElement, fullResponse);
+                                    }
                                 }
                                 
-                                // Подготавливаем историю сообщений (как в эталоне)
-                                const history = [{ role: 'user', content: finalMessage }];
-                                
-                                // ЭТАЛОННЫЙ ВЫЗОВ: точно как в рабочем варианте!
-                                const response = await puter.ai.chat(history, { model: currentModel });
-                                
-                                // ЭТАЛОННОЕ ИЗВЛЕЧЕНИЕ ОТВЕТА: точно как в рабочем варианте!
-                                const answer = response.message.content[0].text || JSON.stringify(response);
-                                
-                                // Показываем ответ
-                                addMessage('ai', answer);
-                                
                                 // Шаг 2: Сохраняем обмен сообщениями в память
-                                if (memoryAvailable && bridge && answer && typeof bridge.save_chat_exchange === 'function') {
+                                if (memoryAvailable && bridge && fullResponse && typeof bridge.save_chat_exchange === 'function') {
                                     try {
-                                        const status = bridge.save_chat_exchange(originalMessage, answer);
+                                        const status = bridge.save_chat_exchange(originalMessage, fullResponse);
                                         if (status === 'OK') {
                                             console.log('💾 Chat exchange saved to memory');
+                                        } else {
+                                            console.warn('⚠️ Failed to save to memory:', status);
                                         }
                                     } catch (error) {
                                         console.warn('⚠️ Memory save failed:', error);
@@ -806,29 +806,15 @@ class WebViewChatWidget(QWidget):
                                 }
                                 
                                 // Уведомляем Python о получении ответа
-                                if (bridge && answer && typeof bridge.receive_ai_message === 'function') {
+                                if (bridge && fullResponse && typeof bridge.receive_ai_message === 'function') {
                                     try {
-                                        bridge.receive_ai_message(currentModel, answer);
+                                        bridge.receive_ai_message(currentModel, fullResponse);
                                     } catch (error) {
                                         console.error('❌ Error calling bridge.receive_ai_message:', error);
                                     }
                                 }
                                 
                             } catch (error) {
-                                console.error('❌ Ошибка чата (эталонный формат):', error);
-                                addMessage('ai', `❌ Ошибка: ${error.message}`);
-                                if (bridge && typeof bridge.log_error === 'function') {
-                                    try {
-                                        bridge.log_error(error.message);
-                                    } catch (bridgeError) {
-                                        console.error('❌ Error calling bridge.log_error:', bridgeError);
-                                    }
-                                }
-                            } finally {
-                                // Убираем индикатор печатания
-                                typingIndicator.classList.remove('active');
-                            }
-                        } catch (error) {
                                 addMessage('ai', `❌ Ошибка: ${error.message}`);
                                 if (bridge && typeof bridge.log_error === 'function') {
                                     try {

@@ -1,0 +1,68 @@
+    # ==============================================
+    # МЕТОДЫ ДЛЯ РАБОТЫ С ФАЙЛАМИ
+    # ==============================================
+    
+    @Slot(str, str, result=str)
+    def save_file_from_base64(self, base64_data: str, filename: str = None) -> str:
+        """
+        Сохраняет файл из base64 данных
+        
+        Args:
+            base64_data: Данные в формате base64
+            filename: Имя файла (опционально)
+            
+        Returns:
+            JSON с информацией о сохраненном файле
+        """
+        if not FILE_HANDLER_AVAILABLE:
+            return json.dumps({'success': False, 'error': 'File handler not available'})
+        
+        try:
+            file_handler = get_file_handler()
+            result = file_handler.save_base64_file(base64_data, filename)
+            return json.dumps(result)
+        except Exception as e:
+            print(f"❌ Error saving file from base64: {e}")
+            return json.dumps({'success': False, 'error': str(e)})
+
+    @Slot(str, result=str)
+    def read_file_as_base64(self, file_path: str) -> str:
+        """
+        Читает файл и возвращает его в формате base64
+        
+        Args:
+            file_path: Путь к файлу
+            
+        Returns:
+            JSON с данными файла в base64
+        """
+        if not FILE_HANDLER_AVAILABLE:
+            return json.dumps({'success': False, 'error': 'File handler not available'})
+        
+        try:
+            file_handler = get_file_handler()
+            result = file_handler.read_file_as_base64(file_path)
+            return json.dumps(result)
+        except Exception as e:
+            print(f"❌ Error reading file as base64: {e}")
+            return json.dumps({'success': False, 'error': str(e)})
+
+    @Slot(str, result=bool)
+    def is_supported_file_type(self, mime_type: str) -> bool:
+        """
+        Проверяет, поддерживается ли тип файла
+        
+        Args:
+            mime_type: MIME-тип файла
+            
+        Returns:
+            True, если тип файла поддерживается
+        """
+        if not FILE_HANDLER_AVAILABLE:
+            return False
+        
+        try:
+            file_handler = get_file_handler()
+            return file_handler.is_supported_file(mime_type)
+        except Exception:
+            return False

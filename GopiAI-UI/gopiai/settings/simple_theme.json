@@ -1,15 +1,15 @@
 {
-  "main_color": "#333333",
-  "header_color": "#434653",
-  "control_color": "#c4c6d5",
-  "accent_color": "#d6c1cd",
-  "titlebar_background": "#434653",
-  "button_color": "#c7c6cc",
-  "button_hover_color": "#46464b",
-  "button_active_color": "#2d303c",
-  "text_color": "#e5e2e1",
-  "border_color": "#929094",
-  "titlebar_text": "#e0e1f2",
-  "name": "Lavender Mist",
-  "variant": "dark"
+  "main_color": "#ffffff",
+  "header_color": "#ffdcc6",
+  "control_color": "#944a00",
+  "accent_color": "#5d6300",
+  "titlebar_background": "#ffdcc6",
+  "button_color": "#815433",
+  "button_hover_color": "#ffb784",
+  "button_active_color": "#944a00",
+  "text_color": "#1d1b1a",
+  "border_color": "#80756f",
+  "titlebar_text": "#301400",
+  "name": "Pumpkin Field",
+  "variant": "light"
 }

@@ -1,0 +1,43 @@
+{
+  "messages": [
+    {
+      "id": 1,
+      "sender": "system",
+      "recipient": "test_agent",
+      "message": "Привет! Это тестовое сообщение",
+      "message_type": "task",
+      "priority": 4,
+      "metadata": {},
+      "timestamp": "2025-06-22T02:33:32.273831",
+      "status": "delivered",
+      "delivered": true
+    },
+    {
+      "id": 2,
+      "sender": "system",
+      "recipient": "test_agent",
+      "message": "Привет! Это тестовое сообщение",
+      "message_type": "task",
+      "priority": 4,
+      "metadata": {},
+      "timestamp": "2025-06-22T02:34:25.017424",
+      "status": "delivered",
+      "delivered": true
+    },
+    {
+      "id": 3,
+      "sender": "system",
+      "recipient": "test_agent",
+      "message": "Привет! Это тестовое сообщение",
+      "message_type": "task",
+      "priority": 4,
+      "metadata": {},
+      "timestamp": "2025-06-22T02:36:17.729076",
+      "status": "delivered",
+      "delivered": true
+    }
+  ],
+  "metadata": {
+    "created": "2025-06-22T02:20:01.058676"
+  }
+}
