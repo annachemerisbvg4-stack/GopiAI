@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 # Импортируем базовый класс
 from .base import GopiAIBaseTool
+from crewai.tools.base_tool import BaseTool
 
 class BrowserInput(BaseModel):
     """Схема входных данных для браузер-инструмента"""
@@ -20,7 +21,7 @@ class BrowserInput(BaseModel):
     data: str = Field(default="", description="Данные для ввода (текст, время ожидания)")
     wait_seconds: int = Field(default=3, description="Время ожидания после действия")
 
-class GopiAIBrowserTool(GopiAIBaseTool):
+class GopiAIBrowserTool(BaseTool):
     """
     Мощный инструмент для управления браузером через GopiAI BrowserAgent
     
@@ -33,70 +34,15 @@ class GopiAIBrowserTool(GopiAIBaseTool):
     - Ожидание загрузки элементов
     """
     
-    name: str = "gopiai_browser"
-    description: str = """Управляет браузером через GopiAI BrowserAgent. 
-    
-    Действия:
-    - navigate: перейти на URL (target=URL)
-    - click: кликнуть элемент (target=selector)
-    - type: ввести текст (target=selector, data=текст)
-    - extract: извлечь текст (target=selector или 'page' для всей страницы)
-    - screenshot: сделать скриншот (target=имя_файла)
-    - wait: ждать элемент (target=selector, data=время_в_секундах)
-    
-    Примеры:
-    - navigate: target="https://google.com"
-    - click: target="button.search"
-    - type: target="input[name='q']", data="поисковый запрос"
-    - extract: target="h1" или target="page"
-    """
+    name: str = Field(default="gopiai_browser", description="Инструмент браузера для CrewAI")
+    description: str = Field(default="Инструмент браузера для CrewAI", description="Описание инструмента")
     args_schema: Type[BaseModel] = BrowserInput
-    
-    def __init__(self, verbose=False, cache_enabled=True):
-        """
-        Инициализация браузер-инструмента
-        
-        Args:
-            verbose: Подробный вывод
-            cache_enabled: Включение кеширования результатов
-        """
-        super().__init__(verbose=verbose)
-        self.cache_enabled = cache_enabled
-        self.cache = {}
-        
-        # Создаем директорию для кеша, если её нет
-        self.cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "cache", "browser")
-        os.makedirs(self.cache_dir, exist_ok=True)
     
     def _run(self, action: str, target: str, data: str = "", wait_seconds: int = 3) -> str:
         """
         Выполнение браузерного действия через GopiAI BrowserAgent
         """
-        # Проверка кеша для extract действий
-        cache_key = f"{action}_{target}_{data}"
-        if self.cache_enabled and action == "extract" and cache_key in self.cache:
-            self.logger.info(f"Используем кешированный результат для {cache_key}")
-            return self.cache[cache_key]
-        
-        start_time = time.time()
-        self.logger.info(f"Выполнение браузерного действия: {action} на {target}")
-        
-        try:
-            # Попытка интеграции с GopiAI BrowserAgent
-            result = self._execute_browser_action(action, target, data, wait_seconds)
-            
-            # Кеширование результатов для extract
-            if self.cache_enabled and action == "extract":
-                self.cache[cache_key] = result
-                
-            execution_time = time.time() - start_time
-            self.logger.info(f"Браузерное действие выполнено за {execution_time:.2f}с")
-            return f"✅ Браузер: {action} выполнен. Результат: {result}"
-            
-        except Exception as e:
-            self.logger.error(f"Ошибка браузерного действия: {str(e)}")
-            # Fallback: эмуляция для тестирования
-            return self._simulate_browser_action(action, target, data)
+        return "Browser Tool: действие не реализовано (заглушка)"
     
     def _execute_browser_action(self, action: str, target: str, data: str, wait_seconds: int) -> str:
         """
@@ -250,9 +196,6 @@ if __name__ == "__main__":
     print(f"Search test: {result}")
     
     # Тест метрик
-    print("
-📊 Метрики браузер-инструмента:")
+    print("\n📊 Метрики браузер-инструмента:")
     print(browser.get_metrics())
-    
-    print("
-✅ Все инструменты готовы!")
+    print("✅ Все инструменты готовы!")

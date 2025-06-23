@@ -28,15 +28,14 @@ from crewai.tasks.task_output import TaskOutput
 
 # Импорт всех GopiAI инструментов
 try:
-    from gopiai_integration.base import GopiAIBaseTool
-    from gopiai_integration.browser_tools import GopiAIBrowserTool
-    from gopiai_integration.filesystem_tools import GopiAIFileSystemTool
-    from gopiai_integration.ai_router_tools import GopiAIRouterTool
-    from gopiai_integration.memory_tools import GopiAIMemoryTool
-    from gopiai_integration.communication_tools import GopiAICommunicationTool
-    from gopiai_integration.huggingface_tools import GopiAIHuggingFaceTool
-    from tools.agent_template_system import AgentTemplateSystem
-    print("✅ Все GopiAI инструменты импортированы успешно!")
+    from tools.gopiai_integration.base.base_tool import GopiAIBaseTool
+    from tools.gopiai_integration.browser_tools import GopiAIBrowserTool
+    from tools.gopiai_integration.filesystem_tools import GopiAIFileSystemTool
+    from tools.gopiai_integration.ai_router_tools import GopiAIRouterTool
+    from tools.gopiai_integration.memory_tools import GopiAIMemoryTool
+    from tools.gopiai_integration.communication_tools import GopiAICommunicationTool
+    from tools.gopiai_integration.huggingface_tools import GopiAIHuggingFaceTool
+    print("🔍 === ПРОВЕРКА ОКРУЖЕНИЯ ===")
 except ImportError as e:
     print(f"❌ Ошибка импорта инструментов: {e}")
     sys.exit(1)
@@ -181,7 +180,7 @@ def test_all_tools():
     try:
         print("📁 Тестирование FileSystem Tool...")
         fs_tool = GopiAIFileSystemTool()
-        result = fs_tool._run("list", ".", "", "", "")
+        result = fs_tool.run("list", ".", "", "", "")
         tools_results['filesystem'] = True
         print(f"✅ FileSystem: найдено {len(result.split())} элементов")
     except Exception as e:
@@ -203,7 +202,7 @@ def test_all_tools():
     try:
         print("🔀 Тестирование AI Router Tool...")
         router_tool = GopiAIRouterTool()
-        result = router_tool._run("route", "Привет!", "gemini", 0.7, 50)
+        result = router_tool._run("route", "Привет!", "gemini", 50, 0.7)
         tools_results['router'] = True
         print(f"✅ Router: {result[:50]}...")
     except Exception as e:
@@ -226,6 +225,9 @@ def test_all_tools():
     
     print(f"📊 Результат: {working_tools}/{total_tools} инструментов работают")
     return working_tools > 0
+
+from tools.gopiai_integration.agent_templates import AgentTemplateSystem
+from crewai import Agent
 
 def create_demo_agents(llm):
     """Создание демонстрационных агентов с GopiAI инструментами"""
@@ -289,7 +291,10 @@ def create_demo_agents(llm):
 def create_demo_tasks(coordinator, researcher, writer, coder):
     """Создание демонстрационных задач"""
     print("📋 === СОЗДАНИЕ ЗАДАЧ ===")
-    
+    # Проверка на None для всех агентов
+    if not all([coordinator, researcher, writer, coder]):
+        print("❌ Ошибка: Один или несколько агентов не созданы. Проверьте шаблоны агентов!")
+        return None, None, None, None
     # Задача 1: Инициализация проекта
     init_task = Task(
         description="""Инициализируй новый проект GopiAI-CrewAI интеграции.
@@ -443,16 +448,18 @@ def run_advanced_demo():
         
         # Создаем агентов с использованием системы шаблонов
         coordinator, researcher, writer, coder = create_demo_agents(llm)
-        
+        agents = [coordinator, researcher, writer, coder]
+        agents = [a for a in agents if a is not None]
         # Создаем задачи
         init_task, research_task, writing_task, coding_task = create_demo_tasks(
             coordinator, researcher, writer, coder
         )
-        
+        tasks = [init_task, research_task, writing_task, coding_task]
+        tasks = [t for t in tasks if t is not None]
         # Создаем crew
         advanced_crew = Crew(
-            agents=[coordinator, researcher, writer, coder],
-            tasks=[init_task, research_task, writing_task, coding_task],
+            agents=agents,
+            tasks=tasks,
             verbose=True
         )
         
@@ -485,55 +492,19 @@ def main():
         print("❌ Критические проблемы с инструментами, остановка")
         return
     
-    # Запрашиваем режим работы
-    print("
-🎮 Выберите режим демонстрации:")
-    print("1. Простая демонстрация (1 агент, базовые инструменты)")
-    print("2. Продвинутая демонстрация (4 агента, все инструменты, шаблоны)")
-    print("3. Только тесты (без запуска CrewAI)")
-    print("4. Просмотр доступных шаблонов агентов")
-    
-    choice = input("Введите номер (1-4): ").strip()
-    
-    if choice == "1":
-        success = run_simple_demo()
-    elif choice == "2":
-        success = run_advanced_demo()
-    elif choice == "3":
-        print("✅ Тесты завершены")
-        success = True
-    elif choice == "4":
-        # Просмотр шаблонов агентов
-        template_system = AgentTemplateSystem(verbose=True)
-        print("
-📋 === ДОСТУПНЫЕ ШАБЛОНЫ АГЕНТОВ ===")
-        
-        for template_name in template_system.list_available_templates():
-            template_info = template_system.get_template_info(template_name)
-            print(f"
-🔹 {template_name}:")
-            print(f"   Роль: {template_info.get('role', 'Не указана')}")
-            print(f"   Цель: {template_info.get('goal', 'Не указана')}")
-            print(f"   Инструменты: {', '.join(template_info.get('tools', []))}")
-            
-        print("
-📝 === ДОСТУПНЫЕ ПРОМПТЫ ===")
-        for prompt_name in template_system.list_available_prompts():
-            print(f"   - {prompt_name}")
-            
-        success = True
+    # Вместо input — всегда режим 2
+    mode = "2"
+    print("Выбран режим: 2 (Продвинутая демонстрация)")
+    if mode == "1":
+        run_simple_demo()
+    elif mode == "2":
+        run_advanced_demo()
+    elif mode == "3":
+        run_tools_tests()
+    elif mode == "4":
+        show_templates()
     else:
-        print("❌ Неверный выбор")
-        success = False
-    
-    if success:
-        print("\\n🎉 === ИНТЕГРАЦИЯ РАБОТАЕТ УСПЕШНО! ===")
-        print("✅ CrewAI + GopiAI инструменты функционируют")
-        print("✅ Агенты могут использовать все возможности системы")
-        print("✅ Коммуникация, память, файлы, браузер, AI роутер - всё работает!")
-    else:
-        print("\\n❌ === ПРОБЛЕМЫ С ИНТЕГРАЦИЕЙ ===")
-        print("Проверьте логи выше для диагностики")
+        print("❌ Неизвестный режим!")
 
 if __name__ == "__main__":
     main()

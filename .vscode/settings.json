@@ -16,5 +16,10 @@
         "*": true,
         "markdown": true,
         "python": true
-    }
+    },
+    "cody.commandCodeLenses": true,
+    "cody.debug.verbose": true,
+    "cody.experimental.tracing": true,
+    "cody.internal.debug.tokenUsage": false,
+    "cody.agentic.context.experimentalOptions": {}
 }

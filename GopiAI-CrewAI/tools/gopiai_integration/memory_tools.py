@@ -8,6 +8,7 @@ import json
 from typing import Type, Any, List, Dict
 from datetime import datetime
 from pydantic import BaseModel, Field
+from crewai.tools.base_tool import BaseTool
 
 class MemoryInput(BaseModel):
     """Схема входных данных для работы с памятью"""
@@ -17,7 +18,7 @@ class MemoryInput(BaseModel):
     category: str = Field(default="general", description="Категория: general, code, docs, research")
     importance: int = Field(default=5, description="Важность от 1 до 10")
 
-class GopiAIMemoryTool:
+class GopiAIMemoryTool(BaseTool):
     """
     Мощный инструмент для работы с памятью и RAG системой GopiAI
     
@@ -52,18 +53,15 @@ class GopiAIMemoryTool:
     - retrieve: query="project_config"
     """
     args_schema: Type[BaseModel] = MemoryInput
+    memory_path: str = Field(default_factory=lambda: os.path.join(os.path.dirname(__file__), "../../../rag_memory_system"), description="Путь к директории памяти")
+    local_memory_file: str = Field(default_factory=lambda: os.path.join(os.path.dirname(__file__), "../../memory/crewai_memory.json"), description="Файл локальной памяти")
     
-    def __init__(self):
-                # Путь к системе памяти
-        self.memory_path = os.path.join(
-            os.path.dirname(__file__), 
-            "../../../rag_memory_system"
-        )
-        # Локальная память (файловая)
-        self.local_memory_file = os.path.join(
-            os.path.dirname(__file__), 
-            "../../memory/crewai_memory.json"
-        )
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Не инициализируем пути вручную!
+        # Для инициализации файлов вызывайте self.init_files() вручную после создания экземпляра
+
+    def init_files(self):
         self._ensure_memory_file()
         
     def _ensure_memory_file(self):

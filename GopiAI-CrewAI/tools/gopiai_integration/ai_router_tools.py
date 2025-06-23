@@ -8,6 +8,7 @@ import json
 import subprocess
 from typing import Type, Any, Dict, Optional
 from pydantic import BaseModel, Field
+from crewai.tools.base_tool import BaseTool
 
 class AIRouterInput(BaseModel):
     """Схема входных данных для AI Router"""
@@ -17,7 +18,7 @@ class AIRouterInput(BaseModel):
     max_tokens: int = Field(default=1000, description="Максимальное количество токенов")
     temperature: float = Field(default=0.7, description="Температура генерации")
 
-class GopiAIRouterTool:
+class GopiAIRouterTool(BaseTool):
     """
     Инструмент для использования AI Router системы GopiAI
     
@@ -28,37 +29,21 @@ class GopiAIRouterTool:
     - Мониторинг использования
     """
     
-    name: str = "gopiai_ai_router"
-    description: str = """Использует систему AI Router GopiAI для запросов к различным LLM.
-    
-    Автоматически:
-    - Выбирает лучшего провайдера по задаче
-    - Переключается при превышении лимитов
-    - Оптимизирует использование free tier
-    
-    Типы задач:
-    - chat: общение, диалоги
-    - code: программирование, отладка
-    - creative: творческие задачи
-    - analysis: анализ данных, исследования
-    
-    Модели:
-    - auto: автовыбор (рекомендуется)
-    - groq: быстрая Llama 3.3
-    - gemini: Google Gemini 2.0
-    - cerebras: мощная Llama
-    - cohere: специализированная
-    - huggingface: открытые модели HF
-    """
+    name: str = Field(default="gopiai_router", description="Имя инструмента")
+    description: str = Field(default="Инструмент маршрутизации AI", description="Описание инструмента")
+    router_path: str = Field(default_factory=lambda: os.path.join(os.path.dirname(__file__), "../../../01_AI_ROUTER_SYSTEM"), description="Путь к директории AI Router")
     args_schema: Type[BaseModel] = AIRouterInput
     
-    def __init__(self):
-                # Путь к AI Router системе
-        self.router_path = os.path.join(
-            os.path.dirname(__file__), 
-            "../../../01_AI_ROUTER_SYSTEM"
-        )
-        
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Для инициализации файлов вызывайте self.init_files() вручную после создания экземпляра
+
+    def init_files(self):
+        os.makedirs(self.router_path, exist_ok=True)
+    
+    def _run(self, *args, **kwargs):
+        return "AI Router Tool: действие не реализовано (заглушка)"
+    
     def _run(self, message: str, task_type: str = "chat", model_preference: str = "auto", 
              max_tokens: int = 1000, temperature: float = 0.7) -> str:
         """

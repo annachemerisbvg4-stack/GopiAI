@@ -8,6 +8,204 @@
       "importance": 5,
       "timestamp": "2025-06-22T02:20:01.063364",
       "rag_stored": true
+    },
+    {
+      "id": 2,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T07:59:25.947423",
+      "rag_stored": true
+    },
+    {
+      "id": 3,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T08:01:28.220994",
+      "rag_stored": true
+    },
+    {
+      "id": 4,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T08:04:04.791691",
+      "rag_stored": true
+    },
+    {
+      "id": 5,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T08:25:55.411619",
+      "rag_stored": true
+    },
+    {
+      "id": 6,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T08:29:06.876548",
+      "rag_stored": true
+    },
+    {
+      "id": 7,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T08:35:42.673002",
+      "rag_stored": true
+    },
+    {
+      "id": 8,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T08:38:42.955296",
+      "rag_stored": true
+    },
+    {
+      "id": 9,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T08:39:34.852920",
+      "rag_stored": true
+    },
+    {
+      "id": 10,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T08:40:33.604711",
+      "rag_stored": true
+    },
+    {
+      "id": 11,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T08:50:39.576825",
+      "rag_stored": true
+    },
+    {
+      "id": 12,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T08:52:26.196320",
+      "rag_stored": true
+    },
+    {
+      "id": 13,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T08:55:12.392983",
+      "rag_stored": true
+    },
+    {
+      "id": 14,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T09:33:26.175732",
+      "rag_stored": true
+    },
+    {
+      "id": 15,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T09:35:24.114406",
+      "rag_stored": true
+    },
+    {
+      "id": 16,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T09:36:44.559625",
+      "rag_stored": true
+    },
+    {
+      "id": 17,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T09:37:31.658203",
+      "rag_stored": true
+    },
+    {
+      "id": 18,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T09:38:25.252400",
+      "rag_stored": true
+    },
+    {
+      "id": 19,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T09:39:22.735723",
+      "rag_stored": true
+    },
+    {
+      "id": 20,
+      "key": "GopiAI-CrewAI Integration Demo",
+      "data": "{\"Название\": \"GopiAI-CrewAI Integration Demo\", \"Дата запуска\": \"2024-07-26\", \"Цель\": \"Демонстрация возможностей интеграции\", \"Участники\": [\"Координатор\", \"Аналитик\", \"Исследователь\"]}",
+      "category": "project",
+      "importance": 10,
+      "timestamp": "2025-06-23T09:39:33.451272",
+      "rag_stored": true
+    },
+    {
+      "id": 21,
+      "key": "project_structure",
+      "data": "Project structure is unknown, simulated for the purpose of this task.  Assumed to contain documentation files: CrewAI_Documentation.pdf, IntegrationGuide.txt, API_Specification.json.  These files are simulated and not actually accessed.",
+      "category": "research",
+      "importance": 10,
+      "timestamp": "2025-06-23T09:39:48.452531",
+      "rag_stored": true
+    },
+    {
+      "id": 22,
+      "key": "CrewAI_Documentation",
+      "data": "Simulated CrewAI documentation: CrewAI is a powerful AI assistant with tools for browsing, memory management, and file system access.  It supports various actions like navigation, clicking, typing, data extraction, screenshots, and waiting.  Integration with other systems is achieved through a well-defined API.",
+      "category": "research",
+      "importance": 9,
+      "timestamp": "2025-06-23T09:39:52.225018",
+      "rag_stored": true
+    },
+    {
+      "id": 23,
+      "key": "IntegrationGuide",
+      "data": "Simulated Integration Guide:  The GopiAI-CrewAI integration leverages CrewAI's API to provide GopiAI with enhanced web interaction and data processing capabilities.  The integration allows GopiAI to access and process information from the web, enriching its responses and capabilities.",
+      "category": "research",
+      "importance": 8,
+      "timestamp": "2025-06-23T09:39:55.812639",
+      "rag_stored": true
     }
   ],
   "metadata": {

@@ -9,6 +9,7 @@ import requests
 from typing import Type, Any, Dict, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
+from crewai.tools.base_tool import BaseTool
 
 class HuggingFaceInput(BaseModel):
     """Схема входных данных для Hugging Face"""
@@ -18,7 +19,7 @@ class HuggingFaceInput(BaseModel):
     max_length: int = Field(default=200, description="Максимальная длина ответа")
     temperature: float = Field(default=0.7, description="Температура генерации")
 
-class GopiAIHuggingFaceTool:
+class GopiAIHuggingFaceTool(BaseTool):
     """
     Инструмент для работы с Hugging Face моделями
     
@@ -29,24 +30,8 @@ class GopiAIHuggingFaceTool:
     - Автоматический выбор модели по задаче
     """
     
-    name: str = "gopiai_huggingface"
-    description: str = (
-        """Использует бесплатные модели Hugging Face для различных задач.\n\n"
-        "Популярные модели:\n"
-        "- tiiuae/falcon-7b-instruct: чат, генерация текста, инструкции (бесплатно через API)\n"
-        "- bigscience/bloomz-560m: генерация текста, инструкции (бесплатно через API)\n\n"
-        "Типы задач:\n"
-        "- text-generation: генерация текста\n"
-        "- conversational: диалоги\n"
-        "- summarization: суммаризация\n"
-        "- question-answering: ответы на вопросы\n"
-        "- text-classification: классификация\n\n"
-        "Лимиты: 1000 запросов/месяц (бесплатно)\n\n"
-        "Примеры:\n"
-        "- message=\"Привет!\", model_name=\"tiiuae/falcon-7b-instruct\"\n"
-        "- message=\"Сделай резюме текста\", model_name=\"bigscience/bloomz-560m\"\n"
-        """
-    )
+    name: str = Field(default="gopiai_huggingface", description="Имя инструмента")
+    description: str = Field(default="Инструмент HuggingFace для CrewAI", description="Описание инструмента")
 
     def run(self, message: str, model_name: str = "tiiuae/falcon-7b-instruct", 
             task_type: str = "text-generation", max_length: int = 200, temperature: float = 0.7) -> str:
@@ -97,6 +82,9 @@ class GopiAIHuggingFaceTool:
             return "⏰ Таймаут запроса (30 сек)"
         except requests.exceptions.RequestException as e:
             return f"🌐 Сетевая ошибка: {str(e)}"
+
+    def _run(self, *args, **kwargs):
+        return "HuggingFace Tool: действие не реализовано (заглушка)"
 
     def get_usage_stats(self) -> str:
         return "(статистика не реализована в этой версии)"

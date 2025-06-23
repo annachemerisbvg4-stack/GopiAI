@@ -10,6 +10,7 @@ import asyncio
 from typing import Type, Any, List, Dict, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
+from crewai.tools.base_tool import BaseTool
 
 class CommunicationInput(BaseModel):
     """Схема входных данных для коммуникации"""
@@ -20,7 +21,7 @@ class CommunicationInput(BaseModel):
     priority: int = Field(default=3, description="Приоритет от 1 (низкий) до 5 (критический)")
     metadata: str = Field(default="{}", description="Дополнительные данные в формате JSON")
 
-class GopiAICommunicationTool:
+class GopiAICommunicationTool(BaseTool):
     """
     Продвинутая система коммуникации для CrewAI агентов
     
@@ -65,17 +66,17 @@ class GopiAICommunicationTool:
     """
     args_schema: Type[BaseModel] = CommunicationInput
     
-    def __init__(self):
-                # Путь к системе сообщений
-        self.messages_path = os.path.join(
-            os.path.dirname(__file__), 
-            "../../communication"
-        )
-        # Файлы для разных типов сообщений
-        self.message_queue_file = os.path.join(self.messages_path, "message_queue.json")
-        self.agent_status_file = os.path.join(self.messages_path, "agent_status.json")
-        self.ui_notifications_file = os.path.join(self.messages_path, "ui_notifications.json")
+    messages_path: str = Field(default_factory=lambda: os.path.join(os.path.dirname(__file__), "../../communication"), description="Путь к директории сообщений")
+    message_queue_file: str = Field(default_factory=lambda: os.path.join(os.path.dirname(__file__), "../../communication/message_queue.json"), description="Файл очереди сообщений")
+    agent_status_file: str = Field(default_factory=lambda: os.path.join(os.path.dirname(__file__), "../../communication/agent_status.json"), description="Файл статусов агентов")
+    ui_notifications_file: str = Field(default_factory=lambda: os.path.join(os.path.dirname(__file__), "../../communication/ui_notifications.json"), description="Файл уведомлений UI")
         
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Не инициализируем пути вручную!
+        # Для инициализации файлов вызывайте self.init_files() вручную после создания экземпляра
+
+    def init_files(self):
         self._ensure_communication_files()
         
     def _ensure_communication_files(self):
@@ -353,7 +354,7 @@ class GopiAICommunicationTool:
         except Exception as e:
             return f"❌ Ошибка получения списка: {str(e)}"
     
-    def _update_agent_status(self, agent_id: str, status: str, extra_info: Dict = None):
+    def _update_agent_status(self, agent_id: str, status: str, extra_info: Optional[Dict] = None):
         """Обновление статуса агента"""
         try:
             status_data = self._load_agent_status()

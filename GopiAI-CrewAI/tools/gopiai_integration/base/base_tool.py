@@ -9,9 +9,10 @@ import logging
 import time
 from datetime import datetime
 from typing import Any, Dict, Optional, Union
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from crewai.tools.base_tool import BaseTool
 
-class GopiAIBaseTool:
+class GopiAIBaseTool(BaseTool):
     """
     Базовый класс для всех GopiAI инструментов CrewAI
     
@@ -22,19 +23,13 @@ class GopiAIBaseTool:
     - Базовый интерфейс для всех инструментов
     """
     
-    name: str = "gopiai_base_tool"
-    description: str = "Базовый класс для всех GopiAI инструментов"
+    name: str = Field(default="gopiai_base_tool", description="Базовый класс для всех GopiAI инструментов")
+    description: str = Field(default="Базовый класс для всех GopiAI инструментов", description="Описание инструмента")
+    verbose: bool = Field(default=False, description="Подробный вывод сообщений")
     
-    def __init__(self, verbose: bool = False, log_level: int = logging.INFO):
-        """
-        Инициализация базового инструмента
-        
-        Args:
-            verbose: Подробный вывод сообщений
-            log_level: Уровень логирования
-        """
-        self.verbose = verbose
-        self.logger = self._setup_logger(log_level)
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.logger = self._setup_logger(logging.INFO)
         self.metrics = {
             "calls": 0,
             "errors": 0,
