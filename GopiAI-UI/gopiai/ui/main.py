@@ -80,7 +80,7 @@ try:
         CustomGrip,
         FileExplorerWidget,
         TabDocumentWidget,
-        WebViewChatWidget,
+        ChatWidget,
         TerminalWidget,
     )
 
@@ -256,13 +256,13 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         # Правая панель - чат с ИИ (модульный)
         try:
             # Пытаемся использовать WebView чат с современным интерфейсом
-            print("🔍 Попытка создать WebViewChatWidget...")
-            self.chat_widget = WebViewChatWidget()
-            print("🔍 WebViewChatWidget создан успешно")
+            print("🔍 Попытка создать ChatWidget...")
+            self.chat_widget = ChatWidget()
+            print("🔍 ChatWidget создан успешно")
             
             # Передаем менеджер тем в WebView чат для интеграции
             if hasattr(self, 'theme_manager'):
-                print("🔍 Передаем theme_manager в WebViewChatWidget...")
+                print("🔍 Передаем theme_manager в ChatWidget...")
                 self.chat_widget.set_theme_manager(self.theme_manager)
                 print("🔍 theme_manager передан успешно")
             print("✅ Используется WebView чат")
@@ -969,7 +969,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                             print("✅ WebView чат обновлен через apply_theme")
                         else:
                             print("❌ У чата нет методов обновления темы!")
-                            print(f"❌ Это значит, что используется обычный ChatWidget, а не WebViewChatWidget")
+                            print(f"❌ Это значит, что используется обычный ChatWidget, а не ChatWidget")
                     except Exception as e:
                         print(f"⚠️ Ошибка обновления WebView чата: {e}")
                 else:

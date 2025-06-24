@@ -11,6 +11,7 @@ from .file_explorer import FileExplorerWidget
 # Исправляем импорт для TabDocumentWidget
 from .tab_widget import TabDocumentWidget
 from .terminal_widget import TerminalWidget
+from .chat_widget import ChatWidget
 
 __all__ = [
     'StandaloneTitlebar',
@@ -19,6 +20,6 @@ __all__ = [
     'StandaloneMenuBar',
     'FileExplorerWidget',
     'TabDocumentWidget',
-    '',
+    'ChatWidget',
     'TerminalWidget',
 ]
