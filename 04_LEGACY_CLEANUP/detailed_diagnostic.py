@@ -14,10 +14,10 @@ def diagnose_structure():
     
     # Основные пути
     paths_to_check = [
-        "GopiAI-WebView/gopiai/webview/js_bridge.py",
-        "GopiAI-WebView/gopiai/webview/assets/chat.js",
+        "GopiAI-WebView/gopiai//js_bridge.py",
+        "GopiAI-WebView/gopiai//assets/chat.js",
         "GopiAI-UI/gopiai/ui/components/claude_tools_handler.py",
-        "GopiAI-UI/gopiai/ui/components/webview_chat_widget.py",
+        
         "GopiAI-UI/gopiai/ui/main.py",
     ]
     
@@ -54,7 +54,7 @@ def check_webchannel_setup():
     print("\n🌐 Проверка WebChannel setup...")
     
     # Проверяем chat.js
-    chat_js = Path("GopiAI-WebView/gopiai/webview/assets/chat.js")
+    chat_js = Path("GopiAI-WebView/gopiai//assets/chat.js")
     if chat_js.exists():
         with open(chat_js, 'r', encoding='utf-8') as f:
             content = f.read()

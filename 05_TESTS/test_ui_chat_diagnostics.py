@@ -13,12 +13,11 @@ from pathlib import Path
 ui_path = Path(__file__).parent / "GopiAI-UI"
 sys.path.insert(0, str(ui_path))
 
-# Проверяем импорт WebViewChatWidget
+# Проверяем импорт 
 try:
-    from gopiai.ui.components.webview_chat_widget import WebViewChatWidget
-    print("✅ WebViewChatWidget импортирован успешно")
+        print("✅ импортирован успешно")
 except ImportError as e:
-    print(f"❌ Ошибка импорта WebViewChatWidget: {e}")
+    print(f"❌ Ошибка импорта : {e}")
     sys.exit(1)
 
 def test_ui_chat():
@@ -32,7 +31,7 @@ def test_ui_chat():
     app = QApplication(sys.argv)
     
     # Создаем чат виджет
-    chat_widget = WebViewChatWidget()
+    chat_widget = ()
     
     # Показываем виджет
     chat_widget.show()

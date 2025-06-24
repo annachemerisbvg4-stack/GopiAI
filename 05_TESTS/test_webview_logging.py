@@ -18,7 +18,6 @@ sys.path.insert(0, str(Path(__file__).parent / "GopiAI-WebView"))
 from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QTextEdit, QLabel
 from PySide6.QtCore import Qt, QTimer
 
-from gopiai.ui.components.webview_chat_widget import WebViewChatWidget
 
 class WebViewLoggingTest(QWidget):
     """Тестовое окно для демонстрации логирования WebView"""
@@ -37,7 +36,7 @@ class WebViewLoggingTest(QWidget):
         layout.addWidget(info_label)
         
         # WebView чат
-        self.chat_widget = WebViewChatWidget()
+        self.chat_widget = ()
         layout.addWidget(self.chat_widget, stretch=3)
         
         # Панель для отображения логов
