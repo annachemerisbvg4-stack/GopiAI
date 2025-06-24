@@ -251,6 +251,267 @@
       "metadata": {},
       "timestamp": "2025-06-23T09:40:54.833040",
       "read": false
+    },
+    {
+      "id": 29,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T11:10:13.058430",
+      "read": false
+    },
+    {
+      "id": 30,
+      "message": "Инициализация проекта GopiAI-CrewAI Integration Demo запущена.",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T11:10:20.371197",
+      "read": false
+    },
+    {
+      "id": 31,
+      "message": "Документация по улучшенной интеграции GopiAI и CrewAI готова.  Файл: gopi_crewai_integration.md",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T11:11:11.602339",
+      "read": false
+    },
+    {
+      "id": 32,
+      "message": "Разработка инструмента для работы с аудио завершена. Файл audio_tool.py создан.",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T11:11:53.838701",
+      "read": false
+    },
+    {
+      "id": 33,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T11:42:44.116313",
+      "read": false
+    },
+    {
+      "id": 34,
+      "message": "Инициализация проекта GopiAI-CrewAI Integration Demo запущена.",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T11:42:52.652637",
+      "read": false
+    },
+    {
+      "id": 35,
+      "message": "Documentation for GopiAI-CrewAI integration created.  Further details needed to complete the document.",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T11:43:39.296770",
+      "read": false
+    },
+    {
+      "id": 36,
+      "message": "Разработка нового аудио-инструмента завершена. Код сохранен в файле audio_tool.py",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T11:43:58.292000",
+      "read": false
+    },
+    {
+      "id": 37,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T11:55:46.355244",
+      "read": false
+    },
+    {
+      "id": 38,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T11:58:03.172989",
+      "read": false
+    },
+    {
+      "id": 39,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T12:07:51.007366",
+      "read": false
+    },
+    {
+      "id": 40,
+      "message": "Новый проект GopiAI-CrewAI интеграции запущен",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T12:07:53.038831",
+      "read": false
+    },
+    {
+      "id": 41,
+      "message": "Проект GopiAI-CrewAI интеграции запущен",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T12:07:56.197825",
+      "read": false
+    },
+    {
+      "id": 42,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T12:13:01.898227",
+      "read": false
+    },
+    {
+      "id": 43,
+      "message": "Начинается новый проект: GopiAI-CrewAI интеграция",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T12:13:04.488169",
+      "read": false
+    },
+    {
+      "id": 44,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T12:18:34.948864",
+      "read": false
+    },
+    {
+      "id": 45,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T12:30:48.345248",
+      "read": false
+    },
+    {
+      "id": 46,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T12:37:19.483524",
+      "read": false
+    },
+    {
+      "id": 47,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T12:55:24.734856",
+      "read": false
+    },
+    {
+      "id": 48,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T13:14:43.433270",
+      "read": false
+    },
+    {
+      "id": 49,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T15:10:31.285093",
+      "read": false
+    },
+    {
+      "id": 50,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T17:15:40.103689",
+      "read": false
+    },
+    {
+      "id": 51,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T18:06:11.781680",
+      "read": false
+    },
+    {
+      "id": 52,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T21:30:22.312710",
+      "read": false
+    },
+    {
+      "id": 53,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T21:34:22.857434",
+      "read": false
+    },
+    {
+      "id": 54,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T22:31:09.444838",
+      "read": false
+    },
+    {
+      "id": 55,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T22:34:47.681017",
+      "read": false
+    },
+    {
+      "id": 56,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T22:40:47.324269",
+      "read": false
+    },
+    {
+      "id": 57,
+      "message": "Система запущена",
+      "message_type": "info",
+      "priority": 3,
+      "metadata": {},
+      "timestamp": "2025-06-23T22:46:07.209691",
+      "read": false
     }
   ],
   "metadata": {

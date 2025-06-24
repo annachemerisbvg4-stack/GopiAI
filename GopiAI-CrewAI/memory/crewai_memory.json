@@ -206,6 +206,222 @@
       "importance": 8,
       "timestamp": "2025-06-23T09:39:55.812639",
       "rag_stored": true
+    },
+    {
+      "id": 24,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T11:10:13.062429",
+      "rag_stored": true
+    },
+    {
+      "id": 25,
+      "key": "GopiAI-CrewAI Integration Demo",
+      "data": "{\"Название\": \"GopiAI-CrewAI Integration Demo\", \"Дата запуска\": \"2024-07-26\", \"Цель\": \"Демонстрация возможностей интеграции\", \"Участники\": [\"Координатор\", \"Аналитик\", \"Исследователь\"]}",
+      "category": "project",
+      "importance": 10,
+      "timestamp": "2025-06-23T11:10:24.046527",
+      "rag_stored": true
+    },
+    {
+      "id": 26,
+      "key": "Список задач GopiAI-CrewAI",
+      "data": "[{\"Задача\": \"Разработка архитектуры интеграции\", \"Ответственный\": \"Аналитик\"}, {\"Задача\": \"Исследование API CrewAI\", \"Ответственный\": \"Исследователь\"}, {\"Задача\": \"Разработка кода интеграции\", \"Ответственный\": \"Разработчик\"}]",
+      "category": "project",
+      "importance": 9,
+      "timestamp": "2025-06-23T11:10:31.711625",
+      "rag_stored": true
+    },
+    {
+      "id": 27,
+      "key": "CrewAI_integration_research",
+      "data": "Информация о проекте GopiAI-CrewAI Integration Demo:\n- Название: GopiAI-CrewAI Integration Demo\n- Дата запуска: 2024-07-26\n- Цель: Демонстрация возможностей интеграции\n- Участники: Координатор, Аналитик, Исследователь\n\nСписок задач:\n- Разработка архитектуры интеграции (Ответственный: Аналитик)\n- Исследование API CrewAI (Ответственный: Исследователь)\n- Разработка кода интеграции (Ответственный: Разработчик)\n\nПредполагаемая информация из документации CrewAI (недоступна напрямую): CrewAI предоставляет API для управления задачами, доступа к данным и взаимодействия с другими сервисами.  Подробности API описаны в документации, недоступной в текущем контексте.\n\nПредполагаемая информация из документации GopiAI (недоступна напрямую): GopiAI - платформа для обработки естественного языка, предоставляющая возможности для анализа текста, генерации ответов и интеграции с другими системами.  Подробности API описаны в документации, недоступной в текущем контексте.\n\nВозможности интеграции:\n- Автоматизация задач в CrewAI с помощью GopiAI.\n- Анализ данных из CrewAI с помощью GopiAI.\n- Генерация отчетов на основе данных из CrewAI с помощью GopiAI.\n- Расширение функциональности CrewAI за счет возможностей GopiAI.\n\nПерспективные направления развития:\n- Разработка более сложных сценариев автоматизации.\n- Интеграция с другими сервисами.\n- Улучшение производительности и масштабируемости.",
+      "category": "research",
+      "importance": 10,
+      "timestamp": "2025-06-23T11:10:41.597940",
+      "rag_stored": true
+    },
+    {
+      "id": 28,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T11:42:44.131315",
+      "rag_stored": true
+    },
+    {
+      "id": 29,
+      "key": "GopiAI-CrewAI Integration Demo",
+      "data": "{\"Название\": \"GopiAI-CrewAI Integration Demo\", \"Дата запуска\": \"2024-07-26\", \"Цель\": \"Демонстрация возможностей интеграции\", \"Участники\": [\"Координатор\", \"Аналитик\", \"Исследователь\"]}",
+      "category": "project",
+      "importance": 10,
+      "timestamp": "2025-06-23T11:42:56.332755",
+      "rag_stored": true
+    },
+    {
+      "id": 30,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T11:55:46.360248",
+      "rag_stored": true
+    },
+    {
+      "id": 31,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T11:58:03.177986",
+      "rag_stored": true
+    },
+    {
+      "id": 32,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T12:07:51.015366",
+      "rag_stored": true
+    },
+    {
+      "id": 33,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T12:13:01.903224",
+      "rag_stored": true
+    },
+    {
+      "id": 34,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T12:18:34.955866",
+      "rag_stored": true
+    },
+    {
+      "id": 35,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T12:30:48.353249",
+      "rag_stored": true
+    },
+    {
+      "id": 36,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T12:37:19.487524",
+      "rag_stored": true
+    },
+    {
+      "id": 37,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T12:55:24.745855",
+      "rag_stored": true
+    },
+    {
+      "id": 38,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T13:14:43.438274",
+      "rag_stored": true
+    },
+    {
+      "id": 39,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T15:10:31.294094",
+      "rag_stored": true
+    },
+    {
+      "id": 40,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T17:15:40.114689",
+      "rag_stored": true
+    },
+    {
+      "id": 41,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T18:06:11.891681",
+      "rag_stored": true
+    },
+    {
+      "id": 42,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T21:30:22.318709",
+      "rag_stored": true
+    },
+    {
+      "id": 43,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T21:34:22.865433",
+      "rag_stored": true
+    },
+    {
+      "id": 44,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T22:31:09.452840",
+      "rag_stored": true
+    },
+    {
+      "id": 45,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T22:34:47.687026",
+      "rag_stored": true
+    },
+    {
+      "id": 46,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T22:40:47.329278",
+      "rag_stored": true
+    },
+    {
+      "id": 47,
+      "key": "system_test",
+      "data": "Тест системы памяти",
+      "category": "general",
+      "importance": 5,
+      "timestamp": "2025-06-23T22:46:07.214689",
+      "rag_stored": true
     }
   ],
   "metadata": {

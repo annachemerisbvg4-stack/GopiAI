@@ -1,3 +1,46 @@
+import threading
+import time
+class LLMLoggerWrapper:
+    """Обёртка для LLM, логирующая все запросы и ответы в logs/llm_requests, с задержкой между запросами"""
+    _last_call_time = 0
+    _lock = threading.Lock()
+    def __init__(self, llm, provider_name, min_delay=2.1):
+        self.llm = llm
+        self.provider_name = provider_name
+        from pathlib import Path
+        self.logs_dir = Path(__file__).parent / 'logs' / 'llm_requests'
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
+        self.min_delay = min_delay
+        print(f"[LLMLoggerWrapper] Инициализирован для {self.provider_name}")
+
+    def call(self, prompt, *args, **kwargs):
+        print(f"[LLMLoggerWrapper] call() для {self.provider_name}, prompt: {str(prompt)[:80]}")
+        from datetime import datetime
+        import traceback
+        # Глобальная задержка между запросами для всех потоков
+        with LLMLoggerWrapper._lock:
+            now = time.time()
+            wait = self.min_delay - (now - LLMLoggerWrapper._last_call_time)
+            if wait > 0:
+                time.sleep(wait)
+            LLMLoggerWrapper._last_call_time = time.time()
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        log_file = self.logs_dir / f"{self.provider_name.replace(' ', '_')}_agent_{timestamp}.txt"
+        with open(log_file, 'w', encoding='utf-8') as f:
+            f.write(f"=== LLM PROVIDER: {self.provider_name} (AGENT) ===\n")
+            f.write(f"TIME: {timestamp}\n")
+            f.write(f"PROMPT: {prompt}\n")
+            f.write(f"ARGS: {args}\nKWARGS: {kwargs}\n")
+        try:
+            response = self.llm.call(prompt, *args, **kwargs)
+            with open(log_file, 'a', encoding='utf-8') as f:
+                f.write(f"RESPONSE: {response}\n")
+            return response
+        except Exception as e:
+            with open(log_file, 'a', encoding='utf-8') as f:
+                f.write(f"EXCEPTION: {e}\n")
+                f.write(traceback.format_exc())
+            raise
 #!/usr/bin/env python3
 """
 🚀 GopiAI-CrewAI Advanced Integration
@@ -121,29 +164,51 @@ def create_llm_with_fallback():
         }
     ]
     
+    import traceback
+    import time
+    from pathlib import Path
+    logs_dir = Path(__file__).parent / 'logs' / 'llm_requests'
+    logs_dir.mkdir(parents=True, exist_ok=True)
     for provider in providers:
         if not provider['api_key'] or provider['api_key'] == "your_key_here":
             continue
-        
         try:
             print(f"🔄 Тестирование {provider['name']}...")
-            
             llm_config = {
                 'model': provider['model'],
                 'api_key': provider['api_key'],
                 **provider['config']
             }
-            
+            print(f"[DEBUG] LLM config: {llm_config}")
             llm = LLM(**llm_config)
-            
-            # Простой тест
-            test_response = llm.call("Скажи 'ОК'")
-            if test_response and len(test_response.strip()) > 0:
-                print(f"✅ {provider['name']} работает!")
-                return llm, provider['name']
-            
+            test_prompt = "Скажи 'ОК'"
+            from datetime import datetime
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+            log_file = logs_dir / f"{provider['name'].replace(' ', '_')}_{timestamp}.txt"
+            with open(log_file, 'w', encoding='utf-8') as f:
+                f.write(f"=== LLM PROVIDER: {provider['name']} ===\n")
+                f.write(f"TIME: {timestamp}\n")
+                f.write(f"LLM CONFIG: {llm_config}\n")
+                f.write(f"PROMPT: {test_prompt}\n")
+            try:
+                test_response = llm.call(test_prompt)
+                with open(log_file, 'a', encoding='utf-8') as f:
+                    f.write(f"RESPONSE: {test_response}\n")
+                print(f"[DEBUG] LLM.call response: {test_response}")
+                if test_response and len(test_response.strip()) > 0:
+                    print(f"✅ {provider['name']} работает!")
+                    # Возвращаем обёртку для логирования всех agent-запросов
+                    return LLMLoggerWrapper(llm, provider['name']), provider['name']
+            except Exception as call_exc:
+                with open(log_file, 'a', encoding='utf-8') as f:
+                    f.write(f"EXCEPTION: {call_exc}\n")
+                    f.write(traceback.format_exc())
+                print(f"❌ {provider['name']} ошибка: {call_exc}")
+                traceback.print_exc()
+                continue
         except Exception as e:
             print(f"❌ {provider['name']} ошибка: {e}")
+            traceback.print_exc()
             continue
     
     raise Exception("Все LLM провайдеры недоступны!")
@@ -180,9 +245,12 @@ def test_all_tools():
     try:
         print("📁 Тестирование FileSystem Tool...")
         fs_tool = GopiAIFileSystemTool()
-        result = fs_tool.run("list", ".", "", "", "")
+        result = fs_tool._run("list", ".")
         tools_results['filesystem'] = True
-        print(f"✅ FileSystem: найдено {len(result.split())} элементов")
+        if isinstance(result, list):
+            print(f"✅ FileSystem: найдено {len(result)} элементов")
+        else:
+            print(f"✅ FileSystem: {result}")
     except Exception as e:
         tools_results['filesystem'] = False
         print(f"❌ FileSystem ошибка: {e}")
@@ -228,6 +296,7 @@ def test_all_tools():
 
 from tools.gopiai_integration.agent_templates import AgentTemplateSystem
 from crewai import Agent
+from llm_rotation_config import LLM_MODELS_CONFIG, select_llm_model, rag_answer
 
 def create_demo_agents(llm):
     """Создание демонстрационных агентов с GopiAI инструментами"""
@@ -417,11 +486,11 @@ def run_simple_demo():
         )
         
         # Создаем crew
-        demo_crew = Crew(
-            agents=[demo_agent],
-            tasks=[demo_task],
-            verbose=True
-        )
+        demo_crew = Crew(**{
+            "agents": [demo_agent],
+            "tasks": [demo_task],
+            "verbose": True
+        })
         
         # Запускаем
         print("⚡ Запуск простой демонстрации...")
@@ -445,7 +514,6 @@ def run_advanced_demo():
         # Создаем LLM
         llm, provider_name = create_llm_with_fallback()
         print(f"🤖 Используется: {provider_name}")
-        
         # Создаем агентов с использованием системы шаблонов
         coordinator, researcher, writer, coder = create_demo_agents(llm)
         agents = [coordinator, researcher, writer, coder]
@@ -457,20 +525,23 @@ def run_advanced_demo():
         tasks = [init_task, research_task, writing_task, coding_task]
         tasks = [t for t in tasks if t is not None]
         # Создаем crew
-        advanced_crew = Crew(
-            agents=agents,
-            tasks=tasks,
-            verbose=True
-        )
-        
+        advanced_crew = Crew(**{
+            "agents": agents,
+            "tasks": tasks,
+            "verbose": True
+        })
         # Запускаем
         print("⚡ Запуск продвинутой демонстрации...")
-        result = advanced_crew.kickoff()
-        
+        try:
+            result = advanced_crew.kickoff()
+        except Exception as e:
+            print(f"[ERROR] Crew.kickoff() exception: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
         print(f"✅ Продвинутая демонстрация завершена!")
         print(f"📋 Итоговый результат: {result}")
         return True
-        
     except Exception as e:
         print(f"❌ Ошибка продвинутой демонстрации: {e}")
         import traceback
@@ -499,12 +570,34 @@ def main():
         run_simple_demo()
     elif mode == "2":
         run_advanced_demo()
-    elif mode == "3":
-        run_tools_tests()
-    elif mode == "4":
-        show_templates()
+    # elif mode == "3":
+    #     run_tools_tests()
+    # elif mode == "4":
+    #     show_templates()
     else:
         print("❌ Неизвестный режим!")
+
+# Пример: учёт использования моделей (rpm/tpm)
+current_llm_usage = {}
+
+# Пример функции для CrewAI/агентов: выбор модели и генерация ответа через txtai+LLM
+# (можно вызывать из агента или инструмента)
+def crewai_rag_query(query, txtai_index, task_type="dialog"):
+    model_id = select_llm_model(task_type, current_llm_usage)
+    if not model_id:
+        return "Все лимиты LLM исчерпаны, попробуйте позже."
+    # Здесь llm_call_func должен быть функцией, принимающей prompt и model (id)
+    # Например, можно сделать обёртку вокруг LLMLoggerWrapper или напрямую llm.call
+    def llm_call_func(prompt, model=None):
+        # Здесь пример для LLMLoggerWrapper (если он поддерживает model)
+        # Если нет — доработать обёртку
+        return llm.call(prompt, model=model) if model else llm.call(prompt)
+    answer = rag_answer(query, txtai_index, llm_call_func, model_id)
+    # Учёт использования (упрощённо)
+    current_llm_usage.setdefault(model_id, {"rpm": 0, "tpm": 0})
+    current_llm_usage[model_id]["rpm"] += 1
+    # tpm можно считать по длине prompt+answer
+    return answer
 
 if __name__ == "__main__":
     main()

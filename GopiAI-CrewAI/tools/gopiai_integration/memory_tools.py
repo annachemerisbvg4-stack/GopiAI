@@ -75,6 +75,7 @@ class GopiAIMemoryTool(BaseTool):
         """
         Выполнение операции с памятью
         """
+        self.init_files()  # Автоматически инициализируем файлы при первом вызове
         try:
             if action == "store":
                 return self._store_memory(data, query, category, importance)
@@ -276,20 +277,42 @@ class GopiAIMemoryTool(BaseTool):
     def _store_to_rag(self, data: str, key: str, category: str) -> str:
         """Сохранение в RAG систему (если доступна)"""
         try:
-            # Попытка интеграции с RAG системой GopiAI
-            # Здесь будет реальная интеграция с rag_memory_system
-            return f"RAG: сохранено {len(data)} символов"
-        except Exception:
-            return ""
-    
+            rag_dir = self.memory_path
+            if not os.path.isdir(rag_dir):
+                return ""
+            # Сохраняем каждый фрагмент как отдельный json
+            os.makedirs(rag_dir, exist_ok=True)
+            fname = f"{category}_{key}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            fpath = os.path.join(rag_dir, fname)
+            with open(fpath, 'w', encoding='utf-8') as f:
+                json.dump({"key": key, "data": data, "category": category, "timestamp": datetime.now().isoformat()}, f, ensure_ascii=False, indent=2)
+            return f"RAG: сохранено в {fpath}"
+        except Exception as e:
+            return f"RAG: ошибка сохранения: {e}"
+
     def _search_in_rag(self, query: str, category: str) -> str:
         """Поиск в RAG системе (если доступна)"""
         try:
-            # Попытка поиска в RAG системе GopiAI
-            # Здесь будет реальная интеграция с rag_memory_system
-            return ""
-        except Exception:
-            return ""
+            rag_dir = self.memory_path
+            if not os.path.isdir(rag_dir):
+                return ""
+            results = []
+            for fname in os.listdir(rag_dir):
+                if not fname.endswith('.json'):
+                    continue
+                fpath = os.path.join(rag_dir, fname)
+                try:
+                    with open(fpath, 'r', encoding='utf-8') as f:
+                        rec = json.load(f)
+                        if (query.lower() in rec.get('key', '').lower() or query.lower() in rec.get('data', '').lower()):
+                            if category == "all" or rec.get('category') == category:
+                                snippet = rec.get('data', '')[:200] + "..." if len(rec.get('data', '')) > 200 else rec.get('data', '')
+                                results.append(f"RAG: {rec.get('key')} ({rec.get('category')}): {snippet}")
+                except Exception:
+                    continue
+            return "\n".join(results[:5]) if results else ""
+        except Exception as e:
+            return f"RAG: ошибка поиска: {e}"
 
 
 # Экспорт инструментов

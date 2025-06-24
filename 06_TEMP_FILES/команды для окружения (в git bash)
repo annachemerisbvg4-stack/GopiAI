@@ -1,0 +1,2 @@
+source rag_memory_env/Scripts/activate
+deactivate 

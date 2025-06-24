@@ -9,6 +9,8 @@ import time
 import logging
 from typing import Type, Any, Optional
 from pydantic import BaseModel, Field
+import requests
+from bs4 import BeautifulSoup
 
 # Импортируем базовый класс
 from .base import GopiAIBaseTool
@@ -40,48 +42,42 @@ class GopiAIBrowserTool(BaseTool):
     
     def _run(self, action: str, target: str, data: str = "", wait_seconds: int = 3) -> str:
         """
-        Выполнение браузерного действия через GopiAI BrowserAgent
-        """
-        return "Browser Tool: действие не реализовано (заглушка)"
-    
-    def _execute_browser_action(self, action: str, target: str, data: str, wait_seconds: int) -> str:
-        """
-        Реальная интеграция с GopiAI BrowserAgent
+        Выполнение браузерного действия через requests/BeautifulSoup (ограниченно)
         """
         try:
-            # Добавляем путь к GopiAI-Core
-            sys.path.append(os.path.join(os.path.dirname(__file__), "../../../GopiAI-Core"))
-            
-            # Импортируем браузер-агент GopiAI
-            from gopiai.core.agent.browser_ai_interface import get_browser_ai
-            
-            # Получаем экземпляр браузера
-            browser_ai = get_browser_ai()
-            
-            # Выполняем действие
             if action == "navigate":
-                return browser_ai.navigate(target)
-            elif action == "click":
-                return browser_ai.click(target)
-            elif action == "type":
-                return browser_ai.type_text(target, data)
+                self._last_url = target
+                resp = requests.get(target, timeout=10)
+                self._last_html = resp.text
+                return f"Навигация на {target} (код {resp.status_code})"
             elif action == "extract":
+                if not hasattr(self, '_last_html'):
+                    return "Нет загруженной страницы. Сначала используйте 'navigate'."
+                soup = BeautifulSoup(self._last_html, 'html.parser')
                 if target.lower() == "page":
-                    return browser_ai.get_page_text()
+                    return soup.get_text(separator='\n')[:2000]
                 else:
-                    return browser_ai.extract_text(target)
+                    elements = soup.select(target)
+                    if not elements:
+                        return f"Элементы '{target}' не найдены."
+                    return "\n".join([el.get_text(strip=True) for el in elements][:10])
+            elif action == "type":
+                # Без headless браузера эмулируем только лог
+                return f"Ввод '{data}' в элемент '{target}' (эмуляция)"
+            elif action == "click":
+                return f"Клик по элементу '{target}' (эмуляция)"
             elif action == "screenshot":
-                return browser_ai.take_screenshot(target)
+                return "Скриншоты поддерживаются только в headless браузере."
             elif action == "wait":
-                wait_time = int(data) if data.isdigit() else wait_seconds
-                return browser_ai.wait_for_element(target, wait_time)
+                time.sleep(wait_seconds)
+                return f"Ожидание {wait_seconds} секунд."
             else:
                 return f"❌ Неизвестное действие: {action}"
-                
-        except ImportError:
-            raise Exception("GopiAI BrowserAgent недоступен")
         except Exception as e:
-            raise Exception(f"Ошибка браузера: {str(e)}")
+            return f"Ошибка браузерного действия: {e}"
+    
+    def _execute_browser_action(self, action: str, target: str, data: str, wait_seconds: int) -> str:
+        return "[DEPRECATED] Используйте _run с requests/BeautifulSoup."
     
     def _simulate_browser_action(self, action: str, target: str, data: str) -> str:
         """
@@ -181,21 +177,14 @@ __all__ = [
 if __name__ == "__main__":
     # Настройка логирования для тестов
     logging.basicConfig(level=logging.INFO)
-    
     # Тест инструментов
     print("🧪 Тестирование GopiAI Browser Tools...")
-    
     # Тест основного браузер-инструмента
-    browser = GopiAIBrowserTool(verbose=True)
+    browser = GopiAIBrowserTool()
     result = browser.run("navigate", "https://google.com")
     print(f"Browser test: {result}")
-    
     # Тест поиска
-    search = GopiAIWebSearchTool(verbose=True)
+    search = GopiAIWebSearchTool()
     result = search.run("CrewAI documentation")
     print(f"Search test: {result}")
-    
-    # Тест метрик
-    print("\n📊 Метрики браузер-инструмента:")
-    print(browser.get_metrics())
     print("✅ Все инструменты готовы!")
