@@ -189,6 +189,17 @@ class StandaloneMenuBar(QMenuBar):
         main_window = self.parent()
         while main_window is not None and not hasattr(main_window, 'tab_document'):
             main_window = main_window.parent() if hasattr(main_window, 'parent') else None
+        def show_frameless_message(parent, title, text):
+            from PySide6.QtWidgets import QMessageBox
+            from PySide6.QtCore import Qt
+            box = QMessageBox(parent)
+            box.setWindowTitle(title)
+            box.setText(text)
+            # Используем WindowType для PySide6
+            flags = box.windowFlags() | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
+            box.setWindowFlags(flags)
+            box.exec()
+
         if main_window is not None and hasattr(main_window, 'tab_document'):
             tab_document = getattr(main_window, 'tab_document', None)
             tab_widget = getattr(tab_document, 'tab_widget', None) if tab_document else None
@@ -199,11 +210,9 @@ class StandaloneMenuBar(QMenuBar):
                     widget = tab_widget.widget(i)
                     widget.setVisible(not visible)
             else:
-                from PySide6.QtWidgets import QMessageBox
-                QMessageBox.information(self, "Нет открытых вкладок", "Нет активных вкладок редактора. Воспользуйтесь меню 'Файл' для создания нового документа.")
+                show_frameless_message(self, "Нет открытых вкладок", "Нет активных вкладок редактора. Воспользуйтесь меню 'Файл' для создания нового документа.")
         else:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.information(self, "Нет редактора", "Редактор не найден в главном окне.")
+            show_frameless_message(self, "Нет редактора", "Редактор не найден в главном окне.")
 
         # Подключение сигналов расширений
         self.productivity_action.triggered.connect(self.toggleProductivityExtension.emit)
