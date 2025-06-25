@@ -6,78 +6,81 @@ RichTextNotebookWidget
 Интеграция расширенного движка из rich_text_notebook_extension.wordprocessor.
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QToolBar, QTextEdit, QFontComboBox, QComboBox
+from PySide6.QtGui import QFont, QKeySequence, QAction
 import chardet
+from PySide6.QtCore import QSize
 
-# Импортируем расширенный движок блокнота из расширения
-try:
-    from gopiai.extensions.rich_text_notebook_extension.wordprocessor import MegasolidEditor
-    WORDPROCESSOR_AVAILABLE = True
-except Exception as e:
-    print(f"[WARNING] Не удалось импортировать MegasolidEditor: {e}")
-    MegasolidEditor = None
-    WORDPROCESSOR_AVAILABLE = False
-
-class RichTextNotebookWidget(QWidget):
+# Чистый rich text notebook для вкладок: тулбар + QTextEdit (или rich движок).
+class NotebookEditorWidget(QWidget):
     """
-    Виджет блокнота с форматированием, использует MegasolidEditor из расширения,
-    либо fallback на QTextEdit (минимальный режим).
+    Чистый rich text notebook для вкладок: тулбар + QTextEdit (или rich движок).
+    Не использует QMainWindow, не открывает отдельное окно.
     """
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setObjectName("RichTextNotebookWidget")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        if WORDPROCESSOR_AVAILABLE:
-            self.editor = MegasolidEditor()
-            self.editor.reset(
-                x=0, y=0, width=800, height=600,
-                use_icons=False, use_menu=False, use_monospace=False, allow_inline_tables=True
-            )
-            # Встраиваем центральный виджет редактора в layout
-            layout.addWidget(self.editor.centralWidget())
-        else:
-            from PySide6.QtWidgets import QTextEdit, QToolBar
-            self.editor = QTextEdit(self)
-            self.editor.setAcceptRichText(True)
-            self.editor.setPlaceholderText("Введите заметку...")
-            layout.addWidget(self.editor)
+
+        # Тулбар форматирования
+        toolbar = QToolBar("Format")
+        toolbar.setIconSize(QSize(16, 16))
+        layout.addWidget(toolbar)
+
+        # Редактор
+        self.editor = QTextEdit()
+        self.editor.setAcceptRichText(True)
+        self.editor.setPlaceholderText("Введите заметку...")
+        layout.addWidget(self.editor)
+
+        # Font family
+        font_box = QFontComboBox()
+        font_box.currentFontChanged.connect(self.editor.setCurrentFont)
+        toolbar.addWidget(font_box)
+        # Font size
+        font_size = QComboBox()
+        font_size.addItems([str(s) for s in [8, 10, 12, 14, 18, 24, 36, 48]])
+        font_size.currentIndexChanged.connect(lambda i: self.editor.setFontPointSize(int(font_size.currentText())))
+        toolbar.addWidget(font_size)
+        # Bold
+        bold_action = QAction("B", self)
+        bold_action.setShortcut(QKeySequence.StandardKey.Bold)
+        bold_action.setCheckable(True)
+        bold_action.toggled.connect(lambda x: self.editor.setFontWeight(QFont.Weight.Bold if x else QFont.Weight.Normal))
+        toolbar.addAction(bold_action)
+        # Italic
+        italic_action = QAction("I", self)
+        italic_action.setShortcut(QKeySequence.StandardKey.Italic)
+        italic_action.setCheckable(True)
+        italic_action.toggled.connect(self.editor.setFontItalic)
+        toolbar.addAction(italic_action)
+        # Underline
+        underline_action = QAction("U", self)
+        underline_action.setShortcut(QKeySequence.StandardKey.Underline)
+        underline_action.setCheckable(True)
+        underline_action.toggled.connect(self.editor.setFontUnderline)
+        toolbar.addAction(underline_action)
 
     def setHtml(self, html):
-        if WORDPROCESSOR_AVAILABLE:
-            self.editor.editor.setHtml(html)
-        else:
-            self.editor.setHtml(html)
-
+        self.editor.setHtml(html)
     def toHtml(self):
-        if WORDPROCESSOR_AVAILABLE:
-            return self.editor.editor.toHtml()
-        else:
-            return self.editor.toHtml()
-
+        return self.editor.toHtml()
     def setPlainText(self, text):
-        if WORDPROCESSOR_AVAILABLE:
-            self.editor.editor.setPlainText(text)
-        else:
-            self.editor.setPlainText(text)
-
+        self.editor.setPlainText(text)
     def toPlainText(self):
-        if WORDPROCESSOR_AVAILABLE:
-            return self.editor.editor.toPlainText()
-        else:
-            return self.editor.toPlainText()
-
-    # Методы для открытия/сохранения файлов с autodetect кодировки
+        return self.editor.toPlainText()
     def open_file(self, path):
+        import chardet
         with open(path, 'rb') as f:
             raw = f.read()
         encoding = chardet.detect(raw)['encoding'] or 'utf-8'
         html = raw.decode(encoding, errors='replace')
         self.setHtml(html)
-
     def save_file(self, path):
+        html = self.toHtml()
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(html)
         html = self.toHtml()
         with open(path, 'w', encoding='utf-8') as f:
             f.write(html)

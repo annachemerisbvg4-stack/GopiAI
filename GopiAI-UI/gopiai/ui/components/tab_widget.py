@@ -12,22 +12,17 @@ from PySide6.QtWebEngineWidgets import QWebEngineView
 import chardet
 
 # Импортируем продвинутый текстовый редактор
-try:
-    import sys
-    import os
-    # Добавляем путь к модулю GopiAI-Widgets
-    widgets_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'GopiAI-Widgets')
-    widgets_path = os.path.abspath(widgets_path)
-    if widgets_path not in sys.path:
-        sys.path.insert(0, widgets_path)
-    
-    from gopiai.widgets.core.text_editor import TextEditorWidget
-    from gopiai.ui.components.rich_text_notebook_widget import RichTextNotebookWidget
-    TEXT_EDITOR_AVAILABLE = True
-    print("TextEditorWidget импортирован успешно")
-except ImportError as e:
-    print(f"Не удалось импортировать TextEditorWidget: {e}")
-    TEXT_EDITOR_AVAILABLE = False
+import sys
+import os
+# Добавляем путь к модулю GopiAI-Widgets
+widgets_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'GopiAI-Widgets')
+widgets_path = os.path.abspath(widgets_path)
+if widgets_path not in sys.path:
+    sys.path.insert(0, widgets_path)
+
+from gopiai.widgets.core.text_editor import TextEditorWidget
+from gopiai.ui.components.rich_text_notebook_widget import NotebookEditorWidget
+TEXT_EDITOR_AVAILABLE = True
 
 class TabDocumentWidget(QWidget):
     """Центральная область с вкладками документов"""
@@ -82,14 +77,11 @@ class TabDocumentWidget(QWidget):
         return editor
 
     def add_notebook_tab(self, title="Новый блокнот", content=""):
-        """Добавление новой вкладки-блокнота с форматированием"""
-        notebook = RichTextNotebookWidget()
+        """Добавление новой вкладки-блокнота с форматированием (чистый rich text notebook)"""
+        from gopiai.ui.components.rich_text_notebook_widget import NotebookEditorWidget
+        notebook = NotebookEditorWidget()
         if content:
-            # Устанавливаем текст в редактор блокнота
-            if hasattr(notebook.editor, "setPlainText"):
-                notebook.editor.setPlainText(content)
-            elif hasattr(notebook.editor, "setHtml"):
-                notebook.editor.setHtml(content)
+            notebook.setPlainText(content)
         index = self.tab_widget.addTab(notebook, title)
         self.tab_widget.setCurrentIndex(index)
         return notebook

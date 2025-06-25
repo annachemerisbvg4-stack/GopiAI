@@ -681,6 +681,11 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         if MODULES_LOADED and hasattr(self.tab_document, "add_notebook_tab"):
             self.tab_document.add_notebook_tab("Новый блокнот", "<h2>Новая заметка</h2><p>Введите текст...</p>")
         else:
+            # Fallback: создаём простую вкладку с QLabel или QTextEdit
+            if hasattr(self.tab_document, "add_new_tab"):
+                self.tab_document.add_new_tab("Новый блокнот (fallback)", "<h2>Новая заметка (fallback)</h2><p>Введите текст...</p>")
+            else:
+                print("📝 Новый блокнот не может быть создан: нет метода add_new_tab (fallback режим)")
             print("📝 Новый блокнот создан (fallback режим)")
 
     def _open_settings(self):
