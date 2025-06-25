@@ -24,7 +24,7 @@ MATERIAL_SKY_THEME = {
     "name": "Material Sky",
     "description": "Тема, сгенерированная на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#cccccc",
+        "main_color": "#b5bbcd",
         "header_color": "#cde5ff",
         "control_color": "#006398",
         "accent_color": "#7a4c8f",

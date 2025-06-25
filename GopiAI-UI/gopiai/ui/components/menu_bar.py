@@ -181,7 +181,29 @@ class StandaloneMenuBar(QMenuBar):
         self.chat_action.triggered.connect(self.openChatRequested.emit)
         self.browser_action.triggered.connect(self.openBrowserRequested.emit)
         self.terminal_action.triggered.connect(self.openTerminalRequested.emit)
-        self.text_editor_action.triggered.connect(self.openTextEditorRequested.emit)
+        self.text_editor_action.triggered.connect(self._on_text_editor_toggle)
+
+    def _on_text_editor_toggle(self):
+        """Обработчик для показа/скрытия всех вкладок редактора или сообщения об их отсутствии"""
+        # Поиск главного окна с tab_document
+        main_window = self.parent()
+        while main_window is not None and not hasattr(main_window, 'tab_document'):
+            main_window = main_window.parent() if hasattr(main_window, 'parent') else None
+        if main_window is not None and hasattr(main_window, 'tab_document'):
+            tab_document = getattr(main_window, 'tab_document', None)
+            tab_widget = getattr(tab_document, 'tab_widget', None) if tab_document else None
+            if tab_widget and tab_widget.count() > 0:
+                # Скрыть/показать все вкладки
+                visible = any(tab_widget.isTabVisible(i) if hasattr(tab_widget, 'isTabVisible') else tab_widget.widget(i).isVisible() for i in range(tab_widget.count()))
+                for i in range(tab_widget.count()):
+                    widget = tab_widget.widget(i)
+                    widget.setVisible(not visible)
+            else:
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.information(self, "Нет открытых вкладок", "Нет активных вкладок редактора. Воспользуйтесь меню 'Файл' для создания нового документа.")
+        else:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.information(self, "Нет редактора", "Редактор не найден в главном окне.")
 
         # Подключение сигналов расширений
         self.productivity_action.triggered.connect(self.toggleProductivityExtension.emit)
