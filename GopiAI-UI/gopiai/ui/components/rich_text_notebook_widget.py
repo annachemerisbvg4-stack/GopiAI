@@ -14,8 +14,9 @@ import chardet
 try:
     from gopiai.extensions.rich_text_notebook_extension.wordprocessor import MegasolidEditor
     WORDPROCESSOR_AVAILABLE = True
-except ImportError as e:
+except Exception as e:
     print(f"[WARNING] Не удалось импортировать MegasolidEditor: {e}")
+    MegasolidEditor = None
     WORDPROCESSOR_AVAILABLE = False
 
 class RichTextNotebookWidget(QWidget):
