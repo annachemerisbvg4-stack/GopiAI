@@ -18,6 +18,14 @@ except ImportError:
 
 
 class StandaloneMenuBar(QMenuBar):
+    # Сигналы меню правки
+    undoRequested = Signal()
+    redoRequested = Signal()
+    cutRequested = Signal()
+    copyRequested = Signal()
+    pasteRequested = Signal()
+    deleteRequested = Signal()
+    selectAllRequested = Signal()
     """Автономное меню с полным набором сигналов"""
     
     # Сигналы файлового меню
@@ -150,6 +158,15 @@ class StandaloneMenuBar(QMenuBar):
         self.delete_action = edit_menu.addAction("Удалить")
         edit_menu.addSeparator()
         self.select_all_action = edit_menu.addAction("Выделить всё")
+
+        # Подключение сигналов меню правки
+        self.undo_action.triggered.connect(self.undoRequested.emit)
+        self.redo_action.triggered.connect(self.redoRequested.emit)
+        self.cut_action.triggered.connect(self.cutRequested.emit)
+        self.copy_action.triggered.connect(self.copyRequested.emit)
+        self.paste_action.triggered.connect(self.pasteRequested.emit)
+        self.delete_action.triggered.connect(self.deleteRequested.emit)
+        self.select_all_action.triggered.connect(self.selectAllRequested.emit)
 
     def _setup_view_menu(self, view_menu):
         """Настройка меню вида (без файлового проводника)"""
