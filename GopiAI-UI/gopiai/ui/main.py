@@ -16,6 +16,7 @@ import os
 import warnings
 from pathlib import Path
 from dotenv import load_dotenv
+import chardet
 
 # Загружаем переменные окружения из .env файла
 load_dotenv()
@@ -593,6 +594,12 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 print("[WARNING] Меню недоступно")
                 return
 
+            # Подключаем новые сигналы для создания документов
+            if hasattr(menu_bar, "newCodeEditorRequested"):
+                menu_bar.newCodeEditorRequested.connect(self._on_new_code_editor)
+            if hasattr(menu_bar, "newNotebookRequested"):
+                menu_bar.newNotebookRequested.connect(self._on_new_notebook)
+
             # Подключаем новые сигналы
             if hasattr(menu_bar, "openSettingsRequested"):
                 menu_bar.openSettingsRequested.connect(self._open_settings)
@@ -661,6 +668,20 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             print("✅ Сигналы меню подключены успешно")
         except Exception as e:
             print(f"⚠️ Ошибка подключения сигналов меню: {e}")
+
+    def _on_new_code_editor(self):
+        """Создание новой вкладки редактора кода"""
+        if MODULES_LOADED and hasattr(self.tab_document, "add_new_tab"):
+            self.tab_document.add_new_tab("Новый код", "# Новый код\n\n")
+        else:
+            print("📝 Новый редактор кода создан (fallback режим)")
+
+    def _on_new_notebook(self):
+        """Создание новой вкладки-блокнота с форматированием"""
+        if MODULES_LOADED and hasattr(self.tab_document, "add_notebook_tab"):
+            self.tab_document.add_notebook_tab("Новый блокнот", "<h2>Новая заметка</h2><p>Введите текст...</p>")
+        else:
+            print("📝 Новый блокнот создан (fallback режим)")
 
     def _open_settings(self):
         """Открыть диалог настроек"""
@@ -814,8 +835,10 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         )
         if file_path:
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    content = f.read()
+                with open(file_path, "rb") as f:
+                    raw = f.read()
+                encoding = chardet.detect(raw)["encoding"] or "utf-8"
+                content = raw.decode(encoding, errors="replace")
                 filename = os.path.basename(file_path)
                 if MODULES_LOADED and hasattr(self.tab_document, "add_new_tab"):
                     self.tab_document.add_new_tab(filename, content)

@@ -9,6 +9,8 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QTextEdit
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
+import chardet
+
 # Импортируем продвинутый текстовый редактор
 try:
     import sys
@@ -20,6 +22,7 @@ try:
         sys.path.insert(0, widgets_path)
     
     from gopiai.widgets.core.text_editor import TextEditorWidget
+    from gopiai.ui.components.rich_text_notebook_widget import RichTextNotebookWidget
     TEXT_EDITOR_AVAILABLE = True
     print("TextEditorWidget импортирован успешно")
 except ImportError as e:
@@ -78,43 +81,46 @@ class TabDocumentWidget(QWidget):
         self.tab_widget.setCurrentIndex(index)
         return editor
 
+    def add_notebook_tab(self, title="Новый блокнот", content=""):
+        """Добавление новой вкладки-блокнота с форматированием"""
+        notebook = RichTextNotebookWidget()
+        if content:
+            # Устанавливаем текст в редактор блокнота
+            if hasattr(notebook.editor, "setPlainText"):
+                notebook.editor.setPlainText(content)
+            elif hasattr(notebook.editor, "setHtml"):
+                notebook.editor.setHtml(content)
+        index = self.tab_widget.addTab(notebook, title)
+        self.tab_widget.setCurrentIndex(index)
+        return notebook
+
     def open_file_in_tab(self, file_path):
         """Открытие файла в новой вкладке"""
         try:
             if TEXT_EDITOR_AVAILABLE:
                 # Создаем текстовый редактор
                 editor = TextEditorWidget()
-                
-                # Открываем файл через методы редактора (он сам обработает кодировку)
                 editor.current_file = file_path
                 with open(file_path, 'rb') as f:
                     raw = f.read()
-                    
-                # Определяем кодировку как в оригинальном коде
                 import chardet
-                try:
-                    encoding = chardet.detect(raw)['encoding'] or 'utf-8'
-                    text = raw.decode(encoding)
-                    editor.current_encoding = encoding
-                except:
-                    text = raw.decode('utf-8', errors='replace')
-                    editor.current_encoding = 'utf-8'
-                
+                encoding = chardet.detect(raw)['encoding'] or 'utf-8'
+                text = raw.decode(encoding, errors='replace')
+                editor.current_encoding = encoding
                 editor.text_editor.setPlainText(text)
-                
-                # Подключаем сигнал изменения имени файла для обновления заголовка вкладки
                 import os
                 tab_title = os.path.basename(file_path)
                 editor.file_name_changed.connect(
                     lambda name: self._update_tab_title(editor, name)
                 )
-                
                 print(f"Файл открыт в TextEditorWidget: {file_path}")
             else:
                 # Fallback к обычному редактору
                 editor = QTextEdit()
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
+                with open(file_path, 'rb') as f:
+                    raw = f.read()
+                encoding = chardet.detect(raw)['encoding'] or 'utf-8'
+                content = raw.decode(encoding, errors='replace')
                 editor.setPlainText(content)
                 import os
                 tab_title = os.path.basename(file_path)

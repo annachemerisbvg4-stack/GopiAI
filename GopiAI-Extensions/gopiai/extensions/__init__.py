@@ -172,15 +172,4 @@ def init_notification_center_extension(main_window):
     return None
 
 
-        
-        if autogen_module:
-            logger.info("✅ AutoGen extension найден, добавляем dock...")
-            add_autogen_dock(main_window)
-            logger.info("✅ AutoGen extension успешно инициализирован")
-        else:
-            logger.warning("AutoGen extension не найден или недоступен")
-    except Exception as e:
-        logger.error(f"Ошибка при инициализации AutoGen extension: {e}")
-    return None
-
 __version__ = "0.1.0"

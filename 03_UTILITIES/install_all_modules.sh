@@ -1,4 +1,3 @@
-#!/bin/bash
 # Автоматическая установка всех модулей GopiAI в правильном порядке
 
 echo "🚀 Установка модулей GopiAI"
@@ -39,13 +38,13 @@ else
 fi
 cd ..
 
-echo "📦 Устанавливаем GopiAI-WebView..."
-cd GopiAI-WebView
+echo "📦 Устанавливаем GopiAI-Extensions..."
+cd GopiAI-Extensions
 pip install -e .
 if [ $? -eq 0 ]; then
-    echo "✅ GopiAI-WebView установлен успешно"
+    echo "✅ GopiAI-Extensions установлен успешно"
 else
-    echo "❌ Ошибка установки GopiAI-WebView"
+    echo "❌ Ошибка установки GopiAI-Extensions"
     exit 1
 fi
 cd ..

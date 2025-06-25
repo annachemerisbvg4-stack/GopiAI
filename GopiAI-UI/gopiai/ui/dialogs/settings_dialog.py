@@ -231,36 +231,29 @@ class GopiAISettingsDialog(QDialog):
     def _apply_theme_styles(self):
         """Применяет полную интеграцию с темой для всех элементов диалога"""
         colors = self._get_theme_colors_for_dialog()
-        
-        # Определяем текст для кнопок на основе яркости фона
         is_light_bg = self._is_light_color(colors['bg_color'])
         button_text_color = "#1a1a1a" if is_light_bg else "#ffffff"
-        
-        # Применяем полные стили с интеграцией темы
         self.setStyleSheet(f"""
             QDialog {{
                 background-color: {colors['bg_color']};
                 color: {colors['text_color']};
                 border: 1px solid {colors['border_color']};
-                border-radius: 1px;
+                border-radius: 8px;
             }}
-            
             QWidget {{
                 background-color: {colors['bg_color']};
                 color: {colors['text_color']};
             }}
-            
             QLabel {{
                 color: {colors['text_color']};
                 background-color: transparent;
             }}
-            
             QPushButton {{
                 background-color: {colors['button_color']};
                 color: {button_text_color};
                 border: 1px solid {colors['border_color']};
                 padding: 8px 16px;
-                border-radius: 1px;
+                border-radius: 4px;
                 font-weight: 500;
                 min-width: 80px;
             }}
@@ -271,10 +264,9 @@ class GopiAISettingsDialog(QDialog):
             QPushButton:pressed {{
                 background-color: {colors['selected_color']};
             }}
-            
             QTabWidget::pane {{
                 border: 1px solid {colors['border_color']};
-                border-radius: 1px;
+                border-radius: 6px;
                 background-color: {colors['bg_color']};
                 top: -1px;
             }}
@@ -283,8 +275,8 @@ class GopiAISettingsDialog(QDialog):
                 color: {colors['text_color']};
                 padding: 10px 20px;
                 margin-right: 2px;
-                border-top-left-radius: 1px;
-                border-top-right-radius: 1px;
+                border-top-left-radius: 6px;
+                border-top-right-radius: 6px;
                 border: 1px solid {colors['border_color']};
                 border-bottom: none;
             }}
@@ -295,42 +287,22 @@ class GopiAISettingsDialog(QDialog):
             QTabBar::tab:hover {{
                 background-color: {colors['hover_color']};
             }}
-            
-            QFrame {{
-                background-color: {colors['button_color']};
-                border: 1px solid {colors['border_color']};
-                border-radius: 1px;
-                color: {colors['text_color']};
+            /* Убираем рамки и фон у всех QFrame, QGroupBox, SettingsCard */
+            QFrame, QGroupBox, QFrame#SettingsCard {{
+                background: transparent;
+                border: none;
+                box-shadow: none;
             }}
-            QFrame:hover {{
-                background-color: {colors['hover_color']};
-                border-color: {colors['accent_color']};
-            }}
-            
-            QFrame#SettingsCard {{
-                background-color: {colors['button_color']};
-                border: 1px solid {colors['border_color']};
-                border-radius: 1px;
-                color: {colors['text_color']};
-                padding: 16px;
-                margin: 6px;
-            }}
-            QFrame#SettingsCard:hover {{
-                background-color: {colors['hover_color']};
-                border-color: {colors['accent_color']};
-            }}
-            
             QLabel#DescriptionLabel {{
                 color: {colors['text_color']};
                 background-color: transparent;
                 font-size: 9pt;
             }}
-            
             QComboBox {{
                 background-color: {colors['button_color']};
                 color: {colors['text_color']};
                 border: 1px solid {colors['border_color']};
-                border-radius: 1px;
+                border-radius: 4px;
                 padding: 6px;
                 min-width: 120px;
             }}
@@ -356,7 +328,6 @@ class GopiAISettingsDialog(QDialog):
                 border: 1px solid {colors['border_color']};
                 selection-background-color: {colors['accent_color']};
             }}
-            
             QCheckBox {{
                 color: {colors['text_color']};
                 spacing: 8px;
@@ -366,7 +337,7 @@ class GopiAISettingsDialog(QDialog):
                 width: 18px;
                 height: 18px;
                 border: 2px solid {colors['border_color']};
-                border-radius: 1px;
+                border-radius: 4px;
                 background-color: {colors['button_color']};
             }}
             QCheckBox::indicator:hover {{
@@ -380,12 +351,11 @@ class GopiAISettingsDialog(QDialog):
             QCheckBox::indicator:checked:hover {{
                 background-color: {colors['selected_color']};
             }}
-            
             QSpinBox, QLineEdit, QTextEdit {{
                 background-color: {colors['button_color']};
                 color: {colors['text_color']};
                 border: 1px solid {colors['border_color']};
-                border-radius: 1px;
+                border-radius: 4px;
                 padding: 6px;
             }}
             QSpinBox:hover, QLineEdit:hover, QTextEdit:hover {{
@@ -396,7 +366,6 @@ class GopiAISettingsDialog(QDialog):
                 border-color: {colors['accent_color']};
                 border-width: 2px;
             }}
-            
             QScrollArea {{
                 background-color: {colors['bg_color']};
                 border: none;
@@ -404,15 +373,14 @@ class GopiAISettingsDialog(QDialog):
             QScrollArea > QWidget > QWidget {{
                 background-color: {colors['bg_color']};
             }}
-            
             QScrollBar:vertical {{
                 background-color: {colors['button_color']};
                 width: 12px;
-                border-radius: 1px;
+                border-radius: 4px;
             }}
             QScrollBar::handle:vertical {{
                 background-color: {colors['border_color']};
-                border-radius: 1px;
+                border-radius: 4px;
                 min-height: 20px;
             }}
             QScrollBar::handle:vertical:hover {{
@@ -422,17 +390,7 @@ class GopiAISettingsDialog(QDialog):
                 border: none;
                 background: none;
             }}
-            
-            QFormLayout {{
-                background-color: transparent;
-            }}
-            QVBoxLayout {{
-                background-color: transparent;
-            }}
-            QHBoxLayout {{
-                background-color: transparent;
-            }}
-            QGridLayout {{
+            QFormLayout, QVBoxLayout, QHBoxLayout, QGridLayout {{
                 background-color: transparent;
             }}
         """)

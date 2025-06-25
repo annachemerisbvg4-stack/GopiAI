@@ -30,7 +30,7 @@ class QuickNotesWidget(QWidget):
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
-          # Заголовок
+        # Заголовок
         header = QLabel("📝 Быстрые заметки")
         header.setObjectName("panelHeader")
         header.setFixedHeight(30)
@@ -80,7 +80,7 @@ class SimpleCalculatorWidget(QWidget):
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
-          # Заголовок
+        # Заголовок
         header = QLabel("🔢 Калькулятор")
         header.setObjectName("panelHeader")
         header.setFixedHeight(30)
@@ -137,7 +137,7 @@ class TaskListWidget(QWidget):
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
-          # Заголовок
+        # Заголовок
         header = QLabel("✅ Список задач")
         header.setObjectName("panelHeader")
         header.setFixedHeight(30)
@@ -227,7 +227,7 @@ def init_productivity_extension(main_window):
         notes_widget = QuickNotesWidget()
         calc_widget = SimpleCalculatorWidget() 
         tasks_widget = TaskListWidget()
-          # Добавляем их в интерфейс как вкладки в нижней панели
+        # Добавляем их в интерфейс как вкладки в нижней панели
         if hasattr(main_window, 'add_dock_widget'):
             main_window.add_dock_widget("quick_notes", notes_widget, "bottom")
             main_window.add_dock_widget("calculator", calc_widget, "bottom")

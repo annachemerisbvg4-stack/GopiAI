@@ -29,7 +29,8 @@ class StandaloneMenuBar(QMenuBar):
     """Автономное меню с полным набором сигналов"""
     
     # Сигналы файлового меню
-    newFileRequested = Signal()
+    newCodeEditorRequested = Signal()
+    newNotebookRequested = Signal()
     openFileRequested = Signal()
     openFolderRequested = Signal()
     saveRequested = Signal()
@@ -130,7 +131,12 @@ class StandaloneMenuBar(QMenuBar):
 
     def _setup_file_menu(self, file_menu):
         """Настройка файлового меню"""
-        self.new_action = file_menu.addAction("Создать новый")
+        # Подменю "Создать новый"
+        self.new_menu = QMenu("Создать новый", file_menu)
+        self.new_code_action = self.new_menu.addAction("Редактор кода")
+        self.new_notebook_action = self.new_menu.addAction("Блокнот")
+        file_menu.addMenu(self.new_menu)
+
         self.open_action = file_menu.addAction("Открыть файл")
         self.open_folder_action = file_menu.addAction("Открыть папку")
         file_menu.addSeparator()
@@ -138,9 +144,10 @@ class StandaloneMenuBar(QMenuBar):
         self.save_as_action = file_menu.addAction("Сохранить как")
         file_menu.addSeparator()
         self.exit_action = file_menu.addAction("Выход")
-        
+
         # Подключение сигналов
-        self.new_action.triggered.connect(self.newFileRequested.emit)
+        self.new_code_action.triggered.connect(self.newCodeEditorRequested.emit)
+        self.new_notebook_action.triggered.connect(self.newNotebookRequested.emit)
         self.open_action.triggered.connect(self.openFileRequested.emit)
         self.open_folder_action.triggered.connect(self.openFolderRequested.emit)
         self.save_action.triggered.connect(self.saveRequested.emit)
@@ -174,7 +181,6 @@ class StandaloneMenuBar(QMenuBar):
         self.chat_action = view_menu.addAction("ИИ чат")
         self.browser_action = view_menu.addAction("Браузер")
         self.terminal_action = view_menu.addAction("Терминал")
-        self.text_editor_action = view_menu.addAction("Редактор")
 
         view_menu.addSeparator()
 
@@ -198,7 +204,6 @@ class StandaloneMenuBar(QMenuBar):
         self.chat_action.triggered.connect(self.openChatRequested.emit)
         self.browser_action.triggered.connect(self.openBrowserRequested.emit)
         self.terminal_action.triggered.connect(self.openTerminalRequested.emit)
-        self.text_editor_action.triggered.connect(self._on_text_editor_toggle)
 
     def _on_text_editor_toggle(self):
         """Обработчик для показа/скрытия всех вкладок редактора или сообщения об их отсутствии"""
@@ -247,7 +252,8 @@ class StandaloneMenuBar(QMenuBar):
         # Маппинг действий к иконкам
         icon_mapping = {
             # Файловое меню
-            'new_action': 'file-plus',
+            'new_code_action': 'file-code',
+            'new_notebook_action': 'book-open',
             'open_action': 'folder-open',
             'open_folder_action': 'folder-open',
             'save_action': 'save',
@@ -283,15 +289,12 @@ class StandaloneMenuBar(QMenuBar):
         for action_name, icon_name in icon_mapping.items():
             if hasattr(self, action_name):
                 action = getattr(self, action_name)
-                
                 try:
-                    # Получаем иконку методом get_icon
                     if hasattr(self.icon_system, 'get_icon'):
                         icon = self.icon_system.get_icon(icon_name)
                     else:
                         print(f"⚠️ Неизвестный тип icon_system: {type(self.icon_system)}")
                         continue
-                        
                     if not icon.isNull():
                         action.setIcon(icon)
                 except Exception as e:
