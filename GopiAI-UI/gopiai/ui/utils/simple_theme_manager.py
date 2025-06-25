@@ -24,7 +24,7 @@ MATERIAL_SKY_THEME = {
     "name": "Material Sky",
     "description": "Тема, сгенерированная на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#cde5ff",
         "control_color": "#006398",
         "accent_color": "#7a4c8f",
@@ -57,7 +57,7 @@ EMERALD_GARDEN_THEME = {
     "name": "Emerald Garden",
     "description": "Зелёная тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#b9f47d",
         "control_color": "#3b6a00",
         "accent_color": "#006c53",
@@ -90,7 +90,7 @@ CRIMSON_RELIC_THEME = {
     "name": "Crimson Relic",
     "description": "Красная тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#ffdad7",
         "control_color": "#c00020",
         "accent_color": "#875219",
@@ -123,7 +123,7 @@ GOLDEN_EMBER_THEME = {
     "name": "Golden Ember",
     "description": "Оранжево-золотая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#ffdbcf",
         "control_color": "#a43d0b",
         "accent_color": "#6e5e00",
@@ -156,7 +156,7 @@ SUNLIT_MEADOW_THEME = {
     "name": "Sunlit Meadow",
     "description": "Жёлто-зелёная тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#ffdf91",
         "control_color": "#755b00",
         "accent_color": "#506600",
@@ -189,7 +189,7 @@ MINT_FROST_THEME = {
     "name": "Mint Frost",
     "description": "Мятно-серо-лавандовая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#c8ead9",
         "control_color": "#466557",
         "accent_color": "#585d77",
@@ -222,7 +222,7 @@ VIOLET_DREAM_THEME = {
     "name": "Violet Dream",
     "description": "Сине-фиолетовая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#e0e0ff",
         "control_color": "#3e4ade",
         "accent_color": "#82478f",
@@ -255,7 +255,7 @@ INDIGO_CANDY_THEME = {
     "name": "Indigo Candy",
     "description": "Индиго-розовая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#e1e0ff",
         "control_color": "#4b50c6",
         "accent_color": "#8b428d",
@@ -288,7 +288,7 @@ PINK_MIRAGE_THEME = {
     "name": "Pink Mirage",
     "description": "Розово-фиолетовая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#ffd7f2",
         "control_color": "#ab00a1",
         "accent_color": "#894d55",
@@ -321,7 +321,7 @@ OLIVE_LIBRARY_THEME = {
     "name": "Olive Library",
     "description": "Оливково-бежево-серая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#eae2c9",
         "control_color": "#635e4a",
         "accent_color": "#596154",
@@ -354,7 +354,7 @@ LAVENDER_MIST_THEME = {
     "name": "Lavender Mist",
     "description": "Лавандово-серая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#e0e1f2",
         "control_color": "#5b5e6b",
         "accent_color": "#6a5a64",
@@ -387,7 +387,7 @@ GRAPHITE_NIGHT_THEME = {
     "name": "Graphite Night",
     "description": "Графитово-серая тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#dde4e3",
         "control_color": "#586060",
         "accent_color": "#605d64",
@@ -420,7 +420,7 @@ PUMPKIN_FIELD_THEME = {
     "name": "Pumpkin Field",
     "description": "Тыквенно-оранжевая с зелёным акцентом тема на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#ffdcc6",
         "control_color": "#944a00",
         "accent_color": "#5d6300",
@@ -453,7 +453,7 @@ SCARLET_FIRE_THEME = {
     "name": "Scarlet Fire",
     "description": "Алый, насыщенно-красный вариант на основе Angular Material tokens. Светлый и тёмный вариант.",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#ffdad5",
         "control_color": "#c00007",
         "accent_color": "#875203",
@@ -486,7 +486,7 @@ TROPICAL_BOUQUET_THEME = {
     "name": "Tropical Bouquet",
     "description": "Тропическая тема: попугайчики, бугенвиллия, салатовые и розовые акценты. Светлый — нежный, тёмный — неоновый!",
     "light": {
-        "main_color": "#ffffff",
+        "main_color": "#cccccc",
         "header_color": "#ffd9e2",
         "control_color": "#b90063",
         "accent_color": "#506600",
@@ -594,11 +594,11 @@ def _adjust_text_contrast(theme):
                 # Определяем более контрастные цвета для лучшей читаемости
                 # Для светлого фона - чёрный текст, для тёмного - белый
                 if text_element not in theme:  # Не перезаписываем, если уже задан
-                    theme[text_element] = "#000000" if is_light else "#ffffff"
+                    theme[text_element] = "#000000" if is_light else "#cccccc"
                     
                 # Особая обработка для кнопок - нужен максимальный контраст
                 if bg_element.startswith("button_"):
-                    theme[text_element] = "#000000" if is_light else "#ffffff"
+                    theme[text_element] = "#000000" if is_light else "#cccccc"
     
     return theme
 
@@ -622,7 +622,7 @@ def save_theme(colors):
             header_color = colors[2]
             button_color = colors[3]
             bg_luminance = (0.299 * bg_color.red() + 0.587 * bg_color.green() + 0.114 * bg_color.blue())
-            text_color = "#FFFFFF" if bg_luminance < 128 else "#000000"
+            text_color = "#cccccc" if bg_luminance < 128 else "#000000"
             theme_data.update({
                 "main_color": bg_color.name(),
                 "header_color": header_color.name(),
@@ -634,7 +634,7 @@ def save_theme(colors):
                 "button_active_color": main_color.name(),
                 "text_color": text_color,
                 "border_color": _darken_color(bg_color.name(), 10),
-                "titlebar_text": "#FFFFFF"
+                "titlebar_text": "#cccccc"
             })
             theme_data["_original_colors"] = [
                 {"index": 0, "name": "primary", "hex": main_color.name(),
@@ -681,7 +681,7 @@ def apply_theme(app):
     theme = _adjust_text_contrast(theme)
     try:
         palette = QPalette()
-        main_color = QColor(theme.get("main_color", "#FFFFFF"))
+        main_color = QColor(theme.get("main_color", "#cccccc"))
         text_color = QColor(theme.get("text_color", "#000000"))
         accent_color = QColor(theme.get("accent_color", "#0078D7"))
         border_color = QColor(theme.get("border_color", "#CCCCCC"))
@@ -689,9 +689,9 @@ def apply_theme(app):
         header_color = QColor(theme.get("header_color", "#F0F0F0"))
         
         # Специфические цвета текста для различных элементов
-        button_text_color = QColor(theme.get("button_text", "#000000" if _is_light(theme.get("button_color", "#E0E0E0")) else "#FFFFFF"))
-        button_hover_text_color = QColor(theme.get("button_hover_text", "#000000" if _is_light(theme.get("button_hover_color", "#F0F0F0")) else "#FFFFFF"))
-        button_active_text_color = QColor(theme.get("button_active_text", "#000000" if _is_light(theme.get("button_active_color", "#0078D7")) else "#FFFFFF"))
+        button_text_color = QColor(theme.get("button_text", "#000000" if _is_light(theme.get("button_color", "#E0E0E0")) else "#cccccc"))
+        button_hover_text_color = QColor(theme.get("button_hover_text", "#000000" if _is_light(theme.get("button_hover_color", "#F0F0F0")) else "#cccccc"))
+        button_active_text_color = QColor(theme.get("button_active_text", "#000000" if _is_light(theme.get("button_active_color", "#0078D7")) else "#cccccc"))
         
         # Устанавливаем цвета элементов
         palette.setColor(QPalette.ColorRole.Window, main_color)
@@ -741,7 +741,7 @@ def apply_theme(app):
             color: {text_color.name()};
             background-color: {main_color.name()};
             selection-background-color: {accent_color.name()};
-            selection-color: #FFFFFF;
+            selection-color: #cccccc;
         }}
         QLineEdit, QTextEdit, QPlainTextEdit {{
             color: {text_color.name()};
@@ -749,7 +749,7 @@ def apply_theme(app):
             border: 1px solid {border_color.name()};
         }}
         QMenuBar::item:selected, QMenu::item:selected {{
-            color: #FFFFFF;
+            color: #cccccc;
             background-color: {accent_color.name()};
         }}
         QCheckBox, QRadioButton {{
@@ -773,7 +773,7 @@ def apply_theme(app):
             background-color: {main_color.name()};
         }}
         QTreeView::item:selected, QListView::item:selected, QTableView::item:selected {{
-            color: #FFFFFF;
+            color: #cccccc;
             background-color: {accent_color.name()};
         }}
         QHeaderView::section {{

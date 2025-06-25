@@ -49,12 +49,12 @@ class TabDocumentWidget(QWidget):
         self.tab_widget.setUsesScrollButtons(True)  # Кнопки прокрутки при множестве вкладок
         self.tab_widget.setElideMode(Qt.TextElideMode.ElideRight)  # Обрезаем длинные названия
         
-        # Добавляем стартовую вкладку
-        welcome_tab = QTextEdit()
-        welcome_tab.setPlainText("Добро пожаловать в GopiAI v0.3.0!")
-        welcome_tab.setReadOnly(True)
+        # # Добавляем стартовую вкладку
+        # welcome_tab = QTextEdit()
+        # welcome_tab.setPlainText("Добро пожаловать в GopiAI v0.3.0!")
+        # welcome_tab.setReadOnly(True)
         
-        self.tab_widget.addTab(welcome_tab, "Добро пожаловать")
+        # self.tab_widget.addTab(welcome_tab, "Добро пожаловать")
         
         # Подключаем сигнал закрытия вкладок
         self.tab_widget.tabCloseRequested.connect(self._close_tab)
@@ -144,7 +144,7 @@ class TabDocumentWidget(QWidget):
 
     def _close_tab(self, index):
         """Закрытие вкладки по индексу"""
-        if self.tab_widget.count() > 1:  # Оставляем хотя бы одну вкладку
+        if self.tab_widget.count() > 0:  
             self.tab_widget.removeTab(index)
 
     def add_browser_tab(self, url="about:blank", title="Браузер"):

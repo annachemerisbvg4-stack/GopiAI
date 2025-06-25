@@ -227,40 +227,41 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self.titlebar_with_menu.setFixedHeight(self.TITLEBAR_HEIGHT * 2)
         main_layout.addWidget(self.titlebar_with_menu)
 
-        # Основной сплиттер (горизонтальный)
+        # --- Новый layout: горизонтальный сплиттер (проводник | центральная область | чат) ---
         main_splitter = QSplitter(Qt.Orientation.Horizontal)
         main_layout.addWidget(main_splitter, 1)
-        
+
         # Левая панель - файловый проводник (модульный)
         self.file_explorer = FileExplorerWidget(icon_manager=self.icon_manager)
-        self.file_explorer.setMinimumWidth(250)
+        self.file_explorer.setMinimumWidth(0)
         self.file_explorer.setMaximumWidth(600)
         self.file_explorer.resize(300, 600)
-
         size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self.file_explorer.setSizePolicy(size_policy)
         main_splitter.addWidget(self.file_explorer)
 
-        # Правый сплиттер (вертикальный)
-        right_splitter = QSplitter(Qt.Orientation.Vertical)
-        main_splitter.addWidget(right_splitter)
-
-        # Центральный сплиттер (горизонтальный)
-        center_splitter = QSplitter(Qt.Orientation.Horizontal)
-        right_splitter.addWidget(center_splitter)
+        # Центральная область: вертикальный сплиттер (TabDocumentWidget | терминал)
+        center_vertical_splitter = QSplitter(Qt.Orientation.Vertical)
+        main_splitter.addWidget(center_vertical_splitter)
 
         # Центральная область - система вкладок (модульная)
         self.tab_document = TabDocumentWidget()
-        center_splitter.addWidget(self.tab_document)
+        self.tab_document.setMinimumWidth(500)
+        center_vertical_splitter.addWidget(self.tab_document)
+
+        # Нижняя панель — терминал под TabDocumentWidget
+        self.terminal_widget = TerminalWidget()
+        self.terminal_widget.setMinimumHeight(150)
+        self.terminal_widget.setMaximumHeight(400)
+        terminal_size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.terminal_widget.setSizePolicy(terminal_size_policy)
+        center_vertical_splitter.addWidget(self.terminal_widget)
 
         # Правая панель - чат с ИИ (модульный)
         try:
-            # Пытаемся использовать WebView чат с современным интерфейсом
             print("🔍 Попытка создать ChatWidget...")
             self.chat_widget = ChatWidget()
             print("🔍 ChatWidget создан успешно")
-            
-            # Передаем менеджер тем в WebView чат для интеграции
             if hasattr(self, 'theme_manager'):
                 print("🔍 Передаем theme_manager в ChatWidget...")
                 self.chat_widget.set_theme_manager(self.theme_manager)
@@ -271,49 +272,29 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             print(f"❌ Тип ошибки: {type(e).__name__}")
             import traceback
             print(f"❌ Полная ошибка: {traceback.format_exc()}")
-            # Fallback - создаем минимальный заглушечный виджет
             self.chat_widget = SimpleWidget("Chat")
             print("🔄 Fallback: используется SimpleWidget для чата")
-        self.chat_widget.setMinimumWidth(250)
+        self.chat_widget.setMinimumWidth(0)
         self.chat_widget.setMaximumWidth(600)
-        self.chat_widget.resize(300, 600)
-        
         chat_size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self.chat_widget.setSizePolicy(chat_size_policy)
-        center_splitter.addWidget(self.chat_widget)
-
-        # ИСПРАВЛЕНИЕ: НЕ скрываем чат, даже если расширения доступны
-        # if EXTENSIONS_AVAILABLE:
-        #     self.chat_widget.setVisible(False)
-
-        # Нижняя панель - терминал (модульный)
-        self.terminal_widget = TerminalWidget()
-        self.terminal_widget.setMinimumHeight(150)
-        self.terminal_widget.setMaximumHeight(400)
-        
-        terminal_size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.terminal_widget.setSizePolicy(terminal_size_policy)
-        right_splitter.addWidget(self.terminal_widget)
+        main_splitter.addWidget(self.chat_widget)
 
         # Настройка пропорций сплиттеров
-        main_splitter.setSizes([300, 1100])
-        center_splitter.setSizes([700, 350])
-        right_splitter.setSizes([700, 200])
-
-        main_splitter.setChildrenCollapsible(True)
-        center_splitter.setChildrenCollapsible(True)
-        right_splitter.setChildrenCollapsible(False)
-
+        main_splitter.setSizes([100, 900, 100])  # Проводник | центр | чат
+        center_vertical_splitter.setSizes([700, 200])  # TabDocumentWidget | терминал
+        main_splitter.setCollapsible(0, True)   # Проводник можно схлопнуть
+        main_splitter.setCollapsible(1, False)  # Центр нельзя схлопнуть
+        main_splitter.setCollapsible(2, True)   # Чат можно схлопнуть
+        center_vertical_splitter.setChildrenCollapsible(True)
         main_splitter.setStretchFactor(0, 0)
-        main_splitter.setStretchFactor(1, 1)
-        center_splitter.setStretchFactor(0, 1)
-        center_splitter.setStretchFactor(1, 0)
-        right_splitter.setStretchFactor(0, 1)
-        right_splitter.setStretchFactor(1, 0)
+        main_splitter.setStretchFactor(1, 10)
+        main_splitter.setStretchFactor(2, 0)
+        center_vertical_splitter.setStretchFactor(0, 1)
+        center_vertical_splitter.setStretchFactor(1, 0)
 
         self._configure_splitter_behavior()
         self._setup_splitter_constraints()  # Добавляем этот вызов
-        
         print("[OK] Модульный UI настроен с ограничениями размеров панелей")
 
     def _configure_splitter_behavior(self):
@@ -323,34 +304,8 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             if main_splitter:
                 main_splitter.setHandleWidth(5)  # Увеличиваем ширину handle для лучшего захвата
                 
-                # Устанавливаем минимальные размеры для левой панели (файловый проводник)
-                self.file_explorer.setMinimumWidth(50)  # Минимум 50px
-                
-                right_splitter = main_splitter.widget(1)
-                if isinstance(right_splitter, QSplitter):
-                    right_splitter.setHandleWidth(5)
-                    
-                    center_splitter = right_splitter.widget(0)
-                    if isinstance(center_splitter, QSplitter):
-                        center_splitter.setHandleWidth(5)
-                        
-                        # Устанавливаем минимальные размеры для центральной области
-                        self.tab_document.setMinimumWidth(200)  # Минимум 200px для редактора
-                        
-                        # Устанавливаем минимальные размеры для чата
-                        self.chat_widget.setMinimumWidth(50)  # Минимум 50px для чата
-                        
-                        center_splitter.setCollapsible(0, False)  # Центральная область не сворачивается
-                        center_splitter.setCollapsible(1, True)   # Чат может сворачиваться
-                    
-                    # Устанавливаем минимальные размеры для терминала
-                    self.terminal_widget.setMinimumHeight(30)  # Минимум 30px для терминала
-                    
-                    right_splitter.setCollapsible(0, False)  # Центральная область не сворачивается
-                    right_splitter.setCollapsible(1, True)   # Терминал может сворачиваться
-                
-                main_splitter.setCollapsible(0, True)   # Файловый проводник может сворачиваться
-                main_splitter.setCollapsible(1, False)  # Правая часть не сворачивается
+                # Минимальные размеры и collapsible теперь задаются в _setup_ui
+                pass
                 
             print("[OK] Поведение сплиттеров настроено с ограничениями")
             
@@ -419,7 +374,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 
                 right_splitter = main_splitter.widget(1)
                 if isinstance(right_splitter, QSplitter):
-                    right_splitter.setSizes([700, 200])
+                    right_splitter.setSizes([900, 100])  # Чат высокий, терминал низкий по умолчанию
                     
                     center_splitter = right_splitter.widget(0)
                     if isinstance(center_splitter, QSplitter):

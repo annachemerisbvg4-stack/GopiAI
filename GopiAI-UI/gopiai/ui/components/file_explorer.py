@@ -19,7 +19,7 @@ File Explorer Component для GopiAI Standalone Interface
 
 import os
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTreeView, QHBoxLayout, 
-                               QPushButton, QLineEdit, QHeaderView, QSizePolicy, QFileSystemModel)
+QPushButton, QLineEdit, QHeaderView, QSizePolicy, QFileSystemModel)
 from PySide6.QtCore import QDir, Signal, Qt, QModelIndex
 from PySide6.QtGui import QIcon
 from .file_type_detector import FileTypeDetector
@@ -202,15 +202,14 @@ class FileExplorerWidget(QWidget):
         self.tree_view.setRootIndex(self.model.index(home_path))
 
     def _go_up(self):
-        """Переход на уровень вверх"""
+        """Переход на уровень вверх (надёжно через os.path.dirname)"""
+        import os
         current_path = self.path_input.text()
-        parent_path = QDir(current_path).absolutePath()
-        if parent_path != current_path:
-            parent_dir = QDir(parent_path)
-            parent_dir.cdUp()
-            new_path = parent_dir.absolutePath()
-            self.path_input.setText(new_path)
-            self.tree_view.setRootIndex(self.model.index(new_path))
+        parent_path = os.path.dirname(os.path.normpath(current_path))
+        # Не позволяем выйти за пределы корня (например, / или диска)
+        if parent_path and parent_path != current_path and os.path.exists(parent_path):
+            self.path_input.setText(parent_path)
+            self.tree_view.setRootIndex(self.model.index(parent_path))
 
     def _path_changed(self):
         """Обработка изменения пути"""

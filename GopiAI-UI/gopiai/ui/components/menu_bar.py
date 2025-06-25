@@ -30,7 +30,6 @@ class StandaloneMenuBar(QMenuBar):
     
     # Сигналы меню вида
     openTextEditorRequested = Signal()
-    openProjectExplorerRequested = Signal()
     openChatRequested = Signal()
     openBrowserRequested = Signal()
     openTerminalRequested = Signal()
@@ -153,39 +152,37 @@ class StandaloneMenuBar(QMenuBar):
         self.select_all_action = edit_menu.addAction("Выделить всё")
 
     def _setup_view_menu(self, view_menu):
-        """Настройка меню вида"""
-        # Основные панели
-        self.project_explorer_action = view_menu.addAction("Файловый проводник")
+        """Настройка меню вида (без файлового проводника)"""
+        # Основные панели (без проводника)
         self.chat_action = view_menu.addAction("ИИ чат")
         self.browser_action = view_menu.addAction("Браузер")
         self.terminal_action = view_menu.addAction("Терминал")
         self.text_editor_action = view_menu.addAction("Редактор")
-        
+
         view_menu.addSeparator()
-        
+
         # Подменю расширений
         extensions_menu = view_menu.addMenu("Расширения")
         self.extensions_menu = extensions_menu  # Сохраняем для установки иконки
-        
+
         self.productivity_action = extensions_menu.addAction("Инструменты продуктивности")
         self.voice_action = extensions_menu.addAction("Голосовое управление")
         self.ai_tools_action = extensions_menu.addAction("ИИ инструменты")
-        
+
         # Делаем действия расширений checkable
         self.productivity_action.setCheckable(True)
         self.voice_action.setCheckable(True)
         self.ai_tools_action.setCheckable(True)
-        
+
         # По умолчанию продуктивность включена
         self.productivity_action.setChecked(True)
-        
+
         # Подключение сигналов вида
-        self.project_explorer_action.triggered.connect(self.openProjectExplorerRequested.emit)
         self.chat_action.triggered.connect(self.openChatRequested.emit)
         self.browser_action.triggered.connect(self.openBrowserRequested.emit)
         self.terminal_action.triggered.connect(self.openTerminalRequested.emit)
         self.text_editor_action.triggered.connect(self.openTextEditorRequested.emit)
-        
+
         # Подключение сигналов расширений
         self.productivity_action.triggered.connect(self.toggleProductivityExtension.emit)
         self.voice_action.triggered.connect(self.toggleVoiceExtension.emit)
@@ -219,7 +216,6 @@ class StandaloneMenuBar(QMenuBar):
             'select_all_action': 'text-select',
             
             # Меню вида
-            'project_explorer_action': 'folder-open',
             'chat_action': 'message-circle',
             'browser_action': 'globe',
             'terminal_action': 'terminal',
