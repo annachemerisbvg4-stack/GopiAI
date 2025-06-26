@@ -12,7 +12,7 @@ import random
 from pathlib import Path
 
 # Путь к директории AI Router
-ROUTER_PATH = os.path.join(os.path.dirname(__file__), "../../../01_AI_ROUTER_SYSTEM")
+ROUTER_PATH = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "ai_router"))
 
 class AIRouterLLM:
     """
@@ -81,49 +81,80 @@ class AIRouterLLM:
         # Экранируем сообщение для безопасности
         safe_message = message.replace("'", "\\'").replace('"', '\\"')
         
-        # JavaScript код для вызова AI Router
-        js_code = f"""
-        const path = require('path');
-        try {{
-            const {{ AIRouter }} = require('{ROUTER_PATH}/ai_router_system.js');
-            const config = require('{ROUTER_PATH}/ai_rotation_config.js');
-            
-            async function processRequest() {{
-                try {{
-                    const router = new AIRouter(config.AI_PROVIDERS_CONFIG);
-                    const result = await router.processRequest('{safe_message}', '{task_type}', '{model_preference}');
-                    console.log(JSON.stringify({{ 
-                        success: true, 
-                        response: result.response,
-                        provider: result.provider,
-                        tokens: result.tokens
-                    }}));
-                }} catch (error) {{
-                    console.log(JSON.stringify({{ 
-                        success: false, 
-                        error: error.message || "Неизвестная ошибка в processRequest" 
-                    }}));
-                }}
-            }}
-            
-            processRequest();
-        }} catch (error) {{
-            console.log(JSON.stringify({{ 
-                success: false, 
-                error: `Failed to require modules: ${{error.message || "Unknown error"}}` 
-            }}));
-        }}
-        """
+        # Создаем временный JS файл вместо передачи кода через -e
+        temp_js_file = os.path.join(ROUTER_PATH, "temp_request.js")
         
-        # Выполняем через Node.js
         try:
+            # JavaScript код для вызова AI Router
+            js_code = f"""
+            const path = require('path');
+            try {{
+                // Используем локальные пути относительно текущего файла
+                const router = require('./ai_router_system.js').AIRouter;
+                const config = require('./ai_rotation_config.js');
+                
+                // Оценка количества токенов
+                function estimateTokens(text) {{
+                    if (!text) return 0;
+                    // Грубая оценка: ~4 символа = 1 токен для латиницы, ~2 для кириллицы
+                    const latinChars = (text.match(/[a-zA-Z0-9\\s.,!?;:()\\-]/g) || []).length;
+                    const cyrillicChars = text.length - latinChars;
+                    return Math.ceil(latinChars / 4 + cyrillicChars / 2);
+                }}
+                
+                async function processRequest() {{
+                    try {{
+                        const routerInstance = new router(config.AI_PROVIDERS_CONFIG);
+                        const result = await routerInstance.chat('{safe_message}', {{ 
+                            taskType: '{task_type}',
+                            temperature: 0.7,
+                            maxTokens: 1000
+                        }});
+                        console.log(JSON.stringify({{ 
+                            success: true, 
+                            response: result.response,
+                            provider: result.provider,
+                            tokens: result.tokens || estimateTokens(result.response) || 0
+                        }}));
+                    }} catch (error) {{
+                        console.log(JSON.stringify({{ 
+                            success: false, 
+                            error: error.message || "Неизвестная ошибка в processRequest" 
+                        }}));
+                    }}
+                }}
+                
+                processRequest();
+            }} catch (error) {{
+                console.log(JSON.stringify({{ 
+                    success: false, 
+                    error: `Failed to require modules: ${{error.message || "Unknown error"}}` 
+                }}));
+            }}
+            """
+            
+            # Записываем код во временный файл
+            try:
+                with open(temp_js_file, 'w', encoding='utf-8') as f:
+                    f.write(js_code)
+            except Exception as e:
+                print(f"⚠️ Ошибка при создании временного JS файла: {e}")
+                return self._simulate_router_call(message, task_type)
+            
+            # Выполняем через Node.js
             result = subprocess.run(
-                ["node", "-e", js_code],
+                ["node", temp_js_file],
                 capture_output=True,
                 text=True,
                 timeout=30,  # 30 секунд таймаут
                 cwd=ROUTER_PATH
             )
+            
+            # Удаляем временный файл
+            try:
+                os.remove(temp_js_file)
+            except Exception as e:
+                print(f"⚠️ Не удалось удалить временный файл: {e}")
             
             if result.returncode == 0:
                 try:
@@ -155,22 +186,26 @@ class AIRouterLLM:
     
     def _simulate_router_call(self, message: str, task_type: str) -> str:
         """
-        Эмуляция AI Router для тестирования/отладки
+        Эмуляция AI Router для тестирования/отладки или когда Node.js недоступен
         """
         # ПРЕДУПРЕЖДЕНИЕ: Эта функция только для тестирования и отладки!
         # В продакшене всегда должен использоваться реальный AI Router
         
-        prefix = f"[DEBUG ЭМУЛЯЦИЯ - НЕ ДЛЯ ПРОДАКШЕНА]\n\n"
+        import random
+        import string
         
-        # Короткий ответ на основе типа задачи
+        prefix = f"[ЭМУЛЯЦИЯ AI ROUTER] "
+        timestamp = time.strftime("%H:%M:%S")
+        
+        # Более детальный ответ на основе типа задачи
         if task_type == "code":
-            return prefix + f"Вот пример кода для решения вашей задачи:\n\n```python\n# Эмуляция ответа для запроса: {message[:50]}...\ndef example_function():\n    return 'Это эмуляция ответа'\n```"
+            return prefix + f"Вот пример кода для решения вашей задачи:\n\n```python\n# Код для: {message[:50]}...\ndef smart_function(input_data):\n    # Логика обработки\n    result = process_data(input_data)\n    return result\n```"
         elif task_type == "creative":
-            return prefix + f"Вот творческий ответ на ваш запрос:\n\n{message[:50]}...\n\nЭто эмуляция ответа, так как AI Router недоступен. Пожалуйста, проверьте настройки AI Router в директории 01_AI_ROUTER_SYSTEM."
+            return prefix + f"Творческий ответ на ваш запрос:\n\n{message[:50]}...\n\nЭто пример творческого текста, который был бы сгенерирован настоящим AI. В реальном ответе здесь был бы полноценный текст, соответствующий вашему запросу."
         elif task_type == "analysis":
-            return prefix + f"Вот результаты анализа по вашему запросу:\n\n1. Первый пункт анализа\n2. Второй пункт анализа\n3. Третий пункт анализа\n\nЭто эмуляция ответа, так как AI Router недоступен."
+            return prefix + f"Анализ по запросу: {message[:50]}...\n\n1. Первый важный аспект анализа\n2. Второй ключевой момент\n3. Третий пункт с дополнительными деталями\n\nЗаключение: Для полного анализа требуется более глубокое рассмотрение."
         else:
-            return prefix + f"Я получил ваш запрос: '{message[:100]}...'\n\nЭто эмуляция ответа, так как AI Router недоступен. Пожалуйста, проверьте настройки AI Router в директории 01_AI_ROUTER_SYSTEM."
+            return prefix + f"Получен запрос: '{message[:100]}...'\n\nЭто эмуляция ответа от AI Router. Чтобы получить настоящий ответ, убедитесь, что Node.js установлен и файлы ai_router_system.js доступны."
             
     def get_llm_instance(self):
         """
@@ -186,7 +221,9 @@ class AIRouterLLM:
             class AIRouterWrapper(LLM):
                 """Обертка для AI Router, совместимая с LangChain"""
                 
-                ai_router: AIRouterLLM
+                def __init__(self, ai_router: AIRouterLLM, **kwargs):
+                    super().__init__(**kwargs)
+                    self.ai_router = ai_router
                 
                 @property
                 def _llm_type(self) -> str:
@@ -202,8 +239,7 @@ class AIRouterLLM:
                     return {"model": "ai_router"}
             
             # Создаем и возвращаем экземпляр
-            wrapper = AIRouterWrapper()
-            wrapper.ai_router = self
+            wrapper = AIRouterWrapper(ai_router=self)
             return wrapper
             
         except ImportError:
