@@ -1,0 +1,23 @@
+[project]
+name = "gopiai"
+version = "0.1.0"
+description = "gopiai using crewAI"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai[tools]>=0.130.0,<1.0.0"
+]
+
+[project.scripts]
+gopiai = "gopiai.main:run"
+run_crew = "gopiai.main:run"
+train = "gopiai.main:train"
+replay = "gopiai.main:replay"
+test = "gopiai.main:test"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "crew"

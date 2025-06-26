@@ -1,10 +1,17 @@
-
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QFileDialog, QLabel, QSizePolicy
-from PySide6.QtCore import Qt, QMimeData
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QFileDialog, QLabel, QSizePolicy, QMessageBox
+from PySide6.QtCore import Qt, QMimeData, Slot, QMetaObject, QTimer
 from PySide6.QtGui import QIcon, QDropEvent, QDragEnterEvent, QPixmap, QTextCursor
+import threading
+import sys
+import os
+import time
+import traceback
 
 # Импортируем UniversalIconManager для Lucide-иконок
 from gopiai.ui.components.icon_file_system_model import UniversalIconManager
+
+# Клиент для обращения к CrewAI API
+from gopiai.ui.components.crewai_client import crewai_client
 
 
 
@@ -32,6 +39,10 @@ class ChatWidget(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(8, 8, 8, 8)
         self.main_layout.setSpacing(6)
+        
+        # Инициализация Smart Delegator
+        self.smart_delegator = None
+        self._init_smart_delegator()
 
         # История сообщений
         self.history = QTextEdit(self)
@@ -40,13 +51,16 @@ class ChatWidget(QWidget):
         self.history.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.history.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.main_layout.addWidget(self.history)
+        
+        # Информационное сообщение о горячих клавишах
+        self.history.append("<b>Система:</b> Добро пожаловать в чат! Используйте <b>Enter</b> для отправки сообщения и <b>Shift+Enter</b> для переноса строки.")
 
         # Нижняя панель
         self.bottom_panel = QHBoxLayout()
 
         # Многострочное поле ввода
         self.input = QTextEdit(self)
-        self.input.setPlaceholderText("Введите сообщение...")
+        self.input.setPlaceholderText("Введите сообщение... (Enter - отправить, Shift+Enter - новая строка)")
         self.input.setObjectName("ChatInput")
         self.input.setFixedHeight(80)  # ~в 10 раз выше обычного QLineEdit
         self.input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -88,9 +102,16 @@ class ChatWidget(QWidget):
         self.apply_theme()
 
     def _input_key_press_event(self, event):
-        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and (event.modifiers() & Qt.KeyboardModifier.ControlModifier):
-            self.send_message()
+        # Если нажат Enter без Shift, отправляем сообщение
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            # Shift+Enter для переноса строки
+            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                QTextEdit.keyPressEvent(self.input, event)
+            else:
+                # Простой Enter отправляет сообщение
+                self.send_message()
         else:
+            # Обрабатываем остальные клавиши стандартным образом
             QTextEdit.keyPressEvent(self.input, event)
 
     def _scroll_history_to_end(self):
@@ -120,12 +141,107 @@ class ChatWidget(QWidget):
         return any(path.lower().endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".bmp", ".gif"])
 
 
+    def _init_smart_delegator(self):
+        """Инициализирует подключение к CrewAI API"""
+        try:
+            # Проверяем доступность CrewAI API сервера
+            if crewai_client.is_available():
+                print("✅ CrewAI API сервер доступен")
+                
+                # Индексируем документацию в фоновом потоке
+                def index_in_background():
+                    result = crewai_client.index_documentation()
+                    print(f"Результат индексации документации: {result}")
+                
+                threading.Thread(target=index_in_background, daemon=True).start()
+            else:
+                print("⚠️ CrewAI API сервер недоступен")
+                
+                # Показываем сообщение через 3 секунды (чтобы не блокировать загрузку UI)
+                def show_warning():
+                    QMessageBox.warning(
+                        self,
+                        "CrewAI недоступен",
+                        "CrewAI API сервер недоступен.\n\n"
+                        "Для полноценной работы многоагентного режима запустите:\n"
+                        "GopiAI-CrewAI/run_crewai_api_server.bat"
+                    )
+                
+                QTimer.singleShot(3000, show_warning)
+                
+        except Exception as e:
+            print(f"❌ Ошибка при инициализации соединения с CrewAI: {e}")
+            traceback.print_exc()
+
     def send_message(self):
+        """Отправляет сообщение и обрабатывает его через CrewAI API"""
         text = self.input.toPlainText().strip()
         if text:
+            # Отображаем сообщение пользователя
             self.append_message("Вы", text)
             self.input.clear()
-            # TODO: интеграция с backend/AI
+            
+            # Показываем индикатор ожидания
+            self.send_btn.setEnabled(False)
+            self.multiagent_btn.setEnabled(False)
+            
+            # Создаем уникальный ID для сообщения ожидания
+            waiting_id = f"waiting_{int(time.time())}"
+            self.append_message("Ассистент", f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>")
+            
+            # Функция обработки в фоновом потоке
+            def process_in_background():
+                response = "Извините, я не смог обработать запрос из-за технической проблемы."
+                
+                try:
+                    # Используем режим multiagent для определения принудительного использования CrewAI
+                    force_crewai = getattr(self, '_multiagent_mode', False)
+                    
+                    # Используем CrewAI API клиент
+                    if crewai_client.is_available():
+                        # Обработка запроса через CrewAI API
+                        response = crewai_client.process_request(text, force_crewai)
+                    else:
+                        # Fallback если API недоступен
+                        response = f"Я получил ваш запрос, но CrewAI API сервер недоступен.\n\n" \
+                                   f"Для использования многоагентной системы запустите:\n" \
+                                   f"GopiAI-CrewAI/run_crewai_api_server.bat"
+                        time.sleep(1)  # Имитация задержки
+                        
+                except Exception as e:
+                    print(f"❌ Ошибка при обработке запроса: {e}")
+                    traceback.print_exc()
+                    response = "Произошла ошибка при обработке запроса. Подробности в консоли."
+                
+                # Обновляем UI в основном потоке
+                def update_ui():
+                    self._update_assistant_response(waiting_id, response)
+                
+                QTimer.singleShot(0, update_ui)
+            
+            # Запускаем обработку в отдельном потоке
+            thread = threading.Thread(target=process_in_background)
+            thread.daemon = True
+            thread.start()
+    
+    @Slot(str, str)
+    def _update_assistant_response(self, waiting_id, response):
+        """Обновляет сообщение ассистента в истории (вызывается из другого потока)"""
+        # Получаем HTML истории
+        html = self.history.toHtml()
+        
+        # Заменяем временное сообщение на ответ
+        html = html.replace(
+            f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>",
+            response
+        )
+        
+        # Обновляем историю
+        self.history.setHtml(html)
+        
+        # Включаем кнопки
+        self.send_btn.setEnabled(True)
+        self.multiagent_btn.setEnabled(True)
 
 
     def append_message(self, author, text):
@@ -147,5 +263,41 @@ class ChatWidget(QWidget):
 
 
     def multiagent_action(self):
-        self.append_message("Multiagent", "Режим multiagent активирован!")
-        # TODO: интеграция multiagent
+        """Активирует/деактивирует многоагентный режим"""
+        if not hasattr(self, '_multiagent_mode'):
+            self._multiagent_mode = False
+        
+        # Переключаем режим
+        self._multiagent_mode = not self._multiagent_mode
+        
+        if self._multiagent_mode:
+            self.append_message("Система", "Режим многоагентной системы активирован! Теперь для сложных задач будет использоваться команда специализированных агентов.")
+            
+            # Визуально выделяем кнопку
+            self.multiagent_btn.setStyleSheet("background-color: #3a86ff;")
+            
+            # Проверяем доступность CrewAI API
+            if not crewai_client.is_available():
+                self.append_message("Система", 
+                    "⚠️ CrewAI API сервер недоступен. Для работы многоагентного режима запустите:\n"
+                    "GopiAI-CrewAI/run_crewai_api_server.bat")
+                
+                # Показываем сообщение с инструкцией
+                QMessageBox.information(
+                    self,
+                    "Запуск CrewAI API сервера",
+                    "Для работы многоагентного режима необходимо запустить CrewAI API сервер.\n\n"
+                    "Выполните следующие шаги:\n"
+                    "1. Откройте командную строку\n"
+                    "2. Перейдите в папку GopiAI-CrewAI\n"
+                    "3. Запустите скрипт run_crewai_api_server.bat\n\n"
+                    "После этого многоагентный режим будет полностью функционален."
+                )
+            else:
+                # API доступен, показываем сообщение о готовности
+                self.append_message("Система", "Агенты готовы к работе! Можете задавать сложные вопросы, требующие исследования, анализа или творчества.")
+        else:
+            self.append_message("Система", "Многоагентный режим деактивирован.")
+            
+            # Возвращаем обычный стиль кнопки
+            self.multiagent_btn.setStyleSheet("")

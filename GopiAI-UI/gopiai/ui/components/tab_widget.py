@@ -47,13 +47,6 @@ class TabDocumentWidget(QWidget):
         self.tab_widget.setUsesScrollButtons(True)  # Кнопки прокрутки при множестве вкладок
         self.tab_widget.setElideMode(Qt.TextElideMode.ElideRight)  # Обрезаем длинные названия
         
-        # # Добавляем стартовую вкладку
-        # welcome_tab = QTextEdit()
-        # welcome_tab.setPlainText("Добро пожаловать в GopiAI v0.3.0!")
-        # welcome_tab.setReadOnly(True)
-        
-        # self.tab_widget.addTab(welcome_tab, "Добро пожаловать")
-        
         # Подключаем сигнал закрытия вкладок
         self.tab_widget.tabCloseRequested.connect(self._close_tab)
         
@@ -76,7 +69,7 @@ class TabDocumentWidget(QWidget):
         self.tab_widget.setCurrentIndex(index)
         return editor
 
-    def add_notebook_tab(self, title="Новый блокнот", content=""):
+    def add_notebook_tab(self, title="Новый блокнот", content="", menu_bar=None):
         """Добавление новой вкладки-блокнота с форматированием (чистый rich text notebook)"""
         from gopiai.ui.components.rich_text_notebook_widget import NotebookEditorWidget
         notebook = NotebookEditorWidget()
@@ -84,6 +77,18 @@ class TabDocumentWidget(QWidget):
             notebook.setPlainText(content)
         index = self.tab_widget.addTab(notebook, title)
         self.tab_widget.setCurrentIndex(index)
+        # Подключаем сигналы меню к QTextEdit, если menu_bar передан
+        if menu_bar is not None:
+            try:
+                menu_bar.undoRequested.connect(notebook.editor.undo)
+                menu_bar.redoRequested.connect(notebook.editor.redo)
+                menu_bar.cutRequested.connect(notebook.editor.cut)
+                menu_bar.copyRequested.connect(notebook.editor.copy)
+                menu_bar.pasteRequested.connect(notebook.editor.paste)
+                menu_bar.deleteRequested.connect(notebook.editor.clear)
+                menu_bar.selectAllRequested.connect(notebook.editor.selectAll)
+            except Exception as e:
+                print(f"[WARNING] Не удалось подключить сигналы меню к NotebookEditorWidget: {e}")
         return notebook
 
     def open_file_in_tab(self, file_path):
@@ -95,7 +100,6 @@ class TabDocumentWidget(QWidget):
                 editor.current_file = file_path
                 with open(file_path, 'rb') as f:
                     raw = f.read()
-                import chardet
                 encoding = chardet.detect(raw)['encoding'] or 'utf-8'
                 text = raw.decode(encoding, errors='replace')
                 editor.current_encoding = encoding
@@ -269,11 +273,11 @@ class TabDocumentWidget(QWidget):
             browser_layout.addWidget(web_view)
             
             # Сохраняем ссылки на компоненты для доступа извне
-            browser_widget._web_view = web_view
-            browser_widget._address_bar = address_bar
-            browser_widget._back_btn = back_btn
-            browser_widget._forward_btn = forward_btn
-            browser_widget._refresh_btn = refresh_btn
+            browser_widget.setProperty("_web_view", web_view)
+            browser_widget.setProperty("_address_bar", address_bar)
+            browser_widget.setProperty("_back_btn", back_btn)
+            browser_widget.setProperty("_forward_btn", forward_btn)
+            browser_widget.setProperty("_refresh_btn", refresh_btn)
             
             # Добавляем вкладку
             index = self.tab_widget.addTab(browser_widget, title)
@@ -346,3 +350,71 @@ class TabDocumentWidget(QWidget):
         editor = self.get_current_editor()
         if editor:
             editor.setPlainText(text)
+
+    def save_current_file(self, parent=None):
+        """Сохраняет текущую вкладку в файл (если уже был путь) или вызывает save as"""
+        current_widget = self.tab_widget.currentWidget()
+        file_path = getattr(current_widget, 'current_file', None)
+        if not file_path:
+            return self.save_current_file_as(parent)
+        return self._save_widget_to_file(current_widget, file_path, parent)
+
+    def save_current_file_as(self, parent=None):
+        """Сохраняет текущую вкладку в новый файл с выбором формата и расширения"""
+        from PySide6.QtWidgets import QFileDialog
+        current_widget = self.tab_widget.currentWidget()
+        if current_widget is None:
+            return False
+        # Расширенный список форматов
+        filters = (
+            "Python (*.py);;JavaScript (*.js);;TypeScript (*.ts);;C++ (*.cpp *.h);;C (*.c *.h);;C# (*.cs);;Java (*.java);;Go (*.go);;Rust (*.rs);;Kotlin (*.kt);;Swift (*.swift);;PHP (*.php);;Ruby (*.rb);;Perl (*.pl);;Shell Script (*.sh);;Batch (*.bat);;PowerShell (*.ps1);;HTML (*.html *.htm);;CSS (*.css);;JSON (*.json);;YAML (*.yaml *.yml);;Markdown (*.md);;INI (*.ini);;XML (*.xml);;SQL (*.sql);;Текстовый файл (*.txt);;Rich Text (*.rtf);;Все файлы (*.*)"
+        )
+        file_path, selected_filter = QFileDialog.getSaveFileName(parent, "Сохранить как", "", filters)
+        if not file_path:
+            return False
+        # Автоматически подставлять расширение, если не указано
+        ext_map = {
+            'Python': '.py', 'JavaScript': '.js', 'TypeScript': '.ts', 'C++': '.cpp', 'C#': '.cs', 'C ': '.c',
+            'Java': '.java', 'Go': '.go', 'Rust': '.rs', 'Kotlin': '.kt', 'Swift': '.swift', 'PHP': '.php',
+            'Ruby': '.rb', 'Perl': '.pl', 'Shell Script': '.sh', 'Batch': '.bat', 'PowerShell': '.ps1',
+            'HTML': '.html', 'CSS': '.css', 'JSON': '.json', 'YAML': '.yaml', 'Markdown': '.md', 'INI': '.ini',
+            'XML': '.xml', 'SQL': '.sql', 'Rich Text': '.rtf', 'Текстовый файл': '.txt'
+        }
+        if '.' not in file_path.split(os.sep)[-1]:
+            for key, ext in ext_map.items():
+                if key in selected_filter:
+                    file_path += ext
+                    break
+        # Сохраняем
+        result = self._save_widget_to_file(current_widget, file_path, parent, selected_filter)
+        if result:
+            setattr(current_widget, 'current_file', file_path)
+        return result
+
+    def _save_widget_to_file(self, widget, file_path, parent=None, selected_filter=None):
+        """Сохраняет содержимое виджета в файл с учетом формата"""
+        try:
+            # Определяем тип редактора
+            if isinstance(widget, NotebookEditorWidget):
+                # Для блокнота поддерживаем txt, md, rtf, html
+                if selected_filter and 'Markdown' in selected_filter:
+                    text = widget.editor.toPlainText()
+                elif selected_filter and 'Rich Text' in selected_filter:
+                    text = widget.editor.toHtml()  # QTextEdit не поддерживает RTF напрямую, но можно сохранить HTML
+                elif selected_filter and 'HTML' in selected_filter:
+                    text = widget.editor.toHtml()
+                else:
+                    text = widget.editor.toPlainText()
+            elif hasattr(widget, 'text_editor'):
+                text = widget.text_editor.toPlainText()
+            elif isinstance(widget, QTextEdit):
+                text = widget.toPlainText()
+            else:
+                text = str(widget)
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(text)
+            return True
+        except Exception as e:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(parent, "Ошибка", f"Не удалось сохранить файл: {e}")
+            return False

@@ -679,7 +679,8 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
     def _on_new_notebook(self):
         """Создание новой вкладки-блокнота с форматированием"""
         if MODULES_LOADED and hasattr(self.tab_document, "add_notebook_tab"):
-            self.tab_document.add_notebook_tab("Новый блокнот", "<h2>Новая заметка</h2><p>Введите текст...</p>")
+            menu_bar = getattr(self.titlebar_with_menu, "menu_bar", None)
+            self.tab_document.add_notebook_tab("Новый блокнот", "<h2>Новая заметка</h2><p>Введите текст...</p>", menu_bar=menu_bar)
         else:
             # Fallback: создаём простую вкладку с QLabel или QTextEdit
             if hasattr(self.tab_document, "add_new_tab"):
