@@ -71,11 +71,13 @@ class CrewAIClient:
             return f"CrewAI API сервер недоступен. Запустите его с помощью 'run_crewai_api_server.bat'.\n\nВаш запрос: {message}"
             
         try:
+            # Всегда используем force_crewai=False, чтобы система сама определяла
+            # необходимость использования CrewAI на основе анализа сложности запроса
             response = requests.post(
                 f"{self.base_url}/api/process",
                 json={
                     "message": message,
-                    "force_crewai": force_crewai
+                    "force_crewai": False  # Игнорируем входной параметр force_crewai
                 },
                 timeout=60  # Увеличенный таймаут, т.к. обработка может быть долгой
             )

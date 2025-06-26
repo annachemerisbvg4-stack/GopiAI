@@ -96,8 +96,8 @@ def index():
             
             <div class="endpoint">
                 <span class="method post">POST</span> <strong>/api/process</strong>
-                <p>Обработка запроса пользователя через AI Router или CrewAI.</p>
-                <p><em>Параметры:</em> {{ "message": "текст запроса", "force_crewai": false }}</p>
+                <p>Обработка запроса пользователя через AI Router или CrewAI. Система автоматически определит необходимость использования команды агентов на основе сложности запроса.</p>
+                <p><em>Параметры:</em> {{ "message": "текст запроса" }}</p>
             </div>
             
             <div class="endpoint">
@@ -150,24 +150,22 @@ def process_request():
     
     try:
         message = data['message']
-        force_crewai = data.get('force_crewai', False)
+        # Параметр force_crewai игнорируется, т.к. система сама определяет
+        # необходимость использования CrewAI на основе анализа запроса
+        # force_crewai = data.get('force_crewai', False)
         
         # Безопасная обработка запроса с перехватом всех исключений
         try:
             # Анализируем запрос
             analysis = smart_delegator.analyze_request(message)
             
-            # Обрабатываем запрос
-            if force_crewai:
-                # Принудительно через CrewAI
-                response = smart_delegator._handle_with_crewai(message, analysis)
-            else:
-                # Стандартная обработка
-                response = smart_delegator.process_request(message)
+            # Обрабатываем запрос через стандартный метод,
+            # который автоматически выберет способ обработки
+            response = smart_delegator.process_request(message)
                 
             return jsonify({
                 "response": response,
-                "processed_with_crewai": force_crewai or analysis.get("requires_crewai", False)
+                "processed_with_crewai": analysis.get("requires_crewai", False)
             })
         except Exception as inner_e:
             # В случае любой ошибки возвращаем fallback ответ

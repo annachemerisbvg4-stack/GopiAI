@@ -78,7 +78,11 @@ class SmartDelegator:
             
         try:
             # Путь к индексу txtai
-            index_path = os.path.join(os.path.dirname(__file__), "../../../rag_memory_system/crewai_embeddings/crewai-docs.tar.gz")
+            index_dir = os.path.join(os.path.dirname(__file__), "../../../rag_memory_system/crewai_embeddings")
+            index_path = os.path.join(index_dir, "crewai-docs.tar.gz")
+            
+            # Создаем директорию для индексов, если она не существует
+            os.makedirs(index_dir, exist_ok=True)
             
             if os.path.exists(index_path):
                 # Загружаем существующий индекс
@@ -118,25 +122,57 @@ class SmartDelegator:
             # 1. README файлы
             readme_paths = [
                 os.path.join(os.path.dirname(__file__), "../../../GopiAI-CrewAI/README.md"),
-                os.path.join(os.path.dirname(__file__), "../../../GopiAI-CrewAI/README_CHAT_INTEGRATION.md")
+                os.path.join(os.path.dirname(__file__), "../../../GopiAI-CrewAI/README_CHAT_INTEGRATION.md"),
+                os.path.join(os.path.dirname(__file__), "../../../CREWAI_INTEGRATION_PLAN.md"),
+                os.path.join(os.path.dirname(__file__), "../../../gopi_crewai_integration.md"),
+                os.path.join(os.path.dirname(__file__), "../../../02_DOCUMENTATION/📖_PROJECT_STRUCTURE.md"),
             ]
+            
+            # Предупреждение если документов нет
+            if not any(os.path.exists(path) for path in readme_paths):
+                print("⚠️ Не найдены README файлы для индексации")
             
             for path in readme_paths:
                 if os.path.exists(path):
-                    with open(path, "r", encoding="utf-8") as f:
-                        content = f.read()
-                        documents.append((os.path.basename(path), content, None))
+                    try:
+                        with open(path, "r", encoding="utf-8") as f:
+                            content = f.read()
+                            documents.append((os.path.basename(path), content, None))
+                            print(f"📄 Индексирован документ: {path}")
+                    except Exception as e:
+                        print(f"⚠️ Ошибка при чтении файла {path}: {e}")
             
-            # 2. Документация API (если есть)
-            # TODO: Добавить индексацию документации API
+            # 2. Документация API
+            api_docs_paths = [
+                os.path.join(os.path.dirname(__file__), "../../../GopiAI-CrewAI/crewai_api_server.py"),
+                os.path.join(os.path.dirname(__file__), "smart_delegator.py"),
+                os.path.join(os.path.dirname(__file__), "ai_router_llm.py"),
+            ]
+            
+            for path in api_docs_paths:
+                if os.path.exists(path):
+                    try:
+                        with open(path, "r", encoding="utf-8") as f:
+                            content = f.read()
+                            # Извлекаем docstrings и комментарии для индексации
+                            documents.append((os.path.basename(path), content, None))
+                            print(f"📄 Индексирован API файл: {path}")
+                    except Exception as e:
+                        print(f"⚠️ Ошибка при чтении файла {path}: {e}")
             
             # Создаем и сохраняем индекс
             if documents:
                 # Индексируем документы
                 self.embeddings.index(documents)
                 
+                # Директория и путь для сохранения индекса
+                index_dir = os.path.join(os.path.dirname(__file__), "../../../rag_memory_system/crewai_embeddings")
+                index_path = os.path.join(index_dir, "crewai-docs.tar.gz")
+                
+                # Создаем директорию, если она не существует
+                os.makedirs(index_dir, exist_ok=True)
+                
                 # Сохраняем индекс
-                index_path = os.path.join(os.path.dirname(__file__), "../../../rag_memory_system/crewai_embeddings/crewai-docs.tar.gz")
                 self.embeddings.save(index_path)
                 print(f"💾 Индекс успешно сохранен в {index_path}")
                 return True

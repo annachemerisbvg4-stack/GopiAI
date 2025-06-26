@@ -4,8 +4,34 @@
  * Создано для максимального использования free tier API
  */
 
+const fs = require('fs');
+const path = require('path');
+
 class AIRouter {
     constructor(config) {
+        // Если передан путь к файлу конфигурации, загружаем его
+        if (typeof config === 'string') {
+            try {
+                // Поддерживаем как абсолютные, так и относительные пути
+                const configPath = path.isAbsolute(config) ? config : path.join(__dirname, config);
+                console.log(`📂 Загрузка конфигурации из файла: ${configPath}`);
+                
+                // Проверяем существование файла
+                if (!fs.existsSync(configPath)) {
+                    console.error(`❌ Файл конфигурации не найден: ${configPath}`);
+                    throw new Error(`Файл конфигурации не найден: ${configPath}`);
+                }
+                
+                const configData = fs.readFileSync(configPath, 'utf8');
+                config = JSON.parse(configData);
+                console.log(`✅ Конфигурация успешно загружена, найдено ${config.providers?.length || 0} провайдеров`);
+            } catch (err) {
+                console.error(`❌ Ошибка при загрузке конфигурации: ${err.message}`);
+                // Устанавливаем пустую конфигурацию по умолчанию
+                config = { providers: [] };
+            }
+        }
+        
         this.providers = config.providers || [];
         this.usage = this.loadUsage();
         this.currentProvider = null;
@@ -384,11 +410,23 @@ class AIRouter {
     }
 }
 
-// 🎯 ЭКСПОРТ ДЛЯ ИСПОЛЬЗОВАНИЯ
+/**
+ * 📊 ЭКСПОРТ МОДУЛЯ
+ */
+ 
+// Экспортируем класс и утилиты для использования в Node.js
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = AIRouter;
-} else if (typeof window !== 'undefined') {
-    window.AIRouter = AIRouter;
+    module.exports = {
+        AIRouter,
+        createRouter: (config) => {
+            try {
+                return new AIRouter(config);
+            } catch (err) {
+                console.error('❌ Не удалось создать экземпляр AIRouter:', err.message);
+                return null;
+            }
+        }
+    };
 }
 
 console.log('🚀 AI Router System загружен и готов к работе!');

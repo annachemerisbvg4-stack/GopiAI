@@ -8,9 +8,12 @@ import sys
 import logging
 import time
 from datetime import datetime
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, List
 from pydantic import BaseModel, Field
 from crewai.tools.base_tool import BaseTool
+import json
+import tempfile
+import subprocess
 
 class GopiAIBaseTool(BaseTool):
     """
@@ -122,7 +125,7 @@ class GopiAIBaseTool(BaseTool):
                 self.logger.error(f"Ошибка в fallback: {str(fallback_error)}")
             
             # Если fallback не сработал или его нет, возвращаем сообщение об ошибке
-            return f"❌ {error_msg}"
+            return f"Ошибка при выполнении инструмента '{self.__class__.__name__}': {e}"
     
     def _run(self, *args, **kwargs) -> str:
         """
@@ -164,6 +167,95 @@ class GopiAIBaseTool(BaseTool):
             "last_call": None
         }
         self.logger.info(f"Метрики {self.__class__.__name__} сброшены")
+
+    def execute(self, *args, **kwargs) -> Any:
+        """Выполнить инструмент с заданными параметрами"""
+        raise NotImplementedError("Метод execute должен быть переопределен в подклассе")
+    
+    def safe_execute(self, *args, **kwargs) -> Dict[str, Any]:
+        """Безопасное выполнение инструмента с обработкой ошибок"""
+        try:
+            result = self.execute(*args, **kwargs)
+            return {"success": True, "result": result}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+            
+    def run_node_script(self, script_path: str, input_data: Union[str, Dict], 
+                       timeout: int = 60, cwd: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Запускает скрипт Node.js и передает ему данные через временный файл
+        
+        Args:
+            script_path: Путь к JavaScript файлу
+            input_data: Данные для передачи в скрипт (строка или словарь)
+            timeout: Таймаут выполнения в секундах
+            cwd: Рабочая директория
+            
+        Returns:
+            Dict с результатами выполнения
+        """
+        try:
+            # Создаем временный файл для входных данных
+            with tempfile.NamedTemporaryFile(suffix='.json', mode='w', encoding='utf-8', delete=False) as temp_input:
+                # Сериализуем данные в JSON если это словарь
+                if isinstance(input_data, dict):
+                    json.dump(input_data, temp_input, ensure_ascii=False)
+                else:
+                    temp_input.write(str(input_data))
+                temp_input_path = temp_input.name
+                
+            # Создаем временный файл для выходных данных
+            with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as temp_output:
+                temp_output_path = temp_output.name
+                
+            # Настройка окружения для правильной кодировки
+            env = os.environ.copy()
+            env['PYTHONIOENCODING'] = 'utf-8'
+            
+            # Запускаем Node.js, передавая пути к временным файлам как аргументы
+            cmd = ["node", script_path, temp_input_path, temp_output_path]
+            
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                encoding='utf-8',
+                timeout=timeout,
+                cwd=cwd,
+                env=env
+            )
+            
+            # Проверяем код возврата
+            if result.returncode != 0:
+                error_message = f"Ошибка Node.js ({result.returncode}): {result.stderr}"
+                print(f"❌ {error_message}")
+                return {"success": False, "error": error_message, "stdout": result.stdout, "stderr": result.stderr}
+            
+            # Читаем результат из выходного файла
+            try:
+                with open(temp_output_path, 'r', encoding='utf-8') as f:
+                    output_data = json.load(f)
+                return {"success": True, "result": output_data}
+            except json.JSONDecodeError as e:
+                return {
+                    "success": False, 
+                    "error": f"Ошибка формата JSON в выходном файле: {e}",
+                    "stdout": result.stdout,
+                    "stderr": result.stderr
+                }
+                
+        except subprocess.TimeoutExpired:
+            return {"success": False, "error": f"Превышен таймаут выполнения ({timeout} сек)"}
+        except Exception as e:
+            return {"success": False, "error": f"Ошибка запуска скрипта: {str(e)}"}
+        finally:
+            # Удаляем временные файлы
+            for path in [temp_input_path, temp_output_path]:
+                try:
+                    if os.path.exists(path):
+                        os.unlink(path)
+                except:
+                    pass
 
 
 # Пример использования

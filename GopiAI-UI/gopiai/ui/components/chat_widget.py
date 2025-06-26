@@ -53,7 +53,7 @@ class ChatWidget(QWidget):
         self.main_layout.addWidget(self.history)
         
         # Информационное сообщение о горячих клавишах
-        self.history.append("<b>Система:</b> Добро пожаловать в чат! Используйте <b>Enter</b> для отправки сообщения и <b>Shift+Enter</b> для переноса строки.")
+        self.history.append("<b>Система:</b> Добро пожаловать в чат! Используйте <b>Enter</b> для отправки сообщения и <b>Shift+Enter</b> для переноса строки. Ассистент автоматически определит, когда нужно использовать команду агентов для сложных запросов.")
 
         # Нижняя панель
         self.bottom_panel = QHBoxLayout()
@@ -77,11 +77,6 @@ class ChatWidget(QWidget):
         self.attach_image_btn.setToolTip("Прикрепить изображение")
         self.attach_image_btn.clicked.connect(self.attach_image)
         self.bottom_panel.addWidget(self.attach_image_btn)
-
-        self.multiagent_btn = QPushButton(icon_mgr.get_icon("users"), "", self)
-        self.multiagent_btn.setToolTip("Multiagent режим")
-        self.multiagent_btn.clicked.connect(self.multiagent_action)
-        self.bottom_panel.addWidget(self.multiagent_btn)
 
         # Кнопка отправки
         self.send_btn = QPushButton(icon_mgr.get_icon("send"), "", self)
@@ -183,7 +178,6 @@ class ChatWidget(QWidget):
             
             # Показываем индикатор ожидания
             self.send_btn.setEnabled(False)
-            self.multiagent_btn.setEnabled(False)
             
             # Создаем уникальный ID для сообщения ожидания
             waiting_id = f"waiting_{int(time.time())}"
@@ -194,8 +188,9 @@ class ChatWidget(QWidget):
                 response = "Извините, я не смог обработать запрос из-за технической проблемы."
                 
                 try:
-                    # Используем режим multiagent для определения принудительного использования CrewAI
-                    force_crewai = getattr(self, '_multiagent_mode', False)
+                    # Пусть система сама определяет нужность использования CrewAI
+                    # на основе сложности запроса и типа задачи
+                    force_crewai = False
                     
                     # Используем CrewAI API клиент
                     if crewai_client.is_available():
@@ -204,7 +199,7 @@ class ChatWidget(QWidget):
                     else:
                         # Fallback если API недоступен
                         response = f"Я получил ваш запрос, но CrewAI API сервер недоступен.\n\n" \
-                                   f"Для использования многоагентной системы запустите:\n" \
+                                   f"Для полноценной работы с агентами запустите:\n" \
                                    f"GopiAI-CrewAI/run_crewai_api_server.bat"
                         time.sleep(1)  # Имитация задержки
                         
@@ -241,7 +236,6 @@ class ChatWidget(QWidget):
         
         # Включаем кнопки
         self.send_btn.setEnabled(True)
-        self.multiagent_btn.setEnabled(True)
 
 
     def append_message(self, author, text):
@@ -260,44 +254,3 @@ class ChatWidget(QWidget):
         if image_path:
             self.append_message("Изображение", image_path)
             # TODO: обработка изображения
-
-
-    def multiagent_action(self):
-        """Активирует/деактивирует многоагентный режим"""
-        if not hasattr(self, '_multiagent_mode'):
-            self._multiagent_mode = False
-        
-        # Переключаем режим
-        self._multiagent_mode = not self._multiagent_mode
-        
-        if self._multiagent_mode:
-            self.append_message("Система", "Режим многоагентной системы активирован! Теперь для сложных задач будет использоваться команда специализированных агентов.")
-            
-            # Визуально выделяем кнопку
-            self.multiagent_btn.setStyleSheet("background-color: #3a86ff;")
-            
-            # Проверяем доступность CrewAI API
-            if not crewai_client.is_available():
-                self.append_message("Система", 
-                    "⚠️ CrewAI API сервер недоступен. Для работы многоагентного режима запустите:\n"
-                    "GopiAI-CrewAI/run_crewai_api_server.bat")
-                
-                # Показываем сообщение с инструкцией
-                QMessageBox.information(
-                    self,
-                    "Запуск CrewAI API сервера",
-                    "Для работы многоагентного режима необходимо запустить CrewAI API сервер.\n\n"
-                    "Выполните следующие шаги:\n"
-                    "1. Откройте командную строку\n"
-                    "2. Перейдите в папку GopiAI-CrewAI\n"
-                    "3. Запустите скрипт run_crewai_api_server.bat\n\n"
-                    "После этого многоагентный режим будет полностью функционален."
-                )
-            else:
-                # API доступен, показываем сообщение о готовности
-                self.append_message("Система", "Агенты готовы к работе! Можете задавать сложные вопросы, требующие исследования, анализа или творчества.")
-        else:
-            self.append_message("Система", "Многоагентный режим деактивирован.")
-            
-            # Возвращаем обычный стиль кнопки
-            self.multiagent_btn.setStyleSheet("")

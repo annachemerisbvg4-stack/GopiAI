@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Any, Mapping
 import time
 import random
 from pathlib import Path
+import traceback
 
 # Путь к директории AI Router
 ROUTER_PATH = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "ai_router"))
@@ -136,71 +137,44 @@ class AIRouterLLM:
             # Записываем код во временный файл
             try:
                 with open(temp_js_file, 'w', encoding='utf-8') as f:
-                    f.write(js_code)
+                    f.write(js_code) # Этот js_code теперь содержит отладочные логи и console.log для вывода
             except Exception as e:
                 print(f"⚠️ Ошибка при создании временного JS файла: {e}")
                 return self._simulate_router_call(message, task_type)
             
             # Выполняем через Node.js
             try:
-                # Явно указываем кодировку UTF-8 для процесса
                 env = os.environ.copy()
                 env['PYTHONIOENCODING'] = 'utf-8'
                 
-                # Создаем временный файл для вывода
-                output_file = os.path.join(ROUTER_PATH, "temp_output.json")
-                
-                # Модифицируем JS-код, чтобы записывать результат в файл
-                with open(temp_js_file, 'r', encoding='utf-8') as f:
-                    js_code = f.read()
-                
-                # Правильно экранируем обратные слэши в пути для JavaScript
-                safe_output_path = output_file.replace('\\', '\\\\')
-                
-                js_code_with_file_output = js_code.replace(
-                    'console.log(JSON.stringify(',
-                    f'const fs = require("fs"); fs.writeFileSync("{safe_output_path}", JSON.stringify('
-                ).replace(
-                    '}));',
-                    '}, null, 2));'
-                )
-                
-                with open(temp_js_file, 'w', encoding='utf-8') as f:
-                    f.write(js_code_with_file_output)
-                
-                # Запускаем Node.js
                 result = subprocess.run(
                     ["node", temp_js_file],
                     capture_output=True,
                     text=True,
                     encoding='utf-8',
-                    timeout=30,
+                    timeout=60,  # Увеличиваем таймаут до 60 секунд
                     cwd=ROUTER_PATH,
                     env=env
                 )
                 
-                # Проверяем, был ли создан файл вывода
-                if os.path.exists(output_file):
-                    with open(output_file, 'r', encoding='utf-8') as f:
-                        output_content = f.read()
+                # Проверяем наличие ошибок в stderr
+                if result.stderr and "cannot find module" in result.stderr.lower():
+                    print(f"⚠️ Ошибка при загрузке модулей Node.js: {result.stderr}")
                     
-                    # Удаляем временный файл вывода
-                    try:
-                        os.remove(output_file)
-                    except Exception as e:
-                        print(f"⚠️ Не удалось удалить временный файл вывода: {e}")
-                    
-                    # Парсим результат
-                    if output_content and output_content.strip():
-                        response_data = json.loads(output_content)
-                        if response_data.get("success"):
-                            return response_data["response"]
-                        else:
-                            router_error = response_data.get("error", "Неизвестная ошибка")
-                            print(f"⚠️ AI Router вернул ошибку: {router_error}")
-                            return self._simulate_router_call(message, task_type)
+                    # Проверяем, есть ли в тексте ошибки проблемы с путями (опечатки)
+                    if "goppiai_integration" in result.stderr.lower():
+                        print("⚠️ Обнаружена опечатка в пути: 'goppiai_integration' вместо 'gopiai_integration'")
+                        # Создаем симлинк для исправления пути
+                        try:
+                            link_dir = os.path.join(os.path.dirname(ROUTER_PATH), "../goppiai_integration")
+                            os.makedirs(os.path.dirname(link_dir), exist_ok=True)
+                            if not os.path.exists(link_dir):
+                                os.symlink(os.path.dirname(ROUTER_PATH), link_dir)
+                                print(f"✅ Создан символический линк для исправления пути: {link_dir}")
+                        except Exception as link_err:
+                            print(f"⚠️ Не удалось создать символический линк: {link_err}")
                 
-                # Если файл не был создан или пуст, проверяем стандартный вывод
+                # Проверяем ответ
                 if result.returncode == 0 and result.stdout and result.stdout.strip():
                     print(f"📄 Получен ответ от Node.js через stdout ({len(result.stdout)} байт)")
                     try:
@@ -211,7 +185,12 @@ class AIRouterLLM:
                             router_error = response_data.get("error", "Неизвестная ошибка")
                             print(f"⚠️ AI Router вернул ошибку: {router_error}")
                             return self._simulate_router_call(message, task_type)
-                    except json.JSONDecodeError:
+                    except json.JSONDecodeError as jde:
+                        # Логируем необработанный stdout, если декодирование JSON не удалось
+                        print(f"❌ Ошибка декодирования JSON: {jde}")
+                        print(f"Необработанный stdout Node.js: {result.stdout[:500]}...")
+                        if result.stderr:
+                            print(f"Необработанный stderr Node.js: {result.stderr[:500]}...")
                         pass  # Продолжаем к fallback
                 
                 # Если все способы не сработали, используем fallback
@@ -296,3 +275,56 @@ class AIRouterLLM:
         except ImportError:
             print("⚠️ langchain не найден, возвращаем self")
             return self
+
+    def _call_node_js_router(self, message, task_type='general'):
+        """
+        Вызывает JavaScript роутер через Node.js
+        
+        Args:
+            message: Сообщение пользователя
+            task_type: Тип задачи для маршрутизации
+            
+        Returns:
+            str: Ответ роутера или fallback ответ при ошибке
+        """
+        try:
+            # Используем новый метод для запуска Node.js с временными файлами
+            router_script = os.path.join(ROUTER_PATH, "router_launcher.js")
+            
+            # Проверяем, существует ли скрипт
+            if not os.path.exists(router_script):
+                print(f"❌ Скрипт не найден: {router_script}")
+                return self._simulate_router_call(message, task_type)
+                
+            # Создаем входные данные для роутера
+            input_data = {
+                "message": message,
+                "taskType": task_type,
+                "configPath": "./ai_rotation_config.js"
+            }
+            
+            # Запускаем скрипт через базовый метод
+            result = self.run_node_script(
+                script_path=router_script,
+                input_data=input_data,
+                timeout=60,
+                cwd=ROUTER_PATH
+            )
+            
+            # Обрабатываем результат
+            if result["success"]:
+                router_response = result["result"]
+                if router_response.get("success"):
+                    return router_response["response"]
+                else:
+                    router_error = router_response.get("error", "Неизвестная ошибка")
+                    print(f"⚠️ AI Router вернул ошибку: {router_error}")
+                    return self._simulate_router_call(message, task_type)
+            else:
+                print(f"❌ Ошибка при запуске Node.js: {result['error']}")
+                return self._simulate_router_call(message, task_type)
+                
+        except Exception as e:
+            print(f"❌ Исключение при вызове Node.js роутера: {e}")
+            traceback.print_exc()
+            return self._simulate_router_call(message, task_type)

@@ -95,6 +95,9 @@ class GopiAIRouterTool(BaseTool):
             const path = require('path');
             const {{ AIRouter }} = require('{self.router_path}/ai_router_system.js');
             const config = require('{self.router_path}/ai_rotation_config.js');
+            // --- DEBUGGING START ---
+            console.log(JSON.stringify({ debug: `Type of AIRouter: ${typeof AIRouter}` }));
+            console.log(JSON.stringify({ debug: `AIRouter object: ${JSON.stringify(AIRouter, null, 2)}` }));
             
             async function processRequest() {{
                 try {{

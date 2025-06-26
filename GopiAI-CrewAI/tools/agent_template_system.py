@@ -9,6 +9,15 @@ import logging
 from typing import Dict, List, Any, Optional
 from crewai import Agent, Task, Crew
 
+# Импорты инструментов для централизованного управления
+from gopiai_integration.browser_tools import GopiAIBrowserTool
+from gopiai_integration.filesystem_tools import GopiAIFileSystemTool
+from gopiai_integration.memory_tools import GopiAIMemoryTool
+from gopiai_integration.communication_tools import GopiAICommunicationTool
+from gopiai_integration.ai_router_tools import GopiAIRouterTool
+from gopiai_integration.huggingface_tools import GopiAIHuggingFaceTool
+
+
 class AgentTemplateSystem:
     """
     Система шаблонов для быстрого создания агентов CrewAI
@@ -19,6 +28,16 @@ class AgentTemplateSystem:
     - Создание агентов с кастомизацией
     - Поддержка различных инструментов
     """
+    # Централизованное сопоставление инструментов для упрощения управления
+    TOOL_MAPPING = {
+        "browser": GopiAIBrowserTool,
+        "filesystem": GopiAIFileSystemTool,
+        "memory": GopiAIMemoryTool,
+        "communication": GopiAICommunicationTool,
+        "router": GopiAIRouterTool,
+        "huggingface": GopiAIHuggingFaceTool
+    }
+
     
     def __init__(self, verbose: bool = False):
         """
@@ -226,11 +245,8 @@ class AgentTemplateSystem:
                 allow_delegation=allow_delegation,
                 **additional_params
             )
-            
-            self.logger.info(f"Создан агент из шаблона {template_name}: {role}")
-            
-            self.logger.info(f"Создан агент: {role}, Инструментов: {len(tools)}, Backstory: {backstory[:50]}...")
-            
+            self.logger.info(f"Агент '{role}' успешно создан из шаблона '{template_name}'.")
+            self.logger.debug(f"Детали агента: Инструменты: {[t.name for t in tools]}, Делегация: {allow_delegation}, Backstory: {backstory[:80]}...")
             return agent
             
         except Exception as e:
@@ -248,32 +264,16 @@ class AgentTemplateSystem:
             Экземпляр инструмента или None
         """
         try:
-            # Импортируем инструменты
-            from gopiai_integration.browser_tools import GopiAIBrowserTool
-            from gopiai_integration.filesystem_tools import GopiAIFileSystemTool
-            from gopiai_integration.memory_tools import GopiAIMemoryTool
-            from gopiai_integration.communication_tools import GopiAICommunicationTool
-            from gopiai_integration.ai_router_tools import GopiAIRouterTool
-            from gopiai_integration.huggingface_tools import GopiAIHuggingFaceTool
-            
-            # Сопоставление имен и классов инструментов
-            tool_mapping = {
-                "browser": GopiAIBrowserTool,
-                "filesystem": GopiAIFileSystemTool,
-                "memory": GopiAIMemoryTool,
-                "communication": GopiAICommunicationTool,
-                "router": GopiAIRouterTool,
-                "huggingface": GopiAIHuggingFaceTool
-            }
-            
-            if tool_name in tool_mapping:
-                return tool_mapping[tool_name]()
+            if tool_name in self.TOOL_MAPPING:
+                tool_class = self.TOOL_MAPPING[tool_name]
+                self.logger.debug(f"Создание экземпляра инструмента: {tool_name}")
+                return tool_class()
             else:
                 self.logger.warning(f"Неизвестный инструмент: {tool_name}")
                 return None
                 
         except ImportError as e:
-            self.logger.error(f"Ошибка импорта инструмента {tool_name}: {str(e)}")
+            self.logger.error(f"Ошибка импорта для инструмента {tool_name}: {str(e)}. Убедитесь, что все зависимости установлены.")
             return None
         except Exception as e:
             self.logger.error(f"Ошибка создания инструмента {tool_name}: {str(e)}")
@@ -315,11 +315,7 @@ class AgentTemplateSystem:
                 verbose=True,
                 name=name
             )
-            
-            self.logger.info(f"Создана команда {name} с {len(agents)} агентами и {len(tasks)} задачами")
-            
-            self.logger.info(f"Создана команда: {name}, Агентов: {len(agents)}, Задач: {len(tasks)}")
-            
+            self.logger.info(f"Создана команда '{name}' с {len(agents)} агентами и {len(tasks)} задачами.")
             return crew
             
         except Exception as e:
