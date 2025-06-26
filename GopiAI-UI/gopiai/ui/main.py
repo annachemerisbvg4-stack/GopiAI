@@ -115,6 +115,9 @@ except ImportError as e:
         def add_new_tab(self, title, content):
             print(f"Fallback: add_new_tab({title})")
 
+        def add_notebook_tab(self, title, content, menu_bar=None):
+            print(f"Fallback: add_notebook_tab({title})")
+
         def get_current_text(self):
             return "Fallback content"
 

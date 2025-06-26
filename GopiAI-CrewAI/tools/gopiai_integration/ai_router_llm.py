@@ -142,40 +142,91 @@ class AIRouterLLM:
                 return self._simulate_router_call(message, task_type)
             
             # Выполняем через Node.js
-            result = subprocess.run(
-                ["node", temp_js_file],
-                capture_output=True,
-                text=True,
-                timeout=30,  # 30 секунд таймаут
-                cwd=ROUTER_PATH
-            )
-            
-            # Удаляем временный файл
             try:
-                os.remove(temp_js_file)
-            except Exception as e:
-                print(f"⚠️ Не удалось удалить временный файл: {e}")
-            
-            if result.returncode == 0:
-                try:
-                    # Проверяем, что stdout не пустой
-                    if not result.stdout.strip():
-                        print("⚠️ Пустой ответ от AI Router")
-                        return self._simulate_router_call(message, task_type)
-                        
-                    response_data = json.loads(result.stdout.strip())
-                    if response_data.get("success"):
-                        return response_data["response"]
-                    else:
-                        router_error = response_data.get("error", "Неизвестная ошибка")
-                        print(f"⚠️ AI Router вернул ошибку: {router_error}")
-                        return self._simulate_router_call(message, task_type)
-                except json.JSONDecodeError:
-                    print(f"⚠️ Ошибка парсинга ответа AI Router: {result.stdout}")
-                    return self._simulate_router_call(message, task_type)
-            else:
-                print(f"⚠️ AI Router вернул ненулевой код: {result.stderr}")
+                # Явно указываем кодировку UTF-8 для процесса
+                env = os.environ.copy()
+                env['PYTHONIOENCODING'] = 'utf-8'
+                
+                # Создаем временный файл для вывода
+                output_file = os.path.join(ROUTER_PATH, "temp_output.json")
+                
+                # Модифицируем JS-код, чтобы записывать результат в файл
+                with open(temp_js_file, 'r', encoding='utf-8') as f:
+                    js_code = f.read()
+                
+                # Правильно экранируем обратные слэши в пути для JavaScript
+                safe_output_path = output_file.replace('\\', '\\\\')
+                
+                js_code_with_file_output = js_code.replace(
+                    'console.log(JSON.stringify(',
+                    f'const fs = require("fs"); fs.writeFileSync("{safe_output_path}", JSON.stringify('
+                ).replace(
+                    '}));',
+                    '}, null, 2));'
+                )
+                
+                with open(temp_js_file, 'w', encoding='utf-8') as f:
+                    f.write(js_code_with_file_output)
+                
+                # Запускаем Node.js
+                result = subprocess.run(
+                    ["node", temp_js_file],
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    timeout=30,
+                    cwd=ROUTER_PATH,
+                    env=env
+                )
+                
+                # Проверяем, был ли создан файл вывода
+                if os.path.exists(output_file):
+                    with open(output_file, 'r', encoding='utf-8') as f:
+                        output_content = f.read()
+                    
+                    # Удаляем временный файл вывода
+                    try:
+                        os.remove(output_file)
+                    except Exception as e:
+                        print(f"⚠️ Не удалось удалить временный файл вывода: {e}")
+                    
+                    # Парсим результат
+                    if output_content and output_content.strip():
+                        response_data = json.loads(output_content)
+                        if response_data.get("success"):
+                            return response_data["response"]
+                        else:
+                            router_error = response_data.get("error", "Неизвестная ошибка")
+                            print(f"⚠️ AI Router вернул ошибку: {router_error}")
+                            return self._simulate_router_call(message, task_type)
+                
+                # Если файл не был создан или пуст, проверяем стандартный вывод
+                if result.returncode == 0 and result.stdout and result.stdout.strip():
+                    print(f"📄 Получен ответ от Node.js через stdout ({len(result.stdout)} байт)")
+                    try:
+                        response_data = json.loads(result.stdout.strip())
+                        if response_data.get("success"):
+                            return response_data["response"]
+                        else:
+                            router_error = response_data.get("error", "Неизвестная ошибка")
+                            print(f"⚠️ AI Router вернул ошибку: {router_error}")
+                            return self._simulate_router_call(message, task_type)
+                    except json.JSONDecodeError:
+                        pass  # Продолжаем к fallback
+                
+                # Если все способы не сработали, используем fallback
+                print("⚠️ Не удалось получить корректный ответ от AI Router")
                 return self._simulate_router_call(message, task_type)
+            except Exception as e:
+                print(f"⚠️ Ошибка при выполнении Node.js: {e}")
+                return self._simulate_router_call(message, task_type)
+            finally:
+                # Удаляем временный JS-файл в любом случае
+                try:
+                    if os.path.exists(temp_js_file):
+                        os.remove(temp_js_file)
+                except Exception as e:
+                    print(f"⚠️ Не удалось удалить временный JS-файл: {e}")
                 
         except subprocess.TimeoutExpired:
             print("⚠️ AI Router: превышено время ожидания")

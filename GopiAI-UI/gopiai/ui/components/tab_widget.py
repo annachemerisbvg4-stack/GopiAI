@@ -5,11 +5,13 @@ Tab Widget Component для GopiAI Standalone Interface
 Центральная область с вкладками документов.
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QTextEdit
+import logging
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QTextEdit, QHBoxLayout, QPushButton, QLineEdit
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
 import chardet
+import traceback
 
 # Импортируем продвинутый текстовый редактор
 import sys
@@ -23,6 +25,8 @@ if widgets_path not in sys.path:
 from gopiai.widgets.core.text_editor import TextEditorWidget
 from gopiai.ui.components.rich_text_notebook_widget import NotebookEditorWidget
 TEXT_EDITOR_AVAILABLE = True
+
+logger = logging.getLogger(__name__)
 
 class TabDocumentWidget(QWidget):
     """Центральная область с вкладками документов"""
@@ -47,6 +51,13 @@ class TabDocumentWidget(QWidget):
         self.tab_widget.setUsesScrollButtons(True)  # Кнопки прокрутки при множестве вкладок
         self.tab_widget.setElideMode(Qt.TextElideMode.ElideRight)  # Обрезаем длинные названия
         
+        # # Добавляем стартовую вкладку
+        # welcome_tab = QTextEdit()
+        # welcome_tab.setPlainText("Добро пожаловать в GopiAI v0.3.0!")
+        # welcome_tab.setReadOnly(True)
+        
+        # self.tab_widget.addTab(welcome_tab, "Добро пожаловать")
+        
         # Подключаем сигнал закрытия вкладок
         self.tab_widget.tabCloseRequested.connect(self._close_tab)
         
@@ -57,13 +68,13 @@ class TabDocumentWidget(QWidget):
         if TEXT_EDITOR_AVAILABLE:
             # Используем продвинутый текстовый редактор с нумерацией строк
             editor = TextEditorWidget()
-            editor.text_editor.setPlainText(content)
-            print(f"Создана вкладка с TextEditorWidget: {title}")
+            editor.text_editor.setPlainText(content) # type: ignore
+            logger.info(f"Создана вкладка с TextEditorWidget: {title}")
         else:
             # Fallback к обычному QTextEdit
             editor = QTextEdit()
             editor.setPlainText(content)
-            print(f"Создана вкладка с QTextEdit (fallback): {title}")
+            logger.info(f"Создана вкладка с QTextEdit (fallback): {title}")
 
         index = self.tab_widget.addTab(editor, title)
         self.tab_widget.setCurrentIndex(index)
@@ -71,7 +82,6 @@ class TabDocumentWidget(QWidget):
 
     def add_notebook_tab(self, title="Новый блокнот", content="", menu_bar=None):
         """Добавление новой вкладки-блокнота с форматированием (чистый rich text notebook)"""
-        from gopiai.ui.components.rich_text_notebook_widget import NotebookEditorWidget
         notebook = NotebookEditorWidget()
         if content:
             notebook.setPlainText(content)
@@ -104,12 +114,11 @@ class TabDocumentWidget(QWidget):
                 text = raw.decode(encoding, errors='replace')
                 editor.current_encoding = encoding
                 editor.text_editor.setPlainText(text)
-                import os
                 tab_title = os.path.basename(file_path)
                 editor.file_name_changed.connect(
                     lambda name: self._update_tab_title(editor, name)
                 )
-                print(f"Файл открыт в TextEditorWidget: {file_path}")
+                logger.info(f"Файл открыт в TextEditorWidget: {file_path}")
             else:
                 # Fallback к обычному редактору
                 editor = QTextEdit()
@@ -118,17 +127,16 @@ class TabDocumentWidget(QWidget):
                 encoding = chardet.detect(raw)['encoding'] or 'utf-8'
                 content = raw.decode(encoding, errors='replace')
                 editor.setPlainText(content)
-                import os
-                tab_title = os.path.basename(file_path)
-                print(f"Файл открыт в QTextEdit (fallback): {file_path}")
+                tab_title = os.path.basename(file_path) # type: ignore
+                logger.info(f"Файл открыт в QTextEdit (fallback): {file_path}")
             
             # Добавляем вкладку
             index = self.tab_widget.addTab(editor, tab_title)
             self.tab_widget.setCurrentIndex(index)
             return editor
             
-        except Exception as e:
-            print(f"Ошибка открытия файла {file_path}: {e}")
+        except Exception as e: # type: ignore
+            logger.error(f"Ошибка открытия файла {file_path}: {e}", exc_info=True)
             # Создаем вкладку с сообщением об ошибке
             error_tab = QTextEdit()
             error_tab.setPlainText(f"Ошибка открытия файла:\n{file_path}\n\n{str(e)}")
@@ -150,12 +158,9 @@ class TabDocumentWidget(QWidget):
             self.tab_widget.removeTab(index)
 
     def add_browser_tab(self, url="about:blank", title="Браузер"):
-        """Добавление новой вкладки с браузером"""
-        print(f"Создаем встроенный браузер...")
+        """Добавление новой вкладки с браузером""" # type: ignore
+        logger.info(f"Создаем встроенный браузер...")
         try:
-            from PySide6.QtWidgets import QHBoxLayout, QPushButton, QLineEdit
-            from PySide6.QtCore import QUrl
-            
             # Создаем главный виджет браузера
             browser_widget = QWidget()
             browser_layout = QVBoxLayout(browser_widget)
@@ -243,7 +248,7 @@ class TabDocumentWidget(QWidget):
                         # Выглядит как поисковый запрос
                         url_text = f'https://google.com/search?q={url_text}'
                 
-                print(f"📡 Переходим к URL: {url_text}")
+                logger.info(f"📡 Переходим к URL: {url_text}")
                 web_view.load(QUrl(url_text))
                 
             def update_address_bar(qurl):
@@ -285,22 +290,21 @@ class TabDocumentWidget(QWidget):
             
             # Загружаем URL
             if url and url != "about:blank":
-                print(f"📡 Загружаем URL: {url}")
+                logger.info(f"📡 Загружаем URL: {url}")
                 address_bar.setText(url)
             else:
                 # Загрузка Google
                 url = "https://google.com"
-                print(f"📡 Загружаем Google")
+                logger.info(f"📡 Загружаем Google")
                 address_bar.setText(url)
                 
             web_view.load(QUrl(url))
             
-            print(f"Веб-страница с навигацией загружена: {url}")
+            logger.info(f"Веб-страница с навигацией загружена: {url}")
             return browser_widget
             
         except Exception as e:
             print(f"Ошибка при создании браузера: {e}")
-            import traceback
             traceback.print_exc()
             return self._create_fallback_browser_tab(f"Ошибка: {str(e)}")
 
@@ -332,8 +336,8 @@ class TabDocumentWidget(QWidget):
         current_widget = self.tab_widget.currentWidget()
         
         # Проверяем, является ли это TextEditorWidget
-        if TEXT_EDITOR_AVAILABLE and type(current_widget).__name__ == "TextEditorWidget":
-            return getattr(current_widget, "text_editor", None)  # Безопасно получаем внутренний редактор
+        if TEXT_EDITOR_AVAILABLE and isinstance(current_widget, TextEditorWidget):
+            return getattr(current_widget, "text_editor", None)
         elif isinstance(current_widget, QTextEdit):
             return current_widget
         return None
@@ -350,71 +354,3 @@ class TabDocumentWidget(QWidget):
         editor = self.get_current_editor()
         if editor:
             editor.setPlainText(text)
-
-    def save_current_file(self, parent=None):
-        """Сохраняет текущую вкладку в файл (если уже был путь) или вызывает save as"""
-        current_widget = self.tab_widget.currentWidget()
-        file_path = getattr(current_widget, 'current_file', None)
-        if not file_path:
-            return self.save_current_file_as(parent)
-        return self._save_widget_to_file(current_widget, file_path, parent)
-
-    def save_current_file_as(self, parent=None):
-        """Сохраняет текущую вкладку в новый файл с выбором формата и расширения"""
-        from PySide6.QtWidgets import QFileDialog
-        current_widget = self.tab_widget.currentWidget()
-        if current_widget is None:
-            return False
-        # Расширенный список форматов
-        filters = (
-            "Python (*.py);;JavaScript (*.js);;TypeScript (*.ts);;C++ (*.cpp *.h);;C (*.c *.h);;C# (*.cs);;Java (*.java);;Go (*.go);;Rust (*.rs);;Kotlin (*.kt);;Swift (*.swift);;PHP (*.php);;Ruby (*.rb);;Perl (*.pl);;Shell Script (*.sh);;Batch (*.bat);;PowerShell (*.ps1);;HTML (*.html *.htm);;CSS (*.css);;JSON (*.json);;YAML (*.yaml *.yml);;Markdown (*.md);;INI (*.ini);;XML (*.xml);;SQL (*.sql);;Текстовый файл (*.txt);;Rich Text (*.rtf);;Все файлы (*.*)"
-        )
-        file_path, selected_filter = QFileDialog.getSaveFileName(parent, "Сохранить как", "", filters)
-        if not file_path:
-            return False
-        # Автоматически подставлять расширение, если не указано
-        ext_map = {
-            'Python': '.py', 'JavaScript': '.js', 'TypeScript': '.ts', 'C++': '.cpp', 'C#': '.cs', 'C ': '.c',
-            'Java': '.java', 'Go': '.go', 'Rust': '.rs', 'Kotlin': '.kt', 'Swift': '.swift', 'PHP': '.php',
-            'Ruby': '.rb', 'Perl': '.pl', 'Shell Script': '.sh', 'Batch': '.bat', 'PowerShell': '.ps1',
-            'HTML': '.html', 'CSS': '.css', 'JSON': '.json', 'YAML': '.yaml', 'Markdown': '.md', 'INI': '.ini',
-            'XML': '.xml', 'SQL': '.sql', 'Rich Text': '.rtf', 'Текстовый файл': '.txt'
-        }
-        if '.' not in file_path.split(os.sep)[-1]:
-            for key, ext in ext_map.items():
-                if key in selected_filter:
-                    file_path += ext
-                    break
-        # Сохраняем
-        result = self._save_widget_to_file(current_widget, file_path, parent, selected_filter)
-        if result:
-            setattr(current_widget, 'current_file', file_path)
-        return result
-
-    def _save_widget_to_file(self, widget, file_path, parent=None, selected_filter=None):
-        """Сохраняет содержимое виджета в файл с учетом формата"""
-        try:
-            # Определяем тип редактора
-            if isinstance(widget, NotebookEditorWidget):
-                # Для блокнота поддерживаем txt, md, rtf, html
-                if selected_filter and 'Markdown' in selected_filter:
-                    text = widget.editor.toPlainText()
-                elif selected_filter and 'Rich Text' in selected_filter:
-                    text = widget.editor.toHtml()  # QTextEdit не поддерживает RTF напрямую, но можно сохранить HTML
-                elif selected_filter and 'HTML' in selected_filter:
-                    text = widget.editor.toHtml()
-                else:
-                    text = widget.editor.toPlainText()
-            elif hasattr(widget, 'text_editor'):
-                text = widget.text_editor.toPlainText()
-            elif isinstance(widget, QTextEdit):
-                text = widget.toPlainText()
-            else:
-                text = str(widget)
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(text)
-            return True
-        except Exception as e:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.warning(parent, "Ошибка", f"Не удалось сохранить файл: {e}")
-            return False

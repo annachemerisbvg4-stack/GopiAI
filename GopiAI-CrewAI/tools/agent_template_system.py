@@ -33,12 +33,11 @@ class AgentTemplateSystem:
         # Загружаем шаблоны и промпты
         self.templates = self._load_templates()
         self.prompt_library = self._load_prompt_library()
-        
         self.logger.info(f"Загружено {len(self.templates)} шаблонов и {len(self.prompt_library)} промптов")
-        
         if self.verbose:
-            print(f"✅ Загружено {len(self.templates)} шаблонов агентов")
-    
+            self.logger.setLevel(logging.DEBUG)
+            self.logger.debug("Verbose mode включен")
+
     def _setup_logger(self) -> logging.Logger:
         """Настройка логгера"""
         logger = logging.getLogger("gopiai.agent_template_system")
@@ -230,10 +229,7 @@ class AgentTemplateSystem:
             
             self.logger.info(f"Создан агент из шаблона {template_name}: {role}")
             
-            if self.verbose:
-                print(f"✅ Создан агент: {role}")
-                print(f"   Инструментов: {len(tools)}")
-                print(f"   Backstory: {backstory[:50]}...")
+            self.logger.info(f"Создан агент: {role}, Инструментов: {len(tools)}, Backstory: {backstory[:50]}...")
             
             return agent
             
@@ -322,10 +318,7 @@ class AgentTemplateSystem:
             
             self.logger.info(f"Создана команда {name} с {len(agents)} агентами и {len(tasks)} задачами")
             
-            if self.verbose:
-                print(f"✅ Создана команда: {name}")
-                print(f"   Агентов: {len(agents)}")
-                print(f"   Задач: {len(tasks)}")
+            self.logger.info(f"Создана команда: {name}, Агентов: {len(agents)}, Задач: {len(tasks)}")
             
             return crew
             

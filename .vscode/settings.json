@@ -21,5 +21,13 @@
     "cody.debug.verbose": true,
     "cody.experimental.tracing": true,
     "cody.internal.debug.tokenUsage": false,
-    "cody.agentic.context.experimentalOptions": {}
+    "cody.agentic.context.experimentalOptions": {},
+    "cursorpyright.analysis.autoImportCompletions": true,
+    "cursorpyright.analysis.extraPaths": [
+        "./GopiAI-UI",
+        "./GopiAI-WebView",
+        "./GopiAI-Core",
+        "./rag_memory_system"
+    ],
+    "cursorpyright.analysis.typeCheckingMode": "basic"
 }
