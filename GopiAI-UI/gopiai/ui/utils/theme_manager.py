@@ -66,7 +66,7 @@ class ThemeManager(QObject):
 
             logger.info(f"Загружена тема: {self._current_theme} ({self._current_variant})")
         except Exception as e:
-            logger.error(f"Ошибка при инициализации темы: {e}")
+            logger.error(f"Ошибка при инициализации темы: {e}", exc_info=True)
 
     def _apply_loaded_theme(self, app):
         """Применяет загруженную тему с проверками"""
@@ -78,8 +78,8 @@ class ThemeManager(QObject):
             else:
                 logger.warning("Тема загружена, но не применена полностью - возможно отображение fallback темы")
                 self._theme_applied = False
-        except Exception as e:
-            logger.error(f"Ошибка при применении загруженной темы: {e}")
+        except (FileNotFoundError, json.JSONDecodeError, Exception) as e: # Добавлены более специфичные исключения
+            logger.error(f"Ошибка при применении загруженной темы: {e}", exc_info=True)
             self._theme_applied = False
 
     def apply_theme(self, theme_input: Union[str, QCoreApplication]) -> bool:
@@ -121,8 +121,8 @@ class ThemeManager(QObject):
             else:
                 logger.error(f"Неподдерживаемый тип параметра: {type(theme_input)}")
                 return False
-        except Exception as e:
-            logger.error(f"Ошибка при применении темы: {e}")
+        except (FileNotFoundError, json.JSONDecodeError, Exception) as e: # Добавлены более специфичные исключения
+            logger.error(f"Ошибка при применении темы: {e}", exc_info=True)
             return False
 
         return False
@@ -148,7 +148,7 @@ class ThemeManager(QObject):
                         self._theme_applied = False
                         return False
         except Exception as e:
-            logger.error(f"Ошибка при обработке выбора темы: {e}")
+            logger.error(f"Ошибка при обработке выбора темы: {e}", exc_info=True)
 
         return False
 
@@ -199,7 +199,7 @@ class ThemeManager(QObject):
                 json.dump(theme_data, f, indent=2)
             return True
         except Exception as e:
-            logger.error(f"Ошибка при сохранении темы: {e}")
+            logger.error(f"Ошибка при сохранении темы: {e}", exc_info=True)
 
         return False
 
@@ -252,7 +252,7 @@ class ThemeManager(QObject):
                         theme_data["variant"] = variant
                         return theme_data
         except Exception as e:
-            logger.error(f"Ошибка при получении данных текущей темы: {e}")
+            logger.error(f"Ошибка при получении данных текущей темы: {e}", exc_info=True)
 
         return None
 
@@ -282,7 +282,7 @@ class ThemeManager(QObject):
                             logger.error("Не удалось применить выбранную тему")
                             self._theme_applied = False
         except Exception as e:
-            logger.error(f"Ошибка при показе диалога выбора темы: {e}")
+            logger.error(f"Ошибка при показе диалога выбора темы: {e}", exc_info=True)
 
         return False
 
@@ -337,6 +337,6 @@ class ThemeManager(QObject):
 
                 return True
         except Exception as e:
-            logger.error(f"Ошибка при сбросе темы: {e}")
+            logger.error(f"Ошибка при сбросе темы: {e}", exc_info=True)
 
         return False

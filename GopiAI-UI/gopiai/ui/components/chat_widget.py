@@ -7,6 +7,9 @@ import os
 import time
 import traceback
 
+# Настройка логирования
+logger = logging.getLogger(__name__)
+
 # Импортируем UniversalIconManager для Lucide-иконок
 from gopiai.ui.components.icon_file_system_model import UniversalIconManager
 
@@ -141,7 +144,7 @@ class ChatWidget(QWidget):
         try:
             # Проверяем доступность CrewAI API сервера
             if crewai_client.is_available():
-                print("✅ CrewAI API сервер доступен")
+                logger.info("✅ CrewAI API сервер доступен")
                 
                 # Индексируем документацию в фоновом потоке
                 def index_in_background():
@@ -150,7 +153,7 @@ class ChatWidget(QWidget):
                 
                 threading.Thread(target=index_in_background, daemon=True).start()
             else:
-                print("⚠️ CrewAI API сервер недоступен")
+                logger.warning("⚠️ CrewAI API сервер недоступен")
                 
                 # Показываем сообщение через 3 секунды (чтобы не блокировать загрузку UI)
                 def show_warning():
@@ -165,8 +168,7 @@ class ChatWidget(QWidget):
                 QTimer.singleShot(3000, show_warning)
                 
         except Exception as e:
-            print(f"❌ Ошибка при инициализации соединения с CrewAI: {e}")
-            traceback.print_exc()
+            logger.error(f"❌ Ошибка при инициализации соединения с CrewAI: {e}", exc_info=True)
 
     def send_message(self):
         """Отправляет сообщение и обрабатывает его через CrewAI API"""
@@ -204,8 +206,7 @@ class ChatWidget(QWidget):
                         time.sleep(1)  # Имитация задержки
                         
                 except Exception as e:
-                    print(f"❌ Ошибка при обработке запроса: {e}")
-                    traceback.print_exc()
+                    logger.error(f"❌ Ошибка при обработке запроса: {e}", exc_info=True)
                     response = "Произошла ошибка при обработке запроса. Подробности в консоли."
                 
                 # Обновляем UI в основном потоке
@@ -226,13 +227,17 @@ class ChatWidget(QWidget):
         html = self.history.toHtml()
         
         # Заменяем временное сообщение на ответ
-        html = html.replace(
-            f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>",
-            response
-        )
+        old_html_content = f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>"
+        new_html = html.replace(old_html_content, response)
         
-        # Обновляем историю
-        self.history.setHtml(html)
+        if new_html == html: # Проверяем, произошла ли замена
+            logger.warning(f"Плейсхолдер для waiting_id '{waiting_id}' не найден в истории чата. Добавляем ответ как новое сообщение.")
+            # Если плейсхолдер не найден (например, из-за слишком быстрой обработки или ошибки),
+            # добавляем ответ как новое сообщение.
+            self.append_message("Ассистент", response)
+            return # Выходим, так как уже добавили
+        
+        self.history.setHtml(new_html) # Обновляем историю
         
         # Включаем кнопки
         self.send_btn.setEnabled(True)
@@ -245,12 +250,12 @@ class ChatWidget(QWidget):
     def attach_file(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Выберите файл")
         if file_path:
-            self.append_message("Файл", file_path)
-            # TODO: обработка файла
+            self.append_message("Система", f"Файл прикреплен: {os.path.basename(file_path)}. (Дальнейшая обработка не реализована)")
+            logger.info(f"Файл прикреплен: {file_path}")
 
 
     def attach_image(self):
         image_path, _ = QFileDialog.getOpenFileName(self, "Выберите изображение", filter="Images (*.png *.jpg *.jpeg *.bmp *.gif)")
         if image_path:
-            self.append_message("Изображение", image_path)
-            # TODO: обработка изображения
+            self.append_message("Система", f"Изображение прикреплено: {os.path.basename(image_path)}. (Дальнейшая обработка не реализована)")
+            logger.info(f"Изображение прикреплено: {image_path}")
