@@ -1,51 +1,69 @@
-import os
 import time
 import threading
 
-# --- UNIFIED LLM CONFIGURATION ---
-# This is now the single source of truth for models in the system.
+# Конфиг моделей Gemini/Gemma для ротации и задач
 LLM_MODELS_CONFIG = [
     {
-        "name": "Groq Llama 3.1 8B",
-        "id": "groq/llama-3.1-8b-instant",
-        "provider": "groq",
-        "rpm": 25,  # A bit safer than 30
-        "tpm": 25000,
-        "type": ["simple", "dialog", "code", "short_answer", "lookup"],
+        "name": "Gemma 3",
+        "id": "gemma-3",
+        "rpm": 30,
+        "tpm": 60000,  # примерное значение, уточнить по API
+        "type": ["simple", "lookup", "short_answer"],
+        "multimodal": False,
+        "embedding": False,
         "priority": 1
     },
     {
-        "name": "Google Gemini 1.5 Flash",
-        "id": "gemini/gemini-1.5-flash",
-        "provider": "gemini",
-        "rpm": 25,
-        "tpm": 100000,
-        "type": ["dialog", "code", "summarize", "long_answer", "multimodal", "vision"],
+        "name": "Gemma 3n",
+        "id": "gemma-3n",
+        "rpm": 30,
+        "tpm": 60000,
+        "type": ["simple", "lookup", "short_answer"],
+        "multimodal": False,
+        "embedding": False,
         "priority": 2
     },
     {
-        "name": "Cerebras Llama3.1 70B",
-        "id": "cerebras/llama3.1-70b",
-        "provider": "cerebras",
-        "rpm": 15,
-        "tpm": 15000,
-        "type": ["dialog", "code", "long_answer", "summarize"],
+        "name": "Gemini 2.0 Flash-Lite",
+        "id": "gemini-2.0-flash-lite",
+        "rpm": 30,
+        "tpm": 120000,
+        "type": ["simple", "dialog", "code", "summarize"],
+        "multimodal": False,
+        "embedding": False,
         "priority": 3
+    },
+    {
+        "name": "Gemini 2.5 Flash-Lite Preview",
+        "id": "gemini-2.5-flash-lite-preview",
+        "rpm": 15,
+        "tpm": 60000,
+        "type": ["dialog", "code", "summarize"],
+        "multimodal": False,
+        "embedding": False,
+        "priority": 4
+    },
+    {
+        "name": "Gemini 2.5 Flash",
+        "id": "gemini-2.5-flash",
+        "rpm": 10,
+        "tpm": 60000,
+        "type": ["dialog", "code", "multimodal", "vision", "long_answer"],
+        "multimodal": True,
+        "embedding": False,
+        "priority": 5
+    },
+    {
+        "name": "Gemini Embedding Experimental",
+        "id": "gemini-embedding-experimental",
+        "rpm": 5,
+        "tpm": 10000,
+        "type": ["embedding"],
+        "multimodal": False,
+        "embedding": True,
+        "priority": 10
     }
 ]
-
-# Helper to get API key based on provider name
-def get_api_key_for_provider(provider_name: str):
-    """Gets the API key from environment variables for a given provider."""
-    key_map = {
-        "groq": "GROQ_API_KEY",
-        "gemini": "GOOGLE_API_KEY",
-        "cerebras": "CEREBRAS_API_KEY"
-    }
-    env_var = key_map.get(provider_name.lower())
-    if env_var is None:
-        return None
-    return os.getenv(env_var)
 
 # Глобальный монитор лимитов (можно заменить на Redis/БД для продакшена)
 class RateLimitMonitor:
