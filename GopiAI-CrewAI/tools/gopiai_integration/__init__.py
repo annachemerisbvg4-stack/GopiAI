@@ -84,4 +84,4 @@ def get_tool_by_name(tool_name: str):
     else:
         raise ValueError(f"Неизвестный инструмент: {tool_name}")
 
-print("✅ GopiAI Integration Tools загружены успешно!")
+print("GopiAI Integration Tools loaded successfully!")

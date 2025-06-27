@@ -1,64 +1,11 @@
 @echo off
 chcp 65001 > nul
 
-echo ======================================================
-echo    Запуск CrewAI API сервера для интеграции с UI
-echo ======================================================
-echo.
+python "%~dp0start_crewai_server.py"
 
-:: Проверяем, не активировано ли уже окружение
-if "%VIRTUAL_ENV%"=="" (
-    :: Проверяем наличие окружения
-    if not exist crewai_env (
-        echo [1/4] Создание виртуального окружения CrewAI...
-        python -m venv crewai_env
-        if errorlevel 1 (
-            echo [ОШИБКА] Не удалось создать виртуальное окружение!
-            echo Убедитесь, что Python установлен и доступен в PATH.
-            pause
-            exit /b 1
-        )
-    )
-
-    :: Активируем окружение CrewAI
-    echo [2/4] Активация окружения CrewAI...
-    call crewai_env\Scripts\activate.bat
-
-    :: Проверяем, что окружение активировано
-    if errorlevel 1 (
-        echo [ОШИБКА] Не удалось активировать окружение CrewAI!
-        pause
-        exit /b 1
-    )
-) else (
-    echo [1/4] Виртуальное окружение уже активировано: %VIRTUAL_ENV%
-    echo [2/4] Пропускаем активацию...
-)
-
-:: Устанавливаем зависимости
-echo [3/4] Проверка и установка зависимостей...
-pip install -r "%~dp0requirements.txt"
-if errorlevel 1 (
-    echo [ПРЕДУПРЕЖДЕНИЕ] Возникли проблемы при установке некоторых зависимостей.
-    echo Сервер может работать с ограниченной функциональностью.
-    echo Нажмите любую клавишу, чтобы продолжить...
-    pause > nul
-)
-
-:: Запускаем сервер через debug wrapper
-echo [4/4] Запуск CrewAI API сервера...
-echo.
-echo CrewAI API будет доступен по адресу http://127.0.0.1:5050
-echo Для остановки сервера нажмите Ctrl+C
-echo ======================================================
-echo.
-
-python "%~dp0debug_wrapper.py"
-
-:: В случае ошибки
 if errorlevel 1 (
     echo.
-    echo [ОШИБКА] Не удалось запустить CrewAI API сервер!
-    echo Проверьте консоль на наличие ошибок.
+    echo [ERROR] Failed to start CrewAI API server!
+    echo Check the console for errors.
     pause
 )

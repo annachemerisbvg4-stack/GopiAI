@@ -1,46 +1,3 @@
-import threading
-import time
-class LLMLoggerWrapper:
-    """Обёртка для LLM, логирующая все запросы и ответы в logs/llm_requests, с задержкой между запросами"""
-    _last_call_time = 0
-    _lock = threading.Lock()
-    def __init__(self, llm, provider_name, min_delay=2.1):
-        self.llm = llm
-        self.provider_name = provider_name
-        from pathlib import Path
-        self.logs_dir = Path(__file__).parent / 'logs' / 'llm_requests'
-        self.logs_dir.mkdir(parents=True, exist_ok=True)
-        self.min_delay = min_delay
-        print(f"[LLMLoggerWrapper] Инициализирован для {self.provider_name}")
-
-    def call(self, prompt, *args, **kwargs):
-        print(f"[LLMLoggerWrapper] call() для {self.provider_name}, prompt: {str(prompt)[:80]}")
-        from datetime import datetime
-        import traceback
-        # Глобальная задержка между запросами для всех потоков
-        with LLMLoggerWrapper._lock:
-            now = time.time()
-            wait = self.min_delay - (now - LLMLoggerWrapper._last_call_time)
-            if wait > 0:
-                time.sleep(wait)
-            LLMLoggerWrapper._last_call_time = time.time()
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        log_file = self.logs_dir / f"{self.provider_name.replace(' ', '_')}_agent_{timestamp}.txt"
-        with open(log_file, 'w', encoding='utf-8') as f:
-            f.write(f"=== LLM PROVIDER: {self.provider_name} (AGENT) ===\n")
-            f.write(f"TIME: {timestamp}\n")
-            f.write(f"PROMPT: {prompt}\n")
-            f.write(f"ARGS: {args}\nKWARGS: {kwargs}\n")
-        try:
-            response = self.llm.call(prompt, *args, **kwargs)
-            with open(log_file, 'a', encoding='utf-8') as f:
-                f.write(f"RESPONSE: {response}\n")
-            return response
-        except Exception as e:
-            with open(log_file, 'a', encoding='utf-8') as f:
-                f.write(f"EXCEPTION: {e}\n")
-                f.write(traceback.format_exc())
-            raise
 #!/usr/bin/env python3
 """
 🚀 GopiAI-CrewAI Advanced Integration
@@ -97,11 +54,7 @@ def check_environment():
     
     # Проверяем ключи API
     api_keys = {
-        'GROQ_API_KEY': {'prefix': 'gsk_', 'name': 'Groq'},
         'GOOGLE_API_KEY': {'prefix': 'AIza', 'name': 'Google Gemini'},
-        'COHERE_API_KEY': {'prefix': '', 'name': 'Cohere'},
-        'CEREBRAS_API_KEY': {'prefix': 'csk_', 'name': 'Cerebras'},
-        'NOVITA_API_KEY': {'prefix': 'sk_', 'name': 'Novita'}
     }
     
     available_providers = []
@@ -185,7 +138,7 @@ def test_all_tools():
     try:
         print("🔀 Тестирование AI Router Tool...")
         router_tool = GopiAIRouterTool()
-        result = router_tool._run("route", "Привет!", "gemini", 50, 0.7)
+        result = router_tool._run(message="Привет!", task_type="chat")
         tools_results['router'] = True
         print(f"✅ Router: {result[:50]}...")
     except Exception as e:
@@ -372,7 +325,7 @@ def run_simple_demo():
         # Создаем LLM через новый AI Router
         ai_router_llm = AIRouterLLM()
         llm = ai_router_llm.get_llm_instance()
-        provider_name = "GopiAI Router"
+        provider_name = "GopiAI Google Router"
         print(f"🤖 Используется: {provider_name}")
         
         # Простой агент с коммуникацией
@@ -431,7 +384,7 @@ def run_advanced_demo():
         # Создаем LLM через новый AI Router
         ai_router_llm = AIRouterLLM()
         llm = ai_router_llm.get_llm_instance()
-        provider_name = "GopiAI Router"
+        provider_name = "GopiAI Google Router"
         print(f"🤖 Используется: {provider_name}")
         coordinator, researcher, writer, coder = create_demo_agents(llm)
         agents = [coordinator, researcher, writer, coder]

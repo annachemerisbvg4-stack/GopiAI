@@ -12,6 +12,7 @@ import sys
 import time
 import json
 import traceback
+import requests
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
 
@@ -21,8 +22,8 @@ crewai_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 sys.path.append(crewai_root)
 
 # Флаги доступности систем
-crewai_available = False
-txtai_available = False
+crewai_available = False # This will be set by the try-except block below
+RAG_API_URL = "http://127.0.0.1:5051" # URL для нашего нового RAG-сервиса
 
 # Проверка доступности CrewAI
 try:
@@ -34,15 +35,13 @@ except ImportError as e:
     print(f"⚠️ CrewAI не найден: {e}")
     print("CrewAI запросы будут обрабатываться как обычные запросы к AI Router")
 
-# Проверка доступности txtai (для RAG)
-try:
-    sys.path.append(os.path.join(crewai_root, "rag_memory_system"))
-    from txtai.embeddings import Embeddings
-    txtai_available = True
-    print("✅ txtai успешно импортирован для RAG!")
-except ImportError as e:
-    print(f"⚠️ txtai не найден: {e}")
-    print("RAG-система не будет использоваться для дополнения контекста")
+def is_rag_service_available():
+    """Проверяет доступность RAG-сервиса."""
+    try:
+        response = requests.get(f"{RAG_API_URL}/api/health", timeout=2)
+        return response.status_code == 200 and response.json().get("status") == "online"
+    except requests.exceptions.RequestException:
+        return False
 
 # Значения по умолчанию
 COMPLEXITY_THRESHOLD = 3  # От 0 (простой) до 5 (очень сложный)
@@ -56,135 +55,68 @@ class SmartDelegator:
         # Инициализируем AI Router
         try:
             from .ai_router_llm import AIRouterLLM
-            self.ai_router = AIRouterLLM()
-            print("✅ AI Router LLM адаптер загружен")
+            try:
+                self.ai_router = AIRouterLLM()
+                print("✅ AI Router LLM адаптер загружен")
+            except AttributeError as attr_err:
+                if "logger" in str(attr_err):
+                    # Создаем временный логгер для объекта
+                    import logging
+                    self.ai_router = AIRouterLLM()
+                    self.ai_router.logger = logging.getLogger("gopiai.tools.AIRouterLLM")
+                    print("✅ AI Router LLM адаптер загружен (с временным логгером)")
+                else:
+                    raise
             # Активация больше не нужна, т.к. роутер полностью на Python
                 
         except Exception as e:
             print(f"⚠️ Ошибка при инициализации AI Router LLM: {e}")
             self.ai_router = None
         
-        self.embeddings = None
-        
-        # Инициализируем RAG, если txtai доступен
-        if txtai_available:
-            self._init_txtai_embeddings()
-    
-    def _init_txtai_embeddings(self):
-        """Инициализирует RAG систему на базе txtai"""
-        if not txtai_available:
-            print("⚠️ txtai недоступен, RAG система не будет использоваться")
-            self.embeddings = None
-            return
-            
-        try:
-            # Путь к индексу txtai
-            index_dir = os.path.join(os.path.dirname(__file__), "../../../rag_memory_system/crewai_embeddings")
-            index_path = os.path.join(index_dir, "crewai-docs.tar.gz")
-            
-            # Создаем директорию для индексов, если она не существует
-            os.makedirs(index_dir, exist_ok=True)
-            
-            if os.path.exists(index_path):
-                # Загружаем существующий индекс
-                self.embeddings = Embeddings()
-                self.embeddings.load(index_path)
-                print(f"📚 Загружен существующий индекс RAG из {index_path}")
-            else:
-                # Создаем новый индекс
-                try:
-                    self.embeddings = Embeddings({
-                        "path": "sentence-transformers/all-MiniLM-L6-v2",
-                        "content": True
-                    })
-                    print(f"🆕 Создан новый индекс RAG (путь будет: {index_path})")
-                    
-                    # Индексируем документацию CrewAI
-                    self.index_documentation()
-                except Exception as e:
-                    print(f"⚠️ Ошибка при создании индекса: {e}")
-                    self.embeddings = None
-        except Exception as e:
-            print(f"❌ Ошибка при инициализации RAG: {e}")
-            traceback.print_exc()
-            self.embeddings = None
+        self.rag_available = is_rag_service_available()
+        if self.rag_available:
+            print("✅ RAG-сервис доступен. Запускаем индексацию в фоновом режиме...")
+            self.index_documentation() # Запускаем индексацию при старте
+        else:
+            print("⚠️ RAG-сервис недоступен. Контекст из документов не будет добавляться.")
     
     def index_documentation(self):
-        """Индексирует документацию CrewAI для RAG"""
-        if not txtai_available or not self.embeddings:
-            print("⚠️ txtai недоступен, индексация невозможна")
+        """Отправляет запрос на индексацию документов на RAG-сервер."""
+        if not self.rag_available:
+            print("⚠️ RAG-сервис недоступен, индексация невозможна.")
             return False
-            
+
+        def do_index():
+            try:
+                response = requests.post(f"{RAG_API_URL}/api/index", timeout=120) # 2-минутный таймаут
+                if response.status_code == 200:
+                    print(f"✅ Ответ от RAG-сервиса по индексации: {response.json().get('message')}")
+                else:
+                    print(f"⚠️ Ошибка при индексации на RAG-сервисе: {response.status_code} {response.text}")
+            except requests.exceptions.RequestException as e:
+                print(f"❌ Не удалось подключиться к RAG-сервису для индексации: {e}")
+
+        # Запускаем в фоновом потоке, чтобы не блокировать старт сервера
+        import threading
+        threading.Thread(target=do_index, daemon=True).start()
+        return True
+
+    def _get_rag_context(self, query: str, max_results: int = 3) -> Optional[str]:
+        """Получает контекст из RAG-сервиса для обогащения запроса."""
+        if not self.rag_available:
+            return None
+
         try:
-            # Подготавливаем данные для индексации
-            documents = []
-            
-            # Собираем документы из разных источников
-            # 1. README файлы
-            readme_paths = [
-                os.path.join(os.path.dirname(__file__), "../../../GopiAI-CrewAI/README.md"),
-                os.path.join(os.path.dirname(__file__), "../../../GopiAI-CrewAI/README_CHAT_INTEGRATION.md"),
-                os.path.join(os.path.dirname(__file__), "../../../CREWAI_INTEGRATION_PLAN.md"),
-                os.path.join(os.path.dirname(__file__), "../../../gopi_crewai_integration.md"),
-                os.path.join(os.path.dirname(__file__), "../../../02_DOCUMENTATION/📖_PROJECT_STRUCTURE.md"),
-            ]
-            
-            # Предупреждение если документов нет
-            if not any(os.path.exists(path) for path in readme_paths):
-                print("⚠️ Не найдены README файлы для индексации")
-            
-            for path in readme_paths:
-                if os.path.exists(path):
-                    try:
-                        with open(path, "r", encoding="utf-8") as f:
-                            content = f.read()
-                            documents.append((os.path.basename(path), content, None))
-                            print(f"📄 Индексирован документ: {path}")
-                    except Exception as e:
-                        print(f"⚠️ Ошибка при чтении файла {path}: {e}")
-            
-            # 2. Документация API
-            api_docs_paths = [
-                os.path.join(os.path.dirname(__file__), "../../../GopiAI-CrewAI/crewai_api_server.py"),
-                os.path.join(os.path.dirname(__file__), "smart_delegator.py"),
-                os.path.join(os.path.dirname(__file__), "ai_router_llm.py"),
-            ]
-            
-            for path in api_docs_paths:
-                if os.path.exists(path):
-                    try:
-                        with open(path, "r", encoding="utf-8") as f:
-                            content = f.read()
-                            # Извлекаем docstrings и комментарии для индексации
-                            documents.append((os.path.basename(path), content, None))
-                            print(f"📄 Индексирован API файл: {path}")
-                    except Exception as e:
-                        print(f"⚠️ Ошибка при чтении файла {path}: {e}")
-            
-            # Создаем и сохраняем индекс
-            if documents:
-                # Индексируем документы
-                self.embeddings.index(documents)
-                
-                # Директория и путь для сохранения индекса
-                index_dir = os.path.join(os.path.dirname(__file__), "../../../rag_memory_system/crewai_embeddings")
-                index_path = os.path.join(index_dir, "crewai-docs.tar.gz")
-                
-                # Создаем директорию, если она не существует
-                os.makedirs(index_dir, exist_ok=True)
-                
-                # Сохраняем индекс
-                self.embeddings.save(index_path)
-                print(f"💾 Индекс успешно сохранен в {index_path}")
-                return True
+            response = requests.post(f"{RAG_API_URL}/api/search", json={"query": query, "max_results": max_results}, timeout=10)
+            if response.status_code == 200:
+                return response.json().get("context")
             else:
-                print("⚠️ Нет документов для индексации")
-                return False
-                
-        except Exception as e:
-            print(f"❌ Ошибка при индексации документации: {e}")
+                print(f"⚠️ Ошибка при получении контекста из RAG-сервиса: {response.status_code} {response.text}")
+                return None
+        except requests.exceptions.RequestException as e:
+            print(f"⚠️ Ошибка при подключении к RAG-сервису: {e}")
             traceback.print_exc()
-            return False
+            return None
     
     def analyze_request(self, message: str) -> Dict[str, Any]:
         """
@@ -400,6 +332,11 @@ class SmartDelegator:
         try:
             # Создаем базовый LLM для агентов на основе AI Router
             try:
+                if self.ai_router is None:
+                    print("❌ AI Router не инициализирован")
+                    return self._handle_with_ai_router(message)
+                
+                # Получаем экземпляр LLM без вызова как функции
                 llm = self.ai_router.get_llm_instance()
                 print("✅ LLM для CrewAI успешно создан")
             except Exception as e:
@@ -465,14 +402,14 @@ class SmartDelegator:
             crew = Crew(
                 agents=[coordinator, researcher, writer],
                 tasks=[research_task, writing_task],
-                verbose=2,
+                verbose=True,
                 process=Process.sequential
             )
             
             # Запускаем работу экипажа и получаем результат
             result = crew.kickoff()
             
-            return result
+            return str(result)
             
         except Exception as e:
             print(f"❌ Ошибка при использовании CrewAI: {e}")
@@ -481,34 +418,6 @@ class SmartDelegator:
             # В случае ошибки возвращаемся к обработке через AI Router
             print("⚠️ Fallback к AI Router")
             return self._handle_with_ai_router(message)
-    
-    def _get_rag_context(self, query, max_results=3):
-        """Получает контекст из RAG для обогащения запроса"""
-        if not txtai_available or not self.embeddings:
-            return None
-            
-        try:
-            # Выполняем семантический поиск
-            results = self.embeddings.search(query, limit=max_results)
-            
-            if not results:
-                return None
-                
-            # Форматируем результаты в контекст
-            context_parts = []
-            for result in results:
-                # Разделяем длинный текст на части
-                text = result["text"]
-                if len(text) > 1000:
-                    text = text[:1000] + "..."
-                    
-                context_parts.append(f"[Документ: {os.path.basename(result['id'])}]\n{text}\n")
-                
-            return "\n".join(context_parts)
-            
-        except Exception as e:
-            print(f"⚠️ Ошибка при получении контекста из RAG: {e}")
-            return None
 
 
 # Глобальный экземпляр SmartDelegator
@@ -527,7 +436,7 @@ if __name__ == "__main__":
     print(f"Ответ: {response1}")
     
     # Сложный запрос
-    test_query2 = "Помоги мне разработать стратегию для оптимизации маркетинговой кампании в сфере онлайн-образования. Мне нужен подробный анализ текущих трендов и предложения по увеличению конверсии."
+    test_query2 = "Помоги мне разработать стратегию для оптимизации маркетинговой кампании в сфере онлайн-образования. Мне нужен подробный поэтапный план с анализом рынка и целевой аудитории."
     print(f"\n📝 Сложный запрос: '{test_query2}'")
     analysis2 = smart_delegator.analyze_request(test_query2)
     print(f"Анализ: {analysis2}")

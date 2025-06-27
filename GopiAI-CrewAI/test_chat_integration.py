@@ -71,7 +71,7 @@ def test_crewai_request():
         # Отправляем запрос с принудительным использованием CrewAI
         response = requests.post(
             f"{API_URL}/api/process", 
-            json={"message": message, "force_crewai": True}
+            json={"message": message}
         )
         
         if response.status_code == 200:

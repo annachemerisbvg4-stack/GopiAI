@@ -1,3 +1,4 @@
+import os
 import time
 import threading
 
@@ -6,6 +7,7 @@ LLM_MODELS_CONFIG = [
     {
         "name": "Gemma 3",
         "id": "gemma-3",
+        "provider": "google",
         "rpm": 30,
         "tpm": 60000,  # примерное значение, уточнить по API
         "type": ["simple", "lookup", "short_answer"],
@@ -16,6 +18,7 @@ LLM_MODELS_CONFIG = [
     {
         "name": "Gemma 3n",
         "id": "gemma-3n",
+        "provider": "google",
         "rpm": 30,
         "tpm": 60000,
         "type": ["simple", "lookup", "short_answer"],
@@ -26,6 +29,7 @@ LLM_MODELS_CONFIG = [
     {
         "name": "Gemini 2.0 Flash-Lite",
         "id": "gemini-2.0-flash-lite",
+        "provider": "google",
         "rpm": 30,
         "tpm": 120000,
         "type": ["simple", "dialog", "code", "summarize"],
@@ -36,6 +40,7 @@ LLM_MODELS_CONFIG = [
     {
         "name": "Gemini 2.5 Flash-Lite Preview",
         "id": "gemini-2.5-flash-lite-preview",
+        "provider": "google",
         "rpm": 15,
         "tpm": 60000,
         "type": ["dialog", "code", "summarize"],
@@ -46,6 +51,7 @@ LLM_MODELS_CONFIG = [
     {
         "name": "Gemini 2.5 Flash",
         "id": "gemini-2.5-flash",
+        "provider": "google",
         "rpm": 10,
         "tpm": 60000,
         "type": ["dialog", "code", "multimodal", "vision", "long_answer"],
@@ -56,6 +62,7 @@ LLM_MODELS_CONFIG = [
     {
         "name": "Gemini Embedding Experimental",
         "id": "gemini-embedding-experimental",
+        "provider": "google",
         "rpm": 5,
         "tpm": 10000,
         "type": ["embedding"],
@@ -64,6 +71,17 @@ LLM_MODELS_CONFIG = [
         "priority": 10
     }
 ]
+
+# Helper to get API key based on provider name
+def get_api_key_for_provider(provider_name: str):
+    """Gets the API key from environment variables for a given provider."""
+    key_map = {
+        "google": "GOOGLE_API_KEY"
+    }
+    env_var = key_map.get(provider_name.lower())
+    if env_var is None:
+        return None
+    return os.getenv(env_var)
 
 # Глобальный монитор лимитов (можно заменить на Redis/БД для продакшена)
 class RateLimitMonitor:

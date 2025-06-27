@@ -29,7 +29,7 @@ def check_server_health():
         print(f"❌ Ошибка при подключении к серверу: {e}")
         return False
 
-def send_message(message, force_crewai=False):
+def send_message(message):
     """Отправка сообщения на сервер"""
     print(f"📤 Отправка: {message[:50]}...")
     
@@ -37,8 +37,8 @@ def send_message(message, force_crewai=False):
         start_time = time.time()
         response = requests.post(
             f"{API_URL}/api/process",
-            json={"message": message, "force_crewai": force_crewai},
-            timeout=30  # 30 секунд таймаут
+            json={"message": message},
+            timeout=300  # 300 секунд таймаут для сложных задач
         )
         elapsed = time.time() - start_time
         
@@ -65,22 +65,16 @@ def main():
         sys.exit(1)
         
     # Простой интерактивный режим
-    print("\n💬 Введите сообщение (или 'exit' для выхода, 'crew' для принудительного использования CrewAI):")
+    print("\n💬 Введите сообщение (или 'exit' для выхода):")
     
     while True:
         try:
             user_input = input("\n> ")
             if user_input.lower() in ["exit", "quit", "q", "выход"]:
                 break
-                
-            force_crewai = False
-            if user_input.startswith("crew:"):
-                force_crewai = True
-                user_input = user_input[5:].strip()
-                print("🤖 Принудительное использование CrewAI")
-                
+
             if user_input:
-                send_message(user_input, force_crewai)
+                send_message(user_input)
         except KeyboardInterrupt:
             print("\n👋 Работа завершена")
             break

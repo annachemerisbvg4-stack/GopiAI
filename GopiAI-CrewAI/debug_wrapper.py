@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-🐞 Debug Wrapper для CrewAI API Server
-Запускает сервер в отказоустойчивом режиме с перехватом всех ошибок
+Debug Wrapper for CrewAI API Server
+Launches the server in a fault-tolerant mode with error interception
 """
 
 import os
@@ -19,53 +19,66 @@ def run_server_with_retry():
     retry_delay = 5  # секунд
     
     print("=" * 60)
-    print("🐞 DEBUG WRAPPER для CrewAI API Server")
+    print("DEBUG WRAPPER for CrewAI API Server")
     print("=" * 60)
-    print("Этот скрипт запускает сервер с автоматическим перезапуском при сбое")
+    print("This script launches the server with automatic restart on failure")
     print()
     
-    # Получаем путь к текущей директории скрипта
+    # Get the path to the current script directory
     current_dir = Path(__file__).parent.absolute()
     server_path = current_dir / "crewai_api_server.py"
     
     while retry_count < max_retries:
         try:
-            print(f"Попытка запуска сервера ({retry_count + 1}/{max_retries})...")
+            print(f"Attempting to start server ({retry_count + 1}/{max_retries})...")
             
-            # Используем subprocess для запуска сервера в отдельном процессе
-            process = subprocess.Popen([sys.executable, str(server_path)])
+            # Use subprocess to launch the server in a separate process
+            process = subprocess.Popen(
+                [sys.executable, str(server_path)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True, # Use text mode for universal newlines and encoding
+                encoding='utf-8' # Explicitly set encoding for subprocess communication
+            )
             
-            # Ждем завершения процесса
-            process.wait()
+            # Wait for the process to complete and get the output
+            stdout, stderr = process.communicate()
             
-            # Если процесс завершился с ошибкой
+            if stdout:
+                print("Server Stdout:")
+                print(stdout)
+            if stderr:
+                print("Server Stderr:")
+                print(stderr)
+            
+            # If the process exited with an error
             if process.returncode != 0:
-                print(f"❌ Сервер завершился с кодом {process.returncode}")
+                print("Сервер завершился с кодом {process.returncode}")
                 retry_count += 1
                 if retry_count < max_retries:
-                    print(f"⏳ Повторная попытка через {retry_delay} секунд...")
+                    print(f"Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
                 else:
-                    print("❌ Превышено максимальное количество попыток")
+                    print("Превышено максимальное количество попыток")
             else:
-                # Нормальное завершение
-                print("✅ Сервер завершил работу без ошибок")
+                # Normal termination
+                print("Server finished without errors")
                 break
                 
         except KeyboardInterrupt:
-            print("\n⛔ Работа прервана пользователем")
+            print("Operation interrupted by user")
             break
         except Exception as e:
-            print(f"❌ Ошибка при запуске сервера: {e}")
+            print(f"Error starting server: {e}")
             traceback.print_exc()
             retry_count += 1
             if retry_count < max_retries:
-                print(f"⏳ Повторная попытка через {retry_delay} секунд...")
+                print(f"Retrying in {retry_delay} seconds...")
                 time.sleep(retry_delay)
             else:
-                print("❌ Превышено максимальное количество попыток")
+                print("Maximum number of retries exceeded")
     
-    print("\n✋ Завершение работы debug wrapper")
+    print("[DEBUG WRAPPER] Exiting.")
 
 if __name__ == "__main__":
     run_server_with_retry()

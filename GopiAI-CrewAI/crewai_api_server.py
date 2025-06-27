@@ -20,8 +20,14 @@ DEBUG = False
 app = Flask(__name__)
 
 # Настройка путей для импорта модулей
-script_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(script_dir)
+# Добавляем корень проекта (GopiAI-CrewAI) в sys.path для корректных импортов
+current_dir = Path(__file__).parent
+sys.path.append(str(current_dir))
+
+# Добавляем путь к site-packages виртуального окружения
+venv_site_packages = current_dir / "crewai_env" / "Lib" / "site-packages"
+if venv_site_packages.exists():
+    sys.path.insert(0, str(venv_site_packages))
 
 # Определяем глобальные переменные для состояния сервера
 API_STATUS = {
@@ -34,14 +40,14 @@ API_STATUS = {
 # Импорт Smart Delegator (должен быть доступен в окружении CrewAI)
 try:
     from tools.gopiai_integration.smart_delegator import smart_delegator
-    from tools.gopiai_integration.smart_delegator import crewai_available, txtai_available
+    from tools.gopiai_integration.smart_delegator import crewai_available, is_rag_service_available
     API_STATUS["status"] = "online"
     API_STATUS["crewai_available"] = crewai_available
-    API_STATUS["txtai_available"] = txtai_available
-    print("✅ Smart Delegator успешно импортирован")
+    API_STATUS["txtai_available"] = is_rag_service_available() # Проверяем доступность RAG-сервиса
+    print("Smart Delegator успешно импортирован")
 except ImportError as e:
-    print(f"❌ Ошибка импорта Smart Delegator: {e}")
-    print("⚠️ API сервер запущен в ограниченном режиме")
+    print(f"Ошибка импорта Smart Delegator: {e}")
+    print("API сервер запущен в ограниченном режиме")
     API_STATUS["status"] = "limited"
     smart_delegator = None
 
@@ -76,8 +82,8 @@ def index():
             
             <div class="status {API_STATUS['status']}">
                 <strong>Статус:</strong> {API_STATUS['status'].upper()}<br>
-                <strong>CrewAI доступен:</strong> {'✅' if API_STATUS['crewai_available'] else '❌'}<br>
-                <strong>txtai доступен:</strong> {'✅' if API_STATUS['txtai_available'] else '❌'}<br>
+                <strong>CrewAI доступен:</strong> {'Да' if API_STATUS['crewai_available'] else 'Нет'}<br>
+                <strong>RAG-сервис (txtai) доступен:</strong> {'Да' if API_STATUS['txtai_available'] else 'Нет'}<br>
                 <strong>Время последнего обновления:</strong> {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(API_STATUS['timestamp']))}
             </div>
             
@@ -117,6 +123,7 @@ def index():
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Проверка работоспособности API"""
+    API_STATUS["txtai_available"] = is_rag_service_available() if 'is_rag_service_available' in globals() else False
     API_STATUS["timestamp"] = time.time()
     return jsonify(API_STATUS)
 
@@ -171,7 +178,7 @@ def process_request():
             # В случае любой ошибки возвращаем fallback ответ
             traceback.print_exc()
             return jsonify({
-                "response": f"[ОШИБКА ОБРАБОТКИ] Извините, произошла ошибка при обработке вашего запроса: {str(inner_e)}",
+                "error_message": f"[ОШИБКА ОБРАБОТКИ] Извините, произошла ошибка при обработке вашего запроса: {str(inner_e)}",
                 "processed_with_crewai": False,
                 "error": str(inner_e)
             })
@@ -208,30 +215,24 @@ def index_documentation():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    print(f"🚀 Запуск CrewAI API сервера на http://{HOST}:{PORT}")
-    print("👉 Этот сервер должен быть запущен из окружения CrewAI (crewai_env)")
+    print(f"Starting CrewAI API server at http://{HOST}:{PORT}")
+    print("This server should be run from the CrewAI environment (crewai_env)")
     
     # Проверяем корректность окружения
     import sys
-    print(f"🔧 Используется Python: {sys.executable}")
+    print(f"Using Python: {sys.executable}")
     
     # Проверяем доступность основных модулей
     try:
         import crewai
-        print("✅ Модуль crewai доступен")
+        print("CrewAI module is available")
     except ImportError:
-        print("⚠️ Модуль crewai НЕ доступен")
+        print("CrewAI module is NOT available")
     
     try:
         import langchain
-        print("✅ Модуль langchain доступен")
+        print("Langchain module is available")
     except ImportError:
-        print("⚠️ Модуль langchain НЕ доступен")
-        
-    try:
-        import txtai
-        print("✅ Модуль txtai доступен")
-    except ImportError:
-        print("⚠️ Модуль txtai НЕ доступен")
+        print("Модуль langchain НЕ доступен")
     
     app.run(host=HOST, port=PORT, debug=DEBUG)
