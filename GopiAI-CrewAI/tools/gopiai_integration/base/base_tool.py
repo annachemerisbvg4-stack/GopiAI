@@ -10,10 +10,22 @@ import time
 from datetime import datetime
 from typing import Any, Dict, Optional, Union, List
 from pydantic import BaseModel, Field
-from crewai.tools.base_tool import BaseTool
 import json
 import tempfile
 import subprocess
+
+# Пытаемся импортировать BaseTool из crewai
+try:
+    from crewai.tools.base_tool import BaseTool
+    CREWAI_AVAILABLE = True
+except ImportError:
+    # Если crewai недоступен, создаем заглушку BaseTool
+    print("⚠️ Модуль crewai не найден, используем заглушку BaseTool")
+    class BaseTool:
+        def __init__(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+    CREWAI_AVAILABLE = False
 
 class GopiAIBaseTool(BaseTool):
     """
@@ -31,7 +43,22 @@ class GopiAIBaseTool(BaseTool):
     verbose: bool = Field(default=False, description="Подробный вывод сообщений")
     
     def __init__(self, **data):
-        super().__init__(**data)
+        try:
+            super().__init__(**data)
+        except Exception as e:
+            print(f"⚠️ Ошибка при инициализации базового класса: {e}")
+            # Устанавливаем атрибуты вручную, если super().__init__ не сработал
+            for key, value in data.items():
+                setattr(self, key, value)
+            
+            # Устанавливаем значения по умолчанию для обязательных атрибутов
+            if not hasattr(self, "name"):
+                self.name = "gopiai_base_tool"
+            if not hasattr(self, "description"):
+                self.description = "Базовый класс для всех GopiAI инструментов"
+            if not hasattr(self, "verbose"):
+                self.verbose = False
+                
         self.logger = self._setup_logger(logging.INFO)
         self.metrics = {
             "calls": 0,
@@ -104,7 +131,7 @@ class GopiAIBaseTool(BaseTool):
             execution_time = time.time() - start_time
             self.metrics["total_time"] += execution_time
             
-            self.logger.info(f"Успешное выполнение за {execution_time:.2f}с: {result[:100]}...")
+            self.logger.info(f"Успешное выполнение за {execution_time:.2f}с: {result[:100] if isinstance(result, str) else str(result)[:100]}...")
             return result
             
         except Exception as e:
@@ -116,10 +143,10 @@ class GopiAIBaseTool(BaseTool):
             
             # Пытаемся выполнить fallback, если он есть
             try:
-                if hasattr(self, '_fallback'):
+                if hasattr(self, '_fallback') and callable(getattr(self, '_fallback')):
                     self.logger.info("Попытка выполнить fallback...")
                     fallback_result = self._fallback(*args, **kwargs, error=e)
-                    self.logger.info(f"Fallback успешен: {fallback_result[:100]}...")
+                    self.logger.info(f"Fallback успешен: {fallback_result[:100] if isinstance(fallback_result, str) else str(fallback_result)[:100]}...")
                     return fallback_result
             except Exception as fallback_error:
                 self.logger.error(f"Ошибка в fallback: {str(fallback_error)}")

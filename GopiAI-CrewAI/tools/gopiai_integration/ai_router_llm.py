@@ -6,16 +6,19 @@
 import os
 import subprocess
 import json
-from typing import Dict, List, Optional, Any, Mapping
+from typing import Dict, List, Optional, Any, Mapping, Union
 import time
 import random
 from pathlib import Path
 import traceback
 
+# Импортируем базовый класс
+from .base.base_tool import GopiAIBaseTool
+
 # Путь к директории AI Router
 ROUTER_PATH = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "ai_router"))
 
-class AIRouterLLM:
+class AIRouterLLM(GopiAIBaseTool):
     """
     LLM-адаптер для использования AI Router с CrewAI.
     
@@ -27,13 +30,41 @@ class AIRouterLLM:
     """
     
     def __init__(self, model_preference="auto"):
+        """Инициализирует AI Router LLM адаптер"""
+        try:
+            # Инициализация базового класса GopiAIBaseTool
+            super().__init__()
+            print("✅ Базовый класс GopiAIBaseTool инициализирован")
+        except Exception as e:
+            print(f"❌ Ошибка при инициализации базового класса: {e}")
+            traceback.print_exc()
+        
         self.model_preference = model_preference
         self.api_key = "api_key_not_needed_using_router"  # Фиктивный ключ
         self.last_call = 0
+        self.is_router_activated = False
         
         # Проверяем наличие директории AI Router
         if not os.path.exists(ROUTER_PATH):
             print(f"⚠️ Директория AI Router не найдена: {ROUTER_PATH}")
+            print(f"📂 Создаем директорию: {ROUTER_PATH}")
+            try:
+                os.makedirs(ROUTER_PATH, exist_ok=True)
+            except Exception as e:
+                print(f"❌ Ошибка при создании директории: {e}")
+        
+        # Проверяем наличие необходимых файлов
+        required_files = ["ai_router_system.js", "ai_rotation_config.js"]
+        all_files_exist = True
+        for file in required_files:
+            if not os.path.exists(os.path.join(ROUTER_PATH, file)):
+                print(f"⚠️ Файл {file} не найден в {ROUTER_PATH}")
+                all_files_exist = False
+        
+        if all_files_exist:
+            print("✅ Все необходимые файлы AI Router найдены")
+        
+        print("ℹ️ AI Router LLM адаптер инициализирован. Активация будет выполнена при первом вызове.")
     
     def call(self, prompt: str, temperature: float = 0.7, max_tokens: int = 1000) -> str:
         """
@@ -41,6 +72,10 @@ class AIRouterLLM:
         
         Этот метод соответствует интерфейсу, ожидаемому CrewAI
         """
+        # Активируем Router, если он еще не активирован
+        if not hasattr(self, 'is_router_activated') or not self.is_router_activated:
+            self.activate_router()
+        
         # Проверка времени с момента последнего вызова (защита от частых вызовов)
         current_time = time.time()
         if current_time - self.last_call < 1.0:
@@ -59,6 +94,42 @@ class AIRouterLLM:
             print(f"⚠️ Ошибка при вызове AI Router: {e}")
             # Fallback: эмуляция для отладки
             return self._simulate_router_call(prompt, task_type)
+    
+    def activate_router(self):
+        """Явно активирует AI Router, создавая необходимые конфигурационные файлы"""
+        try:
+            print("🚀 Активация AI Router...")
+            
+            # Проверяем существование директории и нужных файлов
+            os.makedirs(ROUTER_PATH, exist_ok=True)
+            
+            # Проверяем существование необходимых файлов
+            required_files = [
+                "ai_router_system.js",
+                "ai_rotation_config.js"
+            ]
+            
+            for file in required_files:
+                file_path = os.path.join(ROUTER_PATH, file)
+                if not os.path.exists(file_path):
+                    print(f"⚠️ Файл {file} не найден. AI Router может работать некорректно.")
+            
+            # Тестовый вызов для создания необходимых файлов
+            test_result = self._call_node_js_router("Тестовый запрос активации AI Router")
+            if test_result:
+                print("✅ AI Router успешно активирован!")
+                self.is_router_activated = True
+                return True
+            else:
+                print("⚠️ AI Router не удалось корректно активировать")
+                self.is_router_activated = False
+                return False
+                
+        except Exception as e:
+            print(f"❌ Ошибка при активации AI Router: {e}")
+            traceback.print_exc()
+            self.is_router_activated = False
+            return False
     
     def _detect_task_type(self, prompt: str) -> str:
         """
@@ -91,7 +162,8 @@ class AIRouterLLM:
             const path = require('path');
             try {{
                 // Используем локальные пути относительно текущего файла
-                const router = require('./ai_router_system.js').AIRouter;
+                const AIRouterModule = require('./ai_router_system.js');
+                const AIRouter = AIRouterModule.AIRouter; // Правильный способ импорта 
                 const config = require('./ai_rotation_config.js');
                 
                 // Оценка количества токенов
@@ -105,7 +177,7 @@ class AIRouterLLM:
                 
                 async function processRequest() {{
                     try {{
-                        const routerInstance = new router(config.AI_PROVIDERS_CONFIG);
+                        const routerInstance = new AIRouter(config.AI_PROVIDERS_CONFIG);
                         const result = await routerInstance.chat('{safe_message}', {{ 
                             taskType: '{task_type}',
                             temperature: 0.7,
@@ -161,18 +233,32 @@ class AIRouterLLM:
                 if result.stderr and "cannot find module" in result.stderr.lower():
                     print(f"⚠️ Ошибка при загрузке модулей Node.js: {result.stderr}")
                     
-                    # Проверяем, есть ли в тексте ошибки проблемы с путями (опечатки)
-                    if "goppiai_integration" in result.stderr.lower():
-                        print("⚠️ Обнаружена опечатка в пути: 'goppiai_integration' вместо 'gopiai_integration'")
-                        # Создаем симлинк для исправления пути
-                        try:
-                            link_dir = os.path.join(os.path.dirname(ROUTER_PATH), "../goppiai_integration")
-                            os.makedirs(os.path.dirname(link_dir), exist_ok=True)
-                            if not os.path.exists(link_dir):
-                                os.symlink(os.path.dirname(ROUTER_PATH), link_dir)
-                                print(f"✅ Создан символический линк для исправления пути: {link_dir}")
-                        except Exception as link_err:
-                            print(f"⚠️ Не удалось создать символический линк: {link_err}")
+                    # Проверяем полученный путь и детально логируем, чтобы выявить опечатки
+                    if "gopiai_" in result.stderr.lower():
+                        print(f"⚠️ Анализ пути в ошибке: {result.stderr}")
+                        # Ищем полный путь с опечаткой в сообщении об ошибке
+                        import re
+                        path_match = re.search(r'[\'"]([^\'"]*/gopiai[^\'"]*/ai_router/[^\'"]*)[\'"]\)?', result.stderr)
+                        if path_match:
+                            wrong_path = path_match.group(1)
+                            print(f"⚠️ Обнаружен неверный путь: {wrong_path}")
+                            
+                            # Создаем симлинк для исправления пути
+                            try:
+                                # Получаем родительскую директорию с опечаткой
+                                wrong_dir = os.path.dirname(os.path.dirname(wrong_path))
+                                correct_dir = os.path.dirname(ROUTER_PATH)
+                                
+                                print(f"⚠️ Пытаемся создать симлинк: {wrong_dir} -> {correct_dir}")
+                                
+                                # Создаем директории для симлинка, если их нет
+                                os.makedirs(os.path.dirname(wrong_dir), exist_ok=True)
+                                
+                                if not os.path.exists(wrong_dir):
+                                    os.symlink(correct_dir, wrong_dir)
+                                    print(f"✅ Создан символический линк для исправления пути: {wrong_dir}")
+                            except Exception as link_err:
+                                print(f"⚠️ Не удалось создать символический линк: {link_err}")
                 
                 # Проверяем ответ
                 if result.returncode == 0 and result.stdout and result.stdout.strip():
@@ -278,53 +364,85 @@ class AIRouterLLM:
 
     def _call_node_js_router(self, message, task_type='general'):
         """
-        Вызывает JavaScript роутер через Node.js
-        
-        Args:
-            message: Сообщение пользователя
-            task_type: Тип задачи для маршрутизации
-            
-        Returns:
-            str: Ответ роутера или fallback ответ при ошибке
+        Простой вызов AI Router через Node.js
+        Используется для активации и проверки работоспособности
         """
         try:
-            # Используем новый метод для запуска Node.js с временными файлами
-            router_script = os.path.join(ROUTER_PATH, "router_launcher.js")
+            # Проверяем наличие Node.js
+            try:
+                subprocess.run(["node", "--version"], capture_output=True, check=True)
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                print("❌ Node.js не установлен или не доступен в системе!")
+                return None
             
-            # Проверяем, существует ли скрипт
-            if not os.path.exists(router_script):
-                print(f"❌ Скрипт не найден: {router_script}")
-                return self._simulate_router_call(message, task_type)
+            # Создаем простой JS файл для проверки
+            test_js_file = os.path.join(ROUTER_PATH, "router_check.js")
+            
+            with open(test_js_file, "w", encoding="utf-8") as f:
+                f.write(f"""
+                try {{
+                    const AIRouterModule = require('./ai_router_system.js');
+                    const configModule = require('./ai_rotation_config.js');
+                    
+                    console.log(JSON.stringify({{
+                        success: true,
+                        message: "AI Router успешно загружен!",
+                        router_type: typeof AIRouterModule.AIRouter,
+                        config_type: typeof configModule.AI_PROVIDERS_CONFIG
+                    }}));
+                }} catch (error) {{
+                    console.log(JSON.stringify({{
+                        success: false,
+                        error: error.message
+                    }}));
+                }}
+                """)
                 
-            # Создаем входные данные для роутера
-            input_data = {
-                "message": message,
-                "taskType": task_type,
-                "configPath": "./ai_rotation_config.js"
-            }
-            
-            # Запускаем скрипт через базовый метод
-            result = self.run_node_script(
-                script_path=router_script,
-                input_data=input_data,
-                timeout=60,
-                cwd=ROUTER_PATH
+            # Выполняем проверку
+            result = subprocess.run(
+                ["node", test_js_file],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                cwd=ROUTER_PATH,
+                timeout=10
             )
             
-            # Обрабатываем результат
-            if result["success"]:
-                router_response = result["result"]
-                if router_response.get("success"):
-                    return router_response["response"]
-                else:
-                    router_error = router_response.get("error", "Неизвестная ошибка")
-                    print(f"⚠️ AI Router вернул ошибку: {router_error}")
-                    return self._simulate_router_call(message, task_type)
-            else:
-                print(f"❌ Ошибка при запуске Node.js: {result['error']}")
-                return self._simulate_router_call(message, task_type)
-                
+            # Парсим результат
+            if result.stdout and result.stdout.strip():
+                try:
+                    data = json.loads(result.stdout.strip())
+                    if data.get("success"):
+                        return True
+                    else:
+                        print(f"⚠️ Ошибка при проверке AI Router: {data.get('error')}")
+                except json.JSONDecodeError:
+                    print(f"⚠️ Неожиданный ответ от скрипта проверки: {result.stdout}")
+            
+            # Если есть ошибка в stderr
+            if result.stderr:
+                print(f"⚠️ Ошибка при выполнении скрипта проверки: {result.stderr}")
+            
+            return False
+                    
         except Exception as e:
-            print(f"❌ Исключение при вызове Node.js роутера: {e}")
+            print(f"❌ Ошибка при проверке AI Router: {e}")
             traceback.print_exc()
-            return self._simulate_router_call(message, task_type)
+            return False
+
+    def _run(self, message: str, task_type: str = "chat", model_preference: str = "auto", 
+             max_tokens: int = 1000, temperature: float = 0.7) -> str:
+        """
+        Обязательный метод для наследников GopiAIBaseTool
+        
+        Args:
+            message: Текст запроса
+            task_type: Тип задачи
+            model_preference: Предпочтительная модель
+            max_tokens: Максимальное количество токенов
+            temperature: Температура генерации
+            
+        Returns:
+            Ответ от AI Router
+        """
+        return self.call(message, temperature, max_tokens)

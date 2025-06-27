@@ -6,6 +6,7 @@ import sys
 import os
 import time
 import traceback
+import logging
 
 # Настройка логирования
 logger = logging.getLogger(__name__)

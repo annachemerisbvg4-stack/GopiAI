@@ -28,7 +28,6 @@ txtai_available = False
 try:
     import crewai
     from crewai import Agent, Task, Crew, Process
-    from crewai.project import Project
     crewai_available = True
     print("✅ CrewAI успешно импортирован!")
 except ImportError as e:
@@ -59,6 +58,8 @@ class SmartDelegator:
             from .ai_router_llm import AIRouterLLM
             self.ai_router = AIRouterLLM()
             print("✅ AI Router LLM адаптер загружен")
+            # Активация больше не нужна, т.к. роутер полностью на Python
+                
         except Exception as e:
             print(f"⚠️ Ошибка при инициализации AI Router LLM: {e}")
             self.ai_router = None
@@ -345,8 +346,18 @@ class SmartDelegator:
         start_time = time.time()
         
         try:
+            print("🔍 Проверка AI Router...")
             if not self.ai_router:
+                print("❌ AI Router не найден (self.ai_router is None)")
                 raise ValueError("AI Router не инициализирован")
+            
+            # Проверка метода call
+            print(f"🔍 Проверка наличия метода call в {type(self.ai_router).__name__}...")
+            if not hasattr(self.ai_router, 'call'):
+                print(f"❌ Метод call не найден в {type(self.ai_router).__name__}")
+                raise ValueError("AI Router не содержит метода call")
+            
+            print("✅ AI Router проверки пройдены")
             
             # Получаем контекст из RAG, если доступен
             context = self._get_rag_context(message)
@@ -358,7 +369,15 @@ class SmartDelegator:
                 enriched_message = f"{message}\n\nДополнительный контекст для справки (не упоминай его явно в ответе):\n{context}"
                 
             # Вызываем AI Router с обогащенным запросом
-            response = self.ai_router.call(enriched_message)
+            try:
+                print("🚀 Вызов AI Router...")
+                response = self.ai_router.call(enriched_message)
+                print("✅ Ответ от AI Router получен")
+            except Exception as inner_error:
+                print(f"❌ Ошибка при вызове AI Router: {inner_error}")
+                traceback.print_exc()
+                # Возвращаем базовый ответ
+                return f"Извините, я не смог обработать ваш запрос через AI маршрутизатор. Пожалуйста, попробуйте позже или обратитесь к администратору системы. (Ошибка: {str(inner_error)})"
             
             # Измеряем время выполнения
             elapsed_time = time.time() - start_time
@@ -368,6 +387,7 @@ class SmartDelegator:
             
         except Exception as error:
             print(f"⚠️ Ошибка при обработке через AI Router: {str(error)}")
+            traceback.print_exc()
             
             # Возвращаем сообщение об ошибке
             return f"[ОШИБКА] Извините, произошла ошибка при обработке вашего запроса: {str(error)}"

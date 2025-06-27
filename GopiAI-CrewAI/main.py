@@ -67,6 +67,7 @@ load_dotenv(env_path, override=True)
 
 # Импорт CrewAI
 from crewai import Agent, Task, Crew, LLM
+from tools.gopiai_integration.ai_router_llm import AIRouterLLM
 from crewai.tasks.task_output import TaskOutput
 
 # Импорт всех GopiAI инструментов
@@ -126,92 +127,6 @@ def check_environment():
     
     print(f"✅ Доступные провайдеры: {', '.join(available_providers)}")
     return True
-
-def create_llm_with_fallback():
-    """Создание LLM с поддержкой fallback"""
-    print("🤖 === НАСТРОЙКА LLM ===")
-    
-    # Список провайдеров в порядке приоритета
-    providers = [
-        {
-            'name': 'Google Gemini',
-            'model': 'gemini/gemini-1.5-flash',
-            'api_key': os.getenv('GOOGLE_API_KEY'),
-            'config': {
-                'temperature': 0.7,
-                'max_tokens': 2000
-            }
-        },
-        {
-            'name': 'Groq',
-            'model': 'groq/llama-3.1-8b-instant',
-            'api_key': os.getenv('GROQ_API_KEY'),
-            'config': {
-                'base_url': 'https://api.groq.com/openai/v1',
-                'temperature': 0.7,
-                'max_tokens': 1000
-            }
-        },
-        {
-            'name': 'Cerebras',
-            'model': 'cerebras/llama3.1-70b',
-            'api_key': os.getenv('CEREBRAS_API_KEY'),
-            'config': {
-                'base_url': 'https://api.cerebras.ai/v1',
-                'temperature': 0.5,
-                'max_tokens': 1500
-            }
-        }
-    ]
-    
-    import traceback
-    import time
-    from pathlib import Path
-    logs_dir = Path(__file__).parent / 'logs' / 'llm_requests'
-    logs_dir.mkdir(parents=True, exist_ok=True)
-    for provider in providers:
-        if not provider['api_key'] or provider['api_key'] == "your_key_here":
-            continue
-        try:
-            print(f"🔄 Тестирование {provider['name']}...")
-            llm_config = {
-                'model': provider['model'],
-                'api_key': provider['api_key'],
-                **provider['config']
-            }
-            print(f"[DEBUG] LLM config: {llm_config}")
-            llm = LLM(**llm_config)
-            test_prompt = "Скажи 'ОК'"
-            from datetime import datetime
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-            log_file = logs_dir / f"{provider['name'].replace(' ', '_')}_{timestamp}.txt"
-            with open(log_file, 'w', encoding='utf-8') as f:
-                f.write(f"=== LLM PROVIDER: {provider['name']} ===\n")
-                f.write(f"TIME: {timestamp}\n")
-                f.write(f"LLM CONFIG: {llm_config}\n")
-                f.write(f"PROMPT: {test_prompt}\n")
-            try:
-                test_response = llm.call(test_prompt)
-                with open(log_file, 'a', encoding='utf-8') as f:
-                    f.write(f"RESPONSE: {test_response}\n")
-                print(f"[DEBUG] LLM.call response: {test_response}")
-                if test_response and len(test_response.strip()) > 0:
-                    print(f"✅ {provider['name']} работает!")
-                    # Возвращаем обёртку для логирования всех agent-запросов
-                    return LLMLoggerWrapper(llm, provider['name']), provider['name']
-            except Exception as call_exc:
-                with open(log_file, 'a', encoding='utf-8') as f:
-                    f.write(f"EXCEPTION: {call_exc}\n")
-                    f.write(traceback.format_exc())
-                print(f"❌ {provider['name']} ошибка: {call_exc}")
-                traceback.print_exc()
-                continue
-        except Exception as e:
-            print(f"❌ {provider['name']} ошибка: {e}")
-            traceback.print_exc()
-            continue
-    
-    raise Exception("Все LLM провайдеры недоступны!")
 
 def test_all_tools():
     """Тестирование всех GopiAI инструментов"""
@@ -454,8 +369,10 @@ def run_simple_demo():
     print("🚀 === ПРОСТАЯ ДЕМОНСТРАЦИЯ ===")
     
     try:
-        # Создаем LLM
-        llm, provider_name = create_llm_with_fallback()
+        # Создаем LLM через новый AI Router
+        ai_router_llm = AIRouterLLM()
+        llm = ai_router_llm.get_llm_instance()
+        provider_name = "GopiAI Router"
         print(f"🤖 Используется: {provider_name}")
         
         # Простой агент с коммуникацией
@@ -511,10 +428,11 @@ def run_advanced_demo():
     print("🚀 === ПРОДВИНУТАЯ ДЕМОНСТРАЦИЯ ===")
     
     try:
-        # Создаем LLM
-        llm, provider_name = create_llm_with_fallback()
+        # Создаем LLM через новый AI Router
+        ai_router_llm = AIRouterLLM()
+        llm = ai_router_llm.get_llm_instance()
+        provider_name = "GopiAI Router"
         print(f"🤖 Используется: {provider_name}")
-        # Создаем агентов с использованием системы шаблонов
         coordinator, researcher, writer, coder = create_demo_agents(llm)
         agents = [coordinator, researcher, writer, coder]
         agents = [a for a in agents if a is not None]
@@ -582,7 +500,7 @@ current_llm_usage = {}
 
 # Пример функции для CrewAI/агентов: выбор модели и генерация ответа через txtai+LLM
 # (можно вызывать из агента или инструмента)
-def crewai_rag_query(query, txtai_index, task_type="dialog"):
+def crewai_rag_query(query, txtai_index, llm, task_type="dialog"):
     model_id = select_llm_model(task_type, current_llm_usage)
     if not model_id:
         return "Все лимиты LLM исчерпаны, попробуйте позже."

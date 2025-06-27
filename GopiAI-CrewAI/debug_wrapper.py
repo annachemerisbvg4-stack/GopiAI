@@ -24,12 +24,16 @@ def run_server_with_retry():
     print("Этот скрипт запускает сервер с автоматическим перезапуском при сбое")
     print()
     
+    # Получаем путь к текущей директории скрипта
+    current_dir = Path(__file__).parent.absolute()
+    server_path = current_dir / "crewai_api_server.py"
+    
     while retry_count < max_retries:
         try:
             print(f"Попытка запуска сервера ({retry_count + 1}/{max_retries})...")
             
             # Используем subprocess для запуска сервера в отдельном процессе
-            process = subprocess.Popen([sys.executable, "crewai_api_server.py"])
+            process = subprocess.Popen([sys.executable, str(server_path)])
             
             # Ждем завершения процесса
             process.wait()

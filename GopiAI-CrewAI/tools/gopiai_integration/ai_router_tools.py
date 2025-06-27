@@ -41,9 +41,6 @@ class GopiAIRouterTool(BaseTool):
     def init_files(self):
         os.makedirs(self.router_path, exist_ok=True)
     
-    def _run(self, *args, **kwargs):
-        return "AI Router Tool: действие не реализовано (заглушка)"
-    
     def _run(self, message: str, task_type: str = "chat", model_preference: str = "auto", 
              max_tokens: int = 1000, temperature: float = 0.7) -> str:
         """
@@ -96,8 +93,8 @@ class GopiAIRouterTool(BaseTool):
             const {{ AIRouter }} = require('{self.router_path}/ai_router_system.js');
             const config = require('{self.router_path}/ai_rotation_config.js');
             // --- DEBUGGING START ---
-            console.log(JSON.stringify({ debug: `Type of AIRouter: ${typeof AIRouter}` }));
-            console.log(JSON.stringify({ debug: `AIRouter object: ${JSON.stringify(AIRouter, null, 2)}` }));
+            console.log(JSON.stringify({{ debug: "Type of AIRouter: " + typeof AIRouter }}));
+            console.log(JSON.stringify({{ debug: "AIRouter object: " + JSON.stringify(AIRouter, null, 2) }}));
             
             async function processRequest() {{
                 try {{
