@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 from gopiai.ui.components.icon_file_system_model import UniversalIconManager
 
 # Клиент для обращения к CrewAI API
-from gopiai.ui.components.crewai_client import crewai_client
+from gopiai.core.crewai_client import CrewAIClient
 
 
 
@@ -44,9 +44,9 @@ class ChatWidget(QWidget):
         self.main_layout.setContentsMargins(8, 8, 8, 8)
         self.main_layout.setSpacing(6)
         
-        # Инициализация Smart Delegator
-        self.smart_delegator = None
-        self._init_smart_delegator()
+        # Инициализация CrewAIClient
+        self.crew_ai_client = CrewAIClient()
+        self._check_crewai_availability()
 
         # История сообщений
         self.history = QTextEdit(self)
@@ -116,6 +116,33 @@ class ChatWidget(QWidget):
     def _scroll_history_to_end(self):
         self.history.moveCursor(QTextCursor.MoveOperation.End)
 
+    def _check_crewai_availability(self):
+        """Проверяет доступность CrewAI API сервера и отображает предупреждение при необходимости."""
+        try:
+            health_status = self.crew_ai_client.health_check()
+            if health_status.get("status") == "online":
+                logger.info("✅ CrewAI API сервер доступен.")
+                # Можно добавить логику для индексации документации здесь, если это необходимо
+                # threading.Thread(target=self.crew_ai_client.index_docs, daemon=True).start()
+            else:
+                logger.warning("⚠️ CrewAI API сервер недоступен.")
+                QTimer.singleShot(3000, lambda: QMessageBox.warning(
+                    self,
+                    "CrewAI недоступен",
+                    "CrewAI API сервер недоступен.\n\n"
+                    "Для полноценной работы многоагентного режима запустите:\n"
+                    "GopiAI-CrewAI/run_crewai_api_server.bat"
+                ))
+        except Exception as e:
+            logger.error(f"❌ Ошибка при проверке доступности CrewAI: {e}", exc_info=True)
+            QTimer.singleShot(3000, lambda: QMessageBox.warning(
+                self,
+                "CrewAI недоступен",
+                f"Ошибка при подключении к CrewAI API серверу: {e}\n\n"
+                "Для полноценной работы многоагентного режима запустите:\n"
+                "GopiAI-CrewAI/run_crewai_api_server.bat"
+            ))
+
     # Drag & Drop
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
@@ -140,36 +167,7 @@ class ChatWidget(QWidget):
         return any(path.lower().endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".bmp", ".gif"])
 
 
-    def _init_smart_delegator(self):
-        """Инициализирует подключение к CrewAI API"""
-        try:
-            # Проверяем доступность CrewAI API сервера
-            if crewai_client.is_available():
-                logger.info("✅ CrewAI API сервер доступен")
-                
-                # Индексируем документацию в фоновом потоке
-                def index_in_background():
-                    result = crewai_client.index_documentation()
-                    print(f"Результат индексации документации: {result}")
-                
-                threading.Thread(target=index_in_background, daemon=True).start()
-            else:
-                logger.warning("⚠️ CrewAI API сервер недоступен")
-                
-                # Показываем сообщение через 3 секунды (чтобы не блокировать загрузку UI)
-                def show_warning():
-                    QMessageBox.warning(
-                        self,
-                        "CrewAI недоступен",
-                        "CrewAI API сервер недоступен.\n\n"
-                        "Для полноценной работы многоагентного режима запустите:\n"
-                        "GopiAI-CrewAI/run_crewai_api_server.bat"
-                    )
-                
-                QTimer.singleShot(3000, show_warning)
-                
-        except Exception as e:
-            logger.error(f"❌ Ошибка при инициализации соединения с CrewAI: {e}", exc_info=True)
+    
 
     def send_message(self):
         """Отправляет сообщение и обрабатывает его через CrewAI API"""
@@ -193,18 +191,16 @@ class ChatWidget(QWidget):
                 try:
                     # Пусть система сама определяет нужность использования CrewAI
                     # на основе сложности запроса и типа задачи
-                    force_crewai = False
+                    
                     
                     # Используем CrewAI API клиент
-                    if crewai_client.is_available():
-                        # Обработка запроса через CrewAI API
-                        response = crewai_client.process_request(text, force_crewai)
+                    process_result = self.crew_ai_client.process_request(text)
+                    if process_result and "response" in process_result:
+                        response = process_result["response"]
+                    elif process_result and "error" in process_result:
+                        response = f"Ошибка CrewAI: {process_result["error"]}"
                     else:
-                        # Fallback если API недоступен
-                        response = f"Я получил ваш запрос, но CrewAI API сервер недоступен.\n\n" \
-                                   f"Для полноценной работы с агентами запустите:\n" \
-                                   f"GopiAI-CrewAI/run_crewai_api_server.bat"
-                        time.sleep(1)  # Имитация задержки
+                        response = "Неизвестный ответ от CrewAI."
                         
                 except Exception as e:
                     logger.error(f"❌ Ошибка при обработке запроса: {e}", exc_info=True)

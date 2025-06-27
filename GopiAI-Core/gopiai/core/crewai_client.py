@@ -68,4 +68,4 @@ if __name__ == "__main__":
         print(f"Process Result: {process_result}")
     else:
         print("\nCrewAI API server is not online. Please start it manually.")
-        print("Example: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\crewai_env\Scripts\python.exe C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\crewai_api_server.py")
+        print(r"Example: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\crewai_env\Scripts\python.exe C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\crewai_api_server.py")

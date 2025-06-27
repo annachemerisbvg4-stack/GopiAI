@@ -1,128 +1,98 @@
-"""
-🔄 GopiAI AI Router LLM для CrewAI
-Адаптер, использующий Python-based систему ротации моделей.
-"""
-
+import logging
 import traceback
-from typing import Dict, List, Optional, Any, Mapping
+from typing import List, Optional, Any, Mapping, ClassVar
 
-# Импортируем базовый класс и новую логику ротации
-from .base.base_tool import GopiAIBaseTool
+from pydantic import Field
+
+from langchain.llms.base import BaseLLM
+from langchain.schema import LLMResult, Generation
+
 from llm_rotation_config import select_llm_model_safe, rate_limit_monitor, get_api_key_for_provider, LLM_MODELS_CONFIG
-from crewai import Agent, Task, Crew, Process
-from crewai import LLM
+from crewai import LLM # Assuming this is litellm's LLM
+from .base.base_tool import GopiAIBaseTool # Keeping this for now, as _run method might use it
 
-class AIRouterLLM(GopiAIBaseTool):
+class AIRouterLLM(BaseLLM):
     """
-    LLM-адаптер для использования AI Router с CrewAI.
-    
-    Преимущества:
-    - Автоматическая ротация между провайдерами
-    - Fallback при превышении лимитов
-    - Оптимизация под задачу
+    A custom LLM that routes requests to the AI Router.
     """
-    
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__) # Аннотируем logger как ClassVar
+    model_configs: dict = Field(default_factory=dict) # Define as class attribute
+
     def __init__(self, **kwargs):
-        """Инициализирует AI Router LLM адаптер"""
-        super().__init__()
-        self.model_configs = {m['id']: m for m in LLM_MODELS_CONFIG}
-        print("✅ Python-based AI Router LLM адаптер инициализирован.")
-    
-    def call(self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000) -> str:
+        super().__init__(**kwargs)
+        self.model_configs = {m['id']: m for m in LLM_MODELS_CONFIG} # Initialize in __init__
+
+    def _generate(self, prompts: List[str], stop: Optional[List[str]] = None) -> LLMResult:
+        generations = []
+        for prompt in prompts:
+            response_text = "" # Initialize response_text for each prompt
+            try:
+                # 1. Выбираем лучшую доступную модель
+                # Приблизительно оцениваем количество токенов в промпте
+                prompt_tokens = len(prompt) // 3
+                model_id = select_llm_model_safe("dialog", tokens=prompt_tokens)
+
+                if not model_id:
+                    response_text = "❌ Все LLM провайдеры временно недоступны из-за лимитов. Пожалуйста, подождите."
+                else:
+                    model_config = self.model_configs.get(model_id)
+                    if not model_config:
+                        response_text = f"❌ Конфигурация для модели {model_id} не найдена."
+                    else:
+                        provider_name = model_config['provider']
+                        api_key = get_api_key_for_provider(provider_name)
+
+                        if not api_key:
+                            response_text = f"❌ API ключ для провайдера {provider_name} не найден."
+                        else:
+                            self.logger.info(f"🔄 AI Router: Выбрана модель '{model_id}' от провайдера '{provider_name}'.")
+
+                            # 2. Создаем экземпляр LLM
+                            llm_params = {
+                                'model': model_id,
+                                'api_key': api_key,
+                                'config': {
+                                    'temperature': 0.7, # Using default temperature from original call method
+                                    'max_tokens': 2000, # Using default max_tokens from original call method
+                                }
+                            }
+                            llm_instance = LLM(**llm_params)
+
+                            # 3. Выполняем запрос
+                            response = llm_instance.call(prompt)
+                            response_text = response
+
+                            # 4. Регистрируем использование
+                            response_tokens = len(response) // 3
+                            rate_limit_monitor.register_use(model_id, tokens=prompt_tokens + response_tokens)
+
+            except Exception as e:
+                self.logger.error(f"❌ Ошибка при вызове AI Router: {e}")
+                traceback.print_exc()
+                response_text = f"Произошла критическая ошибка в AI Router: {e}"
+
+            generations.append([Generation(text=response_text)])
+        return LLMResult(generations=generations)
+
+    @property
+    def _llm_type(self) -> str:
+        return "ai_router"
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
         """
-        Вызов LLM через AI Router
-        
-        Этот метод соответствует интерфейсу, ожидаемому CrewAI
+        Возвращает идентификационные параметры LLM.
         """
-        try:
-            # 1. Выбираем лучшую доступную модель
-            # Приблизительно оцениваем количество токенов в промпте
-            prompt_tokens = len(prompt) // 3 
-            model_id = select_llm_model_safe("dialog", tokens=prompt_tokens)
-            
-            if not model_id:
-                return "❌ Все LLM провайдеры временно недоступны из-за лимитов. Пожалуйста, подождите."
+        return {"model": self._llm_type}
 
-            model_config = self.model_configs.get(model_id)
-            if not model_config:
-                 return f"❌ Конфигурация для модели {model_id} не найдена."
-
-            provider_name = model_config['provider']
-            api_key = get_api_key_for_provider(provider_name)
-
-            if not api_key:
-                return f"❌ API ключ для провайдера {provider_name} не найден."
-
-            print(f"🔄 AI Router: Выбрана модель '{model_id}' от провайдера '{provider_name}'.")
-
-            # 2. Создаем экземпляр LLM
-            llm_params = {
-                'model': model_id,
-                'api_key': api_key,
-                'config': {
-                    'temperature': temperature,
-                    'max_tokens': max_tokens,
-                }
-            }
-            # Для моделей Google (gemini) CrewAI не требует base_url,
-            # он определяется автоматически по префиксу модели.
-
-            llm_instance = LLM(**llm_params)
-
-            # 3. Выполняем запрос
-            response = llm_instance.call(prompt)
-            
-            # 4. Регистрируем использование
-            response_tokens = len(response) // 3
-            rate_limit_monitor.register_use(model_id, tokens=prompt_tokens + response_tokens)
-            
-            return response
-
-        except Exception as e:
-            print(f"❌ Ошибка при вызове AI Router: {e}")
-            traceback.print_exc()
-            return f"Произошла критическая ошибка в AI Router: {e}"
-            
-    def get_llm_instance(self):
-        """
-        Возвращает экземпляр LLM для использования с CrewAI
-        
-        Returns:
-            LLM: Экземпляр LLM для CrewAI
-        """
-        try:
-            from langchain.llms.base import LLM as LangChainLLM
-            
-            class AIRouterWrapper(LangChainLLM):
-                """Обертка для AI Router, совместимая с LangChain/CrewAI"""
-                
-                def __init__(self, ai_router: 'AIRouterLLM', **kwargs):
-                    super().__init__(**kwargs)
-                    self.ai_router = ai_router
-                
-                @property
-                def _llm_type(self) -> str:
-                    return "gopiai_router"
-                
-                def _call(self, prompt: str, stop: Optional[List[str]] = None, **kwargs) -> str:
-                    """Вызов AI Router"""
-                    # Передаем kwargs в основной метод call
-                    return self.ai_router.call(prompt, **kwargs)
-                
-                @property
-                def _identifying_params(self) -> Mapping[str, Any]:
-                    """Идентификационные параметры для LangChain"""
-                    return {"model": "gopiai_router"}
-            
-            return AIRouterWrapper(ai_router=self)
-            
-        except ImportError:
-            print("⚠️ langchain не найден, возвращаем self. Это может вызвать проблемы в CrewAI.")
-            return self
-
+    # Keeping _run method as it's part of GopiAIBaseTool
     def _run(self, message: str, **kwargs) -> str:
         """
         Обязательный метод для наследников GopiAIBaseTool
         Перенаправляет вызов на основной метод `call`.
         """
-        return self.call(message, **kwargs)
+        # Since `call` method is removed, we need to adapt this.
+        # For now, I'll make it call _generate with a single prompt.
+        # This might need further refinement depending on how _run is used.
+        result = self._generate(prompts=[message])
+        return result.generations[0][0].text

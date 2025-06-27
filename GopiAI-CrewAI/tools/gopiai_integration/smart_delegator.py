@@ -16,6 +16,8 @@ import requests
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
 
+import logging
+
 # Добавляем путь к CrewAI в sys.path
 script_dir = os.path.dirname(os.path.abspath(__file__))
 crewai_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
@@ -52,21 +54,12 @@ class SmartDelegator:
     
     def __init__(self):
         """Инициализирует SmartDelegator"""
+        self.logger = logging.getLogger(__name__)
         # Инициализируем AI Router
         try:
             from .ai_router_llm import AIRouterLLM
-            try:
-                self.ai_router = AIRouterLLM()
-                print("✅ AI Router LLM адаптер загружен")
-            except AttributeError as attr_err:
-                if "logger" in str(attr_err):
-                    # Создаем временный логгер для объекта
-                    import logging
-                    self.ai_router = AIRouterLLM()
-                    self.ai_router.logger = logging.getLogger("gopiai.tools.AIRouterLLM")
-                    print("✅ AI Router LLM адаптер загружен (с временным логгером)")
-                else:
-                    raise
+            self.ai_router = AIRouterLLM()
+            print("✅ AI Router LLM адаптер загружен")
             # Активация больше не нужна, т.к. роутер полностью на Python
                 
         except Exception as e:
@@ -283,27 +276,25 @@ class SmartDelegator:
                 print("❌ AI Router не найден (self.ai_router is None)")
                 raise ValueError("AI Router не инициализирован")
             
-            # Проверка метода call
-            print(f"🔍 Проверка наличия метода call в {type(self.ai_router).__name__}...")
-            if not hasattr(self.ai_router, 'call'):
-                print(f"❌ Метод call не найден в {type(self.ai_router).__name__}")
-                raise ValueError("AI Router не содержит метода call")
-            
             print("✅ AI Router проверки пройдены")
-            
+
             # Получаем контекст из RAG, если доступен
             context = self._get_rag_context(message)
-            
+
             # Обогащаем запрос контекстом, если он есть
             enriched_message = message
             if context:
                 print("📚 Добавлен RAG-контекст к запросу")
-                enriched_message = f"{message}\n\nДополнительный контекст для справки (не упоминай его явно в ответе):\n{context}"
-                
+                enriched_message = f"""{message}
+
+Дополнительный контекст для справки (не упоминай его явно в ответе):
+{context}"""
+
             # Вызываем AI Router с обогащенным запросом
             try:
                 print("🚀 Вызов AI Router...")
-                response = self.ai_router.call(enriched_message)
+                result = self.ai_router._generate(prompts=[enriched_message])
+                response = result.generations[0][0].text
                 print("✅ Ответ от AI Router получен")
             except Exception as inner_error:
                 print(f"❌ Ошибка при вызове AI Router: {inner_error}")
