@@ -482,6 +482,39 @@ SCARLET_FIRE_THEME = {
     "font_weights": {"bold": 700, "medium": 500, "regular": 400}
 }
 
+DUSTY_ROSE_THEME = {
+    "name": "Dusty Rose",
+    "description": "Пыльная роза: аромат розового сада под дождливым небом",
+    "light": {
+        "main_color": "#ffffff",
+        "header_color": "#835245",
+        "control_color": "#ffdbd1",
+        "accent_color": "#44664c",
+        "titlebar_background": "#735852",
+        "button_color": "#aad0b0",
+        "button_hover_color": "#fedbd2",
+        "button_active_color": "#683b2f",
+        "text_color": "#1c1b1b",
+        "border_color": "#7f7572",
+        "titlebar_text": "#1c1b1b"
+    },
+    "dark": {
+        "main_color": "#333333",
+        "header_color": "#735852",
+        "control_color": "#ffdbd1",
+        "accent_color": "#44664c",
+        "titlebar_background": "#ffdbd1",
+        "button_color": "#aad0b0",
+        "button_hover_color": "#245100",
+        "button_active_color": "#683b2f",
+        "text_color": "#ffdbd1",
+        "border_color": "#7f7572",
+        "titlebar_text": "#fedbd2"
+    },
+    "font_family": "Roboto",
+    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+}
+
 TROPICAL_BOUQUET_THEME = {
     "name": "Tropical Bouquet",
     "description": "Тропическая тема: попугайчики, бугенвиллия, салатовые и розовые акценты. Светлый — нежный, тёмный — неоновый!",
