@@ -195,6 +195,7 @@ class ChatWidget(QWidget):
                     
                     # Используем CrewAI API клиент
                     process_result = self.crew_ai_client.process_request(text)
+                    logger.info(f"Получен результат от CrewAI API: {process_result}") # Добавлено логирование
                     if process_result and "response" in process_result:
                         response = process_result["response"]
                     elif process_result and "error" in process_result:
@@ -219,29 +220,18 @@ class ChatWidget(QWidget):
     
     @Slot(str, str)
     def _update_assistant_response(self, waiting_id, response):
-        """Обновляет сообщение ассистента в истории (вызывается из другого потока)"""
-        # Получаем HTML истории
-        html = self.history.toHtml()
-        
-        # Заменяем временное сообщение на ответ
-        old_html_content = f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>"
-        new_html = html.replace(old_html_content, response)
-        
-        if new_html == html: # Проверяем, произошла ли замена
-            logger.warning(f"Плейсхолдер для waiting_id '{waiting_id}' не найден в истории чата. Добавляем ответ как новое сообщение.")
-            # Если плейсхолдер не найден (например, из-за слишком быстрой обработки или ошибки),
-            # добавляем ответ как новое сообщение.
-            self.append_message("Ассистент", response)
-            return # Выходим, так как уже добавили
-        
-        self.history.setHtml(new_html) # Обновляем историю
+        logger.info(f"_update_assistant_response: waiting_id={waiting_id}, response_len={len(response)}")
+        # Всегда добавляем ответ как новое сообщение для отладки
+        self.append_message("Ассистент", response)
         
         # Включаем кнопки
         self.send_btn.setEnabled(True)
 
 
     def append_message(self, author, text):
+        logger.info(f"append_message: author={author}, text_len={len(text)}")
         self.history.append(f"<b>{author}:</b> {text}")
+        self.history.repaint()
 
 
     def attach_file(self):
@@ -256,3 +246,7 @@ class ChatWidget(QWidget):
         if image_path:
             self.append_message("Система", f"Изображение прикреплено: {os.path.basename(image_path)}. (Дальнейшая обработка не реализована)")
             logger.info(f"Изображение прикреплено: {image_path}")
+            thread.daemon = True
+            thread.start()
+    
+    

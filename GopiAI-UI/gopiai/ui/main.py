@@ -22,12 +22,7 @@ import chardet
 load_dotenv()
 
 # Настройка WebEngine для предотвращения графических ошибок
-os.environ.setdefault(
-    "QTWEBENGINE_CHROMIUM_FLAGS",
-    "--disable-gpu --disable-software-rasterizer --disable-3d-apis --disable-accelerated-2d-canvas --no-sandbox --disable-dev-shm-usage --disable-gpu-sandbox --disable-gpu-compositing --disable-webgl --disable-webgl2",
-)
-os.environ.setdefault("QT_OPENGL", "software")
-os.environ.setdefault("QTWEBENGINE_DISABLE_SANDBOX", "1")
+
 
 from PySide6.QtWidgets import (
     QApplication,
@@ -262,22 +257,12 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         center_vertical_splitter.addWidget(self.terminal_widget)
 
         # Правая панель - чат с ИИ (модульный)
-        try:
-            print("🔍 Попытка создать ChatWidget...")
-            self.chat_widget = ChatWidget()
-            print("🔍 ChatWidget создан успешно")
-            if hasattr(self, 'theme_manager'):
-                print("🔍 Передаем theme_manager в ChatWidget...")
-                self.chat_widget.set_theme_manager(self.theme_manager)
-                print("🔍 theme_manager передан успешно")
-            print("✅ Используется WebView чат")
-        except Exception as e:
-            print(f"❌ WebView чат недоступен, используется обычный чат: {e}")
-            print(f"❌ Тип ошибки: {type(e).__name__}")
-            import traceback
-            print(f"❌ Полная ошибка: {traceback.format_exc()}")
-            self.chat_widget = SimpleWidget("Chat")
-            print("🔄 Fallback: используется SimpleWidget для чата")
+        self.chat_widget = ChatWidget()
+        print("🔍 ChatWidget создан успешно")
+        if hasattr(self, 'theme_manager'):
+            print("🔍 Передаем theme_manager в ChatWidget...")
+            self.chat_widget.set_theme_manager(self.theme_manager)
+            print("🔍 theme_manager передан успешно")
         self.chat_widget.setMinimumWidth(0)
         self.chat_widget.setMaximumWidth(600)
         chat_size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
@@ -800,7 +785,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 # Подключаем сигнал для применения настроек
                 self._settings_dialog.settings_applied.connect(self._on_settings_changed)
                 
-                # ИСПРАВЛЕНИЕ: Подключаем сигнал изменения темы для мгновенного обновления WebView
+                
                 self._settings_dialog.themeChanged.connect(self.on_change_theme)
     
                 # Показываем диалог
@@ -939,28 +924,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                     except Exception as e:
                         print(f"⚠️ Ошибка обновления titlebar: {e}")
                 
-                # ДИАГНОСТИКА: Проверяем, какой именно чат используется
-                if hasattr(self, 'chat_widget') and self.chat_widget:
-                    chat_type = type(self.chat_widget).__name__
-                    print(f"🔍 Тип чата: {chat_type}")
-                    print(f"🔍 Методы чата: {[method for method in dir(self.chat_widget) if 'theme' in method.lower() or 'apply' in method.lower()]}")
-                    
-                    try:
-                        if hasattr(self.chat_widget, '_apply_theme_to_webview'):
-                            print("🎯 Вызываем _apply_theme_to_webview()")
-                            self.chat_widget._apply_theme_to_webview() # type: ignore
-                            print("✅ WebView чат обновлен через _apply_theme_to_webview")
-                        elif hasattr(self.chat_widget, 'apply_theme'):
-                            print("🎯 Вызываем apply_theme()")
-                            self.chat_widget.apply_theme() # type: ignore
-                            print("✅ WebView чат обновлен через apply_theme")
-                        else:
-                            print("❌ У чата нет методов обновления темы!")
-                            print(f"❌ Это значит, что используется обычный ChatWidget, а не ChatWidget")
-                    except Exception as e:
-                        print(f"⚠️ Ошибка обновления WebView чата: {e}")
-                else:
-                    print("[ERROR] chat_widget не найден!")
+                
                 
                 print("[OK] Все компоненты обновлены")
                 
@@ -1042,10 +1006,7 @@ def main():
     """Основная функция запуска приложения"""
     print("[LAUNCH] Запуск модульного GopiAI...")
 
-    # Настройка WebEngine для исправления графических проблем
-    os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = (
-        "--disable-gpu --disable-software-rasterizer --disable-3d-apis --disable-accelerated-2d-canvas --no-sandbox"
-    )
+    
 
     # Создание приложения
     app = QApplication(sys.argv)

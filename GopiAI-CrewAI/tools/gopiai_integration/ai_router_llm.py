@@ -30,8 +30,7 @@ class AIRouterLLM(BaseLLM):
                 # 1. Выбираем лучшую доступную модель
                 # Приблизительно оцениваем количество токенов в промпте
                 prompt_tokens = len(prompt) // 3
-                # model_id = select_llm_model_safe("dialog", tokens=prompt_tokens)
-                model_id = "gemini/gemini-1.5-flash-latest"
+                model_id = select_llm_model_safe("dialog", tokens=prompt_tokens)
 
                 if not model_id:
                     response_text = "❌ Все LLM провайдеры временно недоступны из-за лимитов. Пожалуйста, подождите."
@@ -60,6 +59,8 @@ class AIRouterLLM(BaseLLM):
                             llm_instance = LLM(**llm_params)
 
                             # 3. Выполняем запрос
+                            import time
+                            time.sleep(2)
                             response = llm_instance.call(prompt)
                             response_text = response
 
@@ -104,7 +105,7 @@ class AIRouterLLM(BaseLLM):
         """
         # Выбираем модель для CrewAI. Можно использовать ту же логику ротации, что и в _generate,
         # или выбрать конкретную модель. Для простоты пока используем ту же модель, что и для AI Router.
-        model_id = "gemini/gemini-1.5-flash-latest" # Или можно использовать select_llm_model_safe("dialog")
+        model_id = select_llm_model_safe("dialog") # Или можно использовать select_llm_model_safe("dialog")
         provider_name = self.model_configs.get(model_id.replace("gemini/", ""), {}).get('provider', 'google')
         api_key = get_api_key_for_provider(provider_name)
 

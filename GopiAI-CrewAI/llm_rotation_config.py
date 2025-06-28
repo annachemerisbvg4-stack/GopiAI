@@ -38,6 +38,17 @@ LLM_MODELS_CONFIG = [
         "priority": 3
     },
     {
+        "name": "Gemini 2.0 Flash-Lite",
+        "id": "gemini/gemini-2.0-flash-lite",
+        "provider": "google",
+        "rpm": 30,
+        "tpm": 60000,
+        "type": ["simple", "dialog", "code", "summarize"],
+        "multimodal": False,
+        "embedding": False,
+        "priority": 4
+    },
+    {
         "name": "Gemini 2.5 Flash-Lite Preview",
         "id": "gemini/gemini-2.5-flash-lite-preview",
         "provider": "google",
@@ -46,7 +57,7 @@ LLM_MODELS_CONFIG = [
         "type": ["dialog", "code", "summarize"],
         "multimodal": False,
         "embedding": False,
-        "priority": 4
+        "priority": 5
     },
     {
         "name": "Gemini 2.5 Flash",
@@ -57,7 +68,7 @@ LLM_MODELS_CONFIG = [
         "type": ["dialog", "code", "multimodal", "vision", "long_answer"],
         "multimodal": True,
         "embedding": False,
-        "priority": 5
+        "priority": 6
     },
     {
         "name": "Gemini Embedding Experimental",
@@ -71,6 +82,8 @@ LLM_MODELS_CONFIG = [
         "priority": 10
     }
 ]
+
+print(f"DEBUG: LLM_MODELS_CONFIG loaded: {LLM_MODELS_CONFIG}")
 
 # Helper to get API key based on provider name
 def get_api_key_for_provider(provider_name: str):

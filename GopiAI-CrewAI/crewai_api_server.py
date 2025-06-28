@@ -27,6 +27,19 @@ app = Flask(__name__)
 current_dir = Path(__file__).parent
 sys.path.append(str(current_dir))
 
+# --- Diagnostic: Check llm_rotation_config.py content ---
+try:
+    llm_config_path = current_dir / "llm_rotation_config.py"
+    if llm_config_path.exists():
+        with open(llm_config_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        print(f"DEBUG: Content of llm_rotation_config.py at {llm_config_path}:\n{content[:500]}...") # Print first 500 chars
+    else:
+        print(f"DEBUG: llm_rotation_config.py not found at {llm_config_path}")
+except Exception as e:
+    print(f"DEBUG: Error reading llm_rotation_config.py: {e}")
+# --- End Diagnostic ---
+
 # Добавляем путь к site-packages виртуального окружения
 venv_site_packages = current_dir / "crewai_env" / "Lib" / "site-packages"
 if venv_site_packages.exists():
