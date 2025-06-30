@@ -220,10 +220,26 @@ class ChatWidget(QWidget):
                     response = f"Произошла ошибка при обработке запроса: {str(e)}"
                     error_occurred = True
                 
-                # Обновляем UI в основном потоке
+                # ПРОСТОЕ РЕШЕНИЕ: Обновляем UI напрямую из основного потока
                 def update_ui():
-                    self._update_assistant_response(waiting_id, response, error_occurred)
+                    try:
+                        logger.info(f"✅ update_ui вызван: response_len={len(response)}, error={error_occurred}")
+                        
+                        # Просто добавляем ответ ассистента (без сложной замены)
+                        self.append_message("Ассистент", response)
+                        
+                        # Включаем кнопку отправки
+                        self.send_btn.setEnabled(True)
+                        
+                        logger.info("✅ UI успешно обновлен")
+                        
+                    except Exception as e:
+                        logger.error(f"❌ Ошибка в update_ui: {e}", exc_info=True)
+                        # На всякий случай включаем кнопку
+                        self.send_btn.setEnabled(True)
                 
+                # Используем QTimer из основного потока
+                logger.info("🔄 Планируем обновление UI через QTimer.singleShot")
                 QTimer.singleShot(0, update_ui)
             
             # Запускаем обработку в отдельном потоке
@@ -247,28 +263,57 @@ class ChatWidget(QWidget):
         try:
             # Получаем текущий HTML
             current_html = self.history.toHtml()
+            logger.info(f"Текущий HTML содержит {len(current_html)} символов")
             
-            # Ищем и заменяем сообщение ожидания
-            waiting_span = f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>"
+            # Пробуем разные варианты поиска сообщения ожидания
+            waiting_patterns = [
+                f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>",
+                f"<span id=\"'{waiting_id}'\">⏳ Обрабатываю запрос...</span>",
+                f"id='{waiting_id}'",
+                f"id=\"{waiting_id}\"",
+                waiting_id,
+                "⏳ Обрабатываю запрос..."
+            ]
             
-            if waiting_span in current_html:
-                # Стилизируем ответ в зависимости от наличия ошибки
-                if error_occurred:
-                    new_response = f"<span style='color: #d73027;'>{response}</span>"
-                else:
-                    new_response = response
+            replaced = False
+            for pattern in waiting_patterns:
+                if pattern in current_html:
+                    logger.info(f"✅ Найден паттерн: {pattern}")
                     
-                # Заменяем сообщение ожидания на реальный ответ
-                updated_html = current_html.replace(waiting_span, new_response)
-                self.history.setHtml(updated_html)
-                logger.info("✅ Сообщение ожидания успешно заменено на ответ")
-            else:
+                    # Стилизируем ответ в зависимости от наличия ошибки
+                    if error_occurred:
+                        new_response = f"<span style='color: #d73027;'>{response}</span>"
+                    else:
+                        new_response = response
+                    
+                    # Если это полный span, заменяем его
+                    if "<span" in pattern and "</span>" in pattern:
+                        updated_html = current_html.replace(pattern, new_response)
+                    # Если это просто текст ожидания, заменяем его
+                    elif pattern == "⏳ Обрабатываю запрос...":
+                        updated_html = current_html.replace(pattern, new_response)
+                    else:
+                        # Для других случаев ищем весь span
+                        import re
+                        span_pattern = f"<span[^>]*id=['\"]{waiting_id}['\"][^>]*>.*?</span>"
+                        updated_html = re.sub(span_pattern, new_response, current_html, flags=re.DOTALL)
+                    
+                    if updated_html != current_html:
+                        self.history.setHtml(updated_html)
+                        logger.info("✅ Сообщение ожидания успешно заменено на ответ")
+                        replaced = True
+                        break
+                    else:
+                        logger.warning(f"⚠️ Паттерн найден, но замена не произошла: {pattern}")
+                        
+            if not replaced:
                 # Fallback: если не удалось найти сообщение ожидания, добавляем новое
                 logger.warning("⚠️ Не удалось найти сообщение ожидания, добавляем новое сообщение")
+                logger.debug(f"HTML для отладки (первые 500 символов): {current_html[:500]}")
                 self.append_message("Ассистент", response)
         
         except Exception as e:
-            logger.error(f"❌ Ошибка при обновлении ответа: {e}")
+            logger.error(f"❌ Ошибка при обновлении ответа: {e}", exc_info=True)
             # Fallback: просто добавляем новое сообщение
             self.append_message("Ассистент", response)
         
