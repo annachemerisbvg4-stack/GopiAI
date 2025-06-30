@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QFileDialog, QLabel, QSizePolicy, QMessageBox
+❤️💚💛Буду крайне признательна, если вышлешь полный обновленный текст файла chat_widget.py Смотри, вот твои предложения по исправлению, которые ты мне прислал раньше. И содержимое самого файла: from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QFileDialog, QLabel, QSizePolicy, QMessageBox
 from PySide6.QtCore import Qt, QMimeData, Slot, QMetaObject, QTimer
 from PySide6.QtGui import QIcon, QDropEvent, QDragEnterEvent, QPixmap, QTextCursor
 import threading
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 from gopiai.ui.components.icon_file_system_model import UniversalIconManager
 
 # Клиент для обращения к CrewAI API
-from .crewai_client import CrewAIClient
+from gopiai.core.crewai_client import CrewAIClient
 
 
 
@@ -114,17 +114,16 @@ class ChatWidget(QWidget):
             QTextEdit.keyPressEvent(self.input, event)
 
     def _scroll_history_to_end(self):
-        """Прокручивает историю чата в конец"""
-        scrollbar = self.history.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        self.history.moveCursor(QTextCursor.MoveOperation.End)
 
     def _check_crewai_availability(self):
         """Проверяет доступность CrewAI API сервера и отображает предупреждение при необходимости."""
         try:
-            if self.crew_ai_client.is_available():
+            health_status = self.crew_ai_client.health_check()
+            if health_status.get("status") == "online":
                 logger.info("✅ CrewAI API сервер доступен.")
                 # Можно добавить логику для индексации документации здесь, если это необходимо
-                # threading.Thread(target=self.crew_ai_client.index_documentation, daemon=True).start()
+                # threading.Thread(target=self.crew_ai_client.index_docs, daemon=True).start()
             else:
                 logger.warning("⚠️ CrewAI API сервер недоступен.")
                 QTimer.singleShot(3000, lambda: QMessageBox.warning(
@@ -188,41 +187,29 @@ class ChatWidget(QWidget):
             # Функция обработки в фоновом потоке
             def process_in_background():
                 response = "Извините, я не смог обработать запрос из-за технической проблемы."
-                error_occurred = False
                 
                 try:
+                    # Пусть система сама определяет нужность использования CrewAI
+                    # на основе сложности запроса и типа задачи
+                    
+                    
                     # Используем CrewAI API клиент
                     process_result = self.crew_ai_client.process_request(text)
-                    logger.info(f"Получен результат от CrewAI API: {process_result}")
-                    
-                    # ИСПРАВЛЕНИЕ: Теперь обрабатываем структурированный ответ правильно
-                    if isinstance(process_result, dict):
-                        if "response" in process_result:
-                            response = process_result["response"]
-                            if "error" in process_result:
-                                logger.warning(f"Получена ошибка от API: {process_result['error']}")
-                                error_occurred = True
-                        else:
-                            response = "Неизвестный формат ответа от CrewAI API."
-                            error_occurred = True
-                            logger.error(f"Неожиданный формат ответа: {process_result}")
-                    elif isinstance(process_result, str):
-                        # Обратная совместимость на случай, если клиент вернул строку
-                        response = process_result
-                        logger.info("Получен ответ в виде строки (обратная совместимость)")
+                    logger.info(f"Получен результат от CrewAI API: {process_result}") # Добавлено логирование
+                    if process_result and "response" in process_result:
+                        response = process_result["response"]
+                    elif process_result and "error" in process_result:
+                        response = f"Ошибка CrewAI: {process_result["error"]}"
                     else:
-                        response = "Неизвестный тип ответа от CrewAI API."
-                        error_occurred = True
-                        logger.error(f"Неожиданный тип ответа: {type(process_result)}")
+                        response = "Неизвестный ответ от CrewAI."
                         
                 except Exception as e:
                     logger.error(f"❌ Ошибка при обработке запроса: {e}", exc_info=True)
-                    response = f"Произошла ошибка при обработке запроса: {str(e)}"
-                    error_occurred = True
+                    response = "Произошла ошибка при обработке запроса. Подробности в консоли."
                 
                 # Обновляем UI в основном потоке
                 def update_ui():
-                    self._update_assistant_response(waiting_id, response, error_occurred)
+                    self._update_assistant_response(waiting_id, response)
                 
                 QTimer.singleShot(0, update_ui)
             
@@ -231,50 +218,14 @@ class ChatWidget(QWidget):
             thread.daemon = True
             thread.start()
     
-    @Slot(str, str, bool)
-    def _update_assistant_response(self, waiting_id, response, error_occurred=False):
-        """
-        Обновляет ответ ассистента в истории чата (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+    @Slot(str, str)
+    def _update_assistant_response(self, waiting_id, response):
+        logger.info(f"_update_assistant_response: waiting_id={waiting_id}, response_len={len(response)}")
+        # Всегда добавляем ответ как новое сообщение для отладки
+        self.append_message("Ассистент", response)
         
-        Args:
-            waiting_id: ID сообщения ожидания для замены
-            response: Текст ответа
-            error_occurred: Флаг ошибки для стилизации
-        """
-        logger.info(f"_update_assistant_response: waiting_id={waiting_id}, response_len={len(response)}, error={error_occurred}")
-        
-        # ИСПРАВЛЕНИЕ: Заменяем сообщение ожидания вместо добавления нового
-        try:
-            # Получаем текущий HTML
-            current_html = self.history.toHtml()
-            
-            # Ищем и заменяем сообщение ожидания
-            waiting_span = f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>"
-            
-            if waiting_span in current_html:
-                # Стилизируем ответ в зависимости от наличия ошибки
-                if error_occurred:
-                    new_response = f"<span style='color: #d73027;'>{response}</span>"
-                else:
-                    new_response = response
-                    
-                # Заменяем сообщение ожидания на реальный ответ
-                updated_html = current_html.replace(waiting_span, new_response)
-                self.history.setHtml(updated_html)
-                logger.info("✅ Сообщение ожидания успешно заменено на ответ")
-            else:
-                # Fallback: если не удалось найти сообщение ожидания, добавляем новое
-                logger.warning("⚠️ Не удалось найти сообщение ожидания, добавляем новое сообщение")
-                self.append_message("Ассистент", response)
-        
-        except Exception as e:
-            logger.error(f"❌ Ошибка при обновлении ответа: {e}")
-            # Fallback: просто добавляем новое сообщение
-            self.append_message("Ассистент", response)
-        
-        # Включаем кнопки и прокручиваем вниз
+        # Включаем кнопки
         self.send_btn.setEnabled(True)
-        self._scroll_history_to_end()
 
 
     def append_message(self, author, text):
@@ -295,38 +246,133 @@ class ChatWidget(QWidget):
         if image_path:
             self.append_message("Система", f"Изображение прикреплено: {os.path.basename(image_path)}. (Дальнейшая обработка не реализована)")
             logger.info(f"Изображение прикреплено: {image_path}")
+            thread.daemon = True
+            thread.start()
     
-    # ДОПОЛНИТЕЛЬНЫЕ МЕТОДЫ ДЛЯ ОТЛАДКИ (согласно советам от Minimax и GenSpark)
-    
-    def get_debug_info(self):
-        """Возвращает отладочную информацию о состоянии чата"""
-        return {
-            "crewai_client_available": self.crew_ai_client is not None,
-            "crewai_server_available": self.crew_ai_client.is_available() if self.crew_ai_client else False,
-            "send_button_enabled": self.send_btn.isEnabled(),
-            "input_text_length": len(self.input.toPlainText()),
-            "history_length": len(self.history.toPlainText())
-        }
-    
-    def test_crewai_connection(self):
-        """Тестирует соединение с CrewAI API"""
-        if not self.crew_ai_client:
-            self.append_message("Система", "❌ CrewAI клиент не инициализирован")
-            return False
-            
-        if not self.crew_ai_client.is_available():
-            self.append_message("Система", "❌ CrewAI API сервер недоступен")
-            return False
-            
-        # Отправляем тестовый запрос
+  Ответ от тебя, от Genspark: Анализ кода показал, что проблема находится в методе `_update_assistant_response`, который **не обновляет UI с ответом от API**.
+
+### 🔧 Вот что происходит:
+
+1. **Пользователь отправляет сообщение** → `send_message()` ✅
+2. **Добавляется placeholder** → `append_message("Ассистент", "Обрабатываю...")` ✅
+3. **Запускается фоновый поток** → `process_in_background()` ✅
+4. **API возвращает ответ** → получается в фоновом потоке ✅
+5. **❌ ПРОБЛЕМА: `_update_assistant_response()` НЕ ОБНОВЛЯЕТ UI!**
+
+### 📋 Исправленный код
+
+Вот исправленная версия метода `_update_assistant_response`:
+
+```python
+def _update_assistant_response(self, response_text, message_id=None):
+    """Обновляет сообщение ассистента с полученным ответом"""
+    def update_ui():
         try:
-            test_result = self.crew_ai_client.process_request("Тест соединения")
-            if isinstance(test_result, dict) and "response" in test_result:
-                self.append_message("Система", "✅ CrewAI API работает корректно")
-                return True
-            else:
-                self.append_message("Система", f"⚠️ Неожиданный ответ от API: {test_result}")
-                return False
+            # Найти и обновить последнее сообщение ассистента
+            cursor = self.chat_display.textCursor()
+            cursor.movePosition(QTextCursor.End)
+            
+            # Поиск последнего сообщения ассистента
+            document = self.chat_display.document()
+            block = document.lastBlock()
+            
+            # Ищем блок с сообщением ассистента
+            while block.isValid():
+                text = block.text()
+                if "Ассистент:" in text:
+                    # Найден блок с сообщением ассистента
+                    cursor.setPosition(block.position())
+                    cursor.select(QTextCursor.BlockUnderCursor)
+                    cursor.removeSelectedText()
+                    
+                    # Вставляем новое сообщение
+                    cursor.insertText(f"Ассистент: {response_text}")
+                    
+                    # Прокручиваем к концу
+                    scrollbar = self.chat_display.verticalScrollBar()
+                    scrollbar.setValue(scrollbar.maximum())
+                    
+                    logger.info(f"append_message: author=Ассистент, text_len={len(response_text)}")
+                    break
+                block = block.previous()
+                
         except Exception as e:
-            self.append_message("Система", f"❌ Ошибка тестирования API: {str(e)}")
-            return False
+            logger.error(f"Ошибка при обновлении UI: {e}")
+            # Добавляем новое сообщение как fallback
+            self.append_message("Ассистент", response_text)
+    
+    # Выполняем обновление в main thread
+    QMetaObject.invokeMethod(self, "exec_update", Qt.QueuedConnection)
+    self.pending_update = update_ui
+    
+    @Slot()
+    def exec_update(self):
+        if hasattr(self, 'pending_update'):
+            self.pending_update()
+            del self.pending_update
+```
+
+### 🚀 Альтернативное более простое решение:
+
+```python
+def _update_assistant_response(self, response_text, message_id=None):
+    """Обновляет сообщение ассистента с полученным ответом"""
+    def update_ui():
+        # Просто добавляем новое сообщение от ассистента
+        self.append_message("Ассистент", response_text)
+        logger.info(f"Ответ от API отображен в UI: {len(response_text)} символов")
+    
+    # Выполняем в main thread
+    QMetaObject.invokeMethod(
+        self, 
+        lambda: update_ui(), 
+        Qt.QueuedConnection
+    )
+```
+
+### 🔄 Исправленный метод `process_in_background`:
+
+```python
+def process_in_background(self, message, message_id):
+    """Обрабатывает сообщение в фоновом потоке"""
+    try:
+        # Получаем ответ от CrewAI API
+        response = self.crewai_client.process_message(message)
+        logger.info(f"Получен результат от CrewAI API: {response}")
+        
+        if response and 'response' in response:
+            # ИСПРАВЛЕНИЕ: Вызываем метод обновления UI
+            self._update_assistant_response(response['response'], message_id)
+        else:
+            # Обработка ошибки
+            error_msg = "Не удалось получить ответ от API"
+            self._update_assistant_response(error_msg, message_id)
+            
+    except Exception as e:
+        logger.error(f"Ошибка при обработке сообщения: {e}")
+        error_msg = f"Произошла ошибка: {str(e)}"
+        self._update_assistant_response(error_msg, message_id)
+```
+
+## 📝 Быстрое решение
+
+**Замени свой метод `_update_assistant_response` на этот:**
+
+```python
+def _update_assistant_response(self, response_text, message_id=None):
+    """Обновляет сообщение ассистента с полученным ответом"""
+    # Добавляем новое сообщение с реальным ответом
+    self.append_message("Ассистент", response_text)
+    logger.info(f"Ответ от API отображен в UI: {len(response_text)} символов")
+```
+
+## 🧪 Тестирование
+
+После исправления в логах должно появиться:
+```
+2025-06-28 19:06:57,887 - gopiai.ui.components.chat_widget - INFO - Получен результат от CrewAI API: {'processed_with_crewai': True, 'response': '...'}
+2025-06-28 19:06:57,888 - gopiai.ui.components.chat_widget - INFO - append_message: author=Ассистент, text_len=1500
+2025-06-28 19:06:57,889 - gopiai.ui.components.chat_widget - INFO - Ответ от API отображен в UI: 1500 символов
+```
+
+Попробуй это исправление, и твой чат заработает! 🎉

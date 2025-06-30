@@ -1,5 +1,5 @@
 """
-🔌 CrewAI API Client
+🔌 CrewAI API Client (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 Клиент для интеграции с CrewAI через REST API
 """
 
@@ -130,10 +130,7 @@ class CrewAIClient:
             return False
             
         try:
-            response = requests.post(
-                f"{self.base_url}/api/index_docs",
-                timeout=30
-            )
+            response = requests.post(f"{self.base_url}/api/index_docs", timeout=30)
             
             if response.status_code == 200:
                 data = response.json()
@@ -144,6 +141,3 @@ class CrewAIClient:
         except requests.RequestException as e:
             print(f"❌ Ошибка запроса: {e}")
             return False
-
-# Глобальный экземпляр клиента
-crewai_client = CrewAIClient()
