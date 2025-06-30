@@ -28,7 +28,7 @@ sys.path.insert(0, str(project_root / "GopiAI-UI"))
 sys.path.insert(0, str(project_root / "GopiAI-CrewAI"))
 
 # Test configuration
-TEST_TIMEOUT = 20  # Maximum time to wait for responses
+TEST_TIMEOUT = 150  # Maximum time to wait for responses (увеличено для CrewAI)
 CREWAI_SERVER_URL = "http://127.0.0.1:5050"
 RAG_SERVER_URL = "http://127.0.0.1:5051"
 
@@ -227,7 +227,7 @@ class TestRunner:
             return self._record_result(rag_enabled, crewai_enabled, prompt_type,
                                      "FAIL", f"Request failed: {str(e)}", response_time)
     
-    def _send_test_request(self, prompt, timeout=15):
+    def _send_test_request(self, prompt, timeout=120):
         """Send test request to the system"""
         try:
             # Import CrewAI client for testing
@@ -243,7 +243,7 @@ class TestRunner:
                 response = requests.post(
                     f"{CREWAI_SERVER_URL}/api/process",
                     json={"message": prompt},
-                    timeout=timeout
+                    timeout=120  # Увеличенный таймаут для CrewAI
                 )
                 if response.status_code == 200:
                     return response.json()

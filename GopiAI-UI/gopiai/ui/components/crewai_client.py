@@ -29,7 +29,7 @@ class CrewAIClient:
     
     def __init__(self, base_url="http://127.0.0.1:5050"):
         self.base_url = base_url
-        self.timeout = 5  # Таймаут для API запросов (в секундах)
+        self.timeout = 30  # Таймаут для API запросов (в секундах)
         self._server_available = None  # Кеш статуса сервера
         self._last_check = 0  # Время последней проверки
         
@@ -63,7 +63,7 @@ class CrewAIClient:
             response = requests.post(
                 f"{self.base_url}/api/analyze",
                 json={"message": message},
-                timeout=15
+                timeout=30
             )
             
             if response.status_code == 200:
@@ -102,7 +102,7 @@ class CrewAIClient:
                     "message": message,
                     "force_crewai": False  # Игнорируем входной параметр force_crewai
                 },
-                timeout=15
+                timeout=120  # Увеличенный таймаут для длительных операций CrewAI
             )
             
             if response.status_code == 200:
@@ -146,7 +146,7 @@ class CrewAIClient:
         try:
             response = requests.post(
                 f"{self.base_url}/api/index_docs",
-                timeout=15
+                timeout=60
             )
             
             if response.status_code == 200:

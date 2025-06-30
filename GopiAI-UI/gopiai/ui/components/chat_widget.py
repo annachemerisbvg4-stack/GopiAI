@@ -17,6 +17,8 @@ from gopiai.ui.components.icon_file_system_model import UniversalIconManager
 
 # Клиент для обращения к CrewAI API
 from .crewai_client import CrewAIClient
+# Модуль управления контекстом чата
+from .chat_context import ChatContext
 
 
 
@@ -58,6 +60,9 @@ class ChatWidget(QWidget):
         
         # Инициализация CrewAIClient
         self.crew_ai_client = CrewAIClient()
+        
+        # Инициализация контекста чата для краткосрочной памяти
+        self.chat_context = ChatContext(max_messages=20, max_tokens=4000)
 
         # История сообщений
         self.history = QTextEdit(self)
@@ -93,6 +98,18 @@ class ChatWidget(QWidget):
         self.attach_image_btn.clicked.connect(self.attach_image)
         self.bottom_panel.addWidget(self.attach_image_btn)
 
+        # Кнопка очистки контекста
+        self.clear_context_btn = QPushButton(icon_mgr.get_icon("trash-2"), "", self)
+        self.clear_context_btn.setToolTip("Очистить контекст чата")
+        self.clear_context_btn.clicked.connect(self.clear_chat_context)
+        self.bottom_panel.addWidget(self.clear_context_btn)
+        
+        # Кнопка статистики контекста
+        self.context_stats_btn = QPushButton(icon_mgr.get_icon("info"), "", self)
+        self.context_stats_btn.setToolTip("Показать статистику контекста")
+        self.context_stats_btn.clicked.connect(self.show_context_stats)
+        self.bottom_panel.addWidget(self.context_stats_btn)
+        
         # Кнопка отправки
         self.send_btn = QPushButton(icon_mgr.get_icon("send"), "", self)
         self.send_btn.setToolTip("Отправить сообщение")
@@ -264,6 +281,8 @@ class ChatWidget(QWidget):
         """Отправляет сообщение и обрабатывает его через CrewAI API"""
         text = self.input.toPlainText().strip()
         if text:
+            # Добавляем сообщение пользователя в контекст
+            self.chat_context.add_user_message(text)
             # Отображаем сообщение пользователя
             self.append_message("Вы", text)
             self.input.clear()
@@ -282,8 +301,16 @@ class ChatWidget(QWidget):
                 
                 # ИСПРАВЛЕНИЕ: Обернуть весь body функции в try/except
                 try:
+                    # Получаем контекст для передачи в API
+                    context_string = self.chat_context.get_context_string()
+                    # Формируем запрос с контекстом, если он есть
+                    if context_string:
+                        request_with_context = f"Контекст предыдущих сообщений:\n{context_string}\n\nТекущий запрос: {text}"
+                    else:
+                        request_with_context = text
+                    
                     # Используем CrewAI API клиент с timeout параметром
-                    process_result = self.crew_ai_client.process_request(text, timeout=120)
+                    process_result = self.crew_ai_client.process_request(request_with_context, timeout=120)
                     logger.info(f"Получен результат от CrewAI API: {process_result}")
                     
                     # Handle structured error responses from CrewAI client
@@ -312,6 +339,10 @@ class ChatWidget(QWidget):
                         response = "Неизвестный тип ответа от CrewAI API."
                         error_occurred = True
                         logger.error(f"Неожиданный тип ответа: {type(process_result)}")
+                    
+                    # Добавляем ответ ассистента в контекст (только если нет ошибки)
+                    if not error_occurred:
+                        self.chat_context.add_assistant_message(response)
                         
                 except Exception as e:
                     logger.error(f"❌ Полная ошибка в background thread: {e}", exc_info=True)
@@ -520,3 +551,37 @@ class ChatWidget(QWidget):
         thread.start()
         
         self.append_message("Тест", "🧪 Тест QTimer запущен, ожидайте результат...")
+    
+    def clear_chat_context(self):
+        """Очищает контекст чата (краткосрочную память)"""
+        stats_before = self.chat_context.get_stats()
+        self.chat_context.clear()
+        
+        self.append_message("Система", 
+            f"🧹 Контекст чата очищен. Было: {stats_before['message_count']} сообщений, "
+            f"~{stats_before['estimated_tokens']} токенов.")
+        
+        logger.info(f"Chat context cleared. Previous stats: {stats_before}")
+    
+    def show_context_stats(self):
+        """Показывает статистику текущего контекста чата"""
+        stats = self.chat_context.get_stats()
+        context_preview = ""
+        
+        # Показываем превью последних 2 сообщений
+        if stats['message_count'] > 0:
+            last_messages = self.chat_context.get_last_messages(2)
+            preview_parts = []
+            for msg in last_messages:
+                content_preview = msg.content[:50] + "..." if len(msg.content) > 50 else msg.content
+                preview_parts.append(f"- {msg.role}: {content_preview}")
+            context_preview = "\n\nПоследние сообщения:\n" + "\n".join(preview_parts)
+        
+        self.append_message("Система", 
+            f"📊 Статистика контекста:\n"
+            f"• Сообщений: {stats['message_count']}/{stats['max_messages']}\n"
+            f"• Символов: {stats['total_characters']}\n"
+            f"• Примерно токенов: {stats['estimated_tokens']}/{stats['max_tokens']}"
+            + context_preview)
+        
+        logger.info(f"Context stats displayed: {stats}")

@@ -23,6 +23,10 @@ HOST = "127.0.0.1"
 PORT = 5050
 DEBUG = False
 
+# Настройки таймаутов
+REQUEST_TIMEOUT = 300  # 5 минут таймаут для обработки запросов
+CONNECTION_TIMEOUT = 60  # 1 минута для установки соединения
+
 # Базовая безопасность - API токен (в реальном проекте использовать переменные окружения)
 API_TOKEN = os.environ.get('CREWAI_API_TOKEN', 'gopi-ai-default-token-2025')
 RATE_LIMIT_REQUESTS = 100  # Максимум запросов в минуту
@@ -259,4 +263,11 @@ if __name__ == '__main__':
     except ImportError:
         print("Модуль langchain НЕ доступен")
     
-    app.run(host=HOST, port=PORT, debug=DEBUG)
+    # Настраиваем сервер с увеличенными таймаутами
+    from werkzeug.serving import WSGIRequestHandler
+    WSGIRequestHandler.timeout = REQUEST_TIMEOUT
+    
+    print(f"Request timeout: {REQUEST_TIMEOUT} seconds")
+    print(f"Connection timeout: {CONNECTION_TIMEOUT} seconds")
+    
+    app.run(host=HOST, port=PORT, debug=DEBUG, threaded=True, request_handler=WSGIRequestHandler)

@@ -9,7 +9,7 @@ class CrewAIClient:
         url = f"{self.base_url}/{endpoint}"
         headers = {"Content-Type": "application/json"}
         try:
-            response = requests.post(url, headers=headers, data=json.dumps(data), timeout=15)
+            response = requests.post(url, headers=headers, data=json.dumps(data), timeout=120)
             response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
             return response.json()
         except requests.exceptions.ConnectionError as e:
@@ -36,7 +36,7 @@ class CrewAIClient:
     def health_check(self):
         url = f"{self.base_url}/api/health"
         try:
-            response = requests.get(url, timeout=15)
+            response = requests.get(url, timeout=30)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
