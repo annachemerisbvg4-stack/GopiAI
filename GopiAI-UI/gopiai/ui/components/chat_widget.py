@@ -375,3 +375,25 @@ class ChatWidget(QWidget):
         except Exception as e:
             self.append_message("Система", f"❌ Ошибка тестирования API: {str(e)}")
             return False
+    
+    def test_timer_from_thread(self):
+        """ТЕСТ: Проверяет работу QTimer.singleShot из фонового потока"""
+        logger.info("🧪 Запуск теста QTimer из фонового потока")
+        
+        def background_test():
+            logger.info("🧪 Фоновый поток запущен")
+            time.sleep(1)  # Имитируем работу
+            
+            def ui_update():
+                logger.info("🎯 UI update вызван из QTimer!")
+                self.append_message("Тест", "✅ QTimer.singleShot работает из фонового потока!")
+            
+            logger.info("🧪 Вызываем QTimer.singleShot")
+            QTimer.singleShot(0, ui_update)
+            logger.info("🧪 QTimer.singleShot вызван")
+        
+        thread = threading.Thread(target=background_test)
+        thread.daemon = True
+        thread.start()
+        
+        self.append_message("Тест", "🧪 Тест QTimer запущен, ожидайте результат...")

@@ -2,7 +2,7 @@
     "python.defaultInterpreterPath": "./rag_memory_env/Scripts/python.exe",
     "python.analysis.extraPaths": [
         "./GopiAI-UI",
-        "./GopiAI-WebView",
+        "./GopiAI-CrewAI",
         "./GopiAI-Core",
         "./rag_memory_system"
     ],
