@@ -291,7 +291,7 @@ class GopiAISettingsDialog(QDialog):
             QFrame, QGroupBox, QFrame#SettingsCard {{
                 background: transparent;
                 border: none;
-                box-shadow: none;
+                border_color: none;
             }}
             QLabel#DescriptionLabel {{
                 color: {colors['text_color']};

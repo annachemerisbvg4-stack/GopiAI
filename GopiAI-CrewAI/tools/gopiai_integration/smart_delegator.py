@@ -26,6 +26,7 @@ sys.path.append(crewai_root)
 # Флаги доступности систем
 crewai_available = False # This will be set by the try-except block below
 RAG_API_URL = "http://127.0.0.1:5051" # URL для нашего нового RAG-сервиса
+RAG_TIMEOUT = int(os.environ.get('GOPIAI_RAG_TIMEOUT', 4))  # Таймаут для RAG запросов
 
 # Проверка доступности CrewAI
 try:
@@ -40,7 +41,7 @@ except ImportError as e:
 def is_rag_service_available():
     """Проверяет доступность RAG-сервиса."""
     try:
-        response = requests.get(f"{RAG_API_URL}/api/health", timeout=2)
+        response = requests.get(f"{RAG_API_URL}/api/health", timeout=min(RAG_TIMEOUT, 2))
         return response.status_code == 200 and response.json().get("status") == "online"
     except requests.exceptions.RequestException:
         return False
@@ -48,6 +49,7 @@ def is_rag_service_available():
 # Значения по умолчанию
 COMPLEXITY_THRESHOLD = 3  # От 0 (простой) до 5 (очень сложный)
 ASSISTANT_NAME = "GopiAI"
+RAG_DISABLE_TIMEOUT = 300  # seconds
 
 class SmartDelegator:
     """Модуль для умного распределения запросов между LLM и CrewAI"""
@@ -67,6 +69,7 @@ class SmartDelegator:
             self.ai_router = None
         
         self.rag_available = is_rag_service_available()
+        self._rag_last_failure = 0  # Initialize RAG failure tracking
         if self.rag_available:
             print("✅ RAG-сервис доступен. Запускаем индексацию в фоновом режиме...")
             self.index_documentation() # Запускаем индексацию при старте
@@ -99,8 +102,11 @@ class SmartDelegator:
         if not self.rag_available:
             return None
 
+        if time.time() - self._rag_last_failure < RAG_DISABLE_TIMEOUT:
+            return None
+
         try:
-            response = requests.post(f"{RAG_API_URL}/api/search", json={"query": query, "max_results": max_results}, timeout=10)
+            response = requests.post(f"{RAG_API_URL}/api/search", json={"query": query, "max_results": max_results}, timeout=RAG_TIMEOUT)
             if response.status_code == 200:
                 return response.json().get("context")
             else:
@@ -108,6 +114,7 @@ class SmartDelegator:
                 return None
         except requests.exceptions.RequestException as e:
             print(f"⚠️ Ошибка при подключении к RAG-сервису: {e}")
+            self._rag_last_failure = time.time()
             traceback.print_exc()
             return None
     

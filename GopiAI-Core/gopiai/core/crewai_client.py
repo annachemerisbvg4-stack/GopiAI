@@ -9,21 +9,21 @@ class CrewAIClient:
         url = f"{self.base_url}/{endpoint}"
         headers = {"Content-Type": "application/json"}
         try:
-            response = requests.post(url, headers=headers, data=json.dumps(data))
+            response = requests.post(url, headers=headers, data=json.dumps(data), timeout=15)
             response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
             return response.json()
         except requests.exceptions.ConnectionError as e:
-            print(f"Connection Error: Could not connect to CrewAI API server at {url}. Is the server running?")
-            return {"error": f"Connection Error: {e}"}
+            error_message = f"Connection Error: Could not connect to CrewAI API server at {url}. Is the server running?"
+            return {"error_message": error_message, "processed_with_crewai": False}
         except requests.exceptions.Timeout as e:
-            print(f"Timeout Error: Request to CrewAI API server at {url} timed out.")
-            return {"error": f"Timeout Error: {e}"}
+            error_message = f"Timeout Error: Request to CrewAI API server at {url} timed out."
+            return {"error_message": error_message, "processed_with_crewai": False}
         except requests.exceptions.RequestException as e:
-            print(f"Request Error: An error occurred during the request to {url}: {e}")
-            return {"error": f"Request Error: {e}"}
+            error_message = f"Request Error: An error occurred during the request to {url}: {e}"
+            return {"error_message": error_message, "processed_with_crewai": False}
         except json.JSONDecodeError:
-            print(f"JSON Decode Error: Could not decode JSON from response: {response.text}")
-            return {"error": f"JSON Decode Error: Invalid JSON response from server: {response.text}"}
+            error_message = f"JSON Decode Error: Invalid JSON response from server: {response.text}"
+            return {"error_message": error_message, "processed_with_crewai": False}
 
     def analyze_request(self, message: str):
         data = {"message": message}
@@ -36,12 +36,20 @@ class CrewAIClient:
     def health_check(self):
         url = f"{self.base_url}/api/health"
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=15)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            print(f"Health Check Error: Could not connect to CrewAI API server at {url}: {e}")
-            return {"status": "offline", "error": str(e)}
+            return {"error_message": f"Health Check Error: Could not connect to CrewAI API server at {url}: {e}", "processed_with_crewai": False}
+
+    def is_available(self):
+        """Check if CrewAI API server is available"""
+        try:
+            health_status = self.health_check()
+            # Check if it's an error response (has error_message) or successful
+            return "error_message" not in health_status
+        except Exception:
+            return False
 
     def index_docs(self):
         # This endpoint might not be available if txtai is not installed on the CrewAI server

@@ -14,11 +14,19 @@ import json
 import time
 import traceback
 from pathlib import Path
+from functools import wraps
+import hashlib
+import secrets
 
 # Настройки сервера
 HOST = "127.0.0.1"
 PORT = 5050
 DEBUG = False
+
+# Базовая безопасность - API токен (в реальном проекте использовать переменные окружения)
+API_TOKEN = os.environ.get('CREWAI_API_TOKEN', 'gopi-ai-default-token-2025')
+RATE_LIMIT_REQUESTS = 100  # Максимум запросов в минуту
+RATE_LIMIT_WINDOW = {}     # Счетчик запросов по IP
 
 app = Flask(__name__)
 

@@ -319,7 +319,7 @@ class ThemeManager(QObject):
         """
         try:
             app = QApplication.instance()
-            if app:
+            if app and isinstance(app, QApplication):
                 # Очищаем стили
                 app.setStyleSheet("")
 
@@ -336,6 +336,8 @@ class ThemeManager(QObject):
                 self.themeChanged.emit("")
 
                 return True
+            else:
+                logger.warning("QApplication не инициализирован или неверного типа")
         except Exception as e:
             logger.error(f"Ошибка при сбросе темы: {e}", exc_info=True)
 

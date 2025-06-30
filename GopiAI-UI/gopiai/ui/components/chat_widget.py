@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QFileDialog, QLabel, QSizePolicy, QMessageBox
-from PySide6.QtCore import Qt, QMimeData, Slot, QMetaObject, QTimer
+from PySide6.QtCore import Qt, QMimeData, Slot, QMetaObject, QTimer, Signal
 from PySide6.QtGui import QIcon, QDropEvent, QDragEnterEvent, QPixmap, QTextCursor
 import threading
 import sys
@@ -7,6 +7,7 @@ import os
 import time
 import traceback
 import logging
+import requests
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
@@ -19,7 +20,18 @@ from .crewai_client import CrewAIClient
 
 
 
+
+# DEBUG LOGGING PATCH - Added for hang diagnosis
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+print("🔧 DEBUG logging enabled for chat_widget.py")
+
+
 class ChatWidget(QWidget):
+    # Qt signals for thread-safe communication
+    response_ready = Signal(str, bool)  # response_text, error_occurred
     def set_theme_manager(self, theme_manager):
         """Интеграция с глобальной темой (API совместим с WebViewChatWidget)"""
         self.theme_manager = theme_manager
@@ -46,7 +58,6 @@ class ChatWidget(QWidget):
         
         # Инициализация CrewAIClient
         self.crew_ai_client = CrewAIClient()
-        self._check_crewai_availability()
 
         # История сообщений
         self.history = QTextEdit(self)
@@ -96,9 +107,15 @@ class ChatWidget(QWidget):
         # Автопрокрутка истории
         self.history.textChanged.connect(self._scroll_history_to_end)
 
+        # Connect Qt signal for thread-safe communication
+        self.response_ready.connect(self._handle_response_from_thread)
+
         # Применить тему при инициализации
         self.theme_manager = None
         self.apply_theme()
+        
+        # Check service availability after UI is fully initialized
+        self._check_crewai_availability()
 
     def _input_key_press_event(self, event):
         # Если нажат Enter без Shift, отправляем сообщение
@@ -113,36 +130,109 @@ class ChatWidget(QWidget):
             # Обрабатываем остальные клавиши стандартным образом
             QTextEdit.keyPressEvent(self.input, event)
 
+    @Slot(str, bool)
+    def _handle_response_from_thread(self, response_text, error_occurred):
+        """Handles responses from background thread via Qt signal"""
+        try:
+            logger.info(f"Signal received: response_len={len(response_text)}, error={error_occurred}")
+            
+            # Get current HTML and try to replace waiting span
+            current_html = self.history.toHtml()
+            
+            # Try to find and replace waiting span
+            waiting_patterns = [
+                "⏳ Обрабатываю запрос...",
+                "<span id="
+            ]
+            
+            replaced = False
+            for pattern in waiting_patterns:
+                if pattern in current_html:
+                    # Style error message in red if it's an error
+                    if error_occurred:
+                        styled_response = f"<span style='color: red;'>{response_text}</span>"
+                    else:
+                        styled_response = response_text
+                    
+                    # For waiting text pattern
+                    if pattern == "⏳ Обрабатываю запрос...":
+                        updated_html = current_html.replace(pattern, styled_response)
+                        self.history.setHtml(updated_html)
+                        replaced = True
+                        break
+                    # For span pattern, use regex to replace the whole span
+                    elif "<span id=" in pattern:
+                        import re
+                        span_pattern = r"<span[^>]*id=['\"][^'\"]*['\"][^>]*>⏳ Обрабатываю запрос...</span>"
+                        updated_html = re.sub(span_pattern, styled_response, current_html, flags=re.DOTALL)
+                        if updated_html != current_html:
+                            self.history.setHtml(updated_html)
+                            replaced = True
+                            break
+            
+            # If waiting span not found, append as new message
+            if not replaced:
+                if error_occurred:
+                    self.append_message("Ассистент", f"<span style='color: red;'>{response_text}</span>")
+                else:
+                    self.append_message("Ассистент", response_text)
+            
+            logger.info("✅ Response handled successfully via Qt signal")
+            
+        except Exception as e:
+            logger.error(f"❌ Error in signal handler: {e}", exc_info=True)
+            # Fallback: append error message in red
+            if error_occurred:
+                self.append_message("Ассистент", f"<span style='color: red;'>{response_text}</span>")
+            else:
+                self.append_message("Ассистент", response_text)
+        finally:
+            # Always re-enable Send button and scroll to end
+            self.send_btn.setEnabled(True)
+            self._scroll_history_to_end()
+
     def _scroll_history_to_end(self):
         """Прокручивает историю чата в конец"""
         scrollbar = self.history.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
     def _check_crewai_availability(self):
-        """Проверяет доступность CrewAI API сервера и отображает предупреждение при необходимости."""
+        """Checks availability of CrewAI and RAG services, showing warnings if necessary."""
         try:
-            if self.crew_ai_client.is_available():
-                logger.info("✅ CrewAI API сервер доступен.")
-                # Можно добавить логику для индексации документации здесь, если это необходимо
-                # threading.Thread(target=self.crew_ai_client.index_documentation, daemon=True).start()
+            crewai_available = self.crew_ai_client.is_available()
+            if crewai_available:
+                logger.info("✅ CrewAI API server is available.")
             else:
-                logger.warning("⚠️ CrewAI API сервер недоступен.")
+                logger.warning("⚠️ CrewAI API server is unavailable.")
                 QTimer.singleShot(3000, lambda: QMessageBox.warning(
                     self,
-                    "CrewAI недоступен",
-                    "CrewAI API сервер недоступен.\n\n"
-                    "Для полноценной работы многоагентного режима запустите:\n"
+                    "CrewAI Unavailable",
+                    "CrewAI API server is unavailable.\n\n"
+                    "To fully utilize multi-agent mode, run:\n"
                     "GopiAI-CrewAI/run_crewai_api_server.bat"
                 ))
         except Exception as e:
-            logger.error(f"❌ Ошибка при проверке доступности CrewAI: {e}", exc_info=True)
+            logger.error(f"❌ Error checking CrewAI availability: {e}", exc_info=True)
             QTimer.singleShot(3000, lambda: QMessageBox.warning(
                 self,
-                "CrewAI недоступен",
-                f"Ошибка при подключении к CrewAI API серверу: {e}\n\n"
-                "Для полноценной работы многоагентного режима запустите:\n"
+                "CrewAI Unavailable",
+                f"Error connecting to CrewAI API server: {e}\n\n"
+                "To fully utilize multi-agent mode, run:\n"
                 "GopiAI-CrewAI/run_crewai_api_server.bat"
             ))
+
+        # Check RAG service
+        try:
+            response = requests.get("http://127.0.0.1:5051/api/health", timeout=2)
+            self.rag_available = response.status_code == 200
+        except requests.RequestException:
+            self.rag_available = False
+
+        if not self.rag_available:
+            logger.warning("⚠️ RAG service is unavailable.")
+            self.history.append("⚠️ Память (RAG) недоступна, ответы будут без расширенного контекста.")
+        else:
+            logger.info("✅ RAG service is available.")
 
     # Drag & Drop
     def dragEnterEvent(self, event: QDragEnterEvent):
@@ -190,15 +280,23 @@ class ChatWidget(QWidget):
                 response = "Извините, я не смог обработать запрос из-за технической проблемы."
                 error_occurred = False
                 
+                # ИСПРАВЛЕНИЕ: Обернуть весь body функции в try/except
                 try:
-                    # Используем CrewAI API клиент
-                    process_result = self.crew_ai_client.process_request(text)
+                    # Используем CrewAI API клиент с timeout параметром
+                    process_result = self.crew_ai_client.process_request(text, timeout=120)
                     logger.info(f"Получен результат от CrewAI API: {process_result}")
                     
-                    # ИСПРАВЛЕНИЕ: Теперь обрабатываем структурированный ответ правильно
+                    # Handle structured error responses from CrewAI client
                     if isinstance(process_result, dict):
-                        if "response" in process_result:
+                        # Check for error_message field (new structured error format)
+                        if "error_message" in process_result:
+                            response = process_result["error_message"]
+                            error_occurred = True
+                            logger.warning(f"Получена структурированная ошибка от API: {response}")
+                        # Check for response field (normal response)
+                        elif "response" in process_result:
                             response = process_result["response"]
+                            # Check if there was an error flag
                             if "error" in process_result:
                                 logger.warning(f"Получена ошибка от API: {process_result['error']}")
                                 error_occurred = True
@@ -216,31 +314,48 @@ class ChatWidget(QWidget):
                         logger.error(f"Неожиданный тип ответа: {type(process_result)}")
                         
                 except Exception as e:
-                    logger.error(f"❌ Ошибка при обработке запроса: {e}", exc_info=True)
+                    logger.error(f"❌ Полная ошибка в background thread: {e}", exc_info=True)
                     response = f"Произошла ошибка при обработке запроса: {str(e)}"
                     error_occurred = True
                 
-                # ПРОСТОЕ РЕШЕНИЕ: Обновляем UI напрямую из основного потока
-                def update_ui():
-                    try:
-                        logger.info(f"✅ update_ui вызван: response_len={len(response)}, error={error_occurred}")
-                        
-                        # Просто добавляем ответ ассистента (без сложной замены)
-                        self.append_message("Ассистент", response)
-                        
-                        # Включаем кнопку отправки
-                        self.send_btn.setEnabled(True)
-                        
-                        logger.info("✅ UI успешно обновлен")
-                        
-                    except Exception as e:
-                        logger.error(f"❌ Ошибка в update_ui: {e}", exc_info=True)
-                        # На всякий случай включаем кнопку
-                        self.send_btn.setEnabled(True)
-                
-                # Используем QTimer из основного потока
-                logger.info("🔄 Планируем обновление UI через QTimer.singleShot")
-                QTimer.singleShot(0, update_ui)
+                # ИСПРАВЛЕНИЕ: Используем Qt signal вместо QTimer.singleShot
+                try:
+                    logger.info("🔄 Отправляем ответ через Qt signal")
+                    self.response_ready.emit(response, error_occurred)
+                except Exception as e:
+                    logger.error(f"❌ Ошибка при отправке сигнала: {e}", exc_info=True)
+                    # Fallback: используем QTimer как последний вариант
+                    def emergency_update():
+                        try:
+                            # Get current HTML and try to replace waiting span
+                            current_html = self.history.toHtml()
+                            waiting_patterns = [
+                                f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>",
+                                "⏳ Обрабатываю запрос..."
+                            ]
+                            
+                            # Try to replace waiting span with response
+                            replaced = False
+                            for pattern in waiting_patterns:
+                                if pattern in current_html:
+                                    # Style error message in red
+                                    styled_response = f"<span style='color: red;'>{response}</span>" if error_occurred else response
+                                    updated_html = current_html.replace(pattern, styled_response)
+                                    self.history.setHtml(updated_html)
+                                    replaced = True
+                                    break
+                            
+                            # If waiting span not found, append as new message
+                            if not replaced:
+                                styled_response = f"<span style='color: red;'>{response}</span>" if error_occurred else response
+                                self.append_message("Ассистент", styled_response)
+                                
+                        except Exception as fallback_e:
+                            logger.error(f"❌ Критическая ошибка fallback: {fallback_e}", exc_info=True)
+                        finally:
+                            # Always re-enable Send button
+                            self.send_btn.setEnabled(True)
+                    QTimer.singleShot(0, emergency_update)
             
             # Запускаем обработку в отдельном потоке
             thread = threading.Thread(target=process_in_background)
@@ -366,11 +481,19 @@ class ChatWidget(QWidget):
         # Отправляем тестовый запрос
         try:
             test_result = self.crew_ai_client.process_request("Тест соединения")
-            if isinstance(test_result, dict) and "response" in test_result:
-                self.append_message("Система", "✅ CrewAI API работает корректно")
-                return True
+            if isinstance(test_result, dict):
+                # Check for structured error response
+                if "error_message" in test_result:
+                    self.append_message("Система", f"❌ Ошибка API: {test_result['error_message']}")
+                    return False
+                elif "response" in test_result:
+                    self.append_message("Система", "✅ CrewAI API работает корректно")
+                    return True
+                else:
+                    self.append_message("Система", f"⚠️ Неожиданный ответ от API: {test_result}")
+                    return False
             else:
-                self.append_message("Система", f"⚠️ Неожиданный ответ от API: {test_result}")
+                self.append_message("Система", f"⚠️ Неожиданный тип ответа от API: {type(test_result)}")
                 return False
         except Exception as e:
             self.append_message("Система", f"❌ Ошибка тестирования API: {str(e)}")

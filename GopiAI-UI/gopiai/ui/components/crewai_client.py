@@ -4,10 +4,20 @@
 """
 
 import requests
+import requests.exceptions
 import threading
 import time
 import json
 import os
+
+
+# DEBUG LOGGING PATCH - Added for hang diagnosis
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+print("🔧 DEBUG logging enabled for crewai_client.py")
+
 
 class CrewAIClient:
     """
@@ -53,7 +63,7 @@ class CrewAIClient:
             response = requests.post(
                 f"{self.base_url}/api/analyze",
                 json={"message": message},
-                timeout=self.timeout
+                timeout=15
             )
             
             if response.status_code == 200:
@@ -63,9 +73,9 @@ class CrewAIClient:
                 return None
         except requests.RequestException as e:
             print(f"❌ Ошибка запроса: {e}")
-            return None
+            return {"error_message": str(e), "processed_with_crewai": False}
     
-    def process_request(self, message, force_crewai=False):
+    def process_request(self, message, force_crewai=False, timeout=None):
         """
         Обрабатывает запрос через CrewAI API
         
@@ -82,13 +92,17 @@ class CrewAIClient:
         try:
             # Всегда используем force_crewai=False, чтобы система сама определяла
             # необходимость использования CrewAI на основе анализа сложности запроса
+            
+            # ИСПРАВЛЕНИЕ: Используем timeout параметр если передан, иначе дефолтный
+            request_timeout = timeout if timeout is not None else 60
+            
             response = requests.post(
                 f"{self.base_url}/api/process",
                 json={
                     "message": message,
                     "force_crewai": False  # Игнорируем входной параметр force_crewai
                 },
-                timeout=60  # Увеличенный таймаут, т.к. обработка может быть долгой
+                timeout=15
             )
             
             if response.status_code == 200:
@@ -120,8 +134,8 @@ class CrewAIClient:
         except requests.RequestException as e:
             print(f"❌ Ошибка запроса: {e}")
             return {
-                "response": f"Ошибка связи с CrewAI API: {str(e)}",
-                "error": "connection_error"
+                "error_message": f"Ошибка связи с CrewAI API: {str(e)}",
+                "processed_with_crewai": False
             }
             
     def index_documentation(self):
@@ -132,7 +146,7 @@ class CrewAIClient:
         try:
             response = requests.post(
                 f"{self.base_url}/api/index_docs",
-                timeout=30
+                timeout=15
             )
             
             if response.status_code == 200:
@@ -143,7 +157,7 @@ class CrewAIClient:
                 return False
         except requests.RequestException as e:
             print(f"❌ Ошибка запроса: {e}")
-            return False
+            return {"error_message": str(e), "processed_with_crewai": False}
 
 # Глобальный экземпляр клиента
 crewai_client = CrewAIClient()

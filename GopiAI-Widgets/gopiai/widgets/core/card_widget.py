@@ -110,7 +110,7 @@ class CardWidget(QFrame):
         self.setStyleSheet(self._default_style + """
             #cardWidget {
                 border: 1px solid #b0b0b0;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                border_color: 0 2px 5px rgba(0, 0, 0, 0.1);
             }
         """)
         super().enterEvent(event)
