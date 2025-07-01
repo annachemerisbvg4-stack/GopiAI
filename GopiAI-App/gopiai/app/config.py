@@ -61,3 +61,9 @@ def save_config(config_data):
 
 # Загружаем конфигурацию
 config = load_config()
+# Конфигурация для reasoning агентов
+reasoning_config = {
+    "enabled": True,
+    "temperature": 0.7,
+    "max_tokens": 2000
+}

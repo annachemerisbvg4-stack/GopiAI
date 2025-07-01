@@ -8,16 +8,15 @@
 
 import datetime
 import hashlib
-from gopiai.core.logging import get_logger
-logger = get_logger().logger
+import logging
+logger = logging.getLogger(__name__)
 import os
 import re
 import requests
 import time
 from typing import Any, Dict, List, Tuple, Optional, Callable, TypeVar
 
-# Настройка логирования
-logger = get_logger().logger
+# Настройка логирования завершена выше
 
 # Типы для типизации
 T = TypeVar('T')

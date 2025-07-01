@@ -4,10 +4,14 @@
 """
 
 import os
+import logging
 from typing import Type, Any, Dict, Optional
 from pydantic import BaseModel, Field
 from crewai.tools.base_tool import BaseTool
 from .ai_router_llm import AIRouterLLM
+
+# Настройка логгера
+logger = logging.getLogger(__name__)
 
 class AIRouterInput(BaseModel):
     """Схема входных данных для AI Router"""
@@ -37,24 +41,47 @@ class GopiAIRouterTool(BaseTool):
         # Инициализируем экземпляр AI Router LLM для использования внутри инструмента
         self.ai_router_llm = AIRouterLLM()
     
+    def _validate_parameters(self, temperature: float, max_tokens: int, task_type: str, model_preference: str):
+        if not 0.0 <= temperature <= 2.0:
+            raise ValueError(f"Temperature must be between 0.0 and 2.0, got {temperature}")
+        if not 1 <= max_tokens <= 8192:
+            raise ValueError(f"Max tokens must be between 1 and 8192, got {max_tokens}")
+        # Add more validations...
+    
     def _run(self, message: str, task_type: str = "chat", model_preference: str = "auto", 
-             max_tokens: int = 1000, temperature: float = 0.7) -> str:
-        """
-        Отправка запроса через AI Router
-        """
+            max_tokens: int = 1000, temperature: float = 0.7) -> str:
+        logger.info(f"AI Router request: task_type={task_type}, model={model_preference}")
         try:
+            # Validate parameters before processing
+            self._validate_parameters(temperature, max_tokens, task_type, model_preference)
+            
+            # Check if AI Router LLM is initialized
+            if not self.ai_router_llm:
+                self.ai_router_llm = AIRouterLLM()
+            
             # Используем наш Python-based AI Router
-            # model_preference и task_type пока игнорируются, т.к. роутер сам выбирает лучшую модель
-            response = self.ai_router_llm.call(
-                prompt=message,
+            response = self.ai_router_llm.generate(
+                prompts=[message],  # Convert string to list of strings
                 temperature=temperature,
                 max_tokens=max_tokens
             )
+            logger.info("AI Router request completed successfully")
             return f"🤖 AI Router: {response}"
             
         except Exception as e:
+            logger.error(f"AI Router request failed: {str(e)}", exc_info=True)
             return f"❌ Ошибка вызова AI Router: {str(e)}"
 
+    def __del__(self):
+        """Cleanup resources when tool is destroyed"""
+        if hasattr(self, 'ai_router_llm') and self.ai_router_llm:
+            self.cleanup()
+
+    def cleanup(self):
+        """Explicitly close and cleanup resources"""
+        if hasattr(self, 'ai_router_llm') and self.ai_router_llm:
+            del self.ai_router_llm
+            self.ai_router_llm = None
 
 class GopiAIModelSelectorTool:
     """Умный выбор модели для задачи"""
@@ -116,6 +143,9 @@ __all__ = [
 
 
 if __name__ == "__main__":
+    # Настройка логирования для тестов
+    logging.basicConfig(level=logging.INFO)
+    
     # Тест инструментов
     print("🧪 Тестирование GopiAI AI Router Tools...")
     
