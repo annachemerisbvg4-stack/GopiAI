@@ -12,6 +12,7 @@ from gopiai.core.logging import get_logger
 logger = get_logger().logger
 import os
 import re
+import requests
 import time
 from typing import Any, Dict, List, Tuple, Optional, Callable, TypeVar
 
@@ -336,3 +337,55 @@ def retry(max_attempts: int = 3, delay: float = 1.0, exceptions: Tuple = (Except
                     time.sleep(delay)
         return wrapper
     return decorator
+
+# =====================================================================
+# RAG (Retrieval-Augmented Generation) utility functions
+# =====================================================================
+
+def get_rag_context(query: str, max_results: int = 3) -> str:
+    """Retrieve RAG context from the local RAG server.
+    
+    This function attempts to connect to the local RAG server at
+    http://127.0.0.1:5051/api/search and retrieve context items
+    relevant to the provided query.
+    
+    Args:
+        query: The search query string
+        max_results: Maximum number of context items to retrieve (default: 3)
+        
+    Returns:
+        A string containing the retrieved context items, separated by newlines.
+        Returns an empty string if the RAG server is unavailable or an error occurs.
+        
+    Example:
+        >>> context = get_rag_context("How to use agents?")
+        >>> print(context)
+        "Agent documentation: Agents are autonomous..."
+    """
+    try:
+        # Make request to local RAG server
+        response = requests.post(
+            "http://127.0.0.1:5051/api/search",
+            json={"query": query, "max_results": max_results},
+            timeout=4
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            context_items = data.get("context", [])
+            
+            # Handle both list and string responses
+            if isinstance(context_items, list):
+                return "\n".join(context_items)
+            else:
+                return str(context_items)
+        else:
+            logger.warning(f"RAG server returned status {response.status_code}")
+            return ""
+            
+    except requests.exceptions.RequestException as e:
+        logger.debug(f"RAG server unavailable: {e}")
+        return ""
+    except Exception as e:
+        logger.error(f"Unexpected error in get_rag_context: {e}")
+        return ""

@@ -19,7 +19,7 @@ sys.path.append(str(current_dir / 'tools'))  # tools directory
 
 # Загружаем переменные окружения
 from dotenv import load_dotenv
-env_path = current_dir.parent / '.env'
+env_path = current_dir / '.env'  # Исправляем путь - .env файл в текущей папке
 load_dotenv(env_path, override=True)
 
 # Импорт CrewAI
@@ -54,7 +54,7 @@ def check_environment():
     
     # Проверяем ключи API
     api_keys = {
-        'GOOGLE_API_KEY': {'prefix': 'AIza', 'name': 'Google Gemini'},
+        'GEMINI_API_KEY': {'prefix': 'AIza', 'name': 'Google Gemini'},
     }
     
     available_providers = []

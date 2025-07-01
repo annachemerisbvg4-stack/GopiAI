@@ -20,6 +20,52 @@ from .crewai_client import CrewAIClient
 # Модуль управления контекстом чата
 from .chat_context import ChatContext
 
+# Импортируем функцию для получения RAG контекста
+# Прямая реализация функции вместо импорта для избежания проблем с зависимостями
+import requests
+
+def get_rag_context(query: str, max_results: int = 3) -> str:
+    """Retrieve RAG context from the local RAG server.
+    
+    Args:
+        query: The search query string
+        max_results: Maximum number of context items to retrieve (default: 3)
+        
+    Returns:
+        A string containing the retrieved context items, separated by newlines.
+        Returns an empty string if the RAG server is unavailable or an error occurs.
+    """
+    try:
+        # Make request to local RAG server
+        response = requests.post(
+            "http://127.0.0.1:5051/api/search",
+            json={"query": query, "max_results": max_results},
+            timeout=4
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            context_items = data.get("context", [])
+            
+            # Handle both list and string responses
+            if isinstance(context_items, list):
+                return "\n".join(context_items)
+            else:
+                return str(context_items)
+        else:
+            logger.warning(f"RAG server returned status {response.status_code}")
+            return ""
+            
+    except requests.exceptions.RequestException as e:
+        logger.debug(f"RAG server unavailable: {e}")
+        return ""
+    except Exception as e:
+        logger.error(f"Unexpected error in get_rag_context: {e}")
+        return ""
+
+RAG_AVAILABLE = True  # Функция всегда доступна, но может возвращать пустой результат
+logger.info("✅ RAG context function defined directly")
+
 
 
 
@@ -301,13 +347,41 @@ class ChatWidget(QWidget):
                 
                 # ИСПРАВЛЕНИЕ: Обернуть весь body функции в try/except
                 try:
-                    # Получаем контекст для передачи в API
-                    context_string = self.chat_context.get_context_string()
-                    # Формируем запрос с контекстом, если он есть
-                    if context_string:
-                        request_with_context = f"Контекст предыдущих сообщений:\n{context_string}\n\nТекущий запрос: {text}"
+                    # Получаем RAG контекст
+                    rag_context = ""
+                    if RAG_AVAILABLE:
+                        try:
+                            rag_context = get_rag_context(text, max_results=5)
+                            if rag_context:
+                                logger.info(f"📚 Получен RAG контекст ({len(rag_context)} символов)")
+                            else:
+                                logger.info("📚 RAG контекст пуст")
+                        except Exception as rag_e:
+                            logger.warning(f"⚠️ Ошибка получения RAG контекста: {rag_e}")
+                            rag_context = ""
+                    
+                    # Получаем контекст чата для передачи в API
+                    chat_context_string = self.chat_context.get_context_string()
+                    
+                    # Формируем финальный промпт согласно требованию
+                    system_preamble = "Вы - интеллектуальный ассистент GopiAI. Отвечайте на вопросы пользователей максимально полно и точно."
+                    
+                    # Строим финальный промпт ТОЧНО по схеме из требования:
+                    # system_preamble + "\n\n" + ("Relevant context:\n" + context + "\n\n" if context else "") + "User:\n" + user_message
+                    request_with_context = system_preamble
+                    
+                    # Добавляем RAG контекст, если есть (согласно точной схеме)
+                    if rag_context:
+                        request_with_context += "\n\n" + "Relevant context:\n" + rag_context + "\n\n"
                     else:
-                        request_with_context = text
+                        request_with_context += "\n\n"
+                    
+                    # Добавляем текущий запрос пользователя (User: format из требования)
+                    request_with_context += "User:\n" + text
+                    
+                    # Добавляем контекст чата как дополнительную информацию, если есть
+                    if chat_context_string:
+                        request_with_context += f"\n\nПредыдущие сообщения:\n{chat_context_string}"
                     
                     # Используем CrewAI API клиент с timeout параметром
                     process_result = self.crew_ai_client.process_request(request_with_context, timeout=120)

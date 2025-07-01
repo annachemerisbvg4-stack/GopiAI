@@ -193,14 +193,19 @@ def process_request():
         try:
             # Анализируем запрос
             analysis = smart_delegator.analyze_request(message)
+            print(f"📊 Анализ запроса: сложность={analysis.get('complexity', 0)}, тип={analysis.get('type', 'unknown')}, CrewAI={analysis.get('requires_crewai', False)}")
             
             # Обрабатываем запрос через стандартный метод,
             # который автоматически выберет способ обработки
+            # Smart Delegator уже интегрирует RAG контекст внутри себя
             response = smart_delegator.process_request(message)
+            
+            print(f"✅ Ответ получен, длина: {len(response)} символов")
                 
             return jsonify({
                 "response": response,
-                "processed_with_crewai": analysis.get("requires_crewai", False)
+                "processed_with_crewai": analysis.get("requires_crewai", False),
+                "analysis": analysis  # Добавляем детали анализа для отладки
             })
         except Exception as inner_e:
             # В случае любой ошибки возвращаем fallback ответ

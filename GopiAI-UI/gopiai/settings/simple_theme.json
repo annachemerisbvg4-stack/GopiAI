@@ -1,15 +1,15 @@
 {
-  "main_color": "#333333",
-  "header_color": "#8e004a",
-  "control_color": "#ffb1c8",
-  "accent_color": "#aad600",
-  "titlebar_background": "#8e004a",
-  "button_color": "#70e000",
-  "button_hover_color": "#245100",
-  "button_active_color": "#650033",
-  "text_color": "#e7e1e1",
-  "border_color": "#9a8e90",
-  "titlebar_text": "#ffd9e2",
-  "name": "Tropical Bouquet",
-  "variant": "dark"
+  "main_color": "#ffffff",
+  "header_color": "#b9f47d",
+  "control_color": "#3b6a00",
+  "accent_color": "#006c53",
+  "titlebar_background": "#b9f47d",
+  "button_color": "#4f6538",
+  "button_hover_color": "#9ed764",
+  "button_active_color": "#3b6a00",
+  "text_color": "#1c1b1b",
+  "border_color": "#767870",
+  "titlebar_text": "#0e2000",
+  "name": "Emerald Garden",
+  "variant": "light"
 }
