@@ -6,6 +6,7 @@
 - Индексирования сообщений с использованием SQLite
 - Поиска по истории чатов
 - Интеграции с Llama Index для семантического поиска
+- Мгновенного векторного индексирования с использованием FAISS
 """
 
 import datetime
@@ -15,6 +16,16 @@ logger = get_logger().logger
 import os
 import sqlite3
 from typing import Dict, List, Optional
+import asyncio
+import pickle
+try:
+    import faiss
+    import numpy as np
+    VECTORS_AVAILABLE = True
+except ImportError:
+    VECTORS_AVAILABLE = False
+    faiss = None
+    np = None
 
 # Настройка логирования
 logger = get_logger().logger
@@ -24,7 +35,8 @@ class ChatHistoryIndexer:
     Класс для индексирования и поиска в истории чатов.
     
     Использует SQLite для хранения метаданных и индекса,
-    а также поддерживает экспорт в различные форматы.
+    FAISS для векторного поиска, а также поддерживает 
+    экспорт в различные форматы и мгновенное индексирование.
     """
     
     def __init__(self, base_dir: str = None):
@@ -52,6 +64,15 @@ class ChatHistoryIndexer:
         # Путь к директории для хранения форматированных TXT файлов
         self.txt_dir = os.path.join(self.base_dir, "txt")
         os.makedirs(self.txt_dir, exist_ok=True)
+        
+        # Инициализация векторного индекса
+        self.vectors_available = VECTORS_AVAILABLE
+        self.index = None
+        self.vector_ids = []
+        self.embeddings_path = os.path.join(self.base_dir, "embeddings.pkl")
+        
+        if self.vectors_available:
+            self._init_vector_index()
         
         logger.info(f"Инициализирован индексатор истории чатов с базой данных: {self.db_path}")
         
@@ -109,6 +130,92 @@ class ChatHistoryIndexer:
         except sqlite3.Error as e:
             logger.error(f"Ошибка инициализации базы данных: {e}")
             raise
+
+    
+    def _init_vector_index(self):
+        """
+        Инициализирует векторный индекс FAISS.
+        """
+        try:
+            if os.path.exists(self.embeddings_path):
+                # Загружаем существующий индекс
+                with open(self.embeddings_path, 'rb') as f:
+                    data = pickle.load(f)
+                    self.index = data.get('index')
+                    self.vector_ids = data.get('vector_ids', [])
+                logger.info(f"Загружен векторный индекс с {len(self.vector_ids)} векторами")
+            else:
+                # Создаем новый индекс
+                # Используем размерность 384 (стандартная для sentence-transformers)
+                self.index = faiss.IndexFlatIP(384)  # Inner Product для косинусного сходства
+                self.vector_ids = []
+                logger.info("Создан новый векторный индекс")
+        except Exception as e:
+            logger.error(f"Ошибка при инициализации векторного индекса: {e}")
+            self.vectors_available = False
+            self.index = None
+            self.vector_ids = []
+    
+    def _save_embeddings(self):
+        """
+        Сохраняет векторный индекс и метаданные на диск.
+        """
+        if not self.vectors_available or self.index is None:
+            return
+            
+        try:
+            data = {
+                'index': self.index,
+                'vector_ids': self.vector_ids
+            }
+            with open(self.embeddings_path, 'wb') as f:
+                pickle.dump(data, f)
+            logger.debug(f"Сохранен векторный индекс с {len(self.vector_ids)} векторами")
+        except Exception as e:
+            logger.error(f"Ошибка при сохранении векторного индекса: {e}")
+    
+    async def _save_embeddings_async(self):
+        """
+        Асинхронно сохраняет векторный индекс.
+        """
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self._save_embeddings)
+    
+    def _compute_embedding(self, text: str) -> np.ndarray:
+        """
+        Вычисляет эмбеддинг для текста.
+        
+        Args:
+            text: Текст для векторизации
+            
+        Returns:
+            numpy.ndarray: Вектор эмбеддинга
+        """
+        if not self.vectors_available:
+            return None
+            
+        try:
+            # Здесь должна быть интеграция с вашей моделью эмбеддингов
+            # Для примера используем простой подход с хешированием
+            # В реальном проекте замените на sentence-transformers или другую модель
+            
+            # Временная заглушка - создаем фиктивный вектор
+            # TODO: Заменить на реальную модель эмбеддингов
+            import hashlib
+            hash_obj = hashlib.md5(text.encode())
+            # Преобразуем хеш в числовой вектор размерности 384
+            hash_bytes = hash_obj.digest()
+            # Дополняем до 384 измерений (384 * 4 байта = 1536 байт)
+            extended_bytes = (hash_bytes * 96)[:1536]  # 384 * 4 = 1536
+            vector = np.frombuffer(extended_bytes, dtype=np.float32).reshape(384)
+            # Нормализуем для косинусного сходства
+            norm = np.linalg.norm(vector)
+            if norm > 0:
+                vector = vector / norm
+            return vector
+        except Exception as e:
+            logger.error(f"Ошибка при вычислении эмбеддинга: {e}")
+            return None
     
     def add_session(self, session_id: str, metadata: Dict = None) -> bool:
         """
@@ -228,6 +335,33 @@ class ChatHistoryIndexer:
             conn.commit()
             conn.close()
             logger.info(f"Добавлено сообщение в сессию {session_id}")
+            
+            # Мгновенное векторное индексирование
+            if self.vectors_available and self.index is not None:
+                try:
+                    # Вычисляем эмбеддинг для сообщения
+                    embedding = self._compute_embedding(message)
+                    
+                    if embedding is not None:
+                        # Добавляем в индекс
+                        embedding_reshaped = embedding.reshape(1, -1)
+                        self.index.add(embedding_reshaped)
+                        
+                        # Записываем ID в список
+                        self.vector_ids.append(message_id)
+                        
+                        # Сохраняем эмбеддинги асинхронно (опционально)
+                        try:
+                            # Попробуем асинхронное сохранение
+                            asyncio.create_task(self._save_embeddings_async())
+                        except RuntimeError:
+                            # Если нет event loop, сохраняем синхронно
+                            self._save_embeddings()
+                        
+                        logger.debug(f"Добавлен вектор для сообщения {message_id}")
+                except Exception as e:
+                    logger.error(f"Ошибка при векторном индексировании сообщения {message_id}: {e}")
+            
             return True
             
         except sqlite3.Error as e:

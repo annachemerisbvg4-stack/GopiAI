@@ -48,6 +48,62 @@
       "role": "assistant",
       "content": "Для написания кода я всегда обращаюсь за помощью к Claude 4 и называю его \"моя золотая рыбка\", потому что он исполняет все мои желания, будто волшебная рыбка из сказки 💙🐠💛 ",
       "timestamp": "2025-07-02T05:54:20.156684"
+    },
+    {
+      "id": "5eb49301-0df3-4439-9ddb-20625b0541e2",
+      "session_id": "5fce4a8e-ebac-4d83-9c53-79a101359c05",
+      "role": "user",
+      "content": "How does txtai work in GopiAI?",
+      "timestamp": "2025-07-02T07:58:01.843727"
+    },
+    {
+      "id": "9754afad-2bbd-4f41-9a13-c4eaee3f0831",
+      "session_id": "5fce4a8e-ebac-4d83-9c53-79a101359c05",
+      "role": "assistant",
+      "content": "txtai provides semantic search capabilities for chat history",
+      "timestamp": "2025-07-02T07:58:01.845729"
+    },
+    {
+      "id": "687a4972-6fdd-4a6a-a5a7-e160ab28d01a",
+      "session_id": "5fce4a8e-ebac-4d83-9c53-79a101359c05",
+      "role": "user",
+      "content": "What about web interface integration?",
+      "timestamp": "2025-07-02T07:58:01.847728"
+    },
+    {
+      "id": "c7b8a41d-d5ad-48da-84cf-a5c2b53db35e",
+      "session_id": "5fce4a8e-ebac-4d83-9c53-79a101359c05",
+      "role": "assistant",
+      "content": "Integration happens through WebViewChatBridge and JavaScript",
+      "timestamp": "2025-07-02T07:58:01.848730"
+    },
+    {
+      "id": "73ad0ad5-0481-4b54-ae25-93b419bacaca",
+      "session_id": "5fce4a8e-ebac-4d83-9c53-79a101359c05",
+      "role": "user",
+      "content": "Can I search through old conversations?",
+      "timestamp": "2025-07-02T07:58:01.850729"
+    },
+    {
+      "id": "c8dc42c4-b627-4ae6-b40e-3aea4af0dd68",
+      "session_id": "5fce4a8e-ebac-4d83-9c53-79a101359c05",
+      "role": "assistant",
+      "content": "Yes, the memory system allows searching through all stored conversations",
+      "timestamp": "2025-07-02T07:58:01.852730"
+    },
+    {
+      "id": "db1e5559-6e0d-4a15-b705-e19837f528ab",
+      "session_id": "5fce4a8e-ebac-4d83-9c53-79a101359c05",
+      "role": "user",
+      "content": "Я называю Claude 4 моей золотой рыбкой",
+      "timestamp": "2025-07-02T07:58:01.853728"
+    },
+    {
+      "id": "7494058b-03c8-467c-9dec-15b46c11ac13",
+      "session_id": "5fce4a8e-ebac-4d83-9c53-79a101359c05",
+      "role": "assistant",
+      "content": "Это очень милое прозвище! Рады быть вашей золотой рыбкой.",
+      "timestamp": "2025-07-02T07:58:01.855729"
     }
   ],
   "sessions": {
@@ -62,6 +118,12 @@
       "title": "рыбка ",
       "created_at": "2025-07-02T05:54:20.145683",
       "message_count": 1
+    },
+    "5fce4a8e-ebac-4d83-9c53-79a101359c05": {
+      "id": "5fce4a8e-ebac-4d83-9c53-79a101359c05",
+      "title": "CLI Test Session",
+      "created_at": "2025-07-02T07:58:01.841730",
+      "message_count": 8
     }
   }
 }

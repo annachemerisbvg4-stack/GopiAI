@@ -24,8 +24,8 @@ from .chat_context import ChatContext
 # Прямая реализация функции вместо импорта для избежания проблем с зависимостями
 import requests
 
-def get_rag_context(query: str, max_results: int = 3) -> str:
-    """Retrieve RAG context from the local RAG server.
+def get_embedded_memory_context(query: str, max_results: int = 3) -> str:
+    """Retrieve context from embedded memory system (SimpleMemoryManager).
     
     Args:
         query: The search query string
@@ -33,34 +33,41 @@ def get_rag_context(query: str, max_results: int = 3) -> str:
         
     Returns:
         A string containing the retrieved context items, separated by newlines.
-        Returns an empty string if the RAG server is unavailable or an error occurs.
+        Returns an empty string if memory system is unavailable or an error occurs.
     """
     try:
-        # Make request to local RAG server
-        response = requests.post(
-            "http://127.0.0.1:5051/api/search",
-            json={"query": query, "max_results": max_results},
-            timeout=4
-        )
+        from rag_memory_system import get_memory_manager
         
-        if response.status_code == 200:
-            data = response.json()
-            context_items = data.get("context", [])
+        # Get memory manager
+        manager = get_memory_manager()
+        
+        # Search for relevant messages
+        results = manager.search_memory(query, limit=max_results)
+        
+        if results:
+            # Format results into context string
+            context_items = []
+            for result in results:
+                content = result.get('content', '')
+                # Include role information for better context
+                role = result.get('role', 'unknown')
+                if role == 'user':
+                    context_items.append(f"Пользователь ранее спрашивал: {content}")
+                elif role == 'assistant':
+                    context_items.append(f"Ассистент ранее отвечал: {content}")
+                else:
+                    context_items.append(content)
             
-            # Handle both list and string responses
-            if isinstance(context_items, list):
-                return "\n".join(context_items)
-            else:
-                return str(context_items)
+            return "\n\n".join(context_items)
         else:
-            logger.warning(f"RAG server returned status {response.status_code}")
+            logger.debug(f"No memory results found for query: {query}")
             return ""
             
-    except requests.exceptions.RequestException as e:
-        logger.debug(f"RAG server unavailable: {e}")
+    except ImportError as e:
+        logger.warning(f"Embedded memory system not available: {e}")
         return ""
     except Exception as e:
-        logger.error(f"Unexpected error in get_rag_context: {e}")
+        logger.error(f"Unexpected error in get_embedded_memory_context: {e}")
         return ""
 
 RAG_AVAILABLE = True  # Функция всегда доступна, но может возвращать пустой результат
@@ -284,18 +291,23 @@ class ChatWidget(QWidget):
                 "GopiAI-CrewAI/run_crewai_api_server.bat"
             ))
 
-        # Check RAG service
+        # Check embedded memory system (SimpleMemoryManager)
         try:
-            response = requests.get("http://127.0.0.1:5051/api/health", timeout=2)
-            self.rag_available = response.status_code == 200
-        except requests.RequestException:
+            from rag_memory_system import get_memory_manager
+            manager = get_memory_manager()
+            stats = manager.get_stats()
+            self.rag_available = stats.get('txtai_available', False)
+            
+            if self.rag_available:
+                logger.info(f"✅ Embedded memory system available. Stats: {stats}")
+            else:
+                logger.warning("⚠️ Embedded memory system initialized but txtai not available.")
+                
+        except Exception as e:
+            logger.error(f"❌ Error initializing embedded memory system: {e}")
             self.rag_available = False
-
-        if not self.rag_available:
-            logger.warning("⚠️ RAG service is unavailable.")
-            self.history.append("⚠️ Память (RAG) недоступна, ответы будут без расширенного контекста.")
-        else:
-            logger.info("✅ RAG service is available.")
+            
+        # No warning message for embedded system - it should always work
 
     # Drag & Drop
     def dragEnterEvent(self, event: QDragEnterEvent):
@@ -347,17 +359,17 @@ class ChatWidget(QWidget):
                 
                 # ИСПРАВЛЕНИЕ: Обернуть весь body функции в try/except
                 try:
-                    # Получаем RAG контекст
+                    # Получаем контекст из embedded памяти
                     rag_context = ""
                     if RAG_AVAILABLE:
                         try:
-                            rag_context = get_rag_context(text, max_results=5)
+                            rag_context = get_embedded_memory_context(text, max_results=5)
                             if rag_context:
-                                logger.info(f"📚 Получен RAG контекст ({len(rag_context)} символов)")
+                                logger.info(f"📚 Получен контекст из embedded памяти ({len(rag_context)} символов)")
                             else:
-                                logger.info("📚 RAG контекст пуст")
+                                logger.info("📚 Контекст из embedded памяти пуст")
                         except Exception as rag_e:
-                            logger.warning(f"⚠️ Ошибка получения RAG контекста: {rag_e}")
+                            logger.warning(f"⚠️ Ошибка получения контекста из embedded памяти: {rag_e}")
                             rag_context = ""
                     
                     # Получаем контекст чата для передачи в API
@@ -417,6 +429,15 @@ class ChatWidget(QWidget):
                     # Добавляем ответ ассистента в контекст (только если нет ошибки)
                     if not error_occurred:
                         self.chat_context.add_assistant_message(response)
+                        
+                        # Сохраняем диалог в embedded памяти
+                        try:
+                            from rag_memory_system import get_memory_manager
+                            manager = get_memory_manager()
+                            manager.save_chat_exchange(text, response)
+                            logger.info("💾 Диалог сохранен в embedded память")
+                        except Exception as memory_e:
+                            logger.warning(f"⚠️ Ошибка сохранения в embedded память: {memory_e}")
                         
                 except Exception as e:
                     logger.error(f"❌ Полная ошибка в background thread: {e}", exc_info=True)
