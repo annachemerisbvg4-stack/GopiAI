@@ -1,0 +1,67 @@
+{
+  "chats": [
+    {
+      "id": "06af43e6-cba7-4edc-8831-b0314507fdf2",
+      "session_id": "532a0e4a-63c2-4f4a-ae24-9c00ebce7d89",
+      "role": "user",
+      "content": "How does txtai work in GopiAI?",
+      "timestamp": "2025-07-02T04:45:48.957331"
+    },
+    {
+      "id": "bd5fb6ea-a39b-47e3-801e-d47af52b2642",
+      "session_id": "532a0e4a-63c2-4f4a-ae24-9c00ebce7d89",
+      "role": "assistant",
+      "content": "txtai provides semantic search capabilities for chat history",
+      "timestamp": "2025-07-02T04:45:49.011341"
+    },
+    {
+      "id": "ea325da6-abe9-49c0-bd09-5794f294f167",
+      "session_id": "532a0e4a-63c2-4f4a-ae24-9c00ebce7d89",
+      "role": "user",
+      "content": "What about web interface integration?",
+      "timestamp": "2025-07-02T04:45:49.022863"
+    },
+    {
+      "id": "c3c3c4b5-af18-4ca5-8677-c25679daddcf",
+      "session_id": "532a0e4a-63c2-4f4a-ae24-9c00ebce7d89",
+      "role": "assistant",
+      "content": "Integration happens through WebViewChatBridge and JavaScript",
+      "timestamp": "2025-07-02T04:45:49.037865"
+    },
+    {
+      "id": "82c2e8c4-c16d-4134-9329-f87c4b669295",
+      "session_id": "532a0e4a-63c2-4f4a-ae24-9c00ebce7d89",
+      "role": "user",
+      "content": "Can I search through old conversations?",
+      "timestamp": "2025-07-02T04:45:49.052862"
+    },
+    {
+      "id": "37cee0aa-0ede-4bc1-acba-955cc8caa206",
+      "session_id": "532a0e4a-63c2-4f4a-ae24-9c00ebce7d89",
+      "role": "assistant",
+      "content": "Yes, the memory system allows searching through all stored conversations",
+      "timestamp": "2025-07-02T04:45:49.064863"
+    },
+    {
+      "id": "a37f5acc-d249-40c4-85d0-6e517875ecd8",
+      "session_id": "0e366599-00e4-4bcc-b1c5-64f539c81e78",
+      "role": "assistant",
+      "content": "Для написания кода я всегда обращаюсь за помощью к Claude 4 и называю его \"моя золотая рыбка\", потому что он исполняет все мои желания, будто волшебная рыбка из сказки 💙🐠💛 ",
+      "timestamp": "2025-07-02T05:54:20.156684"
+    }
+  ],
+  "sessions": {
+    "532a0e4a-63c2-4f4a-ae24-9c00ebce7d89": {
+      "id": "532a0e4a-63c2-4f4a-ae24-9c00ebce7d89",
+      "title": "CLI Test Session",
+      "created_at": "2025-07-02T04:45:48.948328",
+      "message_count": 6
+    },
+    "0e366599-00e4-4bcc-b1c5-64f539c81e78": {
+      "id": "0e366599-00e4-4bcc-b1c5-64f539c81e78",
+      "title": "рыбка ",
+      "created_at": "2025-07-02T05:54:20.145683",
+      "message_count": 1
+    }
+  }
+}

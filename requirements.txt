@@ -1,0 +1,86 @@
+# GOPI_AI Requirements
+# Основные зависимости проекта (без указания версий для избежания конфликтов)
+
+# Core Python packages
+requests
+pyyaml
+python-dotenv
+colorama
+click
+rich
+
+# GUI Framework
+PySide6
+PyQt6
+
+# AI & ML Libraries
+openai
+anthropic
+langchain
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+langchain-ollama
+sentence-transformers
+transformers
+torch
+tiktoken
+
+# Memory & Search
+txtai
+faiss-cpu
+qdrant-client
+
+# Data Processing
+pandas
+numpy
+scipy
+scikit-learn
+
+# Web & API
+flask
+fastapi
+uvicorn
+httpx
+aiohttp
+starlette
+
+# Development & Testing
+pytest
+pytest-qt
+jupyter
+jupyterlab
+
+# Audio Processing
+soundfile
+sounddevice
+pydub
+noisereduce
+openai-whisper
+
+# Document Processing
+python-docx
+pypdf
+reportlab
+beautifulsoup4
+lxml
+
+# Browser Automation
+selenium
+playwright
+webdriver-manager
+
+# Utilities
+tqdm
+psutil
+pathlib
+python-dateutil
+packaging
+
+# Local Development Packages (editable installs)
+# These are installed in development mode from local directories:
+# -e ./GopiAI-App
+# -e ./GopiAI-Assets  
+# -e ./GopiAI-Core
+# -e ./GopiAI-Extensions
+# -e ./GopiAI-Widgets

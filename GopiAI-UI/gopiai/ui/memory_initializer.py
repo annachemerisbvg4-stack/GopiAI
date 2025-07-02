@@ -23,20 +23,52 @@ def init_memory_system(silent: bool = True) -> bool:
     """
     
     try:
-        # Инициализируем новый txtai менеджер
-        from rag_memory_system import get_memory_manager
+        # Проверяем доступность txtai напрямую
+        try:
+            import txtai
+            from txtai.embeddings import Embeddings
+            
+            # Тестируем создание простого embeddings объекта
+            embeddings = Embeddings()
+            
+            # Простой тест функциональности
+            test_data = ["Тест txtai инициализации"]
+            embeddings.index(test_data)
+            
+            if not silent:
+                print("✅ txtai инициализирован")
+                print(f"📊 Версия txtai: {getattr(txtai, '__version__', 'неизвестно')}")
+            
+            logger.info("✅ txtai инициализирован")
+            return True
+            
+        except ImportError as import_err:
+            # Критическая ошибка - нет txtai
+            logger.debug(f"Memory init silent mode, success=False - missing txtai: {import_err}")
+            if not silent:
+                print(f"❌ Критическая ошибка: отсутствует txtai - {import_err}")
+                print("💡 Установите: pip install txtai sentence-transformers")
+            return False
         
-        manager = get_memory_manager()
+        # Попытка инициализации rag_memory_system (опционально)
+        try:
+            from rag_memory_system import get_memory_manager
+            manager = get_memory_manager()
+            
+            if not silent:
+                stats = manager.get_stats()
+                print(f"✅ Система памяти rag_memory_system инициализирована")
+                print(f"📊 Статистика: {stats}")
+                
+        except ImportError:
+            if not silent:
+                print("⚠️ rag_memory_system недоступен, используется базовый txtai")
         
-        if not silent:
-            stats = manager.get_stats()
-            print(f"✅ Система памяти инициализирована")
-            print(f"📊 Статистика: {stats}")
-        
-        logger.info("✅ TxtAI память инициализирована")
         return True
         
     except Exception as e:
+        # Гарантируем возврат False при любой критической ошибке
+        logger.debug(f"Memory init silent mode, success=False - error: {e}")
         logger.error(f"❌ Ошибка инициализации памяти: {e}")
         if not silent:
             print(f"❌ Ошибка инициализации памяти: {e}")

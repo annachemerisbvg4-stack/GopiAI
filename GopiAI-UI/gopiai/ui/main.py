@@ -84,7 +84,14 @@ try:
     
     # Инициализация системы памяти GopiAI
     from gopiai.ui.memory_initializer import init_memory_system
-    init_memory_system(silent=True)
+    try:
+        init_ok = init_memory_system(silent=False)
+        print(f"[MEMORY] Initialisation status: {init_ok}")
+        if not init_ok:
+            print("[WARNING] Инициализация памяти неудачна, приложение продолжит работу без полной функциональности памяти")
+    except Exception as e:
+        print(f"[ERROR] Ошибка при инициализации памяти: {e}")
+        print("[WARNING] Приложение продолжит работу без системы памяти")
     
     MODULES_LOADED = True
 

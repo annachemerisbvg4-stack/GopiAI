@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 """
-🧠 RAG Server for GopiAI
+🧠 RAG Server for GopiAI (DEPRECATED)
 Retrieval-Augmented Generation service for context enrichment
+
+⚠️  DEPRECATION WARNING:
+⚠️  This standalone RAG server is deprecated as of GopiAI v2.0.
+⚠️  The memory system is now embedded directly into the main application.
+⚠️  
+⚠️  Use this server only for backward compatibility or special cases.
+⚠️  For normal operation, the embedded memory system is automatically
+⚠️  activated when you start the main GopiAI application.
 
 Provides endpoints for:
 - Health checking

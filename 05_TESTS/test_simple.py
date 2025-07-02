@@ -1,15 +1,31 @@
+#!/usr/bin/env python3
+import sys
+import os
+
+# Добавляем пути для импорта модулей GopiAI
+sys.path.insert(0, os.path.join(os.getcwd(), 'rag_memory_system'))
+
+print("Тест SimpleMemoryManager")
+print("=" * 40)
+
 try:
-    import ast
+    from simple_memory_manager import SimpleMemoryManager, get_memory_manager
     
-    with open(r"C:\Users\crazy\GOPI_AI_MODULES\GopiAI-UI\gopiai\ui\dialogs\settings_dialog.py", "r", encoding="utf-8") as f:
-        content = f.read()
+    print("Создаем SimpleMemoryManager напрямую:")
+    manager = SimpleMemoryManager()
     
-    ast.parse(content)
-    print("✅ Синтаксис корректен!")
+    print("Получаем статистику:")
+    stats = manager.get_stats()
+    print(f"Статистика: {stats}")
     
-except SyntaxError as e:
-    print(f"❌ Синтаксическая ошибка в строке {e.lineno}: {e.msg}")
-    if e.text:
-        print(f"   Проблемная строка: {e.text.strip()}")
+    print("\nТестируем get_memory_manager():")
+    manager2 = get_memory_manager()
+    stats2 = manager2.get_stats()
+    print(f"Статистика через get_memory_manager: {stats2}")
+    
+    print("\nВывод: SimpleMemoryManager работает корректно!")
+    
 except Exception as e:
-    print(f"❌ Ошибка: {e}")
+    print(f"Ошибка: {e}")
+    import traceback
+    traceback.print_exc()

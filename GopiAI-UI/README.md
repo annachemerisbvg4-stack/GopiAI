@@ -23,8 +23,19 @@ from gopiai.ui.components import TextEditorWidget
 from gopiai.ui.utils import UniversalIconManager
 ```
 
-## Установка для разработки
+## Зависимости
+
+Основные зависимости:
+- PySide6 - графический интерфейс
+- txtai - поиск и анализ текста
+- sentence-transformers - векторизация текста
+
+## Установка
 
 ```bash
+# Установка зависимостей
+pip install txtai sentence-transformers
+
+# Установка для разработки
 pip install -e .
 ```
