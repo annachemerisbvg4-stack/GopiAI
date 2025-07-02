@@ -602,12 +602,6 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                     self.icon_manager.get_icon("settings")
                 print("[OK] Сигнал openSettingsRequested подключен")
 
-            if hasattr(menu_bar, "changeThemeRequested"):
-                menu_bar.changeThemeRequested.connect(self.on_change_theme)
-                if self.icon_manager is not None:
-                    self.icon_manager.get_icon("theme")
-                print("[OK] Сигнал changeThemeRequested подключен")
-
             # Подключаем остальные сигналы файлового меню
             if hasattr(menu_bar, "newFileRequested"):
                 menu_bar.newFileRequested.connect(self._on_new_file)

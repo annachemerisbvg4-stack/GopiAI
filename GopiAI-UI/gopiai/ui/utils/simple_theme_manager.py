@@ -671,13 +671,13 @@ def save_theme(colors):
             })
             theme_data["_original_colors"] = [
                 {"index": 0, "name": "primary", "hex": main_color.name(),
-                 "rgb": [main_color.red(), main_color.green(), main_color.blue()]},
+                "rgb": [main_color.red(), main_color.green(), main_color.blue()]},
                 {"index": 1, "name": "background", "hex": bg_color.name(),
-                 "rgb": [bg_color.red(), bg_color.green(), bg_color.blue()]},
+                "rgb": [bg_color.red(), bg_color.green(), bg_color.blue()]},
                 {"index": 2, "name": "header", "hex": header_color.name(),
-                 "rgb": [header_color.red(), header_color.green(), header_color.blue()]},
+                "rgb": [header_color.red(), header_color.green(), header_color.blue()]},
                 {"index": 3, "name": "button", "hex": button_color.name(),
-                 "rgb": [button_color.red(), button_color.green(), button_color.blue()]}
+                "rgb": [button_color.red(), button_color.green(), button_color.blue()]}
             ]
         with open(THEME_FILE, 'w', encoding='utf-8') as f:
             json.dump(theme_data, f, indent=2)
@@ -760,7 +760,44 @@ def apply_theme(app):
             color: {button_active_text_color.name()};
             background-color: {theme.get("button_active_color", "#0078D7")};
         }}
-        
+
+                /* Стили для titlebar */
+        #titlebarWidget, QWidget[objectName="titlebarWidget"] {{
+            background-color: {theme.get("titlebar_background", header_color.name())};
+            color: {theme.get("titlebar_text", text_color.name())};
+            border-bottom: 1px solid {border_color.name()};
+        }}
+        #windowTitle, QLabel[objectName="windowTitle"] {{
+            color: {theme.get("titlebar_text", text_color.name())};
+            background-color: transparent;
+        }}
+        #minimizeButton, #maximizeButton, #restoreButton, #closeButton,
+        QPushButton[objectName="minimizeButton"], QPushButton[objectName="maximizeButton"],
+        QPushButton[objectName="restoreButton"], QPushButton[objectName="closeButton"] {{
+            background-color: transparent;
+            color: {theme.get("titlebar_text", text_color.name())};
+            border: none;
+            border-radius: 4px;
+        }}
+        #minimizeButton:hover, #maximizeButton:hover, #restoreButton:hover,
+        QPushButton[objectName="minimizeButton"]:hover, QPushButton[objectName="maximizeButton"]:hover,
+        QPushButton[objectName="restoreButton"]:hover {{
+            background-color: {theme.get("button_hover_color", "#F0F0F0")};
+        }}
+        #closeButton:hover, QPushButton[objectName="closeButton"]:hover {{
+            background-color: #ff6b6b;
+            color: white;
+        }}
+        #minimizeButton:pressed, #maximizeButton:pressed, #restoreButton:pressed,
+        QPushButton[objectName="minimizeButton"]:pressed, QPushButton[objectName="maximizeButton"]:pressed,
+        QPushButton[objectName="restoreButton"]:pressed {{
+            background-color: {theme.get("button_active_color", "#0078D7")};
+        }}
+        #closeButton:pressed, QPushButton[objectName="closeButton"]:pressed {{
+            background-color: #ff5252;
+            color: white;
+        }}
+                
         /* Стили для всех других виджетов */
         QLabel {{
             color: {text_color.name()};

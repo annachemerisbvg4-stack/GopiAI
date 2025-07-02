@@ -1,15 +1,15 @@
 {
-  "main_color": "#ffffff",
-  "header_color": "#b9f47d",
-  "control_color": "#3b6a00",
-  "accent_color": "#006c53",
-  "titlebar_background": "#b9f47d",
-  "button_color": "#4f6538",
-  "button_hover_color": "#9ed764",
-  "button_active_color": "#3b6a00",
-  "text_color": "#1c1b1b",
-  "border_color": "#767870",
-  "titlebar_text": "#0e2000",
-  "name": "Emerald Garden",
-  "variant": "light"
+  "main_color": "#333333",
+  "header_color": "#2f4d40",
+  "control_color": "#adcebe",
+  "accent_color": "#c1c5e3",
+  "titlebar_background": "#2f4d40",
+  "button_color": "#bccac2",
+  "button_hover_color": "#3d4a44",
+  "button_active_color": "#18362a",
+  "text_color": "#e5e2e1",
+  "border_color": "#8e928e",
+  "titlebar_text": "#c8ead9",
+  "name": "Mint Frost",
+  "variant": "dark"
 }
