@@ -15,6 +15,12 @@ import traceback
 import requests
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
+try:
+    from .ai_router_llm import AIRouterLLM
+    from .self_reflection import ReflectionEnabledAIRouter
+except ImportError:
+    AIRouterLLM = None
+    ReflectionEnabledAIRouter = None
 
 import logging
 
@@ -51,18 +57,54 @@ COMPLEXITY_THRESHOLD = 3  # От 0 (простой) до 5 (очень слож�
 ASSISTANT_NAME = "GopiAI"
 RAG_DISABLE_TIMEOUT = 300  # seconds
 
+# Конфигурация CrewAI для оптимизации
+CREWAI_CONFIG = {
+    'max_iterations': 3,  # Ограничиваем количество итераций
+    'max_rpm': 10,  # Ограничиваем количество запросов в минуту
+    'agent_cache_timeout': 600,  # Кэшируем агентов на 10 минут
+    'allow_delegation': True,  # Разрешаем делегирование, но контролируем
+    'verbose': False,  # Отключаем verbose для production
+    'memory_enabled': True  # Включаем память для агентов
+}
+
 class SmartDelegator:
     """Модуль для умного распределения запросов между LLM и CrewAI"""
     
-    def __init__(self):
+    def __init__(self, enable_reflection=True, reflection_config=None):
         """Инициализирует SmartDelegator"""
         self.logger = logging.getLogger(__name__)
+        
+        # Кэш для агентов CrewAI
+        self._agent_cache = {}
+        self._agent_cache_timestamps = {}
+        self._crew_cache = {}
+        self._crew_cache_timestamps = {}
+        
+        # Конфигурация саморефлексии
+        self.enable_reflection = enable_reflection
+        self.reflection_config = reflection_config or {
+            'min_quality_threshold': 8.0,
+            'max_iterations': 3
+        }
+        
         # Инициализируем AI Router
         try:
-            from .ai_router_llm import AIRouterLLM
-            self.ai_router = AIRouterLLM()
-            print("✅ AI Router LLM адаптер загружен")
-            # Активация больше не нужна, т.к. роутер полностью на Python
+            if AIRouterLLM is None or ReflectionEnabledAIRouter is None:
+                raise ImportError("AI Router modules not available")
+            
+            base_ai_router = AIRouterLLM()
+            
+            # Если саморефлексия включена, оборачиваем AI Router
+            if self.enable_reflection:
+                self.ai_router = ReflectionEnabledAIRouter(
+                    ai_router=base_ai_router,
+                    enable_reflection=True,
+                    reflection_config=self.reflection_config
+                )
+                print(f"✅ AI Router с саморефлексией загружен (порог качества: {self.reflection_config['min_quality_threshold']})")
+            else:
+                self.ai_router = base_ai_router
+                print("✅ AI Router LLM адаптер загружен (без саморефлексии)")
                 
         except Exception as e:
             print(f"⚠️ Ошибка при инициализации AI Router LLM: {e}")
@@ -233,12 +275,20 @@ class SmartDelegator:
         if explicit_crewai_request:
             return True
             
-        # Используем CrewAI для сложных запросов (изменено условие)
-        if complexity >= 2: # Было complexity >= 3
+        # Используем CrewAI для сложных запросов (оптимизировано)
+        if complexity >= 3:  # Повышаем порог для избежания излишней обработки
             return True
             
-        # Запросы, требующие специализированных агентов
-        if request_type in ["research", "business"] and complexity >= 2:
+        # Запросы, требующие специализированных агентов (более строгие условия)
+        if request_type in ["research", "business"] and complexity >= 3:
+            return True
+            
+        # Запросы, явно требующие многоэтапной обработки
+        multi_step_indicators = [
+            "поэтапно", "пошагово", "последовательно", "сначала", "затем", 
+            "после этого", "в несколько этапов", "многоэтапный", "комплексный план"
+        ]
+        if any(indicator in message_lower for indicator in multi_step_indicators) and complexity >= 2:
             return True
             
         # По умолчанию - не используем CrewAI
@@ -281,6 +331,29 @@ class SmartDelegator:
             print(f"❌ Ошибка при обработке запроса: {e}")
             traceback.print_exc()
             return f"Произошла ошибка при обработке запроса: {str(e)}"
+    
+    def clear_agent_cache(self):
+        """Очищает кэш агентов"""
+        self._agent_cache.clear()
+        self._agent_cache_timestamps.clear()
+        self._crew_cache.clear()
+        self._crew_cache_timestamps.clear()
+        print("🧹 Кэш агентов CrewAI очищен")
+    
+    def get_cache_stats(self) -> Dict:
+        """Возвращает статистику кэша агентов"""
+        current_time = time.time()
+        active_agents = sum(
+            1 for timestamp in self._agent_cache_timestamps.values()
+            if current_time - timestamp < CREWAI_CONFIG['agent_cache_timeout']
+        )
+        
+        return {
+            'cached_agents': len(self._agent_cache),
+            'active_cached_agents': active_agents,
+            'cache_timeout': CREWAI_CONFIG['agent_cache_timeout'],
+            'total_cache_hits': getattr(self, '_cache_hits', 0)
+        }
     
     def _handle_with_ai_router(self, message: str) -> str:
         """Обрабатывает запрос через AI Router"""
@@ -331,8 +404,34 @@ class SmartDelegator:
             # Возвращаем сообщение об ошибке
             return f"[ОШИБКА] Извините, произошла ошибка при обработке вашего запроса: {str(error)}"
     
+    def _get_cached_agents(self, message_hash: str):
+        """Получает закэшированных агентов для повторного использования"""
+        current_time = time.time()
+        
+        # Проверяем кэш агентов
+        if (message_hash in self._agent_cache and 
+            current_time - self._agent_cache_timestamps.get(message_hash, 0) < CREWAI_CONFIG['agent_cache_timeout']):
+            return self._agent_cache[message_hash]
+            
+        return None
+    
+    def _cache_agents(self, message_hash: str, agents: dict):
+        """Кэширует агентов для повторного использования"""
+        self._agent_cache[message_hash] = agents
+        self._agent_cache_timestamps[message_hash] = time.time()
+        
+        # Очищаем старые записи из кэша
+        current_time = time.time()
+        expired_keys = [
+            key for key, timestamp in self._agent_cache_timestamps.items()
+            if current_time - timestamp > CREWAI_CONFIG['agent_cache_timeout']
+        ]
+        for key in expired_keys:
+            self._agent_cache.pop(key, None)
+            self._agent_cache_timestamps.pop(key, None)
+    
     def _handle_with_crewai(self, message: str, analysis: Dict[str, Any]) -> str:
-        """Обрабатывает запрос через CrewAI"""
+        """Обрабатывает запрос через CrewAI с оптимизацией"""
         if not crewai_available:
             return self._handle_with_ai_router(message)
         
@@ -354,63 +453,91 @@ class SmartDelegator:
             context = self._get_rag_context(message)
             context_info = f"\n\nДополнительный контекст:\n{context}" if context else ""
             
-            # Создаем агентов
-            coordinator = Agent(
-                role="Координатор проекта",
-                goal=f"Координировать работу команды для наилучшего ответа на запрос пользователя",
-                backstory=f"Опытный координатор проектов с навыками управления командой. "
-                         f"Работает в {ASSISTANT_NAME} и следит за выполнением запросов пользователей.",
-                allow_delegation=True,
-                verbose=True,
-                llm=llm
-            )
+            # Создаем хэш для кэширования агентов
+            import hashlib
+            message_hash = hashlib.md5(f"{analysis['type']}_{analysis['complexity']}".encode()).hexdigest()
             
-            researcher = Agent(
-                role="Исследователь",
-                goal=f"Исследовать тему и собрать необходимую информацию для ответа",
-                backstory=f"Опытный исследователь с глубокими аналитическими навыками. "
-                         f"Специализируется на поиске и анализе информации.",
-                allow_delegation=False,
-                verbose=True,
-                llm=llm
-            )
-            
-            writer = Agent(
-                role="Писатель",
-                goal=f"Составить четкий и понятный ответ на основе информации от команды",
-                backstory=f"Талантливый писатель с опытом создания понятных и информативных текстов. "
-                         f"Специализируется на том, чтобы сложную информацию представить доступным языком.",
-                allow_delegation=False,
-                verbose=True,
-                llm=llm
-            )
+            # Проверяем кэш агентов
+            cached_agents = self._get_cached_agents(message_hash)
+            if cached_agents:
+                print("✅ Используем закэшированных агентов CrewAI")
+                coordinator = cached_agents['coordinator']
+                researcher = cached_agents['researcher'] 
+                writer = cached_agents['writer']
+            else:
+                print("🔄 Создаем новых агентов CrewAI")
+                # Создаем агентов с оптимизированной конфигурацией
+                coordinator = Agent(
+                    role="Координатор проекта",
+                    goal=f"Координировать работу команды для наилучшего ответа на запрос пользователя",
+                    backstory=f"Опытный координатор проектов с навыками управления командой. "
+                    f"Работает в {ASSISTANT_NAME} и следит за выполнением запросов пользователей.",
+                    allow_delegation=CREWAI_CONFIG['allow_delegation'],
+                    verbose=CREWAI_CONFIG['verbose'],
+                    max_iter=CREWAI_CONFIG['max_iterations'],
+                    max_rpm=CREWAI_CONFIG['max_rpm'],
+                    llm=llm
+                )
+
+                researcher = Agent(
+                    role="Исследователь",
+                    goal=f"Исследовать тему и собрать необходимую информацию для ответа",
+                    backstory=f"Опытный исследователь с глубокими аналитическими навыками.",
+                    allow_delegation=False,  # Исследователь не делегирует
+                    verbose=CREWAI_CONFIG['verbose'],
+                    max_iter=CREWAI_CONFIG['max_iterations'],
+                    max_rpm=CREWAI_CONFIG['max_rpm'],
+                    llm=llm
+                )
+                
+                writer = Agent(
+                    role="Писатель",
+                    goal=f"Составить четкий и понятный ответ на основе информации от команды",
+                    backstory=f"Талантливый писатель с опытом создания понятных и информативных текстов. "
+                    f"Специализируется на том, чтобы сложную информацию представить доступным языком.",
+                    allow_delegation=False,  # Писатель не делегирует
+                    verbose=CREWAI_CONFIG['verbose'],
+                    max_iter=CREWAI_CONFIG['max_iterations'],
+                    max_rpm=CREWAI_CONFIG['max_rpm'],
+                    llm=llm
+                )
+                
+                # Кэшируем агентов для повторного использования
+                agents_to_cache = {
+                    'coordinator': coordinator,
+                    'researcher': researcher,
+                    'writer': writer
+                }
+                self._cache_agents(message_hash, agents_to_cache)
             
             # Создаем задачи
             research_task = Task(
                 description=f"Исследуй запрос пользователя: '{message}'{context_info}\n\n"
-                           f"Проведи тщательное исследование темы и собери всю необходимую информацию "
-                           f"для полного и точного ответа. Определи ключевые аспекты запроса и структурируй "
-                           f"свои выводы для дальнейшей обработки.",
+                f"Проведи тщательное исследование темы и собери всю необходимую информацию "
+                f"для полного и точного ответа. Определи ключевые аспекты запроса и структурируй "
+                f"свои выводы для дальнейшей обработки.",
                 expected_output="Структурированный отчет с результатами исследования",
                 agent=researcher
             )
             
             writing_task = Task(
                 description=f"На основе результатов исследования составь полный ответ на запрос пользователя: "
-                           f"'{message}'\n\nИспользуй информацию от исследователя, чтобы создать четкий, "
-                           f"информативный и понятный ответ. Структурируй информацию логично. "
-                           f"Ответ должен быть дружелюбным и полезным.",
+                f"'{message}'\n\nИспользуй информацию от исследователя, чтобы создать четкий, "
+                f"информативный и понятный ответ. Структурируй информацию логично. "
+                f"Ответ должен быть дружелюбным и полезным.",
                 expected_output="Готовый ответ для пользователя",
                 agent=writer,
                 context=[research_task]
             )
             
-            # Создаем экипаж
+            # Создаем экипаж с оптимизированной конфигурацией
             crew = Crew(
                 agents=[coordinator, researcher, writer],
                 tasks=[research_task, writing_task],
-                verbose=True,
-                process=Process.sequential
+                verbose=CREWAI_CONFIG['verbose'],
+                process=Process.sequential,  # Используем последовательный процесс для простоты
+                memory=CREWAI_CONFIG['memory_enabled'],  # Включаем память для агентов
+                max_rpm=CREWAI_CONFIG['max_rpm']  # Ограничиваем количество запросов
             )
             
             # Запускаем работу экипажа и получаем результат
@@ -426,9 +553,51 @@ class SmartDelegator:
             print("⚠️ Fallback к AI Router")
             return self._handle_with_ai_router(message)
 
+    
+    def set_reflection_enabled(self, enabled: bool):
+        """Включает/выключает саморефлексию"""
+        self.enable_reflection = enabled
+        if hasattr(self.ai_router, 'set_reflection_enabled'):
+            self.ai_router.set_reflection_enabled(enabled)
+            self.logger.info(f"🔄 Саморефлексия {'включена' if enabled else 'выключена'}")
+        else:
+            self.logger.warning("⚠️ AI Router не поддерживает управление саморефлексией")
+    
+    def update_reflection_config(self, config: Dict):
+        """Обновляет конфигурацию саморефлексии"""
+        self.reflection_config.update(config)
+        if hasattr(self.ai_router, 'update_reflection_config'):
+            self.ai_router.update_reflection_config(config)
+            self.logger.info(f"🔧 Конфигурация саморефлексии обновлена: {config}")
+        else:
+            self.logger.warning("⚠️ AI Router не поддерживает обновление конфигурации саморефлексии")
+    
+    def get_reflection_stats(self) -> Dict:
+        """Возвращает статистику по саморефлексии"""
+        if self.ai_router and hasattr(self.ai_router, 'get_reflection_stats'):
+            return self.ai_router.get_reflection_stats()
+        else:
+            return {
+                'reflection_enabled': self.enable_reflection,
+                'reflection_config': self.reflection_config,
+                'note': 'AI Router не поддерживает детальную статистику саморефлексии'
+            }
+
 
 # Глобальный экземпляр SmartDelegator
-smart_delegator = SmartDelegator()
+# Создаем SmartDelegator с включенной саморефлексией
+# Конфигурация саморефлексии:
+# - min_quality_threshold: минимальная оценка качества (8.0 из 10)
+# - max_iterations: максимальное количество попыток улучшения (3)
+reflection_config = {
+    'min_quality_threshold': 8.0,  # Требуем высокое качество ответов
+    'max_iterations': 3            # Максимум 3 попытки улучшения
+}
+
+smart_delegator = SmartDelegator(
+    enable_reflection=True,
+    reflection_config=reflection_config
+)
 
 # Для тестирования, если запущен напрямую
 if __name__ == "__main__":

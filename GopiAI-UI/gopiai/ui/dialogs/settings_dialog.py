@@ -229,23 +229,35 @@ class GopiAISettingsDialog(QDialog):
             return color
         
     def _apply_theme_styles(self):
-        """Применяет полную интеграцию с темой для всех элементов диалога"""
+        """Применяет полную интеграцию с темой для всех элементов диалога с автоматической адаптацией цвета текста"""
         colors = self._get_theme_colors_for_dialog()
-        is_light_bg = self._is_light_color(colors['bg_color'])
-        button_text_color = "#1a1a1a" if is_light_bg else "#ffffff"
+        
+        # Автоматически определяем контрастный цвет текста для каждого фона
+        def get_contrast_text_color(bg_color):
+            """Возвращает контрастный цвет текста для данного фона"""
+            is_light = self._is_light_color(bg_color)
+            return "#1a1a1a" if is_light else "#e5e5e5"
+        
+        # Определяем цвета текста для каждого элемента
+        main_text_color = get_contrast_text_color(colors['bg_color'])
+        button_text_color = get_contrast_text_color(colors['button_color'])
+        hover_text_color = get_contrast_text_color(colors['hover_color'])
+        selected_text_color = get_contrast_text_color(colors['selected_color'])
+        accent_text_color = get_contrast_text_color(colors['accent_color'])
+        
         self.setStyleSheet(f"""
             QDialog {{
                 background-color: {colors['bg_color']};
-                color: {colors['text_color']};
+                color: {main_text_color};
                 border: 1px solid {colors['border_color']};
                 border-radius: 8px;
             }}
             QWidget {{
                 background-color: {colors['bg_color']};
-                color: {colors['text_color']};
+                color: {main_text_color};
             }}
             QLabel {{
-                color: {colors['text_color']};
+                color: {main_text_color};
                 background-color: transparent;
             }}
             QPushButton {{
@@ -259,10 +271,12 @@ class GopiAISettingsDialog(QDialog):
             }}
             QPushButton:hover {{
                 background-color: {colors['hover_color']};
+                color: {hover_text_color};
                 border-color: {colors['accent_color']};
             }}
             QPushButton:pressed {{
                 background-color: {colors['selected_color']};
+                color: {selected_text_color};
             }}
             QTabWidget::pane {{
                 border: 1px solid {colors['border_color']};
@@ -272,7 +286,7 @@ class GopiAISettingsDialog(QDialog):
             }}
             QTabBar::tab {{
                 background-color: {colors['button_color']};
-                color: {colors['text_color']};
+                color: {button_text_color};
                 padding: 10px 20px;
                 margin-right: 2px;
                 border-top-left-radius: 6px;
@@ -282,10 +296,12 @@ class GopiAISettingsDialog(QDialog):
             }}
             QTabBar::tab:selected {{
                 background-color: {colors['bg_color']};
+                color: {main_text_color};
                 border-bottom: 1px solid {colors['bg_color']};
             }}
             QTabBar::tab:hover {{
                 background-color: {colors['hover_color']};
+                color: {hover_text_color};
             }}
             /* Убираем рамки и фон у всех QFrame, QGroupBox, SettingsCard */
             QFrame, QGroupBox, QFrame#SettingsCard {{
@@ -294,13 +310,14 @@ class GopiAISettingsDialog(QDialog):
                 border-color: none;
             }}
             QLabel#DescriptionLabel {{
-                color: {colors['text_color']};
+                color: {main_text_color};
                 background-color: transparent;
                 font-size: 9pt;
+                opacity: 0.8;
             }}
             QComboBox {{
                 background-color: {colors['button_color']};
-                color: {colors['text_color']};
+                color: {button_text_color};
                 border: 1px solid {colors['border_color']};
                 border-radius: 4px;
                 padding: 6px;
@@ -309,6 +326,7 @@ class GopiAISettingsDialog(QDialog):
             QComboBox:hover {{
                 border-color: {colors['accent_color']};
                 background-color: {colors['hover_color']};
+                color: {hover_text_color};
             }}
             QComboBox:focus {{
                 border-color: {colors['accent_color']};
@@ -324,12 +342,13 @@ class GopiAISettingsDialog(QDialog):
             }}
             QComboBox QAbstractItemView {{
                 background-color: {colors['button_color']};
-                color: {colors['text_color']};
+                color: {button_text_color};
                 border: 1px solid {colors['border_color']};
                 selection-background-color: {colors['accent_color']};
+                selection-color: {accent_text_color};
             }}
             QCheckBox {{
-                color: {colors['text_color']};
+                color: {main_text_color};
                 spacing: 8px;
                 background-color: transparent;
             }}
@@ -353,7 +372,7 @@ class GopiAISettingsDialog(QDialog):
             }}
             QSpinBox, QLineEdit, QTextEdit {{
                 background-color: {colors['button_color']};
-                color: {colors['text_color']};
+                color: {button_text_color};
                 border: 1px solid {colors['border_color']};
                 border-radius: 4px;
                 padding: 6px;
@@ -361,6 +380,7 @@ class GopiAISettingsDialog(QDialog):
             QSpinBox:hover, QLineEdit:hover, QTextEdit:hover {{
                 border-color: {colors['accent_color']};
                 background-color: {colors['hover_color']};
+                color: {hover_text_color};
             }}
             QSpinBox:focus, QLineEdit:focus, QTextEdit:focus {{
                 border-color: {colors['accent_color']};
@@ -396,14 +416,23 @@ class GopiAISettingsDialog(QDialog):
         """)
 
 
+
     def _apply_close_button_style(self):
         """Применяет стиль к кнопке закрытия с интеграцией темы"""
         colors = self._get_theme_colors_for_dialog()
         
+        # Автоматически определяем контрастный цвет текста для фона
+        def get_contrast_text_color(bg_color):
+            """Возвращает контрастный цвет текста для данного фона"""
+            is_light = self._is_light_color(bg_color)
+            return "#1a1a1a" if is_light else "#e5e5e5"
+        
+        close_button_text_color = get_contrast_text_color(colors['bg_color'])
+        
         self.close_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
-                color: {colors['text_color']};
+                color: {close_button_text_color};
                 font-weight: bold;
                 border: none;
                 border-radius: 1px;
