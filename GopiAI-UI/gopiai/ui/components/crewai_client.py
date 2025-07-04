@@ -90,6 +90,49 @@ class CrewAIClient:
             }
             
         try:
+            # Расширенный список браузерных команд с популярными сайтами
+            browser_commands = [
+                # Основные команды навигации
+                "открой сайт", "открой страницу", "перейди на сайт", "зайди на сайт",
+                "загрузи сайт", "иди на сайт", "переходи на", "открыть сайт",
+                
+                # Популярные сайты (без .com для гибкости)
+                "открой github", "открой гитхаб", "открой google", "открой гугл",
+                "открой youtube", "открой ютуб", "открой stackoverflow",
+                "открой вконтакте", "открой вк", "открой telegram", "открой телеграм",
+                
+                # Конкретные домены
+                "github.com", "google.com", "youtube.com", "stackoverflow.com",
+                "vk.com", "telegram.org", "habr.com", "yandex.ru",
+                
+                # Поисковые команды
+                "найди в google", "поиск в google", "google поиск",
+                "найди в гугле", "поищи в google", "погугли"
+            ]
+            
+            message_lower = message.lower()
+            
+            # Ищем ТОЛЬКО очень явные команды
+            is_browser_command = False
+            for cmd in browser_commands:
+                if cmd in message_lower:
+                    is_browser_command = True
+                    break
+            
+            # Проверяем URL только если есть протокол или www
+            import re
+            url_pattern = r'(https?://[^\s]+|www\.[^\s]+)'
+            if re.search(url_pattern, message):
+                is_browser_command = True
+            
+            if is_browser_command:
+                # Возвращаем специальный объект для обработки как команды браузера
+                return {
+                    "impl": "browser-use",  # Указывает, что браузерная команда
+                    "command": message,
+                    "processed_with_crewai": False
+                }
+            
             # Всегда используем force_crewai=False, чтобы система сама определяла
             # необходимость использования CrewAI на основе анализа сложности запроса
             

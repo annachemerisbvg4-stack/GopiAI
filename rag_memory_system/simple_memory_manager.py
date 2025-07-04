@@ -4,6 +4,7 @@
 """
 
 import json
+import os
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -42,40 +43,55 @@ class SimpleMemoryManager:
         self.chats = []  # Список всех сообщений
         self.sessions = {}  # Словарь сессий
         
-        # txtai embeddings (как в similarity.py)
-        if TXTAI_AVAILABLE:
-            # Используем ту же модель что в примере
-            self.embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
-            print("txtai инициализирован")
+        # Проверяем флаг отключения векторизации
+        disable_embeddings = os.getenv('GOPI_DISABLE_EMBEDDINGS', 'false').lower() == 'true'
+        
+        # txtai embeddings (инициализируем только если не отключено)
+        if TXTAI_AVAILABLE and not disable_embeddings:
+            try:
+                print("🔄 Инициализация txtai embeddings...")
+                # Используем ту же модель что в примере
+                self.embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
+                print("✅ txtai инициализирован")
+            except Exception as e:
+                print(f"❌ Ошибка инициализации txtai: {e}")
+                print("⚠️ Работаем без векторного поиска")
+                self.embeddings = None
         else:
             self.embeddings = None
-            print("⚠️ txtai недоступен - работаем без поиска")
+            if disable_embeddings:
+                print("⚠️ Векторизация отключена через GOPI_DISABLE_EMBEDDINGS")
+            else:
+                print("⚠️ txtai недоступен - работаем без поиска")
         
         # Инициализация FAISS-индекса и структур хранения
         self.dim = 768  # размерность векторов для nli-mpnet-base-v2
         
-        if FAISS_AVAILABLE:
+        if FAISS_AVAILABLE and self.embeddings:
             # Создаем FAISS индекс для косинусной близости (Inner Product)
             self.index = faiss.IndexFlatIP(self.dim)
             self.vector_ids = []  # список для соответствия позиция ↔ id сообщения
-            print("FAISS индекс инициализирован")
+            print("✅ FAISS индекс инициализирован")
         else:
             self.index = None
             self.vector_ids = []
-            print("⚠️ FAISS недоступен - работаем только с txtai")
+            if not FAISS_AVAILABLE:
+                print("⚠️ FAISS недоступен - работаем только с txtai")
         
         # Пути к файлам для хранения векторов
         self.vectors_file = self.data_dir / "vectors.npy"
         self.idmap_file = self.data_dir / "vector_ids.json"
+        self.migration_done_file = self.data_dir / "migration_complete.flag"  # Флаг завершения миграции
         
         # Загружаем сохраненные данные
         self._load_data()
         
         # Загружаем векторы FAISS (если файл отсутствует, будет ленивое перестроение)
-        self._load_embeddings()
-        
-        # Миграция существующих сообщений в FAISS индекс (если нужно)
-        self._rebuild_embeddings_if_needed()
+        if self.embeddings:
+            self._load_embeddings()
+            
+            # Миграция существующих сообщений в FAISS индекс (только если нужно и не было выполнено)
+            self._rebuild_embeddings_if_needed()
         
         # Добавляем атрибут для совместимости
         self.session_id = "default_session"  # Текущая сессия
@@ -217,27 +233,38 @@ class SimpleMemoryManager:
         пройти по всем self.chats, вычислить embedding, добавить в индекс, пополнить self.vector_ids.
         
         Вызывается автоматически при инициализации после загрузки чатов.
+        Теперь с проверкой флага завершения миграции.
         """
         if not FAISS_AVAILABLE or self.index is None:
             print("⚠️ FAISS недоступен - миграция эмбеддингов пропущена")
             return
             
+        # Проверяем флаг завершения миграции
+        if self.migration_done_file.exists():
+            print("✅ Миграция уже завершена ранее (найден флаг)")
+            return
+            
         if self.index.ntotal > 0:
-            print(f"📊 FAISS индекс уже содержит {self.index.ntotal} векторов - миграция не требуется")
+            print(f"📊 FAISS индекс уже содержит {self.index.ntotal} векторов - создаем флаг миграции")
+            # Создаем флаг, чтобы не повторять миграцию
+            self.migration_done_file.touch()
             return
             
         if not self.chats:
-            print("📝 Нет сообщений для миграции")
+            print("📝 Нет сообщений для миграции - создаем флаг")
+            # Создаем флаг, чтобы не пытаться мигрировать пустые данные
+            self.migration_done_file.touch()
             return
             
         if not self.embeddings:
-            print("⚠️ Embeddings модель недоступна - миграция невозможна")
+            print("⚠️ Embeddings модель недоступна - миграция пропущена")
             return
             
-        print(f"🔄 Начинаем миграцию {len(self.chats)} существующих сообщений в FAISS индекс...")
+        print(f"🔄 Начинаем ЕДИНОКРАТНУЮ миграцию {len(self.chats)} существующих сообщений в FAISS индекс...")
         
         try:
             migrated_count = 0
+            failed_count = 0
             
             for chat in self.chats:
                 try:
@@ -261,15 +288,24 @@ class SimpleMemoryManager:
                     migrated_count += 1
                     
                 except Exception as e:
-                    print(f"⚠️ Ошибка при миграции сообщения {chat.get('id', 'unknown')}: {e}")
+                    failed_count += 1
+                    # Убираем подробное логирование ошибок - слишком много спама
+                    if failed_count <= 5:  # Показываем только первые 5 ошибок
+                        print(f"⚠️ Ошибка при миграции сообщения {chat.get('id', 'unknown')}: {e}")
+                    elif failed_count == 6:
+                        print("⚠️ ... (скрываем дальнейшие ошибки миграции)")
                     continue
                     
-            print(f"✅ Успешно мигрировано {migrated_count} из {len(self.chats)} сообщений")
+            print(f"✅ Миграция завершена: {migrated_count} успешно, {failed_count} ошибок")
             
             # Сохраняем результат
             if migrated_count > 0:
                 self._save_embeddings()
                 print(f"💾 Эмбеддинги сохранены в файлы")
+            
+            # Создаем флаг завершения миграции независимо от результата
+            self.migration_done_file.touch()
+            print(f"🏁 Флаг завершения миграции создан: {self.migration_done_file}")
             
         except Exception as e:
             print(f"❌ Критическая ошибка при миграции эмбеддингов: {e}")
@@ -277,6 +313,8 @@ class SimpleMemoryManager:
             if FAISS_AVAILABLE:
                 self.index = faiss.IndexFlatIP(self.dim)
                 self.vector_ids = []
+            # Все равно создаем флаг, чтобы не повторять попытки
+            self.migration_done_file.touch()
     
     def create_session(self, title: str = "Новый чат") -> str:
         """Создание новой сессии"""

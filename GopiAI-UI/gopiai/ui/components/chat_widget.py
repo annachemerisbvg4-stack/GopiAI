@@ -375,7 +375,7 @@ class ChatWidget(QWidget):
                     # Получаем контекст чата для передачи в API
                     chat_context_string = self.chat_context.get_context_string()
                     
-                    # Формируем финальный промпт согласно требованию
+                    # Формируем базовый системный промпт
                     system_preamble = "Вы - интеллектуальный ассистент GopiAI. Отвечайте на вопросы пользователей максимально полно и точно."
                     
                     # Строим финальный промпт ТОЧНО по схеме из требования:
@@ -398,6 +398,42 @@ class ChatWidget(QWidget):
                     # Используем CrewAI API клиент с timeout параметром
                     process_result = self.crew_ai_client.process_request(request_with_context, timeout=120)
                     logger.info(f"Получен результат от CrewAI API: {process_result}")
+                    
+                    # Проверяем, является ли это браузерной командой
+                    if isinstance(process_result, dict) and process_result.get("impl") == "browser-use":
+                        # Обрабатываем браузерную команду через вызов метода из главного потока
+                        # Поскольку мы в фоновом потоке, используем QTimer для безопасного вызова
+                        from PySide6.QtCore import QTimer
+                        import time
+                        
+                        # Создаем переменную для результата
+                        browser_result = [None]  # Используем список для передачи по ссылке
+                        
+                        def handle_browser_in_main_thread():
+                            try:
+                                result = self._handle_browser_command(process_result["command"])
+                                browser_result[0] = result
+                            except Exception as e:
+                                browser_result[0] = f"Ошибка выполнения браузерной команды: {str(e)}"
+                        
+                        # Запускаем обработку в главном потоке
+                        QTimer.singleShot(0, handle_browser_in_main_thread)
+                        
+                        # Ждем завершения (простая реализация)
+                        timeout = 0
+                        while browser_result[0] is None and timeout < 20:  # 2 секунды максимум
+                            time.sleep(0.1)
+                            timeout += 1
+                        
+                        if browser_result[0] is not None:
+                            browser_response = browser_result[0]
+                        else:
+                            browser_response = "Таймаут при выполнении браузерной команды"
+                        
+                        process_result = {
+                            "response": browser_response,
+                            "processed_with_crewai": False
+                        }
                     
                     # Handle structured error responses from CrewAI client
                     if isinstance(process_result, dict):
@@ -680,3 +716,188 @@ class ChatWidget(QWidget):
             + context_preview)
         
         logger.info(f"Context stats displayed: {stats}")
+    
+    def _handle_browser_command(self, command: str) -> str:
+        """Обрабатывает браузерную команду через встроенный браузер."""
+        try:
+            self.append_message("Система", f"🌐 Выполняю команду в встроенном браузере: {command}")
+            
+            # Получаем ссылку на встроенный браузер из главного окна
+            browser_widget = self._get_embedded_browser()
+            
+            if not browser_widget:
+                return "❌ Встроенный браузер не найден. Откройте вкладку браузера."
+            
+            # Парсим команду и выполняем соответствующее действие
+            result = self._execute_browser_action(browser_widget, command)
+            
+            self.append_message("Система", f"✅ Результат: {result}")
+            return result
+            
+        except Exception as e:
+            error_msg = f"❌ Ошибка при выполнении команды браузера: {str(e)}"
+            logger.error(error_msg)
+            return error_msg
+    
+    def _get_embedded_browser(self):
+        """Получает ссылку на встроенный браузер из главного окна."""
+        try:
+            # Ищем родительское окно
+            parent = self.parent()
+            while parent and not hasattr(parent, 'tab_document_widget'):
+                parent = parent.parent()
+            
+            if not parent:
+                return None
+            
+            # Получаем TabDocumentWidget
+            tab_widget = getattr(parent, 'tab_document_widget', None)
+            if not tab_widget:
+                return None
+            
+            # Ищем активную вкладку браузера
+            current_widget = tab_widget.tab_widget.currentWidget()
+            
+            # Проверяем, является ли это браузерной вкладкой
+            if hasattr(current_widget, 'property'):
+                web_view = current_widget.property('_web_view')
+                if web_view:
+                    return {
+                        'web_view': web_view,
+                        'address_bar': current_widget.property('_address_bar'),
+                        'widget': current_widget
+                    }
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Ошибка получения браузера: {str(e)}")
+            return None
+    
+    def _execute_browser_action(self, browser_widget, command: str) -> str:
+        """Выполняет действие в браузере на основе команды."""
+        try:
+            web_view = browser_widget['web_view']
+            address_bar = browser_widget['address_bar']
+            
+            command_lower = command.lower()
+            
+            # Навигация
+            if any(word in command_lower for word in ['открой', 'открыть', 'перейди', 'перейти', 'зайди', 'зайти']):
+                url = self._extract_url_from_command(command)
+                if url:
+                    if address_bar:
+                        address_bar.setText(url)
+                    from PySide6.QtCore import QUrl
+                    web_view.load(QUrl(url))
+                    return f"Переход к {url}"
+                else:
+                    return "❌ Не удалось определить URL из команды"
+            
+            # Обновление страницы
+            elif any(word in command_lower for word in ['обнови', 'обновить', 'перезагрузи', 'перезагрузить']):
+                web_view.reload()
+                return "Страница обновлена"
+            
+            # Назад
+            elif any(word in command_lower for word in ['назад', 'back']):
+                if web_view.history().canGoBack():
+                    web_view.back()
+                    return "Переход назад"
+                else:
+                    return "Нельзя перейти назад"
+            
+            # Вперед
+            elif any(word in command_lower for word in ['вперед', 'forward']):
+                if web_view.history().canGoForward():
+                    web_view.forward()
+                    return "Переход вперед"
+                else:
+                    return "Нельзя перейти вперед"
+            
+            # Получение информации о странице
+            elif any(word in command_lower for word in ['заголовок', 'title', 'url', 'адрес']):
+                current_url = web_view.url().toString()
+                return f"Текущий URL: {current_url}"
+            
+            # Поиск Google
+            elif 'google' in command_lower or 'поиск' in command_lower:
+                search_query = self._extract_search_from_command(command)
+                if search_query:
+                    google_url = f"https://google.com/search?q={search_query}"
+                    if address_bar:
+                        address_bar.setText(google_url)
+                    web_view.load(QUrl(google_url))
+                    return f"Поиск в Google: {search_query}"
+                else:
+                    google_url = "https://google.com"
+                    if address_bar:
+                        address_bar.setText(google_url)
+                    web_view.load(QUrl(google_url))
+                    return "Переход на Google"
+            
+            else:
+                # Для более сложных команд можно использовать browser-use
+                return self._try_browser_use_command(command, web_view)
+            
+        except Exception as e:
+            return f"❌ Ошибка выполнения: {str(e)}"
+    
+    def _extract_url_from_command(self, command: str) -> str:
+        """Извлекает URL из команды."""
+        import re
+        
+        # Поиск URL в команде
+        url_patterns = [
+            r'https?://[^\s]+',  # Полный URL
+            r'www\.[^\s]+',      # www.example.com
+            r'[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',  # example.com
+        ]
+        
+        for pattern in url_patterns:
+            match = re.search(pattern, command)
+            if match:
+                url = match.group(0)
+                if not url.startswith(('http://', 'https://')):
+                    url = 'https://' + url
+                return url
+        
+        # Популярные сайты
+        sites_map = {
+            'google': 'https://google.com',
+            'гугл': 'https://google.com',
+            'github': 'https://github.com',
+            'гитхаб': 'https://github.com',
+            'youtube': 'https://youtube.com',
+            'ютуб': 'https://youtube.com',
+        }
+        
+        command_lower = command.lower()
+        for keyword, url in sites_map.items():
+            if keyword in command_lower:
+                return url
+        
+        return None
+    
+    def _extract_search_from_command(self, command: str) -> str:
+        """Извлекает поисковый запрос из команды."""
+        # Убираем служебные слова
+        stop_words = ['найди', 'найти', 'поиск', 'поищи', 'google', 'гугл', 'в', 'на']
+        words = command.split()
+        
+        filtered_words = []
+        for word in words:
+            if word.lower() not in stop_words:
+                filtered_words.append(word)
+        
+        return ' '.join(filtered_words)
+    
+    def _try_browser_use_command(self, command: str, web_view) -> str:
+        """Пытается выполнить команду через browser-use для сложных действий."""
+        try:
+            # Здесь можно интегрировать browser-use для более сложных команд
+            # Пока возвращаем информационное сообщение
+            return f"Команда '{command}' передана для обработки. Сложные браузерные действия будут добавлены в следующих версиях."
+            
+        except Exception as e:
+            return f"❌ Не удалось выполнить сложную команду: {str(e)}"

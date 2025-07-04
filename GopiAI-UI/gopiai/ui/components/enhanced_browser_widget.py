@@ -1,6 +1,14 @@
 """
 Улучшенный виджет браузера с поддержкой асинхронной об        # Создаем основной браузерный виджет
+from PySide6.QtWebEngineCore import QWebEngineProfile
+
+        # Создаем профиль для хранения данных сессии
+        profile = QWebEngineProfile.defaultProfile()
+        profile.setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.ForcePersistentCookies)
+        profile.setHttpCacheType(QWebEngineProfile.HttpCacheType.DiskHttpCache)
+
         self.browser = QWebEngineView(self)
+        self.browser.setPage(profile.createStandardPage(self))
         self.browser.setMinimumSize(400, 300)  # Увеличили минимальные размеры
         
         # Принудительно устанавливаем стиль для браузера
