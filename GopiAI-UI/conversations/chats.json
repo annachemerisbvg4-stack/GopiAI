@@ -699,6 +699,20 @@
       "role": "assistant",
       "content": "❌ Не удалось определить URL из команды",
       "timestamp": "2025-07-05T17:48:02.294261"
+    },
+    {
+      "id": "5f8d38e8-a99e-4b42-b4fd-ff0698491bda",
+      "session_id": "default_session",
+      "role": "user",
+      "content": "зайди на huggingface и открой страницу flux dev",
+      "timestamp": "2025-07-05T18:52:12.323608"
+    },
+    {
+      "id": "d3e9db30-cb1c-4562-af2f-30335aa0d14b",
+      "session_id": "default_session",
+      "role": "assistant",
+      "content": "❌ Не удалось определить URL из команды",
+      "timestamp": "2025-07-05T18:52:12.323608"
     }
   ],
   "sessions": {
@@ -706,7 +720,7 @@
       "id": "default_session",
       "title": "Auto Session",
       "created_at": "2025-07-02T07:13:51.630462",
-      "message_count": 100
+      "message_count": 102
     }
   }
 }
