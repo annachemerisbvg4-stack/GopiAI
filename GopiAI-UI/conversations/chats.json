@@ -643,6 +643,62 @@
       "role": "assistant",
       "content": "Переход к https://github.com",
       "timestamp": "2025-07-05T13:19:02.810561"
+    },
+    {
+      "id": "49a01b5a-2d97-424c-8f96-e3686f36e07e",
+      "session_id": "default_session",
+      "role": "user",
+      "content": "Привет! Зайдешь в гугл?",
+      "timestamp": "2025-07-05T15:49:57.285394"
+    },
+    {
+      "id": "e2ffe86c-d167-42ce-b74e-8bcd709b10e4",
+      "session_id": "default_session",
+      "role": "assistant",
+      "content": "Привет, Анютка!  Конечно, зайду в Google.  Что именно тебе нужно найти?  Рассказывай,  я готов помочь с GOPI_AI_MODULES.  Давай конкретно, чтобы я сразу мог составить план работы.\n",
+      "timestamp": "2025-07-05T15:49:57.291395"
+    },
+    {
+      "id": "52640d52-4d0e-4fb8-92d8-142379f23862",
+      "session_id": "default_session",
+      "role": "user",
+      "content": "нее, мне надо протестировать как ты заходишь в браузер, всё ли я удобно для тебя устроила",
+      "timestamp": "2025-07-05T15:51:25.014786"
+    },
+    {
+      "id": "278fa8ea-843a-43bf-b3fa-37a6e444ea50",
+      "session_id": "default_session",
+      "role": "assistant",
+      "content": "Команда 'нее, мне надо протестировать как ты заходишь в браузер, всё ли я удобно для тебя устроила' передана для обработки. Сложные браузерные действия будут добавлены в следующих версиях.",
+      "timestamp": "2025-07-05T15:51:25.047789"
+    },
+    {
+      "id": "870f37e0-c8fa-438b-9054-c951ad3cc03d",
+      "session_id": "default_session",
+      "role": "user",
+      "content": "зайди на гитхаб",
+      "timestamp": "2025-07-05T17:45:37.501824"
+    },
+    {
+      "id": "e0e639b9-398c-4198-bb34-702aff9f5b10",
+      "session_id": "default_session",
+      "role": "assistant",
+      "content": "Переход к https://github.com",
+      "timestamp": "2025-07-05T17:45:37.527978"
+    },
+    {
+      "id": "e6e3b6ed-5638-42f6-ac9a-5e3a0df0e802",
+      "session_id": "default_session",
+      "role": "user",
+      "content": "зайди на сайт leonardo ai",
+      "timestamp": "2025-07-05T17:48:02.280263"
+    },
+    {
+      "id": "a92462b5-f56c-4529-80c9-660ccf5e145a",
+      "session_id": "default_session",
+      "role": "assistant",
+      "content": "❌ Не удалось определить URL из команды",
+      "timestamp": "2025-07-05T17:48:02.294261"
     }
   ],
   "sessions": {
@@ -650,7 +706,7 @@
       "id": "default_session",
       "title": "Auto Session",
       "created_at": "2025-07-02T07:13:51.630462",
-      "message_count": 92
+      "message_count": 100
     }
   }
 }

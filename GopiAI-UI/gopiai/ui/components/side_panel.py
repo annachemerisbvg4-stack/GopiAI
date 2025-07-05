@@ -1,5 +1,4 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                               QPushButton)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton)
 from PySide6.QtCore import QRect, Signal
 from PySide6 import QtCore
 
@@ -25,16 +24,13 @@ class SlidingPanel(QWidget):
         """Настройка интерфейса панели"""
         self.setStyleSheet("""
             SlidingPanel {
-                background-color: rgba(40, 40, 40, 0.96);
-                border: 2px solid rgba(100, 100, 100, 0.8);
                 border-radius: 12px;
-                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
             }
         """)
         
         # Основной layout для содержимого панели
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(15, 15, 15, 15)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(10)
         
         # Заголовок панели с навигацией и кнопкой закрытия
@@ -45,9 +41,6 @@ class SlidingPanel(QWidget):
         self.back_btn.setToolTip("Назад")
         self.back_btn.setStyleSheet("""
             QPushButton {
-                background-color: rgba(70, 70, 70, 0.8);
-                color: white;
-                border: 1px solid rgba(100, 100, 100, 0.6);
                 border-radius: 6px;
                 font-size: 14px;
                 font-weight: bold;
@@ -57,16 +50,10 @@ class SlidingPanel(QWidget):
                 max-height: 24px;
             }
             QPushButton:hover {
-                background-color: rgba(90, 90, 90, 0.9);
-                border-color: rgba(120, 120, 120, 0.8);
             }
             QPushButton:pressed {
-                background-color: rgba(60, 60, 60, 0.9);
             }
             QPushButton:disabled {
-                background-color: rgba(50, 50, 50, 0.5);
-                color: rgba(150, 150, 150, 0.5);
-                border-color: rgba(80, 80, 80, 0.3);
             }
         """)
         self.back_btn.clicked.connect(self.navigate_back)
@@ -82,11 +69,10 @@ class SlidingPanel(QWidget):
         header_layout.addSpacing(10)
         
         # Заголовок панели
-        self.title_label = QLabel("🔧 Панель инструментов")
+        self.title_label = QLabel("Панель инструментов")
         self.title_label.setStyleSheet("""
             QLabel {
-                color: white;
-                font-size: 16px;
+                color;
                 font-weight: bold;
                 padding: 8px 0px;
             }
@@ -100,9 +86,6 @@ class SlidingPanel(QWidget):
         close_btn = QPushButton("✕")
         close_btn.setStyleSheet("""
             QPushButton {
-                background-color: rgba(200, 50, 50, 0.8);
-                color: white;
-                border: none;
                 border-radius: 12px;
                 font-size: 14px;
                 font-weight: bold;
@@ -112,10 +95,8 @@ class SlidingPanel(QWidget):
                 max-height: 24px;
             }
             QPushButton:hover {
-                background-color: rgba(220, 70, 70, 0.9);
             }
             QPushButton:pressed {
-                background-color: rgba(180, 30, 30, 0.9);
             }
         """)
         close_btn.clicked.connect(self.hide_panel)
@@ -127,7 +108,6 @@ class SlidingPanel(QWidget):
         separator = QLabel()
         separator.setStyleSheet("""
             QLabel {
-                border-bottom: 2px solid rgba(100, 100, 100, 0.6);
                 margin: 8px 0px;
             }
         """)
@@ -163,13 +143,10 @@ class SlidingPanel(QWidget):
         layout.setSpacing(8)
         
         # Кнопка информации
-        info_btn = QPushButton("ℹ️ Информация")
+        info_btn = QPushButton("Информация")
         info_btn.setToolTip("Показать информацию о панели инструментов")
         info_btn.setStyleSheet("""
             QPushButton {
-                background-color: rgba(70, 70, 70, 0.8);
-                color: white;
-                border: 1px solid rgba(100, 100, 100, 0.6);
                 border-radius: 6px;
                 padding: 8px 12px;
                 font-size: 12px;
@@ -177,27 +154,21 @@ class SlidingPanel(QWidget):
                 min-height: 25px;
             }
             QPushButton:hover {
-                background-color: rgba(90, 90, 90, 0.9);
-                border-color: rgba(120, 120, 120, 0.8);
             }
             QPushButton:pressed {
-                background-color: rgba(60, 60, 60, 0.9);
             }
         """)
         info_btn.clicked.connect(lambda: self.show_view('info'))
         layout.addWidget(info_btn)
         
         # Placeholder для будущих кнопок
-        placeholder_label = QLabel("🚧 Дополнительные инструменты будут добавлены позже")
+        placeholder_label = QLabel("Дополнительные инструменты будут добавлены позже")
         placeholder_label.setStyleSheet("""
             QLabel {
-                color: rgba(200, 200, 200, 0.7);
                 font-size: 11px;
                 font-style: italic;
                 padding: 10px;
-                border: 1px dashed rgba(100, 100, 100, 0.4);
                 border-radius: 4px;
-                background-color: rgba(50, 50, 50, 0.3);
             }
         """)
         layout.addWidget(placeholder_label)
@@ -211,14 +182,12 @@ class SlidingPanel(QWidget):
         layout.setSpacing(10)
         
         # Заголовок информационного раздела
-        info_title = QLabel("📋 Информация о панели")
+        info_title = QLabel("Информация о панели")
         info_title.setStyleSheet("""
             QLabel {
-                color: white;
                 font-size: 14px;
                 font-weight: bold;
                 padding: 5px 0px;
-                border-bottom: 1px solid rgba(100, 100, 100, 0.5);
                 margin-bottom: 10px;
             }
         """)
@@ -226,8 +195,7 @@ class SlidingPanel(QWidget):
         
         # Информационный текст
         info_text = QLabel("""
-<p style="color: rgba(220, 220, 220, 0.9); font-size: 11px; line-height: 1.4;">
-<b>🔧 Панель инструментов Chata Widget</b><br><br>
+<b>Панель инструментов Chat Widget</b><br><br>
 
 <b>Навигация:</b><br>
 • Используйте кнопки ◀ ▶ для перемещения между видами<br>
@@ -242,14 +210,12 @@ class SlidingPanel(QWidget):
 • Статистика использования<br>
 • Дополнительные инструменты<br><br>
 
-<i>📖 Для разработчиков: см. README_PANEL_TOOLS.md</i>
+<i>Для разработчиков: см. README_PANEL_TOOLS.md</i>
 </p>
         """)
         info_text.setWordWrap(True)
         info_text.setStyleSheet("""
             QLabel {
-                background-color: rgba(60, 60, 60, 0.3);
-                border: 1px solid rgba(100, 100, 100, 0.3);
                 border-radius: 6px;
                 padding: 10px;
             }
@@ -257,23 +223,17 @@ class SlidingPanel(QWidget):
         layout.addWidget(info_text)
         
         # Кнопка возврата к главному виду
-        back_to_main_btn = QPushButton("🏠 Вернуться к главной")
+        back_to_main_btn = QPushButton("Вернуться к главной")
         back_to_main_btn.setStyleSheet("""
             QPushButton {
-                background-color: rgba(50, 100, 150, 0.8);
-                color: white;
-                border: 1px solid rgba(70, 120, 170, 0.6);
                 border-radius: 6px;
                 padding: 8px 12px;
                 font-size: 12px;
                 min-height: 25px;
             }
             QPushButton:hover {
-                background-color: rgba(70, 120, 170, 0.9);
-                border-color: rgba(90, 140, 190, 0.8);
             }
             QPushButton:pressed {
-                background-color: rgba(40, 80, 130, 0.9);
             }
         """)
         back_to_main_btn.clicked.connect(lambda: self.show_view('main'))
@@ -319,10 +279,10 @@ class SlidingPanel(QWidget):
     def update_title_for_view(self, view_name):
         """Обновить заголовок в зависимости от текущего вида"""
         titles = {
-            'main': "🔧 Панель инструментов",
-            'info': "📋 Информация"
+            'main': "Панель инструментов",
+            'info': "Информация"
         }
-        self.title_label.setText(titles.get(view_name, "🔧 Панель инструментов"))
+        self.title_label.setText(titles.get(view_name, "Панель инструментов"))
         
     def navigate_back(self):
         """Навигация назад"""
@@ -364,9 +324,6 @@ class SlidingPanel(QWidget):
             # Применяем стандартный стиль
             button.setStyleSheet("""
                 QPushButton {
-                    background-color: rgba(70, 70, 70, 0.8);
-                    color: white;
-                    border: 1px solid rgba(100, 100, 100, 0.6);
                     border-radius: 6px;
                     padding: 8px 12px;
                     font-size: 12px;
@@ -374,11 +331,8 @@ class SlidingPanel(QWidget):
                     min-height: 25px;
                 }
                 QPushButton:hover {
-                    background-color: rgba(90, 90, 90, 0.9);
-                    border-color: rgba(120, 120, 120, 0.8);
                 }
                 QPushButton:pressed {
-                    background-color: rgba(60, 60, 60, 0.9);
                 }
             """)
             # Вставляем кнопку перед placeholder'ом (если он есть)
@@ -427,7 +381,7 @@ class PanelTrigger(QPushButton):
     
     panel_toggle_requested = Signal()
     
-    def __init__(self, text="🔧 Панель инструментов", parent=None):
+    def __init__(self, text="Панель инструментов", parent=None):
         super().__init__(text, parent)
         self.setup_ui()
         
@@ -435,21 +389,14 @@ class PanelTrigger(QPushButton):
         """Настройка внешнего вида кнопки"""
         self.setStyleSheet("""
             PanelTrigger {
-                color: rgba(200, 200, 200, 0.9);
-                background-color: rgba(60, 60, 60, 0.8);
-                border: 1px solid rgba(100, 100, 100, 0.6);
                 border-radius: 4px;
                 padding: 6px 12px;
                 font-size: 12px;
                 min-height: 24px;
             }
             PanelTrigger:hover {
-                color: white;
-                background-color: rgba(80, 80, 80, 0.9);
-                border-color: rgba(120, 120, 120, 0.8);
             }
             PanelTrigger:pressed {
-                background-color: rgba(50, 50, 50, 0.9);
             }
         """)
         self.clicked.connect(self.panel_toggle_requested.emit)
@@ -466,13 +413,12 @@ class SidePanelContainer(QWidget):
         
     def setup_ui(self):
         """Настройка интерфейса"""
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(5)
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setSpacing(5)
         
         # Триггер
         self.trigger = PanelTrigger()
-        self.layout.addWidget(self.trigger)
+        self.main_layout.addWidget(self.trigger)
         
         # Боковая панель (создается, но изначально скрыта)
         self.panel = SlidingPanel(parent=self.parent())
@@ -492,13 +438,21 @@ class SidePanelContainer(QWidget):
             # Создаем QRect для панели - используем всю область родителя (чата)
             if self.parent():
                 parent_widget = self.parent()
-                panel_rect = QRect(
-                    0,  # Начало области чата
-                    0,  # Начало области чата
-                    parent_widget.width(),   # Полная ширина чата
-                    parent_widget.height()   # Полная высота чата
-                )
-                self.panel.toggle_panel(panel_rect)
+                # Приводим к QWidget, если это необходимо
+                # Поднимаемся по иерархии родителей, пока не найдем QWidget
+                while parent_widget is not None and not isinstance(parent_widget, QWidget):
+                    if hasattr(parent_widget, 'parent'):
+                        parent_widget = parent_widget.parent()
+                    else:
+                        parent_widget = None
+                if isinstance(parent_widget, QWidget):
+                    panel_rect = QRect(
+                        0,  # Начало области чата
+                        0,  # Начало области чата
+                        parent_widget.width(),   # Полная ширина чата
+                        parent_widget.height()   # Полная высота чата
+                    )
+                    self.panel.toggle_panel(panel_rect)
             
     def add_button_to_panel(self, button):
         """Добавить кнопку в боковую панель"""

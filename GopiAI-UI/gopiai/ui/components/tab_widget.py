@@ -9,6 +9,7 @@ import logging
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QTextEdit, QHBoxLayout, QPushButton, QLineEdit
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWebEngineCore import QWebEnginePage
 
 import chardet
 import traceback
@@ -22,9 +23,14 @@ widgets_path = os.path.abspath(widgets_path)
 if widgets_path not in sys.path:
     sys.path.insert(0, widgets_path)
 
-from gopiai.widgets.core.text_editor import TextEditorWidget
+try:
+    from gopiai.widgets.core.text_editor import TextEditorWidget
+    TEXT_EDITOR_AVAILABLE = True
+except ImportError:
+    TextEditorWidget = None
+    TEXT_EDITOR_AVAILABLE = False
+
 from gopiai.ui.components.rich_text_notebook_widget import NotebookEditorWidget
-TEXT_EDITOR_AVAILABLE = True
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +45,7 @@ class TabDocumentWidget(QWidget):
     def _setup_ui(self):
         """Настройка интерфейса вкладок"""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins#000000
         
         # Виджет вкладок с улучшенными настройками
         self.tab_widget = QTabWidget()
@@ -211,14 +217,49 @@ class TabDocumentWidget(QWidget):
             nav_layout.addWidget(go_btn)
             
             # ==============================================
-            # Веб-браузер
+            # Веб-браузер с ПЕРСИСТЕНТНЫМ ПРОФИЛЕМ
             # ==============================================
+            
+            # 🔥 ИСПРАВЛЕНИЕ: Создаем персистентный профиль для сохранения данных
+            import os
+            from pathlib import Path
+            from PySide6.QtWebEngineCore import QWebEngineProfile
+            
+            # Создаем папку для профиля браузера в рабочей директории
+            profile_dir = Path.home() / ".gopiai" / "browser_profile"
+            profile_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Создаем персистентный профиль (НЕ defaultProfile!)
+            profile = QWebEngineProfile("GopiAI_Browser", browser_widget)
+            
+            # 🔧 Настраиваем сохранение данных
+            profile.setPersistentStoragePath(str(profile_dir))
+            profile.setCachePath(str(profile_dir / "cache"))
+            profile.setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.ForcePersistentCookies)
+            profile.setHttpCacheType(QWebEngineProfile.HttpCacheType.DiskHttpCache)
+            profile.setHttpCacheMaximumSize(100 * 1024 * 1024)  # 100MB cache
+            
+            # 🔒 Настройки безопасности и удобства
+            settings = profile.settings()
+            settings.setAttribute(settings.WebAttribute.LocalStorageEnabled, True)
+            settings.setAttribute(settings.WebAttribute.AutoLoadImages, True)
+            settings.setAttribute(settings.WebAttribute.JavascriptEnabled, True)
+            settings.setAttribute(settings.WebAttribute.PluginsEnabled, True)
+            settings.setAttribute(settings.WebAttribute.LocalContentCanAccessRemoteUrls, True)
+            settings.setAttribute(settings.WebAttribute.LocalContentCanAccessFileUrls, True)
+            
+            # Создаем веб-вью с нашим персистентным профилем
             web_view = QWebEngineView()
+            
+            web_page = QWebEnginePage(profile, web_view)
+            web_view.setPage(web_page)
             web_view.setMinimumSize(800, 600)
             
             # Принудительно показываем
             web_view.show()
             web_view.setVisible(True)
+            
+            logger.info(f"🔥 Браузер создан с персистентным профилем: {profile_dir}")
             
             # ==============================================
             # Подключение сигналов навигации
@@ -283,6 +324,7 @@ class TabDocumentWidget(QWidget):
             browser_widget.setProperty("_back_btn", back_btn)
             browser_widget.setProperty("_forward_btn", forward_btn)
             browser_widget.setProperty("_refresh_btn", refresh_btn)
+            browser_widget.setProperty("_profile", profile)  # 🔥 Сохраняем ссылку на профиль
             
             # Добавляем вкладку
             index = self.tab_widget.addTab(browser_widget, title)
@@ -300,7 +342,7 @@ class TabDocumentWidget(QWidget):
                 
             web_view.load(QUrl(url))
             
-            logger.info(f"Веб-страница с навигацией загружена: {url}")
+            logger.info(f"✅ Веб-страница с персистентным профилем загружена: {url}")
             return browser_widget
             
         except Exception as e:

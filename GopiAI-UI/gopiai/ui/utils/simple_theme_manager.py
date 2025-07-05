@@ -806,6 +806,7 @@ def apply_theme(app):
             color: {button_text_color.name()};
             background-color: {button_color.name()};
             border: 1px solid {border_color.name()};
+            border-radius: 4px;
         }}
         QComboBox QAbstractItemView {{
             color: {text_color.name()};
