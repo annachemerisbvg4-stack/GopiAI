@@ -113,25 +113,57 @@ class CrewAIClient:
             message_lower = message.lower()
             
             # Ищем ТОЛЬКО очень явные команды
+            logger.info(f"🔍 [CREWAI] Анализ сообщения на браузерные команды: '{message}'")
+            logger.info(f"🔍 [CREWAI] Сообщение в нижнем регистре: '{message_lower}'")
+            
             is_browser_command = False
+            matched_command = None
             for cmd in browser_commands:
                 if cmd in message_lower:
                     is_browser_command = True
+                    matched_command = cmd
+                    logger.info(f"🔍 [CREWAI] ✅ Найдена команда браузера: '{cmd}'")
                     break
+            
+            if not is_browser_command:
+                logger.info(f"🔍 [CREWAI] Команды браузера в тексте не найдены")
             
             # Проверяем URL только если есть протокол или www
             import re
             url_pattern = r'(https?://[^\s]+|www\.[^\s]+)'
-            if re.search(url_pattern, message):
+            url_match = re.search(url_pattern, message)
+            if url_match:
                 is_browser_command = True
+                matched_url = url_match.group(0)
+                logger.info(f"🔍 [CREWAI] ✅ Найден URL в сообщении: '{matched_url}'")
+            else:
+                logger.info(f"🔍 [CREWAI] URL в сообщении не найден")
+            
+            logger.info(f"🔍 [CREWAI] Итоговый результат анализа: is_browser_command={is_browser_command}")
             
             if is_browser_command:
+                logger.info(f"🌐 [CREWAI] Возвращаем браузерную команду для обработки")
+                
+                # Извлекаем только пользовательскую команду из полного контекста
+                # message может содержать системный промпт + контекст + "User:
+                # + реальная_команда
+                user_command = message
+                if "User:" in message:
+                    # Извлекаем только часть после "User:"
+                    user_command = message.split("User:")[-1].strip()
+                    # Убираем контекст предыдущих сообщений, если есть
+                    if "Предыдущие сообщения:" in user_command:
+                        user_command = user_command.split("Предыдущие сообщения:")[0].strip()
+                    logger.info(f"🌐 [CREWAI] Извлечена пользовательская команда: '{user_command}'")
+                
                 # Возвращаем специальный объект для обработки как команды браузера
-                return {
+                result = {
                     "impl": "browser-use",  # Указывает, что браузерная команда
-                    "command": message,
+                    "command": user_command,  # Только пользовательская команда
                     "processed_with_crewai": False
                 }
+                logger.info(f"🌐 [CREWAI] Результат браузерной команды: {result}")
+                return result
             
             # Всегда используем force_crewai=False, чтобы система сама определяла
             # необходимость использования CrewAI на основе анализа сложности запроса

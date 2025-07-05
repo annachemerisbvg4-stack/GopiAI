@@ -14,11 +14,22 @@ logger = logging.getLogger(__name__)
 
 # Импортируем UniversalIconManager для Lucide-иконок
 from gopiai.ui.components.icon_file_system_model import UniversalIconManager
+# Импортируем компоненты боковой панели
+from .side_panel import SidePanelContainer
 
 # Клиент для обращения к CrewAI API
 from .crewai_client import CrewAIClient
 # Модуль управления контекстом чата
 from .chat_context import ChatContext
+
+# Импорт персонализированных промптов
+try:
+    # Пытаемся импортировать из GopiAI-App
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'GopiAI-App'))
+    from gopiai.app.prompt.personality import PERSONALITY_SYSTEM_PROMPT
+except ImportError:
+    # Fallback на стандартный промпт если файл не найден
+    PERSONALITY_SYSTEM_PROMPT = "Вы - интеллектуальный ассистент GopiAI. Отвечайте на вопросы пользователей максимально полно и точно."
 
 # Импортируем функцию для получения RAG контекста
 # Прямая реализация функции вместо импорта для избежания проблем с зависимостями
@@ -76,17 +87,27 @@ logger.info("✅ RAG context function defined directly")
 
 
 
-# DEBUG LOGGING PATCH - Added for hang diagnosis
+# DEBUG LOGGING PATCH - Enhanced for browser command debugging
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-print("🔧 DEBUG logging enabled for chat_widget.py")
+
+# Create file handler for persistent logging
+file_handler = logging.FileHandler('chat_debug.log', encoding='utf-8')
+file_handler.setLevel(logging.DEBUG)
+file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(file_formatter)
+logger.addHandler(file_handler)
+
+print("🔧 Enhanced DEBUG logging enabled for chat_widget.py (console + file)")
+logger.info("=== Chat Widget Debug Session Started ===")
 
 
 class ChatWidget(QWidget):
     # Qt signals for thread-safe communication
     response_ready = Signal(str, bool)  # response_text, error_occurred
+    browser_command_ready = Signal(str)  # browser_command
     def set_theme_manager(self, theme_manager):
         """Интеграция с глобальной темой (API совместим с WebViewChatWidget)"""
         self.theme_manager = theme_manager
@@ -157,11 +178,18 @@ class ChatWidget(QWidget):
         self.clear_context_btn.clicked.connect(self.clear_chat_context)
         self.bottom_panel.addWidget(self.clear_context_btn)
         
-        # Кнопка статистики контекста
+        # Кнопка статистики контекста (будет добавлена в боковую панель)
         self.context_stats_btn = QPushButton(icon_mgr.get_icon("info"), "", self)
         self.context_stats_btn.setToolTip("Показать статистику контекста")
         self.context_stats_btn.clicked.connect(self.show_context_stats)
-        self.bottom_panel.addWidget(self.context_stats_btn)
+        
+        # Создание боковой панели с триггером
+        self.side_panel_container = SidePanelContainer(parent=self)
+        
+        # Кнопка статистики контекста будет добавлена в боковую панель
+        # Перемещаем кнопку статистики в боковую панель
+        self.context_stats_btn.setText(" Статистика контекста")
+        self.side_panel_container.add_button_to_panel(self.context_stats_btn)
         
         # Кнопка отправки
         self.send_btn = QPushButton(icon_mgr.get_icon("send"), "", self)
@@ -169,6 +197,9 @@ class ChatWidget(QWidget):
         self.send_btn.clicked.connect(self.send_message)
         self.bottom_panel.addWidget(self.send_btn)
 
+        # Добавляем контейнер боковой панели перед нижней панелью
+        self.main_layout.addWidget(self.side_panel_container)
+        
         self.main_layout.addLayout(self.bottom_panel)
 
         # Обработка Enter (Ctrl+Enter для отправки)
@@ -179,6 +210,7 @@ class ChatWidget(QWidget):
 
         # Connect Qt signal for thread-safe communication
         self.response_ready.connect(self._handle_response_from_thread)
+        self.browser_command_ready.connect(self._handle_browser_command_from_signal)
 
         # Применить тему при инициализации
         self.theme_manager = None
@@ -260,6 +292,33 @@ class ChatWidget(QWidget):
             # Always re-enable Send button and scroll to end
             self.send_btn.setEnabled(True)
             self._scroll_history_to_end()
+
+    @Slot(str)
+    def _handle_browser_command_from_signal(self, command):
+        """Handles browser command from signal in main thread"""
+        logger.info(f"🔄 [SIGNAL_HANDLER] Получена браузерная команда через сигнал: '{command}'")
+        
+        try:
+            # Store the result in a shared location that background thread can access
+            if not hasattr(self, '_browser_command_result'):
+                self._browser_command_result = {}
+            
+            # Execute browser command
+            result = self._handle_browser_command(command)
+            
+            # Store result with timestamp as key
+            import time
+            timestamp = str(int(time.time() * 1000))  # milliseconds for uniqueness
+            self._browser_command_result[timestamp] = result
+            
+            logger.info(f"🔄 [SIGNAL_HANDLER] Результат браузерной команды сохранен под ключом {timestamp}: '{result}'")
+            
+        except Exception as e:
+            logger.error(f"🔄 [SIGNAL_HANDLER] Ошибка обработки браузерной команды: {str(e)}", exc_info=True)
+            # Store error result
+            import time
+            timestamp = str(int(time.time() * 1000))
+            self._browser_command_result[timestamp] = f"Ошибка: {str(e)}"
 
     def _scroll_history_to_end(self):
         """Прокручивает историю чата в конец"""
@@ -376,7 +435,7 @@ class ChatWidget(QWidget):
                     chat_context_string = self.chat_context.get_context_string()
                     
                     # Формируем базовый системный промпт
-                    system_preamble = "Вы - интеллектуальный ассистент GopiAI. Отвечайте на вопросы пользователей максимально полно и точно."
+                    system_preamble = PERSONALITY_SYSTEM_PROMPT
                     
                     # Строим финальный промпт ТОЧНО по схеме из требования:
                     # system_preamble + "\n\n" + ("Relevant context:\n" + context + "\n\n" if context else "") + "User:\n" + user_message
@@ -400,35 +459,50 @@ class ChatWidget(QWidget):
                     logger.info(f"Получен результат от CrewAI API: {process_result}")
                     
                     # Проверяем, является ли это браузерной командой
+                    logger.info(f"🔍 [PROCESS] Анализ результата от CrewAI: тип={type(process_result)}, содержимое={process_result}")
+                    
                     if isinstance(process_result, dict) and process_result.get("impl") == "browser-use":
+                        logger.info(f"🌐 [PROCESS] ✅ Обнаружена браузерная команда: '{process_result.get('command', 'N/A')}'")
+                        
                         # Обрабатываем браузерную команду через вызов метода из главного потока
                         # Поскольку мы в фоновом потоке, используем QTimer для безопасного вызова
                         from PySide6.QtCore import QTimer
                         import time
                         
-                        # Создаем переменную для результата
-                        browser_result = [None]  # Используем список для передачи по ссылке
+                        logger.info(f"🌐 [PROCESS] Подготовка к выполнению в главном потоке...")
                         
-                        def handle_browser_in_main_thread():
-                            try:
-                                result = self._handle_browser_command(process_result["command"])
-                                browser_result[0] = result
-                            except Exception as e:
-                                browser_result[0] = f"Ошибка выполнения браузерной команды: {str(e)}"
+                        # Отправляем команду через Qt signal
+                        logger.info(f"🔄 [PROCESS] Отправляем браузерную команду через Qt signal")
+                        self.browser_command_ready.emit(process_result["command"])
+                        logger.info(f"🔄 [PROCESS] Signal отправлен, начинаем ожидание результата")
                         
-                        # Запускаем обработку в главном потоке
-                        QTimer.singleShot(0, handle_browser_in_main_thread)
-                        
-                        # Ждем завершения (простая реализация)
+                        # Ждем завершения (улучшенная реализация с большим таймаутом)
                         timeout = 0
-                        while browser_result[0] is None and timeout < 20:  # 2 секунды максимум
+                        max_timeout = 100  # 10 секунд максимум
+                        logger.info(f"⏰ [WAIT] Начинаем ожидание результата (макс. {max_timeout/10} сек)")
+                        
+                        browser_response = None
+                        
+                        while browser_response is None and timeout < max_timeout:
+                            if timeout % 10 == 0:  # Логируем каждую секунду
+                                logger.info(f"⏰ [WAIT] Ожидание... ({timeout/10:.1f}/{max_timeout/10} сек)")
+                            
+                            # Проверяем, есть ли результат
+                            if hasattr(self, '_browser_command_result') and self._browser_command_result:
+                                # Получаем последний результат
+                                latest_key = max(self._browser_command_result.keys())
+                                browser_response = self._browser_command_result[latest_key]
+                                # Очищаем результат
+                                del self._browser_command_result[latest_key]
+                                logger.info(f"✅ [WAIT] Результат получен через signal: '{browser_response}'")
+                                break
+                            
                             time.sleep(0.1)
                             timeout += 1
                         
-                        if browser_result[0] is not None:
-                            browser_response = browser_result[0]
-                        else:
-                            browser_response = "Таймаут при выполнении браузерной команды"
+                        if browser_response is None:
+                            browser_response = "Таймаут при выполнении браузерной команды (10 сек). Возможно, браузер не настроен или недоступен."
+                            logger.warning(f"⏰ [WAIT] ❌ Таймаут! Результат не получен за {max_timeout/10} секунд")
                         
                         process_result = {
                             "response": browser_response,
@@ -608,14 +682,16 @@ class ChatWidget(QWidget):
     def attach_file(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Выберите файл")
         if file_path:
-            self.append_message("Система", f"Файл прикреплен: {os.path.basename(file_path)}. (Дальнейшая обработка не реализована)")
+            # НЕ выводим системное сообщение в чат - только в логи
+            logger.info(f"📎 Файл прикреплен: {os.path.basename(file_path)} (полный путь: {file_path})")
             logger.info(f"Файл прикреплен: {file_path}")
 
 
     def attach_image(self):
         image_path, _ = QFileDialog.getOpenFileName(self, "Выберите изображение", filter="Images (*.png *.jpg *.jpeg *.bmp *.gif)")
         if image_path:
-            self.append_message("Система", f"Изображение прикреплено: {os.path.basename(image_path)}. (Дальнейшая обработка не реализована)")
+            # НЕ выводим системное сообщение в чат - только в логи
+            logger.info(f"🖼️ Изображение прикреплено: {os.path.basename(image_path)} (полный путь: {image_path})")
             logger.info(f"Изображение прикреплено: {image_path}")
     
     # ДОПОЛНИТЕЛЬНЫЕ МЕТОДЫ ДЛЯ ОТЛАДКИ (согласно советам от Minimax и GenSpark)
@@ -633,11 +709,11 @@ class ChatWidget(QWidget):
     def test_crewai_connection(self):
         """Тестирует соединение с CrewAI API"""
         if not self.crew_ai_client:
-            self.append_message("Система", "❌ CrewAI клиент не инициализирован")
+            logger.error("❌ CrewAI клиент не инициализирован")  # НЕ выводим в чат
             return False
             
         if not self.crew_ai_client.is_available():
-            self.append_message("Система", "❌ CrewAI API сервер недоступен")
+            logger.warning("❌ CrewAI API сервер недоступен")  # НЕ выводим в чат
             return False
             
         # Отправляем тестовый запрос
@@ -646,19 +722,19 @@ class ChatWidget(QWidget):
             if isinstance(test_result, dict):
                 # Check for structured error response
                 if "error_message" in test_result:
-                    self.append_message("Система", f"❌ Ошибка API: {test_result['error_message']}")
+                    logger.error(f"❌ Ошибка API: {test_result['error_message']}")  # НЕ выводим в чат
                     return False
                 elif "response" in test_result:
-                    self.append_message("Система", "✅ CrewAI API работает корректно")
+                    logger.info("✅ CrewAI API работает корректно")  # НЕ выводим в чат
                     return True
                 else:
-                    self.append_message("Система", f"⚠️ Неожиданный ответ от API: {test_result}")
+                    logger.warning(f"⚠️ Неожиданный ответ от API: {test_result}")  # НЕ выводим в чат
                     return False
             else:
-                self.append_message("Система", f"⚠️ Неожиданный тип ответа от API: {type(test_result)}")
+                logger.warning(f"⚠️ Неожиданный тип ответа от API: {type(test_result)}")  # НЕ выводим в чат
                 return False
         except Exception as e:
-            self.append_message("Система", f"❌ Ошибка тестирования API: {str(e)}")
+            logger.error(f"❌ Ошибка тестирования API: {str(e)}")  # НЕ выводим в чат
             return False
     
     def test_timer_from_thread(self):
@@ -688,9 +764,8 @@ class ChatWidget(QWidget):
         stats_before = self.chat_context.get_stats()
         self.chat_context.clear()
         
-        self.append_message("Система", 
-            f"🧹 Контекст чата очищен. Было: {stats_before['message_count']} сообщений, "
-            f"~{stats_before['estimated_tokens']} токенов.")
+        self.append_message("Ассистент", 
+            f"🧹 Контекст нашего разговора очищен! Теперь я начинаю с чистого листа.")
         
         logger.info(f"Chat context cleared. Previous stats: {stats_before}")
     
@@ -717,70 +792,198 @@ class ChatWidget(QWidget):
         
         logger.info(f"Context stats displayed: {stats}")
     
+    
     def _handle_browser_command(self, command: str) -> str:
         """Обрабатывает браузерную команду через встроенный браузер."""
+        logger.info(f"🌐 [BROWSER] Начало обработки команды: '{command}'")
+        
         try:
-            self.append_message("Система", f"🌐 Выполняю команду в встроенном браузере: {command}")
+            logger.info(f"🌐 [BROWSER] Начинаем выполнение команды (без вывода в чат): '{command}'")
+            # НЕ выводим системные сообщения в чат - они отвлекают пользователя
             
             # Получаем ссылку на встроенный браузер из главного окна
+            logger.info(f"🌐 [BROWSER] Поиск встроенного браузера...")
             browser_widget = self._get_embedded_browser()
+            logger.info(f"🌐 [BROWSER] Результат поиска браузера: {browser_widget is not None}")
             
             if not browser_widget:
-                return "❌ Встроенный браузер не найден. Откройте вкладку браузера."
+                logger.info(f"🌐 [BROWSER] Встроенный браузер не найден. Создаем новую вкладку...")
+                try:
+                    # Автоматически создаем новую вкладку браузера
+                    browser_widget = self._create_browser_tab()
+                    if not browser_widget:
+                        error_msg = "❌ Не удалось создать вкладку браузера."
+                        logger.error(f"🌐 [BROWSER] {error_msg}")
+                        return error_msg
+                    logger.info(f"🌐 [BROWSER] ✅ Вкладка браузера создана автоматически")
+                except Exception as e:
+                    error_msg = f"❌ Ошибка создания вкладки браузера: {str(e)}"
+                    logger.error(f"🌐 [BROWSER] {error_msg}", exc_info=True)
+                    return error_msg
+            
+            logger.info(f"🌐 [BROWSER] Найден браузер, детали: {type(browser_widget)}")
             
             # Парсим команду и выполняем соответствующее действие
+            logger.info(f"🌐 [BROWSER] Выполнение действия в браузере...")
             result = self._execute_browser_action(browser_widget, command)
+            logger.info(f"🌐 [BROWSER] Результат выполнения: '{result}'")
             
-            self.append_message("Система", f"✅ Результат: {result}")
+            logger.info(f"🌐 [BROWSER] Команда выполнена успешно (результат в логах): '{result}'")
+            # НЕ выводим результат в чат - пользователь видит изменения в браузере
+            
+            logger.info(f"🌐 [BROWSER] Команда успешно обработана")
             return result
             
         except Exception as e:
             error_msg = f"❌ Ошибка при выполнении команды браузера: {str(e)}"
-            logger.error(error_msg)
+            logger.error(f"🌐 [BROWSER] {error_msg}", exc_info=True)
             return error_msg
+    
+    def _create_browser_tab(self):
+        """Создает новую вкладку браузера, если её нет."""
+        logger.info(f"🆕 [CREATE_BROWSER] Создание новой вкладки браузера...")
+        
+        try:
+            # Ищем tab_document через иерархию родителей
+            parent = self.parent()
+            level = 0
+            while parent and not hasattr(parent, 'tab_document'):
+                level += 1
+                logger.debug(f"🆕 [CREATE_BROWSER] Уровень {level}: {type(parent).__name__}")
+                parent = parent.parent()
+                if level > 10:  # защита от бесконечного цикла
+                    break
+            
+            if not parent or not hasattr(parent, 'tab_document'):
+                logger.warning(f"🆕 [CREATE_BROWSER] Не найден родительский объект с tab_document")
+                return None
+            
+            tab_document = parent.tab_document
+            logger.info(f"🆕 [CREATE_BROWSER] Найден tab_document: {type(tab_document)}")
+            
+            if not hasattr(tab_document, 'add_browser_tab'):
+                logger.warning(f"🆕 [CREATE_BROWSER] tab_document не поддерживает add_browser_tab")
+                return None
+            
+            # Создаем новую вкладку браузера
+            logger.info(f"🆕 [CREATE_BROWSER] Вызываем add_browser_tab...")
+            browser_widget = tab_document.add_browser_tab()
+            
+            if browser_widget:
+                logger.info(f"🆕 [CREATE_BROWSER] ✅ Вкладка браузера создана успешно")
+                
+                # Возвращаем в том же формате, что ожидает _execute_browser_action
+                if hasattr(browser_widget, 'property'):
+                    web_view = browser_widget.property('_web_view')
+                    address_bar = browser_widget.property('_address_bar')
+                    
+                    if web_view:
+                        result = {
+                            'web_view': web_view,
+                            'address_bar': address_bar,
+                            'widget': browser_widget
+                        }
+                        logger.info(f"🆕 [CREATE_BROWSER] ✅ Браузер готов к использованию")
+                        return result
+                    else:
+                        logger.warning(f"🆕 [CREATE_BROWSER] _web_view не найден в созданной вкладке")
+                        return None
+                else:
+                    logger.warning(f"🆕 [CREATE_BROWSER] Созданная вкладка не поддерживает свойства")
+                    return None
+            else:
+                logger.warning(f"🆕 [CREATE_BROWSER] add_browser_tab вернул None")
+                return None
+                
+        except Exception as e:
+            logger.error(f"🆕 [CREATE_BROWSER] Ошибка создания вкладки: {e}", exc_info=True)
+            return None
     
     def _get_embedded_browser(self):
         """Получает ссылку на встроенный браузер из главного окна."""
+        logger.info(f"🔍 [GET_BROWSER] Начинаем поиск встроенного браузера")
+        
         try:
-            # Ищем родительское окно
+            # Ищем tab_document через иерархию родителей (так же как в _create_browser_tab)
+            logger.info(f"🔍 [GET_BROWSER] Поиск tab_document...")
             parent = self.parent()
-            while parent and not hasattr(parent, 'tab_document_widget'):
+            level = 0
+            while parent and not hasattr(parent, 'tab_document'):
+                level += 1
+                logger.debug(f"🔍 [GET_BROWSER] Уровень {level}: {type(parent).__name__}")
                 parent = parent.parent()
+                if level > 10:  # защита от бесконечного цикла
+                    break
             
-            if not parent:
+            if not parent or not hasattr(parent, 'tab_document'):
+                logger.warning(f"🔍 [GET_BROWSER] Родительское окно с tab_document не найдено")
                 return None
+            
+            logger.info(f"🔍 [GET_BROWSER] Найдено родительское окно: {type(parent).__name__}")
             
             # Получаем TabDocumentWidget
-            tab_widget = getattr(parent, 'tab_document_widget', None)
-            if not tab_widget:
+            tab_document = getattr(parent, 'tab_document', None)
+            if not tab_document:
+                logger.warning(f"🔍 [GET_BROWSER] tab_document отсутствует в родителе")
                 return None
             
+            logger.info(f"🔍 [GET_BROWSER] Найден TabDocument: {type(tab_document).__name__}")
+            
             # Ищем активную вкладку браузера
-            current_widget = tab_widget.tab_widget.currentWidget()
+            if not hasattr(tab_document, 'tab_widget'):
+                logger.warning(f"🔍 [GET_BROWSER] tab_widget отсутствует в TabDocument")
+                return None
+                
+            current_widget = tab_document.tab_widget.currentWidget()
+            logger.info(f"🔍 [GET_BROWSER] Текущая вкладка: {type(current_widget).__name__ if current_widget else 'None'}")
+            
+            if not current_widget:
+                logger.warning(f"🔍 [GET_BROWSER] Активная вкладка не найдена")
+                return None
             
             # Проверяем, является ли это браузерной вкладкой
             if hasattr(current_widget, 'property'):
+                logger.info(f"🔍 [GET_BROWSER] Вкладка поддерживает свойства, проверяем _web_view")
                 web_view = current_widget.property('_web_view')
+                address_bar = current_widget.property('_address_bar')
+                
+                logger.info(f"🔍 [GET_BROWSER] web_view найден: {web_view is not None}")
+                logger.info(f"🔍 [GET_BROWSER] address_bar найден: {address_bar is not None}")
+                
                 if web_view:
-                    return {
+                    result = {
                         'web_view': web_view,
-                        'address_bar': current_widget.property('_address_bar'),
+                        'address_bar': address_bar,
                         'widget': current_widget
                     }
+                    logger.info(f"🔍 [GET_BROWSER] ✅ Браузер успешно найден!")
+                    return result
+                else:
+                    logger.warning(f"🔍 [GET_BROWSER] _web_view отсутствует в свойствах вкладки")
+            else:
+                logger.warning(f"🔍 [GET_BROWSER] Вкладка не поддерживает свойства (method 'property' not found)")
             
+            logger.warning(f"🔍 [GET_BROWSER] Браузерная вкладка не найдена")
             return None
             
         except Exception as e:
-            logger.error(f"Ошибка получения браузера: {str(e)}")
+            logger.error(f"🔍 [GET_BROWSER] ❌ Ошибка получения браузера: {str(e)}", exc_info=True)
             return None
     
     def _execute_browser_action(self, browser_widget, command: str) -> str:
         """Выполняет действие в браузере на основе команды."""
+        logger.info(f"⚡ [EXECUTE_ACTION] Начало выполнения действия: '{command}'")
+        
         try:
+            logger.info(f"⚡ [EXECUTE_ACTION] Извлечение компонентов браузера...")
             web_view = browser_widget['web_view']
             address_bar = browser_widget['address_bar']
             
+            logger.info(f"⚡ [EXECUTE_ACTION] web_view: {type(web_view).__name__ if web_view else 'None'}")
+            logger.info(f"⚡ [EXECUTE_ACTION] address_bar: {type(address_bar).__name__ if address_bar else 'None'}")
+            
             command_lower = command.lower()
+            logger.info(f"⚡ [EXECUTE_ACTION] Команда в нижнем регистре: '{command_lower}'")
             
             # Навигация
             if any(word in command_lower for word in ['открой', 'открыть', 'перейди', 'перейти', 'зайди', 'зайти']):
