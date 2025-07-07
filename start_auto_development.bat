@@ -8,7 +8,7 @@ echo.
 
 REM Настройка путей к виртуальным окружениям
 set "CREWAI_VENV=C:\Users\crazy\GOPI_AI_MODULES\rag_memory_env"
-set "UI_VENV=C:\Users\crazy\GOPI_AI_MODULES\GopiAI-UI\venv"
+set "UI_VENV=C:\Users\crazy\GOPI_AI_MODULES\rag_memory_env"
 
 REM Проверяем окружения
 echo 🔍 Checking virtual environments...
@@ -23,7 +23,8 @@ if exist "%UI_VENV%\Scripts\activate.bat" (
     echo ✅ UI environment found: %UI_VENV%
 ) else (
     echo ⚠️  UI environment not found at %UI_VENV%
-    echo    Using global Python for UI
+    echo    Using rag_memory_env for UI
+    set "UI_VENV=%CREWAI_VENV%"
 )
 
 echo.

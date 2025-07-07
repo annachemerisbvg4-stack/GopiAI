@@ -8,6 +8,7 @@ import time
 import traceback
 import logging
 import requests
+import json
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
@@ -106,7 +107,7 @@ logger.info("=== Chat Widget Debug Session Started ===")
 
 class ChatWidget(QWidget):
     # Qt signals for thread-safe communication
-    response_ready = Signal(str, bool)  # response_text, error_occurred
+    response_ready = Signal(object, bool)  # response_data (str or dict), error_occurred
     browser_command_ready = Signal(str)  # browser_command
     def set_theme_manager(self, theme_manager):
         """Интеграция с глобальной темой (API совместим с WebViewChatWidget)"""
@@ -137,6 +138,10 @@ class ChatWidget(QWidget):
         
         # Инициализация контекста чата для краткосрочной памяти
         self.chat_context = ChatContext(max_messages=20, max_tokens=4000)
+        
+        # Флаг использования долгосрочной памяти (RAG)
+        self.use_long_term_memory = True
+        self.rag_context = None  # Будет инициализирован при первом использовании
 
         # История сообщений
         self.history = QTextEdit(self)
@@ -219,6 +224,76 @@ class ChatWidget(QWidget):
         # Check service availability after UI is fully initialized
         self._check_crewai_availability()
 
+    @Slot(object, bool)
+    def _handle_response_from_thread(self, response_data, error_occurred=False):
+        """
+        Обрабатывает ответы от фонового потока через Qt signal
+        
+        Args:
+            response_data: Ответ от CrewAI (может быть строкой или словарем)
+            error_occurred: Флаг ошибки
+        """
+        try:
+            logger.info(f"[RESPONSE] Получен ответ. Тип: {type(response_data)}, Ошибка: {error_occurred}")
+            logger.debug(f"[RESPONSE] Полные данные ответа: {response_data}")
+            
+            # Если это словарь с командой браузера
+            if isinstance(response_data, dict) and 'browser_command' in response_data:
+                logger.info(f"[BROWSER] Обнаружена браузерная команда")
+                command = response_data['browser_command']
+                # Выполняем команду браузера в основном потоке
+                QTimer.singleShot(0, lambda: self._handle_browser_command(command))
+                return
+            
+            # Обработка ответа от CrewAI
+            response_text = ""
+            if isinstance(response_data, dict):
+                # Если это словарь, извлекаем текст ответа
+                response_text = response_data.get('response', str(response_data))
+                # Если response - это словарь с ключом 'response', проверим его тип
+                if isinstance(response_text, dict):
+                    response_text = str(response_text)
+            else:
+                # Иначе используем как есть (строка)
+                response_text = str(response_data)
+            
+            # Если ответ пустой, используем заглушку
+            if not response_text.strip():
+                response_text = "Пустой ответ от сервера"
+            
+            logger.info(f"[RESPONSE] Текст ответа: {response_text[:200]}...")
+            
+            # Получаем ID сообщения ожидания или создаем новый
+            waiting_id = getattr(self, '_waiting_message_id', f"msg_{int(time.time() * 1000)}")
+            logger.info(f"[RESPONSE] Обновление сообщения с ID: {waiting_id}")
+            
+            # Обновляем сообщение с ответом
+            self._update_assistant_response(
+                waiting_id,
+                response_text,
+                error_occurred
+            )
+            
+            # Очищаем ID сообщения ожидания
+            if hasattr(self, '_waiting_message_id'):
+                del self._waiting_message_id
+            
+        except Exception as e:
+            logger.error(f"[ERROR] Ошибка при обработке ответа: {e}", exc_info=True)
+            try:
+                # Пытаемся показать ошибку пользователю
+                error_msg = f"Произошла ошибка: {str(e)}"
+                if hasattr(self, '_waiting_message_id'):
+                    self._update_assistant_response(self._waiting_message_id, error_msg, True)
+                else:
+                    self.append_message("Ошибка", error_msg)
+            except Exception as inner_e:
+                logger.error(f"[CRITICAL] Не удалось показать сообщение об ошибке: {inner_e}")
+        finally:
+            # Всегда включаем кнопку отправки
+            self.send_btn.setEnabled(True)
+            self._scroll_history_to_end()
+
     def _input_key_press_event(self, event):
         # Если нажат Enter без Shift, отправляем сообщение
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
@@ -233,65 +308,57 @@ class ChatWidget(QWidget):
             QTextEdit.keyPressEvent(self.input, event)
 
     @Slot(str, bool)
-    def _handle_response_from_thread(self, response_text, error_occurred):
-        """Handles responses from background thread via Qt signal"""
+    def _handle_response_from_thread(self, response_data, error_occurred=False):
+        """
+        Обрабатывает ответы от фонового потока через Qt signal
+        
+        Args:
+            response_data: Ответ от CrewAI или команда браузера
+            error_occurred: Флаг ошибки
+        """
         try:
-            logger.info(f"Signal received: response_len={len(response_text)}, error={error_occurred}")
+            logger.info(f"🔄 [SIGNAL_HANDLER] Получен ответ в основном потоке: {response_data}")
             
-            # Get current HTML and try to replace waiting span
-            current_html = self.history.toHtml()
+            # Если это словарь с командой браузера
+            if isinstance(response_data, dict) and "impl" in response_data and response_data["impl"] == "browser-use":
+                command = response_data.get("command", "")
+                logger.info(f"🌐 [BROWSER-USE] Получена команда браузера: {command}")
+                
+                # Отправляем команду в браузер
+                self.browser_command_ready.emit(command)
+                
+                # Показываем ответ пользователю
+                response_message = response_data.get("response", f"Выполняю команду: {command}")
+                self._update_assistant_response(self._waiting_message_id, response_message, False)
             
-            # Try to find and replace waiting span
-            waiting_patterns = [
-                "⏳ Обрабатываю запрос...",
-                "<span id="
-            ]
+            # Если это обычный текстовый ответ
+            elif isinstance(response_data, str):
+                self._update_assistant_response(self._waiting_message_id, response_data, error_occurred)
             
-            replaced = False
-            for pattern in waiting_patterns:
-                if pattern in current_html:
-                    # Style error message in red if it's an error
-                    if error_occurred:
-                        styled_response = f"<span style='color: red;'>{response_text}</span>"
-                    else:
-                        styled_response = response_text
-                    
-                    # For waiting text pattern
-                    if pattern == "⏳ Обрабатываю запрос...":
-                        updated_html = current_html.replace(pattern, styled_response)
-                        self.history.setHtml(updated_html)
-                        replaced = True
-                        break
-                    # For span pattern, use regex to replace the whole span
-                    elif "<span id=" in pattern:
-                        import re
-                        span_pattern = r"<span[^>]*id=['\"][^'\"]*['\"][^>]*>⏳ Обрабатываю запрос...</span>"
-                        updated_html = re.sub(span_pattern, styled_response, current_html, flags=re.DOTALL)
-                        if updated_html != current_html:
-                            self.history.setHtml(updated_html)
-                            replaced = True
-                            break
+            # Если это словарь с ответом от CrewAI
+            elif isinstance(response_data, dict):
+                response_text = response_data.get("response", "")
+                if not response_text and "error" in response_data:
+                    response_text = f"Произошла ошибка: {response_data['error']}"
+                    error_occurred = True
+                self._update_assistant_response(self._waiting_message_id, response_text, error_occurred)
             
-            # If waiting span not found, append as new message
-            if not replaced:
-                if error_occurred:
-                    self.append_message("Ассистент", f"<span style='color: red;'>{response_text}</span>")
-                else:
-                    self.append_message("Ассистент", response_text)
-            
-            logger.info("✅ Response handled successfully via Qt signal")
-            
-        except Exception as e:
-            logger.error(f"❌ Error in signal handler: {e}", exc_info=True)
-            # Fallback: append error message in red
-            if error_occurred:
-                self.append_message("Ассистент", f"<span style='color: red;'>{response_text}</span>")
+            # Неизвестный формат ответа
             else:
-                self.append_message("Ассистент", response_text)
-        finally:
-            # Always re-enable Send button and scroll to end
-            self.send_btn.setEnabled(True)
-            self._scroll_history_to_end()
+                logger.error(f"❌ [SIGNAL_HANDLER] Неизвестный формат ответа: {response_data}")
+                self._update_assistant_response(
+                    self._waiting_message_id,
+                    "Получен ответ в неизвестном формате. Пожалуйста, попробуйте еще раз.",
+                    True
+                )
+                
+        except Exception as e:
+            logger.error(f"❌ [SIGNAL_HANDLER] Ошибка при обработке ответа: {e}", exc_info=True)
+            self._update_assistant_response(
+                self._waiting_message_id,
+                f"Произошла ошибка при обработке ответа: {str(e)}",
+                True
+            )
 
     @Slot(str)
     def _handle_browser_command_from_signal(self, command):
@@ -397,207 +464,80 @@ class ChatWidget(QWidget):
     def send_message(self):
         """Отправляет сообщение и обрабатывает его через CrewAI API"""
         text = self.input.toPlainText().strip()
-        if text:
-            # Добавляем сообщение пользователя в контекст
-            self.chat_context.add_user_message(text)
-            # Отображаем сообщение пользователя
-            self.append_message("Вы", text)
-            self.input.clear()
+        if not text:
+            return
             
-            # Показываем индикатор ожидания
-            self.send_btn.setEnabled(False)
+        # Добавляем сообщение в историю и контекст
+        self.append_message("Вы", text)
+        self.chat_context.add_user_message(text)
+        self.input.clear()
+        
+        # Показываем индикатор ожидания
+        self.send_btn.setEnabled(False)
+        
+        # Создаем уникальный ID для сообщения ожидания
+        self._waiting_message_id = f"msg_{int(time.time() * 1000)}"
+        self.append_message("Ассистент", "⏳ Обрабатываю запрос...")
+        
+        # Запускаем обработку в фоновом потоке
+        thread = threading.Thread(
+            target=self._process_message_in_background,
+            args=(text,)
+        )
+        thread.daemon = True
+        thread.start()
+        
+    def _process_message_in_background(self, message):
+        """
+        Обрабатывает сообщение в фоновом потоке
+        
+        Args:
+            message: Текст сообщения от пользователя
+        """
+        try:
+            logger.info(f"[DEBUG] Начало обработки сообщения: {message[:100]}...")
             
-            # Создаем уникальный ID для сообщения ожидания
-            waiting_id = f"waiting_{int(time.time())}"
-            self.append_message("Ассистент", f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>")
+            # Добавляем сообщение в контекст чата
+            self.chat_context.add_user_message(message)
             
-            # Функция обработки в фоновом потоке
-            def process_in_background():
-                response = "Извините, я не смог обработать запрос из-за технической проблемы."
-                error_occurred = False
+            # Получаем контекст чата
+            chat_history = self.chat_context.get_context_for_api()
+            
+            # Если включена долгосрочная память, получаем релевантный контекст
+            rag_context = ""
+            if self.use_long_term_memory:
+                rag_context = self._get_rag_context(message)
+                if rag_context:
+                    logger.info(f"[MEMORY] Получен контекст из долгосрочной памяти: {len(rag_context)} символов")
+            
+            # Формируем полный контекст для отправки
+            context = {
+                'message': message,
+                'chat_history': chat_history,
+                'rag_context': rag_context
+            }
+            
+            # Отправляем запрос в CrewAI с контекстом
+            response = self.crew_ai_client.process_request(json.dumps(context))
+            
+            # Обработка ответа
+            if isinstance(response, dict):
+                if response.get("impl") == "browser-use" and not response.get("response"):
+                    response["response"] = f"Выполняю команду: {response.get('command', '')}"
                 
-                # ИСПРАВЛЕНИЕ: Обернуть весь body функции в try/except
-                try:
-                    # Получаем контекст из embedded памяти
-                    rag_context = ""
-                    if RAG_AVAILABLE:
-                        try:
-                            rag_context = get_embedded_memory_context(text, max_results=5)
-                            if rag_context:
-                                logger.info(f"📚 Получен контекст из embedded памяти ({len(rag_context)} символов)")
-                            else:
-                                logger.info("📚 Контекст из embedded памяти пуст")
-                        except Exception as rag_e:
-                            logger.warning(f"⚠️ Ошибка получения контекста из embedded памяти: {rag_e}")
-                            rag_context = ""
-                    
-                    # Получаем контекст чата для передачи в API
-                    chat_context_string = self.chat_context.get_context_string()
-                    
-                    # Формируем базовый системный промпт
-                    system_preamble = PERSONALITY_SYSTEM_PROMPT
-                    
-                    # Строим финальный промпт ТОЧНО по схеме из требования:
-                    # system_preamble + "\n\n" + ("Relevant context:\n" + context + "\n\n" if context else "") + "User:\n" + user_message
-                    request_with_context = system_preamble
-                    
-                    # Добавляем RAG контекст, если есть (согласно точной схеме)
-                    if rag_context:
-                        request_with_context += "\n\n" + "Relevant context:\n" + rag_context + "\n\n"
-                    else:
-                        request_with_context += "\n\n"
-                    
-                    # Добавляем текущий запрос пользователя (User: format из требования)
-                    request_with_context += "User:\n" + text
-                    
-                    # Добавляем контекст чата как дополнительную информацию, если есть
-                    if chat_context_string:
-                        request_with_context += f"\n\nПредыдущие сообщения:\n{chat_context_string}"
-                    
-                    # Используем CrewAI API клиент с timeout параметром
-                    process_result = self.crew_ai_client.process_request(request_with_context, timeout=120)
-                    logger.info(f"Получен результат от CrewAI API: {process_result}")
-                    
-                    # Проверяем, является ли это браузерной командой
-                    logger.info(f"🔍 [PROCESS] Анализ результата от CrewAI: тип={type(process_result)}, содержимое={process_result}")
-                    
-                    if isinstance(process_result, dict) and process_result.get("impl") == "browser-use":
-                        logger.info(f"🌐 [PROCESS] ✅ Обнаружена браузерная команда: '{process_result.get('command', 'N/A')}'")
-                        
-                        # Обрабатываем браузерную команду через вызов метода из главного потока
-                        # Поскольку мы в фоновом потоке, используем QTimer для безопасного вызова
-                        from PySide6.QtCore import QTimer
-                        import time
-                        
-                        logger.info(f"🌐 [PROCESS] Подготовка к выполнению в главном потоке...")
-                        
-                        # Отправляем команду через Qt signal
-                        logger.info(f"🔄 [PROCESS] Отправляем браузерную команду через Qt signal")
-                        self.browser_command_ready.emit(process_result["command"])
-                        logger.info(f"🔄 [PROCESS] Signal отправлен, начинаем ожидание результата")
-                        
-                        # Ждем завершения (улучшенная реализация с большим таймаутом)
-                        timeout = 0
-                        max_timeout = 100  # 10 секунд максимум
-                        logger.info(f"⏰ [WAIT] Начинаем ожидание результата (макс. {max_timeout/10} сек)")
-                        
-                        browser_response = None
-                        
-                        while browser_response is None and timeout < max_timeout:
-                            if timeout % 10 == 0:  # Логируем каждую секунду
-                                logger.info(f"⏰ [WAIT] Ожидание... ({timeout/10:.1f}/{max_timeout/10} сек)")
-                            
-                            # Проверяем, есть ли результат
-                            if hasattr(self, '_browser_command_result') and self._browser_command_result:
-                                # Получаем последний результат
-                                latest_key = max(self._browser_command_result.keys())
-                                browser_response = self._browser_command_result[latest_key]
-                                # Очищаем результат
-                                del self._browser_command_result[latest_key]
-                                logger.info(f"✅ [WAIT] Результат получен через signal: '{browser_response}'")
-                                break
-                            
-                            time.sleep(0.1)
-                            timeout += 1
-                        
-                        if browser_response is None:
-                            browser_response = "Таймаут при выполнении браузерной команды (10 сек). Возможно, браузер не настроен или недоступен."
-                            logger.warning(f"⏰ [WAIT] ❌ Таймаут! Результат не получен за {max_timeout/10} секунд")
-                        
-                        process_result = {
-                            "response": browser_response,
-                            "processed_with_crewai": False
-                        }
-                    
-                    # Handle structured error responses from CrewAI client
-                    if isinstance(process_result, dict):
-                        # Check for error_message field (new structured error format)
-                        if "error_message" in process_result:
-                            response = process_result["error_message"]
-                            error_occurred = True
-                            logger.warning(f"Получена структурированная ошибка от API: {response}")
-                        # Check for response field (normal response)
-                        elif "response" in process_result:
-                            response = process_result["response"]
-                            # Check if there was an error flag
-                            if "error" in process_result:
-                                logger.warning(f"Получена ошибка от API: {process_result['error']}")
-                                error_occurred = True
-                        else:
-                            response = "Неизвестный формат ответа от CrewAI API."
-                            error_occurred = True
-                            logger.error(f"Неожиданный формат ответа: {process_result}")
-                    elif isinstance(process_result, str):
-                        # Обратная совместимость на случай, если клиент вернул строку
-                        response = process_result
-                        logger.info("Получен ответ в виде строки (обратная совместимость)")
-                    else:
-                        response = "Неизвестный тип ответа от CrewAI API."
-                        error_occurred = True
-                        logger.error(f"Неожиданный тип ответа: {type(process_result)}")
-                    
-                    # Добавляем ответ ассистента в контекст (только если нет ошибки)
-                    if not error_occurred:
-                        self.chat_context.add_assistant_message(response)
-                        
-                        # Сохраняем диалог в embedded памяти
-                        try:
-                            from rag_memory_system import get_memory_manager
-                            manager = get_memory_manager()
-                            manager.save_chat_exchange(text, response)
-                            logger.info("💾 Диалог сохранен в embedded память")
-                        except Exception as memory_e:
-                            logger.warning(f"⚠️ Ошибка сохранения в embedded память: {memory_e}")
-                        
-                except Exception as e:
-                    logger.error(f"❌ Полная ошибка в background thread: {e}", exc_info=True)
-                    response = f"Произошла ошибка при обработке запроса: {str(e)}"
-                    error_occurred = True
-                
-                # ИСПРАВЛЕНИЕ: Используем Qt signal вместо QTimer.singleShot
-                try:
-                    logger.info("🔄 Отправляем ответ через Qt signal")
-                    self.response_ready.emit(response, error_occurred)
-                except Exception as e:
-                    logger.error(f"❌ Ошибка при отправке сигнала: {e}", exc_info=True)
-                    # Fallback: используем QTimer как последний вариант
-                    def emergency_update():
-                        try:
-                            # Get current HTML and try to replace waiting span
-                            current_html = self.history.toHtml()
-                            waiting_patterns = [
-                                f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>",
-                                "⏳ Обрабатываю запрос..."
-                            ]
-                            
-                            # Try to replace waiting span with response
-                            replaced = False
-                            for pattern in waiting_patterns:
-                                if pattern in current_html:
-                                    # Style error message in red
-                                    styled_response = f"<span style='color: red;'>{response}</span>" if error_occurred else response
-                                    updated_html = current_html.replace(pattern, styled_response)
-                                    self.history.setHtml(updated_html)
-                                    replaced = True
-                                    break
-                            
-                            # If waiting span not found, append as new message
-                            if not replaced:
-                                styled_response = f"<span style='color: red;'>{response}</span>" if error_occurred else response
-                                self.append_message("Ассистент", styled_response)
-                                
-                        except Exception as fallback_e:
-                            logger.error(f"❌ Критическая ошибка fallback: {fallback_e}", exc_info=True)
-                        finally:
-                            # Always re-enable Send button
-                            self.send_btn.setEnabled(True)
-                    QTimer.singleShot(0, emergency_update)
+                # Добавляем ответ ассистента в контекст чата
+                if 'response' in response:
+                    self.chat_context.add_assistant_message(response['response'])
             
-            # Запускаем обработку в отдельном потоке
-            thread = threading.Thread(target=process_in_background)
-            thread.daemon = True
-            thread.start()
-    
+            logger.info(f"[DEBUG] Отправка ответа в основной поток: {str(response)[:200]}...")
+            self.response_ready.emit(response, False)
+            
+        except Exception as e:
+            error_msg = f"Произошла ошибка при обработке запроса: {str(e)}"
+            logger.error(f"[ERROR] {error_msg}", exc_info=True)
+            error_response = {"response": error_msg, "error": str(e)}
+            self.response_ready.emit(error_response, True)
+
     @Slot(str, str, bool)
     def _update_assistant_response(self, waiting_id, response, error_occurred=False):
         """
@@ -605,72 +545,85 @@ class ChatWidget(QWidget):
         
         Args:
             waiting_id: ID сообщения ожидания для замены
-            response: Текст ответа
+            response: Текст ответа или словарь с ответом
             error_occurred: Флаг ошибки для стилизации
         """
-        logger.info(f"_update_assistant_response: waiting_id={waiting_id}, response_len={len(response)}, error={error_occurred}")
-        
-        # ИСПРАВЛЕНИЕ: Заменяем сообщение ожидания вместо добавления нового
         try:
+            logger.info(f"[UPDATE] Обновление ответа. ID: {waiting_id}, Тип ответа: {type(response)}, Ошибка: {error_occurred}")
+            
+            # Извлекаем текст ответа, если response - это словарь
+            response_text = response
+            if isinstance(response, dict):
+                response_text = response.get("response", str(response))
+            
+            # Убедимся, что response_text - строка
+            if not isinstance(response_text, str):
+                response_text = str(response_text)
+            
+            logger.debug(f"[UPDATE] Текст ответа: {response_text[:200]}...")
+            
+            # Стилизуем ответ в зависимости от наличия ошибки
+            if error_occurred:
+                formatted_response = f"<span style='color: #d73027;'>{response_text}</span>"
+            else:
+                formatted_response = response_text
+            
             # Получаем текущий HTML
             current_html = self.history.toHtml()
-            logger.info(f"Текущий HTML содержит {len(current_html)} символов")
+            logger.debug(f"[UPDATE] Текущий HTML содержит {len(current_html)} символов")
             
-            # Пробуем разные варианты поиска сообщения ожидания
+            # Варианты поиска сообщения ожидания
             waiting_patterns = [
-                f"<span id='{waiting_id}'>⏳ Обрабатываю запрос...</span>",
-                f"<span id=\"'{waiting_id}'\">⏳ Обрабатываю запрос...</span>",
                 f"id='{waiting_id}'",
-                f"id=\"{waiting_id}\"",
-                waiting_id,
+                f'id="{waiting_id}"',
                 "⏳ Обрабатываю запрос..."
             ]
             
+            # Пробуем найти и заменить сообщение ожидания
             replaced = False
+            
             for pattern in waiting_patterns:
                 if pattern in current_html:
-                    logger.info(f"✅ Найден паттерн: {pattern}")
+                    logger.info(f"[UPDATE] Найден паттерн: {pattern}")
                     
-                    # Стилизируем ответ в зависимости от наличия ошибки
-                    if error_occurred:
-                        new_response = f"<span style='color: #d73027;'>{response}</span>"
-                    else:
-                        new_response = response
-                    
-                    # Если это полный span, заменяем его
-                    if "<span" in pattern and "</span>" in pattern:
-                        updated_html = current_html.replace(pattern, new_response)
-                    # Если это просто текст ожидания, заменяем его
-                    elif pattern == "⏳ Обрабатываю запрос...":
-                        updated_html = current_html.replace(pattern, new_response)
-                    else:
-                        # Для других случаев ищем весь span
+                    # Если нашли по ID, заменяем весь span
+                    if 'id=' in pattern:
                         import re
-                        span_pattern = f"<span[^>]*id=['\"]{waiting_id}['\"][^>]*>.*?</span>"
-                        updated_html = re.sub(span_pattern, new_response, current_html, flags=re.DOTALL)
+                        span_pattern = f'<span[^>]*id=["\']{waiting_id}["\'][^>]*>.*?</span>'
+                        updated_html = re.sub(span_pattern, formatted_response, current_html, flags=re.DOTALL)
+                    else:
+                        # Иначе заменяем просто текст
+                        updated_html = current_html.replace("⏳ Обрабатываю запрос...", formatted_response)
                     
                     if updated_html != current_html:
+                        logger.debug("[UPDATE] Обновление HTML чата...")
                         self.history.setHtml(updated_html)
-                        logger.info("✅ Сообщение ожидания успешно заменено на ответ")
+                        logger.info("[UPDATE] Сообщение успешно обновлено")
                         replaced = True
                         break
-                    else:
-                        logger.warning(f"⚠️ Паттерн найден, но замена не произошла: {pattern}")
-                        
+            
             if not replaced:
-                # Fallback: если не удалось найти сообщение ожидания, добавляем новое
-                logger.warning("⚠️ Не удалось найти сообщение ожидания, добавляем новое сообщение")
-                logger.debug(f"HTML для отладки (первые 500 символов): {current_html[:500]}")
-                self.append_message("Ассистент", response)
-        
+                logger.warning("[UPDATE] Не удалось найти сообщение ожидания, добавляем новое сообщение")
+                self.append_message("Ассистент", response_text)
+            
+            # Добавляем ответ в контекст чата, если это не ошибка
+            if not error_occurred and hasattr(self, 'chat_context'):
+                self.chat_context.add_assistant_message(response_text)
+            
+            # Прокручиваем вниз
+            self._scroll_history_to_end()
+            
         except Exception as e:
-            logger.error(f"❌ Ошибка при обновлении ответа: {e}", exc_info=True)
-            # Fallback: просто добавляем новое сообщение
-            self.append_message("Ассистент", response)
-        
-        # Включаем кнопки и прокручиваем вниз
-        self.send_btn.setEnabled(True)
-        self._scroll_history_to_end()
+            logger.error(f"[ERROR] Ошибка при обновлении ответа: {e}", exc_info=True)
+            try:
+                # Fallback: добавляем новое сообщение с текстом ошибки
+                error_msg = f"Ошибка при обработке ответа: {str(e)}" if not error_occurred else str(response)
+                self.append_message("Ассистент", error_msg)
+            except Exception as inner_e:
+                logger.error(f"[CRITICAL] Не удалось добавить сообщение об ошибке: {inner_e}")
+        finally:
+            # Всегда включаем кнопку отправки
+            self.send_btn.setEnabled(True)
 
 
     def append_message(self, author, text):
@@ -764,35 +717,111 @@ class ChatWidget(QWidget):
         stats_before = self.chat_context.get_stats()
         self.chat_context.clear()
         
+        # Сохраняем текущий чат в историю перед очисткой
+        self._save_chat_history()
+        
         self.append_message("Ассистент", 
             f"🧹 Контекст нашего разговора очищен! Теперь я начинаю с чистого листа.")
         
         logger.info(f"Chat context cleared. Previous stats: {stats_before}")
     
+    def _save_chat_history(self):
+        """Сохраняет историю чата в долгосрочное хранилище"""
+        try:
+            if not hasattr(self, 'chat_context') or not self.chat_context.messages:
+                return
+                
+            # Получаем все сообщения из контекста
+            messages = [msg.to_dict() for msg in self.chat_context.messages]
+            
+            # Здесь должна быть логика сохранения в долгосрочное хранилище
+            # Например, сохранение в базу данных или файл
+            logger.info(f"[MEMORY] Сохранено {len(messages)} сообщений в историю чата")
+            
+        except Exception as e:
+            logger.error(f"[ERROR] Ошибка при сохранении истории чата: {e}", exc_info=True)
+    
     def show_context_stats(self):
         """Показывает статистику текущего контекста чата"""
         stats = self.chat_context.get_stats()
-        context_preview = ""
+        
+        # Получаем информацию о долгосрочной памяти
+        rag_status = "🟢 Включена" if self.use_long_term_memory else "🔴 Выключена"
+        rag_info = f"• Долгосрочная память (RAG): {rag_status}\n"
         
         # Показываем превью последних 2 сообщений
+        context_preview = ""
         if stats['message_count'] > 0:
             last_messages = self.chat_context.get_last_messages(2)
             preview_parts = []
             for msg in last_messages:
+                role_display = "Вы" if msg.role == "user" else "Ассистент"
                 content_preview = msg.content[:50] + "..." if len(msg.content) > 50 else msg.content
-                preview_parts.append(f"- {msg.role}: {content_preview}")
+                preview_parts.append(f"- {role_display}: {content_preview}")
             context_preview = "\n\nПоследние сообщения:\n" + "\n".join(preview_parts)
         
         self.append_message("Система", 
             f"📊 Статистика контекста:\n"
             f"• Сообщений: {stats['message_count']}/{stats['max_messages']}\n"
             f"• Символов: {stats['total_characters']}\n"
-            f"• Примерно токенов: {stats['estimated_tokens']}/{stats['max_tokens']}"
+            f"• Примерно токенов: {stats['estimated_tokens']}/{stats['max_tokens']}\n"
+            f"{rag_info}"
             + context_preview)
+        
+        # Добавляем информацию о долгосрочной памяти, если она доступна
+        if RAG_AVAILABLE and self.use_long_term_memory:
+            try:
+                # Примерная проверка доступности RAG
+                sample_query = "тест"
+                rag_context = self._get_rag_context(sample_query)
+                if rag_context:
+                    self.append_message("Система",
+                        f"✅ Долгосрочная память активна. "
+                        f"Тестовый запрос вернул {len(rag_context)} символов контекста."
+                    )
+                else:
+                    self.append_message("Система",
+                        "⚠️ Долгосрочная память активна, но не вернула результатов. "
+                        "Возможно, база знаний пуста."
+                    )
+            except Exception as e:
+                logger.error(f"Ошибка при проверке RAG: {e}", exc_info=True)
+                self.append_message("Система",
+                    f"⚠️ Ошибка при проверке долгосрочной памяти: {str(e)}"
+                )
         
         logger.info(f"Context stats displayed: {stats}")
     
-    
+    def _get_rag_context(self, query: str) -> str:
+        """
+        Получает релевантный контекст из долгосрочной памяти (RAG)
+        
+        Args:
+            query: Поисковый запрос
+            
+        Returns:
+            str: Релевантный контекст или пустая строка, если RAG недоступен
+        """
+        try:
+            # Проверяем доступность RAG
+            if not RAG_AVAILABLE:
+                logger.warning("[RAG] RAG недоступен. Пропускаем поиск по долгосрочной памяти.")
+                return ""
+                
+            # Получаем контекст из встроенной памяти
+            rag_context = get_embedded_memory_context(query, max_results=3)
+            
+            if rag_context and rag_context.strip():
+                logger.info(f"[RAG] Найден релевантный контекст: {len(rag_context)} символов")
+                return rag_context
+                
+            logger.info("[RAG] Релевантный контекст не найден")
+            return ""
+            
+        except Exception as e:
+            logger.error(f"[RAG] Ошибка при получении контекста: {e}", exc_info=True)
+            return ""
+
     def _handle_browser_command(self, command: str) -> str:
         """Обрабатывает браузерную команду через встроенный браузер."""
         logger.info(f"🌐 [BROWSER] Начало обработки команды: '{command}'")

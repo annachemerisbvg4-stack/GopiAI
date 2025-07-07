@@ -106,15 +106,42 @@ print(f"DEBUG: LLM_MODELS_CONFIG loaded: {LLM_MODELS_CONFIG}")
 # Helper to get API key based on provider name
 def get_api_key_for_provider(provider_name: str):
     """Gets the API key from environment variables for a given provider."""
+    print(f"[DEBUG] Getting API key for provider: {provider_name}")
+    
+    # Check if we're in test environment
     env_test_suffix = "_TEST" if os.getenv("ENVIRONMENT") == "test" else ""
+    print(f"[DEBUG] Environment test suffix: '{env_test_suffix}'")
+    
+    # Map of provider names to their environment variable names
     key_map = {
         "google": "GEMINI_API_KEY"
     }
+    print(f"[DEBUG] Key map: {key_map}")
+    
+    # Get the base environment variable name for the provider
     env_var_base = key_map.get(provider_name.lower())
+    print(f"[DEBUG] Environment variable base for {provider_name}: '{env_var_base}'")
+    
     if env_var_base is None:
+        print(f"[ERROR] No environment variable mapping found for provider: {provider_name}")
         return None
+    
+    # Construct the full environment variable name
     env_var = env_var_base + env_test_suffix
-    return os.getenv(env_var)
+    print(f"[DEBUG] Full environment variable name: '{env_var}'")
+    
+    # Get the API key from environment variables
+    api_key = os.getenv(env_var)
+    
+    # Debug output about the API key
+    if api_key:
+        print(f"[DEBUG] Successfully retrieved API key for {provider_name}")
+        print(f"[DEBUG] API key starts with: {api_key[:5]}...{api_key[-5:] if len(api_key) > 10 else ''}")
+    else:
+        print(f"[ERROR] Failed to get API key for {provider_name} from environment variable: {env_var}")
+        print(f"[DEBUG] Current environment variables: {[k for k in os.environ if 'GEMINI' in k or 'API' in k]}")
+    
+    return api_key
 # 🚨 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Улучшенный монитор лимитов с blacklist механизмом
 class RateLimitMonitor:
     def __init__(self, models_config):
