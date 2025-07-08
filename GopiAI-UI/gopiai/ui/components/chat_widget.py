@@ -1,89 +1,46 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QFileDialog, QLabel, QSizePolicy, QMessageBox
 from PySide6.QtCore import Qt, QMimeData, Slot, QMetaObject, QTimer, Signal
 from PySide6.QtGui import QIcon, QDropEvent, QDragEnterEvent, QPixmap, QTextCursor
-import threading
-import sys
-import os
-import time
-import traceback
-import logging
-import requests
+from typing import Optional, List, Dict, Any, Tuple, Union
+import re
 import json
+import time
+import logging
+import html
+import uuid
+from datetime import datetime
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
 
-# Импортируем UniversalIconManager для Lucide-иконок
+# Импортируем UniversalIconManager
 from gopiai.ui.components.icon_file_system_model import UniversalIconManager
-# Импортируем компоненты боковой панели
-from .side_panel import SidePanelContainer
 
-# Клиент для обращения к CrewAI API
-from .crewai_client import CrewAIClient
-# Модуль управления контекстом чата
+# Импортируем ChatContext из компонентов
 from .chat_context import ChatContext
 
-# Импорт персонализированных промптов
+# Импортируем CrewAIClient
+from .crewai_client import CrewAIClient
+
+# Импортируем SidePanelContainer
+from .side_panel import SidePanelContainer
+
+# Импортируем MemoryManager
+from ..memory import get_memory_manager, MemoryManager
+
+# Импортируем системный промпт из personality
+# Пытаемся импортировать из gopiai.app.prompt.personality, если не получится - используем стандартный
+PERSONALITY_SYSTEM_PROMPT = None
 try:
-    # Пытаемся импортировать из GopiAI-App
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'GopiAI-App'))
     from gopiai.app.prompt.personality import PERSONALITY_SYSTEM_PROMPT
 except ImportError:
     # Fallback на стандартный промпт если файл не найден
     PERSONALITY_SYSTEM_PROMPT = "Вы - интеллектуальный ассистент GopiAI. Отвечайте на вопросы пользователей максимально полно и точно."
 
-# Импортируем функцию для получения RAG контекста
-# Прямая реализация функции вместо импорта для избежания проблем с зависимостями
-import requests
-
-def get_embedded_memory_context(query: str, max_results: int = 3) -> str:
-    """Retrieve context from embedded memory system (SimpleMemoryManager).
-    
-    Args:
-        query: The search query string
-        max_results: Maximum number of context items to retrieve (default: 3)
-        
-    Returns:
-        A string containing the retrieved context items, separated by newlines.
-        Returns an empty string if memory system is unavailable or an error occurs.
-    """
-    try:
-        from rag_memory_system import get_memory_manager
-        
-        # Get memory manager
-        manager = get_memory_manager()
-        
-        # Search for relevant messages
-        results = manager.search_memory(query, limit=max_results)
-        
-        if results:
-            # Format results into context string
-            context_items = []
-            for result in results:
-                content = result.get('content', '')
-                # Include role information for better context
-                role = result.get('role', 'unknown')
-                if role == 'user':
-                    context_items.append(f"Пользователь ранее спрашивал: {content}")
-                elif role == 'assistant':
-                    context_items.append(f"Ассистент ранее отвечал: {content}")
-                else:
-                    context_items.append(content)
-            
-            return "\n\n".join(context_items)
-        else:
-            logger.debug(f"No memory results found for query: {query}")
-            return ""
-            
-    except ImportError as e:
-        logger.warning(f"Embedded memory system not available: {e}")
-        return ""
-    except Exception as e:
-        logger.error(f"Unexpected error in get_embedded_memory_context: {e}")
-        return ""
-
-RAG_AVAILABLE = True  # Функция всегда доступна, но может возвращать пустой результат
-logger.info("✅ RAG context function defined directly")
+# Глобальный экземпляр менеджера памяти
+memory_manager = get_memory_manager()
+RAG_AVAILABLE = True  # Флаг доступности RAG
+logger.info("✅ Memory manager initialized")
 
 
 
@@ -727,70 +684,100 @@ class ChatWidget(QWidget):
     
     def _save_chat_history(self):
         """Сохраняет историю чата в долгосрочное хранилище"""
+        if not RAG_AVAILABLE or not hasattr(self, 'current_session_id'):
+            return
+            
         try:
-            if not hasattr(self, 'chat_context') or not self.chat_context.messages:
+            # Получаем сообщения из текущей сессии
+            messages = []
+            for msg in self.chat_context.get_messages():
+                if msg.role in ['user', 'assistant']:
+                    messages.append({
+                        'role': msg.role,
+                        'content': msg.content,
+                        'timestamp': datetime.now().isoformat()
+                    })
+            
+            if not messages:
                 return
                 
-            # Получаем все сообщения из контекста
-            messages = [msg.to_dict() for msg in self.chat_context.messages]
-            
-            # Здесь должна быть логика сохранения в долгосрочное хранилище
-            # Например, сохранение в базу данных или файл
+            # Используем новый MemoryManager для сохранения сообщений
+            for msg in messages:
+                memory_manager.add_message(
+                    session_id=self.current_session_id,
+                    role=msg['role'],
+                    content=msg['content'],
+                    timestamp=msg['timestamp']
+                )
+                
             logger.info(f"[MEMORY] Сохранено {len(messages)} сообщений в историю чата")
             
         except Exception as e:
-            logger.error(f"[ERROR] Ошибка при сохранении истории чата: {e}", exc_info=True)
+            logger.error(f"[MEMORY] Ошибка при сохранении истории чата: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            logger.error("Ошибка при сохранении истории чата", exc_info=True)
     
     def show_context_stats(self):
         """Показывает статистику текущего контекста чата"""
-        stats = self.chat_context.get_stats()
-        
-        # Получаем информацию о долгосрочной памяти
-        rag_status = "🟢 Включена" if self.use_long_term_memory else "🔴 Выключена"
-        rag_info = f"• Долгосрочная память (RAG): {rag_status}\n"
-        
-        # Показываем превью последних 2 сообщений
-        context_preview = ""
-        if stats['message_count'] > 0:
-            last_messages = self.chat_context.get_last_messages(2)
-            preview_parts = []
-            for msg in last_messages:
-                role_display = "Вы" if msg.role == "user" else "Ассистент"
-                content_preview = msg.content[:50] + "..." if len(msg.content) > 50 else msg.content
-                preview_parts.append(f"- {role_display}: {content_preview}")
-            context_preview = "\n\nПоследние сообщения:\n" + "\n".join(preview_parts)
-        
-        self.append_message("Система", 
-            f"📊 Статистика контекста:\n"
-            f"• Сообщений: {stats['message_count']}/{stats['max_messages']}\n"
-            f"• Символов: {stats['total_characters']}\n"
-            f"• Примерно токенов: {stats['estimated_tokens']}/{stats['max_tokens']}\n"
-            f"{rag_info}"
-            + context_preview)
-        
-        # Добавляем информацию о долгосрочной памяти, если она доступна
-        if RAG_AVAILABLE and self.use_long_term_memory:
-            try:
-                # Примерная проверка доступности RAG
-                sample_query = "тест"
-                rag_context = self._get_rag_context(sample_query)
-                if rag_context:
-                    self.append_message("Система",
-                        f"✅ Долгосрочная память активна. "
-                        f"Тестовый запрос вернул {len(rag_context)} символов контекста."
-                    )
-                else:
-                    self.append_message("Система",
-                        "⚠️ Долгосрочная память активна, но не вернула результатов. "
-                        "Возможно, база знаний пуста."
-                    )
-            except Exception as e:
-                logger.error(f"Ошибка при проверке RAG: {e}", exc_info=True)
-                self.append_message("Система",
-                    f"⚠️ Ошибка при проверке долгосрочной памяти: {str(e)}"
-                )
-        
-        logger.info(f"Context stats displayed: {stats}")
+        try:
+            # Получаем статистику из ChatContext
+            stats = self.chat_context.get_stats()
+            
+            # Получаем статистику из MemoryManager
+            memory_stats = {}
+            if RAG_AVAILABLE:
+                try:
+                    memory_stats = memory_manager.get_stats()
+                except Exception as e:
+                    memory_stats = {"error": str(e)}
+            
+            # Формируем сообщение
+            message = "<b>Статистика контекста:</b>\n"
+            message += f"• Сообщений в текущем контексте: {stats['total_messages']}\n"
+            # Добавляем информацию о токенах, если доступна
+            if 'total_tokens' in stats and 'max_tokens' in stats:
+                message += f"• Всего токенов: {stats['total_tokens']}/{stats['max_tokens']}\n"
+            
+            # Добавляем информацию о долгосрочной памяти
+            message += f"\n<b>Долгосрочная память (txtai):</b>\n"
+            
+            if 'error' in memory_stats:
+                message += f"Ошибка: {memory_stats['error']}\n"
+            else:
+                message += f"• Всего сообщений: {memory_stats.get('total_messages', 0)}\n"
+                # Добавляем информацию о сессиях, если доступно
+                if 'total_sessions' in memory_stats:
+                    message += f"• Всего сессий: {memory_stats['total_sessions']}\n"
+                # Добавляем информацию о доступности эмбеддингов
+                if 'embeddings_available' in memory_stats:
+                    status = "доступны" if memory_stats['embeddings_available'] else "недоступны"
+                    message += f"• Семантический поиск: {status}\n"
+                # Добавляем информацию о доступности анализа эмоций
+                if 'emotion_analyzer_available' in memory_stats:
+                    status = "доступен" if memory_stats['emotion_analyzer_available'] else "недоступен"
+                    message += f"• Анализ эмоций: {status}\n"
+                # Добавляем информацию о каталоге данных
+                if 'data_dir' in memory_stats:
+                    message += f"\n<b>Каталог данных:</b>\n{memory_stats['data_dir']}\n"
+
+            # Показываем диалоговое окно с информацией
+            QMessageBox.information(
+                self,
+                "Статистика контекста",
+                message,
+                QMessageBox.StandardButton.Ok
+            )
+            
+        except Exception as e:
+            logger.error(f"Ошибка при получении статистики контекста: {e}")
+            QMessageBox.critical(
+                self,
+                "Ошибка",
+                f"Не удалось получить статистику контекста: {e}",
+                QMessageBox.StandardButton.Ok
+            )
+            logger.info(f"Context stats displayed: {stats}")
     
     def _get_rag_context(self, query: str) -> str:
         """
@@ -802,19 +789,27 @@ class ChatWidget(QWidget):
         Returns:
             str: Релевантный контекст или пустая строка, если RAG недоступен
         """
+        if not RAG_AVAILABLE or not query.strip():
+            return ""
+            
         try:
-            # Проверяем доступность RAG
-            if not RAG_AVAILABLE:
-                logger.warning("[RAG] RAG недоступен. Пропускаем поиск по долгосрочной памяти.")
+            # Используем новый MemoryManager для поиска релевантного контекста
+            results = memory_manager.search_memory(query, limit=3)
+            if not results:
                 return ""
                 
-            # Получаем контекст из встроенной памяти
-            rag_context = get_embedded_memory_context(query, max_results=3)
+            # Форматируем результаты в строку контекста
+            context_items = []
+            for i, result in enumerate(results, 1):
+                role = "Пользователь" if result.get('role') == 'user' else "Ассистент"
+                content = result.get('content', '').strip()
+                if content:
+                    context_items.append(f"{i}. [{role}] {content}")
             
-            if rag_context and rag_context.strip():
-                logger.info(f"[RAG] Найден релевантный контекст: {len(rag_context)} символов")
-                return rag_context
-                
+            if context_items:
+                context = "\n\n".join(context_items)
+                logger.info(f"[MEMORY] Получен контекст из долгосрочной памяти: {len(context)} символов")
+                return f"Релевантный контекст из предыдущих обсуждений:\n{context}"
             logger.info("[RAG] Релевантный контекст не найден")
             return ""
             

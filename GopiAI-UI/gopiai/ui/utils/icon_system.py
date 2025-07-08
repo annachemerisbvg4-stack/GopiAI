@@ -16,9 +16,9 @@ from PySide6.QtCore import QSize, QTimer
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtWidgets import QMenuBar, QWidget
 
-# Импортируем универсальный менеджер иконок
+# Импортируем универсальный менеджер иконок из компонентов
 try:
-    from .icon_manager import UniversalIconManager, get_icon
+    from ..components.icon_file_system_model import UniversalIconManager, get_icon
     icon_manager = UniversalIconManager.instance()
     print(f"✅ Инициализирован универсальный менеджер иконок")
 except ImportError as e:
@@ -210,7 +210,7 @@ class AutoIconSystem:
             if icon_manager is None:
                 # Если глобальный тоже не определен, пробуем импортировать UniversalIconManager
                 try:
-                    from .icon_manager import UniversalIconManager
+                    from ..components.icon_file_system_model import UniversalIconManager
                     self.icon_manager = UniversalIconManager.instance()
                     print("✅ AutoIconSystem использует UniversalIconManager")
                 except ImportError:

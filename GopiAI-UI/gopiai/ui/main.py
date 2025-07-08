@@ -82,16 +82,29 @@ try:
 
     print("[OK] Все основные модули UI загружены успешно")
     
-    # Инициализация системы памяти GopiAI
-    from gopiai.ui.memory_initializer import init_memory_system
+    # Инициализация системы памяти GopiAI с использованием нового MemoryManager
     try:
-        init_ok = init_memory_system(silent=False)
-        print(f"[MEMORY] Initialisation status: {init_ok}")
-        if not init_ok:
-            print("[WARNING] Инициализация памяти неудачна, приложение продолжит работу без полной функциональности памяти")
+        from gopiai.core.memory import get_memory_manager
+        memory_manager = get_memory_manager()
+        print("[MEMORY] Инициализирован MemoryManager")
+        print(f"[MEMORY] Данные хранятся в: {memory_manager.data_dir}")
+        
+        # Простой тест работы памяти
+        try:
+            test_session = "test_session_" + str(hash('test'))
+            test_msg = "Тестовая запись от " + str(datetime.now())
+            memory_manager.add_message(
+                session_id=test_session,
+                role="system",
+                content=test_msg
+            )
+            print("[MEMORY] Тестовая запись успешно добавлена")
+        except Exception as test_err:
+            print(f"[WARNING] Предупреждение при тестировании памяти: {test_err}")
+            
     except Exception as e:
         print(f"[ERROR] Ошибка при инициализации памяти: {e}")
-        print("[WARNING] Приложение продолжит работу без системы памяти")
+        print("[WARNING] Приложение продолжит работу с ограниченной функциональностью памяти")
     
     MODULES_LOADED = True
 

@@ -497,11 +497,19 @@ class EmotionalClassifier:
         return adapter_config
 
 
-# Для тестирования
-if __name__ == "__main__":
-    print("Тестирование EmotionalClassifier")
+def run_tests():
+    """Запуск тестов эмоционального классификатора"""
+    print("\n" + "="*80)
+    print("🔍 ТЕСТИРОВАНИЕ EMOTIONAL CLASSIFIER".center(80))
+    print("="*80 + "\n")
+    
+    # Включаем подробный вывод
+    import sys
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    print("Настройка вывода завершена")
     
     # Моковый AI Router для тестирования
+    print("Инициализация мокового AI Router...")
     class MockAIRouter:
         def _generate(self, prompts):
             class MockGeneration:
@@ -509,19 +517,195 @@ if __name__ == "__main__":
                     self.text = text
             
             class MockResult:
-                def __init__(self):
-                    self.generations = [[MockGeneration('{"primary_emotion": "positive", "confidence": 0.8, "emotional_intensity": 0.7, "explanation": "Пользователь выражает радость", "recommendations": ["Поддержать позитивное настроение"]}')]]
+                def __init__(self, emotion_data):
+                    self.generations = [[MockGeneration(json.dumps(emotion_data))]]
             
-            return MockResult()
+            # Извлекаем текст запроса из промпта
+            def extract_text(prompt):
+                if hasattr(prompt, 'text'):
+                    return prompt.text
+                elif isinstance(prompt, str):
+                    return prompt
+                elif isinstance(prompt, list) and prompt:
+                    return extract_text(prompt[0])
+                return str(prompt)
+                
+            prompt_text = extract_text(prompts)
+            
+            # Определяем эмоцию на основе ключевых слов (в порядке приоритета)
+            prompt_lower = prompt_text.lower()
+            
+            if any(word in prompt_lower for word in ["рад", "спасибо", "помог", "отлично"]):
+                return MockResult({
+                    "primary_emotion": "positive",
+                    "confidence": 0.9,
+                    "emotional_intensity": 0.8,
+                    "explanation": "Пользователь выражает радость и благодарность",
+                    "recommendations": ["Поддержать позитивное настроение"],
+                    "secondary_emotions": ["gratitude", "happiness"]
+                })
+            elif any(word in prompt_text.lower() for word in ["отчаянии", "одиноко", "не получается"]):
+                return MockResult({
+                    "primary_emotion": "depressed",
+                    "confidence": 0.85,
+                    "emotional_intensity": 0.9,
+                    "explanation": "Пользователь выражает отчаяние и одиночество",
+                    "recommendations": ["Проявить эмпатию и предложить поддержку"],
+                    "secondary_emotions": ["sadness", "hopelessness"]
+                })
+            elif any(word in prompt_text.lower() for word in ["почему", "не работает", "пробовал"]):
+                return MockResult({
+                    "primary_emotion": "frustrated",
+                    "confidence": 0.8,
+                    "emotional_intensity": 0.75,
+                    "explanation": "Пользователь выражает раздражение от неудач",
+                    "recommendations": ["Проявить терпение, предложить помощь"],
+                    "secondary_emotions": ["annoyance", "impatience"]
+                })
+            elif any(word in prompt_text.lower() for word in ["боюсь", "не успею", "сделать"]):
+                return MockResult({
+                    "primary_emotion": "anxious",
+                    "confidence": 0.82,
+                    "emotional_intensity": 0.7,
+                    "explanation": "Пользователь выражает тревогу о сроках",
+                    "recommendations": ["Успокоить, предложить план действий"],
+                    "secondary_emotions": ["worry", "uncertainty"]
+                })
+            elif any(word in prompt_text.lower() for word in ["объясни", "не понял"]):
+                return MockResult({
+                    "primary_emotion": "confused",
+                    "confidence": 0.88,
+                    "emotional_intensity": 0.6,
+                    "explanation": "Пользователь выражает замешательство",
+                    "recommendations": ["Объяснить подробнее, использовать примеры"],
+                    "secondary_emotions": ["uncertainty", "perplexity"]
+                })
+            elif any(word in prompt_text.lower() for word in ["жить", "одиноко", "не знаю"]):
+                return MockResult({
+                    "primary_emotion": "supportive_needed",
+                    "confidence": 0.9,
+                    "emotional_intensity": 0.85,
+                    "explanation": "Пользователю нужна эмоциональная поддержка",
+                    "recommendations": ["Проявить эмпатию, предложить помощь"],
+                    "secondary_emotions": ["loneliness", "vulnerability"]
+                })
+            elif any(word in prompt_text.lower() for word in ["всё", "хватит", "не могу"]):
+                return MockResult({
+                    "primary_emotion": "angry",
+                    "confidence": 0.92,
+                    "emotional_intensity": 0.95,
+                    "explanation": "Пользователь выражает гнев и раздражение",
+                    "recommendations": ["Сохранять спокойствие, деэскалировать ситуацию"],
+                    "secondary_emotions": ["frustration", "irritation"]
+                })
+            else:
+                # Ответ по умолчанию для неизвестных запросов
+                return MockResult({
+                    "primary_emotion": "neutral",
+                    "confidence": 0.5,
+                    "emotional_intensity": 0.3,
+                    "explanation": "Эмоциональный тон не определен",
+                    "recommendations": ["Задать уточняющие вопросы"],
+                    "secondary_emotions": []
+                })
     
-    # Тестируем классификатор
-    classifier = EmotionalClassifier(MockAIRouter())
+    # Создаем экземпляр классификатора с моковым роутером
+    print("Создание экземпляра EmotionalClassifier...")
+    try:
+        classifier = EmotionalClassifier(ai_router=MockAIRouter())
+        print("Классификатор успешно создан")
+    except Exception as e:
+        print(f"ОШИБКА при создании классификатора: {str(e)}")
+        return False
     
-    # Пример анализа
-    test_message = "Спасибо большое! Ты мне очень помог, я так рад!"
-    analysis = classifier.analyze_emotional_state([], test_message)
+    # Тестовые кейсы: (сообщение, ожидаемая эмоция, описание)
+    test_cases = [
+        ("Спасибо большое! Ты мне очень помог, я так рад!", 
+         EmotionalState.POSITIVE, "Ярко выраженная радость"),
+        
+        ("Я в полном отчаянии... У меня ничего не получается", 
+         EmotionalState.DEPRESSED, "Глубокое отчаяние"),
+        
+        ("Почему ничего не работает? Я уже сто раз пробовал!", 
+         EmotionalState.FRUSTRATED, "Раздражение от неудач"),
+        
+        ("Боюсь, что не успею к сроку, столько всего нужно сделать...", 
+         EmotionalState.ANXIOUS, "Тревога о сроках"),
+        
+        ("Объясни, пожалуйста, еще раз, я не совсем понял", 
+         EmotionalState.CONFUSED, "Замешательство"),
+        
+        ("Я не знаю, как дальше жить, мне так одиноко...", 
+         EmotionalState.SUPPORTIVE_NEEDED, "Потребность в поддержке"),
+        
+        ("ВСЁ! ХВАТИТ! Я больше так не могу!", 
+         EmotionalState.ANGRY, "Ярость и гнев")
+    ]
     
-    print(f"Эмоция: {analysis.primary_emotion.value}")
-    print(f"Уверенность: {analysis.confidence:.2f}")
-    print(f"Нужна поддержка: {analysis.needs_support}")
-    print(f"Рекомендации: {analysis.recommendations}")
+    # Запускаем тесты
+    total = len(test_cases)
+    passed = 0
+    print(f"\nНайдено тестов: {total}")
+    if total == 0:
+        print("ОШИБКА: Не найдено тестов для выполнения!")
+        return False
+    
+    for i, (message, expected_emotion, description) in enumerate(test_cases, 1):
+        print(f"\nТЕСТ {i}/{total}: {description.upper()}")
+        print("-" * 50)
+        print(f"Сообщение: {message}")
+        # Debug information
+        print(f"Тест: {i}/{total} - {description}")
+        print(f"Ожидаемая эмоция: {expected_emotion.value}")
+        
+        try:
+            # Анализ эмоционального состояния
+            analysis = classifier.analyze_emotional_state([], message)
+            result = analysis.primary_emotion
+            confidence = analysis.confidence
+            
+            print("\nРЕЗУЛЬТАТ:")
+            print(f"- Эмоция: {result.value.upper()}")
+            print(f"- Уверенность: {confidence:.1%}")
+            print(f"- Интенсивность: {analysis.emotional_intensity:.1%}")
+            if hasattr(analysis, 'explanation'):
+                print(f"- Объяснение: {analysis.explanation}")
+            
+            # Проверка результата
+            test_passed = result == expected_emotion
+            
+            if test_passed:
+                print("\n✅ ВЕРНО: эмоция определена правильно")
+                passed += 1
+            else:
+                print(f"\n❌ ОШИБКА: ожидалось {expected_emotion.value.upper()}")
+            
+            # Вывод рекомендаций, если они есть
+            if hasattr(analysis, 'recommendations') and analysis.recommendations:
+                print("\nРекомендации:")
+                for rec in analysis.recommendations[:2]:
+                    print(f"- {rec}")
+                    
+        except Exception as e:
+            print(f"\nОШИБКА: {str(e)}")
+    
+    # Вывод итогов
+    success_rate = (passed / total) * 100 if total > 0 else 0
+    
+    print("\n" + "="*50)
+    print(f"ИТОГИ ТЕСТИРОВАНИЯ")
+    print("="*50)
+    print(f"✅ Успешно: {passed} из {total}")
+    print(f"❌ Ошибок: {total - passed} из {total}")
+    print(f"📊 Успешность: {success_rate:.1f}%")
+    
+    if success_rate < 50:
+        print("\n⚠️  Внимание: низкий процент успешных тестов!")
+        print("Рекомендуется проверить ключевые слова и логику классификации.")
+    
+    print("\n" + "="*50)
+    return success_rate >= 70
+
+
+if __name__ == "__main__":
+    run_tests()
