@@ -69,10 +69,31 @@ class UniversalIconManager:
     
     def _init_lucide_manager(self):
         """Инициализация Lucide менеджера иконок"""
-        # Lucide иконки интегрированы в UniversalIconManager
-        # Старые внешние менеджеры больше не используются
-        logger.info("✅ Lucide иконки интегрированы в UniversalIconManager")
-        return True
+        try:
+            # Создаем словарь для хранения Lucide иконок
+            self.lucide_icons = {}
+            
+            # Путь к директории с SVG иконками Lucide
+            lucide_icons_dir = Path(__file__).parent.parent / "assets" / "icons" / "lucide"
+            
+            # Проверяем существование директории
+            if lucide_icons_dir.exists() and lucide_icons_dir.is_dir():
+                # Сканируем директорию с SVG файлами
+                for svg_file in lucide_icons_dir.glob("*.svg"):
+                    icon_name = svg_file.stem
+                    with open(svg_file, 'r', encoding='utf-8') as f:
+                        self.lucide_icons[icon_name] = f.read()
+                
+                logger.info(f"✅ Загружено {len(self.lucide_icons)} Lucide иконок")
+                self.lucide_manager = self  # Используем себя в качестве менеджера
+                return True
+            else:
+                logger.warning(f"Директория с Lucide иконками не найдена: {lucide_icons_dir}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Ошибка при инициализации Lucide иконок: {e}")
+            return False
     
     def _create_fallback_icons(self):
         """Создает базовые fallback иконки"""
@@ -118,18 +139,53 @@ class UniversalIconManager:
         if cache_key in self.icon_cache:
             return self.icon_cache[cache_key]        # Пытаемся получить иконку из Lucide
         icon = None
-        if self.lucide_manager:
+        if self.lucide_manager is self and hasattr(self, 'lucide_icons'):
+            # Используем встроенный менеджер Lucide иконок
+            try:
+                if icon_name in self.lucide_icons:
+                    # Создаем QIcon из SVG данных
+                    svg_data = self.lucide_icons[icon_name]
+                    if color:
+                        # Заменяем цвет в SVG, если указан
+                        from PySide6.QtSvg import QSvgRenderer
+                        from PySide6.QtGui import QPixmap, QPainter
+                        
+                        # Создаем временный QPixmap для отрисовки иконки
+                        pixmap = QPixmap(size)
+                        pixmap.fill(Qt.GlobalColor.transparent)
+                        
+                        # Создаем рендерер SVG
+                        renderer = QSvgRenderer(bytes(svg_data, 'utf-8'))
+                        
+                        # Отрисовываем SVG на QPixmap с нужным цветом
+                        painter = QPainter(pixmap)
+                        renderer.render(painter)
+                        
+                        # Создаем QIcon из QPixmap
+                        icon = QIcon(pixmap)
+                        painter.end()
+                    else:
+                        # Создаем QIcon напрямую из SVG данных, если цвет не указан
+                        from PySide6.QtSvg import QSvgWidget
+                        icon = QIcon()
+                        icon.addData(svg_data.encode('utf-8'))
+                    
+                    logger.debug(f"Загружена Lucide иконка: {icon_name}")
+                else:
+                    logger.debug(f"Lucide иконка не найдена: {icon_name}")
+            except Exception as e:
+                logger.error(f"Ошибка при создании иконки {icon_name} из SVG: {e}")
+                icon = None
+        elif self.lucide_manager and self.lucide_manager is not self:
+            # Используем внешний менеджер Lucide иконок, если он есть
             try:
                 if hasattr(self.lucide_manager, "get_icon"):
                     icon = self.lucide_manager.get_icon(icon_name, color, size)
                 elif hasattr(self.lucide_manager, "get_lucide_icon"):
                     icon = self.lucide_manager.get_lucide_icon(icon_name, color, size)
             except Exception as e:
-                logger.debug(f"Ошибка при получении иконки {icon_name} из LucideIconManager: {e}")
+                logger.debug(f"Ошибка при получении иконки {icon_name} из внешнего LucideIconManager: {e}")
                 icon = None
-        else:
-            # print(f"🔍 UniversalIconManager: lucide_manager = None, ищем {icon_name} в fallback")
-            pass
         
         # Если иконка не получена, используем fallback
         if icon is None:

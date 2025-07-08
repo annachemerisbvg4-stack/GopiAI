@@ -1,8 +1,14 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QFileDialog, QLabel, QSizePolicy, QMessageBox
-from PySide6.QtCore import Qt, QMimeData, Slot, QMetaObject, QTimer, Signal
-from PySide6.QtGui import QIcon, QDropEvent, QDragEnterEvent, QPixmap, QTextCursor
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, 
+                              QFileDialog, QLabel, QSizePolicy, QMessageBox, QGraphicsOpacityEffect)
+from PySide6.QtCore import Qt, QMimeData, Slot, QMetaObject, QTimer, QThread, Signal, QRect, QPoint
+from PySide6.QtGui import QIcon, QDropEvent, QDragEnterEvent, QPixmap, QTextCursor, QPainter, QColor, QPen
+
+# Import UI Assistant
+from gopiai.core import get_ui_assistant_tool
 from typing import Optional, List, Dict, Any, Tuple, Union
 import re
+import threading
+import time
 import json
 import time
 import logging
@@ -42,9 +48,6 @@ memory_manager = get_memory_manager()
 RAG_AVAILABLE = True  # Флаг доступности RAG
 logger.info("✅ Memory manager initialized")
 
-
-
-
 # DEBUG LOGGING PATCH - Enhanced for browser command debugging
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -71,8 +74,126 @@ class ChatWidget(QWidget):
         self.theme_manager = theme_manager
         self.apply_theme()
 
+    def _init_ui_assistant(self):
+        """Initialize the UI Assistant integration."""
+        # Create visual feedback elements
+        self._setup_visual_feedback()
+        
+        # Get the UI Assistant instance
+        self.ui_assistant = get_ui_assistant()
+        
+        # Connect UI Assistant signals
+        self.ui_assistant.action_started.connect(self._on_assistant_action_started)
+        self.ui_assistant.action_completed.connect(self._on_assistant_action_completed)
+        self.ui_assistant.visual_feedback.connect(self._on_visual_feedback)
+        
+        # Set the main window reference
+        main_window = self.window()
+        if main_window:
+            self.ui_assistant.set_main_window(main_window)
+    
+    def _setup_visual_feedback(self):
+        """Set up visual feedback elements for the UI Assistant."""
+        # Create a transparent overlay window for visual feedback
+        self.overlay_widget = QWidget(self)
+        self.overlay_widget.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint | 
+            Qt.WindowType.WindowStaysOnTopHint |
+            Qt.WindowType.Tool |
+            Qt.WindowType.WindowTransparentForInput
+        )
+        self.overlay_widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.overlay_widget.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Status label for showing current action
+        self.status_label = QLabel()
+        self.status_label.setStyleSheet("""
+            QLabel {
+                background-color: rgba(0, 0, 0, 180);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 12px;
+                margin: 10px;
+            }
+        """)
+        self.status_label.hide()
+        
+        # Highlight widget for showing where actions are being performed
+        self.highlight_widget = QLabel()
+        self.highlight_widget.setStyleSheet("""
+            QLabel {
+                background-color: rgba(65, 131, 196, 40);
+                border: 2px solid #4183c4;
+                border-radius: 4px;
+            }
+        """)
+        self.highlight_widget.hide()
+        
+        layout.addWidget(self.status_label, 0, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        layout.addStretch()
+        
+        self.overlay_widget.setLayout(layout)
+        self.overlay_widget.hide()
+    
+    def _on_assistant_action_started(self, message: str):
+        """Handle action started signal from UI Assistant."""
+        self.append_message("assistant", message)
+    
+    def _on_assistant_action_completed(self, message: str, success: bool):
+        """Handle action completed signal from UI Assistant."""
+        status = "успешно" if success else "с ошибкой"
+        self.append_message("assistant", f"{message} - {status}")
+    
+    def _on_visual_feedback(self, feedback_type: str, data: dict):
+        """Handle visual feedback from UI Assistant."""
+        if feedback_type == "status_message":
+            self._show_status_message(data["message"], data.get("duration", 3000))
+        elif feedback_type == "highlight_element":
+            rect = QRect(
+                data["x"], data["y"],
+                data["width"], data["height"]
+            )
+            self._highlight_element(rect, data.get("duration", 1000))
+    
+    def _show_status_message(self, message: str, duration: int = 3000):
+        """Show a status message to the user."""
+        if not hasattr(self, 'status_label') or not self.status_label:
+            return
+            
+        self.status_label.setText(message)
+        self.status_label.show()
+        self.overlay_widget.raise_()
+        
+        # Hide the message after the duration
+        QTimer.singleShot(duration, self.status_label.hide)
+    
+    def _highlight_element(self, rect: QRect, duration: int = 1000):
+        """Highlight a UI element at the specified position."""
+        if not hasattr(self, 'highlight_widget') or not self.highlight_widget:
+            return
+            
+        # Convert to global coordinates if needed
+        main_window = self.window()
+        if main_window:
+            pos = main_window.mapToGlobal(rect.topLeft())
+            pos = self.overlay_widget.mapFromGlobal(pos)
+            rect = QRect(pos, rect.size())
+        
+        self.highlight_widget.setGeometry(rect)
+        self.highlight_widget.show()
+        self.highlight_widget.raise_()
+        
+        # Hide the highlight after the duration
+        QTimer.singleShot(duration, self.highlight_widget.hide)
+
     def apply_theme(self):
-        """Применяет глобальную тему к чату (ничего не делает, всё подтянется из глобального стиля)"""
+        """Apply the current theme to the chat widget."""
+        # Theme is applied through global stylesheet
         pass
 
 
@@ -93,12 +214,18 @@ class ChatWidget(QWidget):
         # Инициализация CrewAIClient
         self.crew_ai_client = CrewAIClient()
         
-        # Инициализация контекста чата для краткосрочной памяти
-        self.chat_context = ChatContext(max_messages=20, max_tokens=4000)
+        # Инициализация менеджера памяти
+        self.memory_manager = get_memory_manager()
+        self.session_id = f"session_{int(time.time())}"  # Уникальный ID сессии
         
         # Флаг использования долгосрочной памяти (RAG)
         self.use_long_term_memory = True
-        self.rag_context = None  # Будет инициализирован при первом использовании
+        
+        # Загружаем историю чата из памяти
+        self._load_chat_history()
+        
+        # Инициализируем переменные для отслеживания состояния чата
+        self._waiting_message_id = None
 
         # История сообщений
         self.history = QTextEdit(self)
@@ -177,6 +304,9 @@ class ChatWidget(QWidget):
         # Применить тему при инициализации
         self.theme_manager = None
         self.apply_theme()
+        
+        # Initialize UI Assistant integration
+        self._init_ui_assistant()
         
         # Check service availability after UI is fully initialized
         self._check_crewai_availability()
@@ -265,6 +395,73 @@ class ChatWidget(QWidget):
             QTextEdit.keyPressEvent(self.input, event)
 
     @Slot(str, bool)
+    def _update_assistant_response(self, message_id, response, error_occurred=False):
+        """
+        Обновляет ответ ассистента в истории чата с улучшенной обработкой контекста
+        
+        Args:
+            message_id: ID сообщения для обновления
+            response: Текст ответа или данные ответа
+            error_occurred: Флаг ошибки
+        """
+        try:
+            # Получаем текст ответа, если response - словарь
+            response_text = response
+            if isinstance(response, dict):
+                response_text = response.get('response', str(response))
+                
+                # Если есть дополнительные данные в ответе, обрабатываем их
+                if 'action' in response:
+                    # Обработка специальных действий (например, навигация, поиск и т.д.)
+                    action = response.get('action')
+                    if action == 'search' and 'query' in response:
+                        response_text = f"🔍 Ищу информацию по запросу: {response['query']}"
+                    elif action == 'navigate' and 'url' in response:
+                        response_text = f"🌐 Перехожу по ссылке: {response['url']}"
+            
+            # Обработка ошибок
+            if error_occurred:
+                error_msg = ""
+                if isinstance(response, dict) and 'error' in response:
+                    error_msg = response['error']
+                elif isinstance(response, str):
+                    error_msg = response
+                
+                if "connection" in str(error_msg).lower():
+                    response_text = "⚠️ Не удалось подключиться к серверу. Пожалуйста, проверьте подключение к интернету и повторите попытку."
+                else:
+                    response_text = f"⚠️ Произошла ошибка: {error_msg if error_msg else 'Неизвестная ошибка'}"
+            
+            # Добавляем сообщение ассистента в чат
+            self.append_message("assistant", response_text)
+            
+            # Прокручиваем чат вниз
+            self._scroll_history_to_end()
+            
+            # Очищаем ID сообщения ожидания
+            if hasattr(self, '_waiting_message_id'):
+                del self._waiting_message_id
+                
+            # Сохраняем контекст разговора
+            if hasattr(self, 'memory_manager') and self.memory_manager:
+                try:
+                    self.memory_manager.add_message(
+                        role="assistant",
+                        content=response_text,
+                        session_id=self.session_id
+                    )
+                except Exception as e:
+                    logger.error(f"Ошибка при сохранении сообщения в память: {e}")
+                
+        except Exception as e:
+            logger.error(f"Ошибка при обновлении ответа ассистента: {e}", exc_info=True)
+            
+            # Показываем пользователю понятное сообщение об ошибке
+            try:
+                self.append_message("Система", "Извините, произошла ошибка при обработке запроса. Пожалуйста, попробуйте еще раз.")
+            except:
+                pass
+            
     def _handle_response_from_thread(self, response_data, error_occurred=False):
         """
         Обрабатывает ответы от фонового потока через Qt signal
@@ -426,7 +623,6 @@ class ChatWidget(QWidget):
             
         # Добавляем сообщение в историю и контекст
         self.append_message("Вы", text)
-        self.chat_context.add_user_message(text)
         self.input.clear()
         
         # Показываем индикатор ожидания
@@ -437,12 +633,12 @@ class ChatWidget(QWidget):
         self.append_message("Ассистент", "⏳ Обрабатываю запрос...")
         
         # Запускаем обработку в фоновом потоке
-        thread = threading.Thread(
+        processing_thread = threading.Thread(
             target=self._process_message_in_background,
-            args=(text,)
+            args=(text,),
+            daemon=True
         )
-        thread.daemon = True
-        thread.start()
+        processing_thread.start()
         
     def _process_message_in_background(self, message):
         """
@@ -452,142 +648,88 @@ class ChatWidget(QWidget):
             message: Текст сообщения от пользователя
         """
         try:
-            logger.info(f"[DEBUG] Начало обработки сообщения: {message[:100]}...")
+            # Получаем контекст из памяти, если включена долгосрочная память
+            context = ""
+            if self.use_long_term_memory and hasattr(self, 'memory_manager'):
+                context = self._get_rag_context(message)
+                if context:
+                    logger.info(f"[MEMORY] Найден контекст из памяти: {context[:200]}...")
             
-            # Добавляем сообщение в контекст чата
-            self.chat_context.add_user_message(message)
+            # Формируем промпт с учетом контекста
+            prompt = message
+            if context:
+                prompt = f"Контекст из предыдущих обсуждений:\n{context}\n\nТекущий вопрос: {message}"
             
-            # Получаем контекст чата
-            chat_history = self.chat_context.get_context_for_api()
-            
-            # Если включена долгосрочная память, получаем релевантный контекст
-            rag_context = ""
-            if self.use_long_term_memory:
-                rag_context = self._get_rag_context(message)
-                if rag_context:
-                    logger.info(f"[MEMORY] Получен контекст из долгосрочной памяти: {len(rag_context)} символов")
-            
-            # Формируем полный контекст для отправки
-            context = {
-                'message': message,
-                'chat_history': chat_history,
-                'rag_context': rag_context
-            }
-            
-            # Отправляем запрос в CrewAI с контекстом
-            response = self.crew_ai_client.process_request(json.dumps(context))
-            
-            # Обработка ответа
-            if isinstance(response, dict):
-                if response.get("impl") == "browser-use" and not response.get("response"):
-                    response["response"] = f"Выполняю команду: {response.get('command', '')}"
+            # Отправляем запрос в CrewAI API
+            try:
+                # Получаем историю сообщений для контекста
+                history = []
+                if hasattr(self, 'memory_manager') and self.memory_manager:
+                    history = self.memory_manager.get_chat_history(
+                        session_id=self.session_id,
+                        limit=5  # Берем последние 5 сообщений для контекста
+                    )
                 
-                # Добавляем ответ ассистента в контекст чата
-                if 'response' in response:
-                    self.chat_context.add_assistant_message(response['response'])
+                # Формируем историю сообщений в формате для API
+                messages = [
+                    {"role": "system", "content": "Ты - полезный ассистент, который помогает пользователю. Будь дружелюбным и отзывчивым."}
+                ]
+                
+                # Добавляем историю сообщений
+                for msg in history:
+                    role = "user" if msg.get("role") == "user" else "assistant"
+                    messages.append({"role": role, "content": msg.get("content", "")})
+                
+                # Добавляем текущее сообщение пользователя
+                messages.append({"role": "user", "content": message})
+                
+                # Отправляем запрос в CrewAI API
+                response = self.crew_ai_client.chat_complete(
+                    messages=messages,
+                    context=context,
+                    session_id=self.session_id
+                )
+                
+                # Если ответ пустой, возвращаем стандартное сообщение
+                if not response:
+                    response = "Извините, не удалось обработать ваш запрос. Пожалуйста, попробуйте еще раз."
+                
+            except Exception as e:
+                logger.error(f"Ошибка при обработке сообщения через CrewAI: {e}", exc_info=True)
+                response = f"Произошла ошибка при обработке вашего запроса: {str(e)}"
             
-            logger.info(f"[DEBUG] Отправка ответа в основной поток: {str(response)[:200]}...")
+            # Добавляем задержку для имитации обработки
+            import time
+            time.sleep(0.5)
+                
             self.response_ready.emit(response, False)
             
         except Exception as e:
-            error_msg = f"Произошла ошибка при обработке запроса: {str(e)}"
-            logger.error(f"[ERROR] {error_msg}", exc_info=True)
-            error_response = {"response": error_msg, "error": str(e)}
-            self.response_ready.emit(error_response, True)
+            error_msg = f"Ошибка при обработке сообщения: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            self.response_ready.emit(error_msg, True)
 
-    @Slot(str, str, bool)
-    def _update_assistant_response(self, waiting_id, response, error_occurred=False):
+    def append_message(self, author, text, **kwargs):
         """
-        Обновляет ответ ассистента в истории чата (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+        Добавляет сообщение в историю чата и сохраняет в памяти
         
         Args:
-            waiting_id: ID сообщения ожидания для замены
-            response: Текст ответа или словарь с ответом
-            error_occurred: Флаг ошибки для стилизации
+            author: Отправитель сообщения (user/assistant)
+            text: Текст сообщения
+            **kwargs: Дополнительные метаданные (timestamp, emotion и т.д.)
         """
-        try:
-            logger.info(f"[UPDATE] Обновление ответа. ID: {waiting_id}, Тип ответа: {type(response)}, Ошибка: {error_occurred}")
-            
-            # Извлекаем текст ответа, если response - это словарь
-            response_text = response
-            if isinstance(response, dict):
-                response_text = response.get("response", str(response))
-            
-            # Убедимся, что response_text - строка
-            if not isinstance(response_text, str):
-                response_text = str(response_text)
-            
-            logger.debug(f"[UPDATE] Текст ответа: {response_text[:200]}...")
-            
-            # Стилизуем ответ в зависимости от наличия ошибки
-            if error_occurred:
-                formatted_response = f"<span style='color: #d73027;'>{response_text}</span>"
-            else:
-                formatted_response = response_text
-            
-            # Получаем текущий HTML
-            current_html = self.history.toHtml()
-            logger.debug(f"[UPDATE] Текущий HTML содержит {len(current_html)} символов")
-            
-            # Варианты поиска сообщения ожидания
-            waiting_patterns = [
-                f"id='{waiting_id}'",
-                f'id="{waiting_id}"',
-                "⏳ Обрабатываю запрос..."
-            ]
-            
-            # Пробуем найти и заменить сообщение ожидания
-            replaced = False
-            
-            for pattern in waiting_patterns:
-                if pattern in current_html:
-                    logger.info(f"[UPDATE] Найден паттерн: {pattern}")
-                    
-                    # Если нашли по ID, заменяем весь span
-                    if 'id=' in pattern:
-                        import re
-                        span_pattern = f'<span[^>]*id=["\']{waiting_id}["\'][^>]*>.*?</span>'
-                        updated_html = re.sub(span_pattern, formatted_response, current_html, flags=re.DOTALL)
-                    else:
-                        # Иначе заменяем просто текст
-                        updated_html = current_html.replace("⏳ Обрабатываю запрос...", formatted_response)
-                    
-                    if updated_html != current_html:
-                        logger.debug("[UPDATE] Обновление HTML чата...")
-                        self.history.setHtml(updated_html)
-                        logger.info("[UPDATE] Сообщение успешно обновлено")
-                        replaced = True
-                        break
-            
-            if not replaced:
-                logger.warning("[UPDATE] Не удалось найти сообщение ожидания, добавляем новое сообщение")
-                self.append_message("Ассистент", response_text)
-            
-            # Добавляем ответ в контекст чата, если это не ошибка
-            if not error_occurred and hasattr(self, 'chat_context'):
-                self.chat_context.add_assistant_message(response_text)
-            
-            # Прокручиваем вниз
-            self._scroll_history_to_end()
-            
-        except Exception as e:
-            logger.error(f"[ERROR] Ошибка при обновлении ответа: {e}", exc_info=True)
-            try:
-                # Fallback: добавляем новое сообщение с текстом ошибки
-                error_msg = f"Ошибка при обработке ответа: {str(e)}" if not error_occurred else str(response)
-                self.append_message("Ассистент", error_msg)
-            except Exception as inner_e:
-                logger.error(f"[CRITICAL] Не удалось добавить сообщение об ошибке: {inner_e}")
-        finally:
-            # Всегда включаем кнопку отправки
-            self.send_btn.setEnabled(True)
-
-
-    def append_message(self, author, text):
-        logger.info(f"append_message: author={author}, text_len={len(text)}")
+        # Сохраняем сообщение в памяти
+        role = 'user' if author.lower() == 'user' else 'assistant'
+        self.memory_manager.add_message(
+            session_id=self.session_id,
+            role=role,
+            content=text,
+            **kwargs
+        )
+        
+        # Отображаем сообщение в чате
         self.history.append(f"<b>{author}:</b> {text}")
-        self.history.repaint()
-
+        self._scroll_history_to_end()
 
     def attach_file(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Выберите файл")
@@ -595,7 +737,6 @@ class ChatWidget(QWidget):
             # НЕ выводим системное сообщение в чат - только в логи
             logger.info(f"📎 Файл прикреплен: {os.path.basename(file_path)} (полный путь: {file_path})")
             logger.info(f"Файл прикреплен: {file_path}")
-
 
     def attach_image(self):
         image_path, _ = QFileDialog.getOpenFileName(self, "Выберите изображение", filter="Images (*.png *.jpg *.jpeg *.bmp *.gif)")
@@ -671,53 +812,44 @@ class ChatWidget(QWidget):
     
     def clear_chat_context(self):
         """Очищает контекст чата (краткосрочную память)"""
-        stats_before = self.chat_context.get_stats()
-        self.chat_context.clear()
+        # Создаем новую сессию
+        self.session_id = f"session_{int(time.time())}"
         
-        # Сохраняем текущий чат в историю перед очисткой
-        self._save_chat_history()
+        # Очищаем историю отображения
+        self.history.clear()
+        self.history.append("<b>Система:</b> Контекст чата очищен. Начата новая сессия.")
+        self.history.append("<b>Система:</b> Добро пожаловать в чат! Используйте <b>Enter</b> для отправки сообщения и <b>Shift+Enter</b> для переноса строки.")
         
-        self.append_message("Ассистент", 
-            f"🧹 Контекст нашего разговора очищен! Теперь я начинаю с чистого листа.")
-        
-        logger.info(f"Chat context cleared. Previous stats: {stats_before}")
+        # Очищаем историю в памяти для текущей сессии
+        if hasattr(self, 'memory_manager') and self.memory_manager:
+            try:
+                # Очищаем только текущую сессию в памяти
+                # Проверяем, есть ли метод clear_session, иначе используем clear_memory
+                if hasattr(self.memory_manager, 'clear_session'):
+                    self.memory_manager.clear_session(self.session_id)
+                else:
+                    self.memory_manager.clear_memory()
+                logger.info("Контекст чата и сессия очищены")
+            except Exception as e:
+                logger.error(f"Ошибка при очистке сессии в памяти: {e}")
     
-    def _save_chat_history(self):
-        """Сохраняет историю чата в долгосрочное хранилище"""
-        if not RAG_AVAILABLE or not hasattr(self, 'current_session_id'):
+    def _load_chat_history(self):
+        """Загружает историю чата из памяти"""
+        if not hasattr(self, 'memory_manager') or not self.memory_manager:
             return
             
         try:
-            # Получаем сообщения из текущей сессии
-            messages = []
-            for msg in self.chat_context.get_messages():
-                if msg.role in ['user', 'assistant']:
-                    messages.append({
-                        'role': msg.role,
-                        'content': msg.content,
-                        'timestamp': datetime.now().isoformat()
-                    })
-            
-            if not messages:
-                return
-                
-            # Используем новый MemoryManager для сохранения сообщений
+            messages = self.memory_manager.get_chat_history(self.session_id)
             for msg in messages:
-                memory_manager.add_message(
-                    session_id=self.current_session_id,
-                    role=msg['role'],
-                    content=msg['content'],
-                    timestamp=msg['timestamp']
-                )
-                
-            logger.info(f"[MEMORY] Сохранено {len(messages)} сообщений в историю чата")
-            
+                role = msg.get('role', 'assistant')
+                content = msg.get('content', '')
+                if role == 'user':
+                    self.append_message("User", content)
+                else:
+                    self.append_message("Assistant", content)
         except Exception as e:
-            logger.error(f"[MEMORY] Ошибка при сохранении истории чата: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
-            logger.error("Ошибка при сохранении истории чата", exc_info=True)
-    
+            logger.error(f"Ошибка при загрузке истории чата: {e}")
+
     def show_context_stats(self):
         """Показывает статистику текущего контекста чата"""
         try:
@@ -789,32 +921,33 @@ class ChatWidget(QWidget):
         Returns:
             str: Релевантный контекст или пустая строка, если RAG недоступен
         """
-        if not RAG_AVAILABLE or not query.strip():
+        if not self.use_long_term_memory or not hasattr(self, 'memory_manager'):
             return ""
             
         try:
-            # Используем новый MemoryManager для поиска релевантного контекста
-            results = memory_manager.search_memory(query, limit=3)
+            # Ищем релевантные сообщения в памяти
+            results = self.memory_manager.search_memory(query, limit=3)
+            
             if not results:
                 return ""
                 
-            # Форматируем результаты в строку контекста
-            context_items = []
+            # Формируем контекст из найденных сообщений
+            context_parts = []
             for i, result in enumerate(results, 1):
-                role = "Пользователь" if result.get('role') == 'user' else "Ассистент"
-                content = result.get('content', '').strip()
-                if content:
-                    context_items.append(f"{i}. [{role}] {content}")
+                role = result.get('role', 'user')
+                content = result.get('content', '')
+                score = result.get('score', 0)
+                
+                # Обрезаем слишком длинные сообщения
+                if len(content) > 200:
+                    content = content[:200] + "..."
+                    
+                context_parts.append(f"{i}. [{role.upper()}] {content} (релевантность: {score:.2f})")
             
-            if context_items:
-                context = "\n\n".join(context_items)
-                logger.info(f"[MEMORY] Получен контекст из долгосрочной памяти: {len(context)} символов")
-                return f"Релевантный контекст из предыдущих обсуждений:\n{context}"
-            logger.info("[RAG] Релевантный контекст не найден")
-            return ""
+            return "\n".join(context_parts)
             
         except Exception as e:
-            logger.error(f"[RAG] Ошибка при получении контекста: {e}", exc_info=True)
+            logger.error(f"[RAG] Ошибка при поиске в памяти: {e}", exc_info=True)
             return ""
 
     def _handle_browser_command(self, command: str) -> str:

@@ -34,6 +34,9 @@ class GopiAILogger:
     
     def _setup_logger(self):
         """Настройка централизованного логгера"""
+        import sys  # Ensure sys is imported at the function level
+        import io
+        
         self._logger = logging.getLogger('GopiAI')
         self._logger.setLevel(logging.DEBUG)
         
@@ -41,11 +44,34 @@ class GopiAILogger:
         for handler in self._logger.handlers[:]:
             self._logger.removeHandler(handler)
         
-        # Консольный handler
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(logging.INFO)
+        # Консольный handler с поддержкой UTF-8
+        if sys.platform.startswith('win'):
+            
+            # Создаем обертку для stdout с поддержкой UTF-8
+            if sys.stdout.encoding != 'utf-8':
+                sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+            
+            # Создаем консольный handler с поддержкой UTF-8
+            console_handler = logging.StreamHandler(sys.stdout)
+            console_handler.setLevel(logging.INFO)
+            
+            # Форматтер для консоли (без эмодзи)
+            console_formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            )
+            console_handler.setFormatter(console_formatter)
+            self._logger.addHandler(console_handler)
+        else:
+            # Для не-Windows систем используем стандартный обработчик
+            console_handler = logging.StreamHandler(sys.stdout)
+            console_handler.setLevel(logging.INFO)
+            console_formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            )
+            console_handler.setFormatter(console_formatter)
+            self._logger.addHandler(console_handler)
         
-        # Файловый handler
+        # Файловый handler с UTF-8
         log_dir = Path("logs")
         log_dir.mkdir(exist_ok=True)
         
@@ -53,18 +79,18 @@ class GopiAILogger:
         file_handler = logging.FileHandler(log_file, encoding='utf-8')
         file_handler.setLevel(logging.DEBUG)
         
-        # Форматтер
-        formatter = logging.Formatter(
+        # Форматтер для файла (с эмодзи)
+        file_formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
-        console_handler.setFormatter(formatter)
-        file_handler.setFormatter(formatter)
-        
-        # Добавляем handlers
-        self._logger.addHandler(console_handler)
+        file_handler.setFormatter(file_formatter)
         self._logger.addHandler(file_handler)
         
-        self._logger.info("🎯 GopiAI Unified Logger initialized")
+        # Используем текстовое представление вместо эмодзи для Windows
+        if sys.platform.startswith('win'):
+            self._logger.info("[GOPIAI] GopiAI Unified Logger initialized")
+        else:
+            self._logger.info("🎯 GopiAI Unified Logger initialized")
     
     @property
     def logger(self) -> logging.Logger:

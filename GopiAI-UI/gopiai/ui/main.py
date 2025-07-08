@@ -37,6 +37,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QTabWidget,
     QSizePolicy,
+    QDockWidget,
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QPalette
@@ -84,7 +85,7 @@ try:
     
     # Инициализация системы памяти GopiAI с использованием нового MemoryManager
     try:
-        from gopiai.core.memory import get_memory_manager
+        from gopiai.ui.memory import get_memory_manager
         memory_manager = get_memory_manager()
         print("[MEMORY] Инициализирован MemoryManager")
         print(f"[MEMORY] Данные хранятся в: {memory_manager.data_dir}")
@@ -220,6 +221,9 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self._connect_menu_signals()
         self._apply_vscode_like_layout()
         self._setup_panel_shortcuts()
+        
+        # Initialize AI Assistant
+        self._init_ai_assistant()
 
 
         print("[OK] FramelessGopiAIStandaloneWindow готов к работе!")
@@ -594,6 +598,41 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
 
 
+    def _init_ai_assistant(self):
+        """Initialize the AI Assistant dock widget."""
+        try:
+            from gopiai.ui.components.ai_assistant_widget import AIAssistantWidget
+            
+            # Create the AI Assistant dock widget
+            self.ai_assistant_dock = QDockWidget("AI Assistant", self)
+            self.ai_assistant_dock.setObjectName("aiAssistantDock")
+            self.ai_assistant_dock.setAllowedAreas(
+                Qt.DockWidgetArea.LeftDockWidgetArea | 
+                Qt.DockWidgetArea.RightDockWidgetArea |
+                Qt.DockWidgetArea.BottomDockWidgetArea
+            )
+            
+            # Create the AI Assistant widget
+            self.ai_assistant = AIAssistantWidget()
+            self.ai_assistant.set_main_window(self)
+            
+            # Add the widget to the dock
+            self.ai_assistant_dock.setWidget(self.ai_assistant)
+            
+            # Add the dock to the main window (right side by default)
+            self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.ai_assistant_dock)
+            
+            # Add toggle action to View menu
+            if hasattr(self, 'menu_view'):
+                toggle_ai_assistant = self.ai_assistant_dock.toggleViewAction()
+                toggle_ai_assistant.setText("Показать/скрыть AI Assistant")
+                self.menu_view.addAction(toggle_ai_assistant)
+                
+            print("[OK] AI Assistant инициализирован")
+            
+        except Exception as e:
+            print(f"[ERROR] Ошибка инициализации AI Assistant: {e}")
+    
     def _connect_menu_signals(self):
         """Подключение сигналов меню"""
         try:

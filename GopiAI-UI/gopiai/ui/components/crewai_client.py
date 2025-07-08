@@ -14,22 +14,14 @@ import os
 import sys
 from pathlib import Path
 
-# Add the parent directory to path to import emotional_classifier
-sys.path.append(str(Path(__file__).parent.parent.parent.parent / 'GopiAI-CrewAI' / 'tools' / 'gopiai_integration'))
-try:
-    from emotional_classifier import EmotionalClassifier, EmotionalState
-    EMOTIONAL_CLASSIFIER_AVAILABLE = True
-except ImportError as e:
-    print(f"⚠️ Не удалось загрузить эмоциональный классификатор: {e}")
-    EMOTIONAL_CLASSIFIER_AVAILABLE = False
+# Emotional classifier is not available in this version
+EMOTIONAL_CLASSIFIER_AVAILABLE = False
+EmotionalClassifier = None
+EmotionalState = None
 
-
-# DEBUG LOGGING PATCH - Added for hang diagnosis
+# Set up logging
 import logging
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-print("🔧 DEBUG logging enabled for crewai_client.py")
 
 
 # --- NLP (spaCy) ---
@@ -65,9 +57,10 @@ class CrewAIClient:
                 from emotional_classifier import EmotionalClassifier
                 # Инициализируем с None, так как мы будем использовать моковый роутер
                 self.emotional_classifier = EmotionalClassifier(ai_router=None)
-                print("✅ Эмоциональный классификатор успешно инициализирован")
+                logger.info("Emotional classifier initialized")
             except Exception as e:
-                print(f"⚠️ Ошибка при инициализации эмоционального классификатора: {e}")
+                logger.warning(f"Failed to initialize emotional classifier: {e}")
+                self.emotional_classifier = None
 
     def brave_search_site(self, query):
         """

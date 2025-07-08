@@ -7,7 +7,7 @@ echo ═════════════════════════
 echo.
 
 REM Настройка путей к виртуальным окружениям
-set "CREWAI_VENV=C:\Users\crazy\GOPI_AI_MODULES\rag_memory_env"
+set "CREWAI_VENV=C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\crewai_env"
 set "UI_VENV=C:\Users\crazy\GOPI_AI_MODULES\rag_memory_env"
 
 REM Проверяем окружения
@@ -24,7 +24,7 @@ if exist "%UI_VENV%\Scripts\activate.bat" (
 ) else (
     echo ⚠️  UI environment not found at %UI_VENV%
     echo    Using rag_memory_env for UI
-    set "UI_VENV=%CREWAI_VENV%"
+    set "UI_VENV=%RAG_MEMORY_VENV%"
 )
 
 echo.
@@ -39,11 +39,11 @@ if exist "%CREWAI_VENV%\Scripts\activate.bat" (
     start "🤖 CrewAI API Server" cmd /k "title 🤖 CrewAI API Server && color 0A && cd /d C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI && echo. && echo ═══════════════════════════════════════ && echo    🤖 CrewAI API Server Environment && echo ═══════════════════════════════════════ && echo. && echo ⚠️  Using global Python environment && echo 📂 Directory: GopiAI-CrewAI && echo. && echo 🚀 Starting CrewAI API Server... && python crewai_api_server.py"
 )
 
-echo ⏳ Waiting for CrewAI server to start (10 seconds)...
+echo ⏳ Waiting for CrewAI server to start (20 seconds)...
 echo    🔄 Server initialization in progress...
 
-REM Ждем 10 секунд для запуска CrewAI сервера
-timeout /t 10 >nul
+REM Ждем 20 секунд для запуска CrewAI сервера
+timeout /t 20 >nul
 
 echo.
 echo 2️⃣  Launching GopiAI-UI...

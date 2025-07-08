@@ -53,17 +53,28 @@ class MemoryManager:
     def _init_emotion_classifier(self):
         """Initialize the emotion classifier"""
         try:
-            from ..components.emotional_classifier import EmotionalClassifier
-            self.emotion_classifier = EmotionalClassifier()
-            logger.info("✅ Emotional classifier initialized")
-        except ImportError:
+            # First try to import the simple emotion classifier from the project root
+            import sys
+            from pathlib import Path
+            
+            # Add the project root to Python path if not already there
+            project_root = str(Path(__file__).parent.parent.parent.parent.absolute())
+            if project_root not in sys.path:
+                sys.path.insert(0, project_root)
+                
+            from simple_emotion_classifier import SimpleEmotionClassifier
+            self.emotion_classifier = SimpleEmotionClassifier()
+            logger.info("✅ Simple emotion classifier initialized")
+        except ImportError as e:
             try:
-                # Fallback to simple classifier
+                # Fallback to trying to import from the standard location
                 from simple_emotion_classifier import get_emotion_classifier
                 self.emotion_classifier = get_emotion_classifier()
-                logger.info("✅ Simple emotion classifier initialized")
-            except Exception as e:
-                logger.warning(f"⚠️ Could not initialize emotion classifier: {e}")
+                logger.info("✅ Simple emotion classifier (legacy) initialized")
+            except ImportError:
+                # If all else fails, log a warning and continue without emotion classification
+                logger.warning("⚠️ Could not initialize emotion classifier. Emotion analysis will be disabled.")
+                self.emotion_classifier = None
     
     def _init_embeddings(self):
         """Initialize txtai embeddings"""
@@ -221,19 +232,33 @@ class MemoryManager:
             
             # Format results
             search_results = []
-            for score, idx in results:
-                if idx < len(self.chats):
-                    msg = self.chats[idx]
-                    search_results.append({
-                        'id': msg['id'],
-                        'session_id': msg['session_id'],
-                        'role': msg['role'],
-                        'content': msg['content'],
-                        'timestamp': msg['timestamp'],
-                        'score': float(score),
-                        'emotion': msg.get('emotion', 'neutral'),
-                        'sentiment': msg.get('sentiment', 'neutral')
-                    })
+            for result in results:
+                # Check if result is a tuple (score, id) or dict with score/id
+                if isinstance(result, tuple) and len(result) >= 2:
+                    score, idx = result[0], result[1]
+                elif isinstance(result, dict):
+                    score, idx = result.get('score', 0), result.get('id')
+                else:
+                    continue
+                    
+                # Ensure idx is an integer and within bounds
+                try:
+                    idx = int(idx)
+                    if 0 <= idx < len(self.chats):
+                        msg = self.chats[idx]
+                        search_results.append({
+                            'id': msg['id'],
+                            'session_id': msg['session_id'],
+                            'role': msg['role'],
+                            'content': msg['content'],
+                            'timestamp': msg['timestamp'],
+                            'score': float(score),
+                            'emotion': msg.get('emotion', 'neutral'),
+                            'sentiment': msg.get('sentiment', 'neutral')
+                        })
+                except (ValueError, IndexError, KeyError) as e:
+                    logger.warning(f"Error processing search result: {e}")
+                    continue
             
             # Filter by min_score
             if min_score > 0:
