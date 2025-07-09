@@ -84,3 +84,6 @@ packaging
 # -e ./GopiAI-Core
 # -e ./GopiAI-Extensions
 # -e ./GopiAI-Widgets
+
+
+chardet

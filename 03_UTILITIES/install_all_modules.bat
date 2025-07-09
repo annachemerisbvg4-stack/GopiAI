@@ -39,16 +39,6 @@ else
 fi
 cd ..
 
-echo 📦 Устанавливаем GopiAI-WebView...
-cd GopiAI-WebView
-pip install -e .
-if %ERRORLEVEL% EQU 0; then
-    echo ✅ GopiAI-WebView установлен успешно
-else
-    echo ❌ Ошибка установки GopiAI-WebView
-    exit /b 1
-fi
-cd ..
 
 echo 📦 Устанавливаем GopiAI-Extensions...
 cd GopiAI-Extensions

@@ -4,11 +4,39 @@ import threading
 # Конфиг моделей Gemini/Gemma для ротации и задач
 LLM_MODELS_CONFIG = [
     {
+        "name": "Gemini 1.5 Flash",
+        "id": "gemini/gemini-1.5-flash",
+        "provider": "google",
+        "rpm": 15,  
+        "tpm": 250000,  
+        "type": ["simple", "dialog", "code", "summarize"],
+        "multimodal": False,
+        "embedding": False,
+        "priority": 3,
+        "rpd": 50,  
+        "deprecated": False,
+        "base_score": 0.5
+    },
+    {
+        "name": "Gemini 2.0 Flash-Lite",
+        "id": "gemini/gemini-2.0-flash-lite",
+        "provider": "google",
+        "rpm": 30,
+        "tpm": 1000000,  
+        "type": ["simple", "dialog", "code", "summarize"],
+        "multimodal": False,
+        "embedding": False,
+        "priority": 4,
+        "rpd": 200,  
+        "deprecated": False,
+        "base_score": 0.5
+    },
+    {
         "name": "Gemma 3",
         "id": "gemini/gemma-3",
         "provider": "google",
-        "rpm": 2,  # ДЕМО: сильно уменьшили
-        "tpm": 100,  # ДЕМО: сильно уменьшили
+        "rpm": 30,  
+        "tpm": 14400,  
         "type": ["simple", "lookup", "short_answer"],
         "multimodal": False,
         "embedding": False,
@@ -21,41 +49,13 @@ LLM_MODELS_CONFIG = [
         "name": "Gemma 3n",
         "id": "gemini/gemma-3n",
         "provider": "google",
-        "rpm": 2,  # ДЕМО: уменьшили
-        "tpm": 200,  # ДЕМО: уменьшили
+        "rpm": 30,  
+        "tpm": 14400,  
         "type": ["simple", "lookup", "short_answer"],
         "multimodal": False,
         "embedding": False,
         "priority": 2,
         "rpd": 0,
-        "deprecated": False,
-        "base_score": 0.5
-    },
-    {
-        "name": "Gemini 1.5 Flash",
-        "id": "gemini/gemini-1.5-flash",
-        "provider": "google",
-        "rpm": 15,  # Реальный лимит
-        "tpm": 250000,  # Реальный лимит
-        "type": ["simple", "dialog", "code", "summarize"],
-        "multimodal": False,
-        "embedding": False,
-        "priority": 3,
-        "rpd": 50,  # ВОТ ОНО! 50 запросов в день
-        "deprecated": False,
-        "base_score": 0.5
-    },
-    {
-        "name": "Gemini 2.0 Flash-Lite",
-        "id": "gemini/gemini-2.0-flash-lite",
-        "provider": "google",
-        "rpm": 30,
-        "tpm": 1000000,  # Реальный лимит
-        "type": ["simple", "dialog", "code", "summarize"],
-        "multimodal": False,
-        "embedding": False,
-        "priority": 4,
-        "rpd": 200,  # Реальный лимит 200 в день
         "deprecated": False,
         "base_score": 0.5
     },

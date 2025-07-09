@@ -599,37 +599,16 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
 
     def _init_ai_assistant(self):
-        """Initialize the AI Assistant dock widget."""
+        """Initialize the AI Assistant functionality in the main chat widget."""
         try:
-            from gopiai.ui.components.ai_assistant_widget import AIAssistantWidget
-            
-            # Create the AI Assistant dock widget
-            self.ai_assistant_dock = QDockWidget("AI Assistant", self)
-            self.ai_assistant_dock.setObjectName("aiAssistantDock")
-            self.ai_assistant_dock.setAllowedAreas(
-                Qt.DockWidgetArea.LeftDockWidgetArea | 
-                Qt.DockWidgetArea.RightDockWidgetArea |
-                Qt.DockWidgetArea.BottomDockWidgetArea
-            )
-            
-            # Create the AI Assistant widget
-            self.ai_assistant = AIAssistantWidget()
-            self.ai_assistant.set_main_window(self)
-            
-            # Add the widget to the dock
-            self.ai_assistant_dock.setWidget(self.ai_assistant)
-            
-            # Add the dock to the main window (right side by default)
-            self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.ai_assistant_dock)
-            
-            # Add toggle action to View menu
-            if hasattr(self, 'menu_view'):
-                toggle_ai_assistant = self.ai_assistant_dock.toggleViewAction()
-                toggle_ai_assistant.setText("Показать/скрыть AI Assistant")
-                self.menu_view.addAction(toggle_ai_assistant)
+            # AI Assistant functionality is now integrated into the main chat widget
+            if hasattr(self, 'chat_widget') and hasattr(self.chat_widget, 'ui_assistant'):
+                # Set the main window reference for the UI Assistant
+                self.chat_widget.ui_assistant.set_main_window(self)
+                print("[OK] AI Assistant инициализирован в основном чате")
+            else:
+                print("[WARNING] Основной виджет чата не найден или не содержит UI Assistant")
                 
-            print("[OK] AI Assistant инициализирован")
-            
         except Exception as e:
             print(f"[ERROR] Ошибка инициализации AI Assistant: {e}")
     

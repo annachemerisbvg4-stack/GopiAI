@@ -25,7 +25,6 @@
     "cursorpyright.analysis.autoImportCompletions": true,
     "cursorpyright.analysis.extraPaths": [
         "./GopiAI-UI",
-        "./GopiAI-WebView",
         "./GopiAI-Core",
         "./rag_memory_system"
     ],

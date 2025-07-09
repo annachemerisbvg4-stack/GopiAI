@@ -13,11 +13,11 @@ from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass, asdict
 from enum import Enum, auto
 
-from PySide6.QtCore import QObject, QTimer, Signal, QPoint, QSize, QRect, QBuffer, QIODevice
+from PySide6.QtCore import QObject, QTimer, Signal, QPoint, QSize, QRect, QBuffer, QIODevice, Qt
 from PySide6.QtGui import QPixmap, QGuiApplication, QScreen, QPainter, QColor, QPen, QFont, QImage
 from PySide6.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QMessageBox
 
-from gopiai.core.llm import get_llm_client  # Assuming we have an LLM client
+from gopiai.ui_core.llm import get_llm_client  # Import from ui_core instead of core
 
 class CommandType(Enum):
     CLICK = "click"

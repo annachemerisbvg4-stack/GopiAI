@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, QMimeData, Slot, QMetaObject, QTimer, QThread, Si
 from PySide6.QtGui import QIcon, QDropEvent, QDragEnterEvent, QPixmap, QTextCursor, QPainter, QColor, QPen
 
 # Import UI Assistant
-from gopiai.core import get_ui_assistant_tool
+from gopiai.ui_core.ai_tools import get_ui_assistant_tool
 from typing import Optional, List, Dict, Any, Tuple, Union
 import re
 import threading
@@ -80,7 +80,7 @@ class ChatWidget(QWidget):
         self._setup_visual_feedback()
         
         # Get the UI Assistant instance
-        self.ui_assistant = get_ui_assistant()
+        self.ui_assistant = get_ui_assistant_tool()
         
         # Connect UI Assistant signals
         self.ui_assistant.action_started.connect(self._on_assistant_action_started)
@@ -684,11 +684,27 @@ class ChatWidget(QWidget):
                 messages.append({"role": "user", "content": message})
                 
                 # Отправляем запрос в CrewAI API
-                response = self.crew_ai_client.chat_complete(
-                    messages=messages,
-                    context=context,
-                    session_id=self.session_id
-                )
+                # Формируем сообщение в формате, ожидаемом process_request
+                user_message = messages[-1]["content"] if messages else message
+                
+                # Создаем объект сообщения с историей и контекстом
+                message_data = {
+                    "message": user_message,
+                    "metadata": {
+                        "session_id": self.session_id,
+                        "chat_history": messages
+                    }
+                }
+                
+                # Добавляем контекст из RAG, если он есть
+                if context:
+                    if isinstance(context, dict):
+                        message_data["metadata"].update(context)
+                    else:  # Если context - строка
+                        message_data["metadata"]["rag_context"] = context
+                
+                # Отправляем запрос в CrewAI API
+                response = self.crew_ai_client.process_request(message_data)
                 
                 # Если ответ пустой, возвращаем стандартное сообщение
                 if not response:
