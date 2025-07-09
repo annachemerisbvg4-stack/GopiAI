@@ -39,9 +39,9 @@ try:
     import crewai
     from crewai import Agent, Task, Crew, Process
     crewai_available = True
-    print("✅ CrewAI успешно импортирован!")
+    print("[OK] CrewAI успешно импортирован!")
 except ImportError as e:
-    print(f"⚠️ CrewAI не найден: {e}")
+    print(f"[WARNING] CrewAI не найден: {e}")
     print("CrewAI запросы будут обрабатываться как обычные запросы к AI Router")
 
 def is_rag_service_available():
@@ -101,27 +101,27 @@ class SmartDelegator:
                     enable_reflection=True,
                     reflection_config=self.reflection_config
                 )
-                print(f"✅ AI Router с саморефлексией загружен (порог качества: {self.reflection_config['min_quality_threshold']})")
+                print(f"[OK] AI Router с саморефлексией загружен (порог качества: {self.reflection_config['min_quality_threshold']})")
             else:
                 self.ai_router = base_ai_router
-                print("✅ AI Router LLM адаптер загружен (без саморефлексии)")
+                print("[OK] AI Router LLM адаптер загружен (без саморефлексии)")
                 
         except Exception as e:
-            print(f"⚠️ Ошибка при инициализации AI Router LLM: {e}")
+            print(f"[WARNING] Ошибка при инициализации AI Router LLM: {e}")
             self.ai_router = None
         
         self.rag_available = is_rag_service_available()
         self._rag_last_failure = 0  # Initialize RAG failure tracking
         if self.rag_available:
-            print("✅ RAG-сервис доступен. Запускаем индексацию в фоновом режиме...")
+            print("[OK] RAG-сервис доступен. Запускаем индексацию в фоновом режиме...")
             self.index_documentation() # Запускаем индексацию при старте
         else:
-            print("⚠️ RAG-сервис недоступен. Контекст из документов не будет добавляться.")
+            print("[WARNING] RAG-сервис недоступен. Контекст из документов не будет добавляться.")
     
     def index_documentation(self):
         """Отправляет запрос на индексацию документов на RAG-сервер."""
         if not self.rag_available:
-            print("⚠️ RAG-сервис недоступен, индексация невозможна.")
+            print("[WARNING] RAG-сервис недоступен, индексация невозможна.")
             return False
 
         def do_index():
@@ -338,7 +338,7 @@ class SmartDelegator:
         self._agent_cache_timestamps.clear()
         self._crew_cache.clear()
         self._crew_cache_timestamps.clear()
-        print("🧹 Кэш агентов CrewAI очищен")
+        print("[CLEAN] Кэш агентов CrewAI очищен")
     
     def get_cache_stats(self) -> Dict:
         """Возвращает статистику кэша агентов"""
@@ -439,12 +439,12 @@ class SmartDelegator:
             # Создаем базовый LLM для агентов на основе AI Router
             try:
                 if self.ai_router is None:
-                    print("❌ AI Router не инициализирован")
+                    print("[ERROR] AI Router не инициализирован")
                     return self._handle_with_ai_router(message)
                 
                 # Получаем экземпляр LLM без вызова как функции
                 llm = self.ai_router.get_llm_instance()
-                print("✅ LLM для CrewAI успешно создан")
+                print("[OK] LLM для CrewAI успешно создан")
             except Exception as e:
                 print(f"❌ Ошибка при создании LLM для CrewAI: {e}")
                 return self._handle_with_ai_router(message)
@@ -460,12 +460,12 @@ class SmartDelegator:
             # Проверяем кэш агентов
             cached_agents = self._get_cached_agents(message_hash)
             if cached_agents:
-                print("✅ Используем закэшированных агентов CrewAI")
+                print("[OK] Используем закэшированных агентов CrewAI")
                 coordinator = cached_agents['coordinator']
                 researcher = cached_agents['researcher'] 
                 writer = cached_agents['writer']
             else:
-                print("🔄 Создаем новых агентов CrewAI")
+                print("[...] Создаем новых агентов CrewAI")
                 # Создаем агентов с оптимизированной конфигурацией
                 coordinator = Agent(
                     role="Координатор проекта",
@@ -550,7 +550,7 @@ class SmartDelegator:
             traceback.print_exc()
             
             # В случае ошибки возвращаемся к обработке через AI Router
-            print("⚠️ Fallback к AI Router")
+            print("[WARNING] Fallback к AI Router")
             return self._handle_with_ai_router(message)
 
     
