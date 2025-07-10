@@ -6,12 +6,17 @@ It provides a simple interface for the AI to assist users with UI interactions.
 """
 
 import asyncio
-from typing import Dict, Any, Optional, List, Callable, Coroutine
+from typing import Any, Callable, Coroutine, Dict, List, Optional
 
-from PySide6.QtCore import QObject, Signal, Slot, Qt, QTimer
+from PySide6.QtCore import QObject, QTimer, Qt, Signal, Slot
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QPushButton, 
-    QTextEdit, QMessageBox, QHBoxLayout
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
 
 from gopiai.ui.components.ai_tools import get_ui_assistant

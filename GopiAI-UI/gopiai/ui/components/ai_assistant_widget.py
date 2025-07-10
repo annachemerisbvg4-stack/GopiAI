@@ -4,16 +4,22 @@ AI Assistant Widget for GopiAI
 This module provides a widget that integrates the AI Assistant into the main application.
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-    QPushButton, QTextEdit, QSplitter, QSizePolicy
-)
 from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSizePolicy,
+    QSplitter,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
-from gopiai.ui.components.ai_tools import get_ui_assistant
 from gopiai.ui.components.ai_assistant_integration import AIAssistantIntegration
+from gopiai.ui.components.ai_tools import get_ui_assistant
 
 class AIAssistantWidget(QWidget):
     """

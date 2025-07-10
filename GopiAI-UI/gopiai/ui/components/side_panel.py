@@ -1,14 +1,23 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton)
-from PySide6.QtCore import QRect, Signal
+import os
+import subprocess
+from pathlib import Path
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+                              QPushButton, QButtonGroup, QRadioButton)
+from PySide6.QtCore import QRect, Signal, QUrl
+from PySide6.QtGui import QDesktopServices
 from PySide6 import QtCore
 
 
 class SlidingPanel(QWidget):
     """Боковая панель с навигационной системой"""
     
+    # Сигнал об изменении режима администратора
+    admin_mode_changed = Signal(bool)
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.is_visible = False
+        self.is_admin_mode = False  # По умолчанию режим обычного пользователя
         
         # История навигации для кнопок вперёд-назад
         self.navigation_history = []
@@ -17,14 +26,38 @@ class SlidingPanel(QWidget):
         # Словарь видов панели
         self.views = {}
         
+        # Текущий режим пользователя (False - обычный, True - админ)
+        self.is_admin_mode = False
+        
         self.setup_ui()
         self.setup_views()
+        
+        # Инициализация режима пользователя
+        self.setup_user_mode()
         
     def setup_ui(self):
         """Настройка интерфейса панели"""
         self.setStyleSheet("""
             SlidingPanel {
                 border-radius: 12px;
+            }
+            QRadioButton {
+                padding: 2px 5px;
+                font-size: 11px;
+            }
+            QRadioButton:checked {
+                font-weight: bold;
+            }
+            QPushButton#logsButton {
+                border-radius: 4px;
+                padding: 4px 8px;
+                font-size: 11px;
+                margin-top: 8px;
+                background-color: #f0f0f0;
+                border: 1px solid #ccc;
+            }
+            QPushButton#logsButton:hover {
+                background-color: #e0e0e0;
             }
         """)
         
@@ -122,6 +155,12 @@ class SlidingPanel(QWidget):
         # Spacer для размещения содержимого сверху
         self.main_layout.addStretch()
         
+        # Добавляем переключатель режима пользователя
+        self.setup_user_mode_ui()
+        
+        # Добавляем кнопку для открытия логов
+        self.setup_logs_button()
+        
         # Изначально отключаем кнопки навигации
         self.update_navigation_buttons()
         
@@ -172,6 +211,19 @@ class SlidingPanel(QWidget):
             }
         """)
         layout.addWidget(placeholder_label)
+        
+        # Добавляем информацию о текущем режиме
+        self.mode_info_label = QLabel("Режим: Обычный пользователь")
+        self.mode_info_label.setStyleSheet("""
+            QLabel {
+                font-size: 10px;
+                color: #666;
+                padding: 4px 8px;
+                margin-top: 8px;
+                border-top: 1px solid #eee;
+            }
+        """)
+        layout.addWidget(self.mode_info_label)
         
         return view_widget
         
@@ -375,16 +427,103 @@ class SlidingPanel(QWidget):
         else:
             self.show_panel(target_rect)
 
+    # ===== Новые методы для работы с пользовательским режимом и логами =====
+    
+    def setup_user_mode(self):
+        """Инициализация режима пользователя"""
+        # Здесь можно добавить загрузку сохраненного режима из настроек
+        pass
+    
+    def setup_user_mode_ui(self):
+        """Настройка интерфейса переключения режима пользователя"""
+        mode_group = QWidget()
+        mode_layout = QVBoxLayout(mode_group)
+        mode_layout.setContentsMargins(8, 8, 8, 8)
+        mode_layout.setSpacing(4)
+        
+        # Заголовок
+        mode_label = QLabel("Режим работы:")
+        mode_label.setStyleSheet("font-size: 11px; font-weight: bold;")
+        mode_layout.addWidget(mode_label)
+        
+        # Группа переключателей
+        self.mode_button_group = QButtonGroup(self)
+        
+        # Обычный пользователь
+        self.normal_mode_btn = QRadioButton("Обычный пользователь (рекомендуется)")
+        self.normal_mode_btn.setToolTip("Стандартный режим с базовыми правами")
+        self.normal_mode_btn.setChecked(not self.is_admin_mode)
+        self.normal_mode_btn.toggled.connect(lambda: self.set_admin_mode(False))
+        self.mode_button_group.addButton(self.normal_mode_btn)
+        mode_layout.addWidget(self.normal_mode_btn)
+        
+        # Администратор
+        self.admin_mode_btn = QRadioButton("Администратор")
+        self.admin_mode_btn.setToolTip("Расширенный режим с полными правами")
+        self.admin_mode_btn.setChecked(self.is_admin_mode)
+        self.admin_mode_btn.toggled.connect(lambda: self.set_admin_mode(True))
+        self.mode_button_group.addButton(self.admin_mode_btn)
+        mode_layout.addWidget(self.admin_mode_btn)
+        
+        # Добавляем внизу панели
+        self.main_layout.addWidget(mode_group)
+    
+    def setup_logs_button(self):
+        """Добавление кнопки для открытия папки с логами"""
+        logs_btn = QPushButton("Открыть папку с логами")
+        logs_btn.setObjectName("logsButton")
+        logs_btn.clicked.connect(self.open_logs_folder)
+        self.main_layout.addWidget(logs_btn)
+    
+    def set_admin_mode(self, is_admin):
+        """Установка режима администратора"""
+        self.is_admin_mode = is_admin
+        if hasattr(self, 'mode_info_label'):
+            mode_text = "Администратор" if is_admin else "Обычный пользователь"
+            self.mode_info_label.setText(f"Режим: {mode_text}")
+        
+        # Здесь можно добавить логику изменения прав доступа
+        # Например, показать/скрыть административные функции
+        self.admin_mode_changed.emit(is_admin)
+    
+    def open_logs_folder(self):
+        """Открытие папки с логами в проводнике системы"""
+        try:
+            # Путь к папке с логами (относительно корня приложения)
+            logs_dir = os.path.join(os.path.dirname(os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 
+                "logs")
+            
+            # Создаем папку, если её нет
+            os.makedirs(logs_dir, exist_ok=True)
+            
+            # Открываем в проводнике
+            if os.name == 'nt':  # Windows
+                os.startfile(logs_dir)
+            elif os.name == 'posix':  # macOS и Linux
+                if sys.platform == 'darwin':
+                    subprocess.run(['open', logs_dir])
+                else:
+                    subprocess.run(['xdg-open', logs_dir])
+        except Exception as e:
+            print(f"Ошибка при открытии папки с логами: {e}")
+
 
 class PanelTrigger(QPushButton):
     """Кнопка для показа/скрытия боковой панели"""
-    
     panel_toggle_requested = Signal()
-    
+    admin_mode_changed = Signal(bool)  # Сигнал об изменении режима администратора
+
+
+class PanelTrigger(QPushButton):
+    """Кнопка для показа/скрытия боковой панели"""
+    panel_toggle_requested = Signal()
+    admin_mode_changed = Signal(bool)  # Сигнал об изменении режима администратора
+
     def __init__(self, text="Панель инструментов", parent=None):
         super().__init__(text, parent)
         self.setup_ui()
-        
+
     def setup_ui(self):
         """Настройка внешнего вида кнопки"""
         self.setStyleSheet("""

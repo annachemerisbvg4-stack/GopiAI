@@ -1,0 +1,23 @@
+2025-07-10T06:19:02.852Z - Extension - INFO - Logging system initialized with file: c:\Users\crazy\GOPI_AI_MODULES\.codebase2docs\output\log.txt
+2025-07-10T06:19:02.859Z - ApiKeyUtils - INFO - Production mode: using injected API key
+2025-07-10T06:19:03.049Z - ApiKeyUtils - INFO - Default API key stored in secret storage
+2025-07-10T06:19:03.050Z - Extension - INFO - Auth and analytics disabled - skipping auth and analytics initialization
+2025-07-10T06:19:03.055Z - CheckNodeVersionService - ERROR - Error getting node version with shell environment: spawn /bin/bash ENOENT
+2025-07-10T06:19:03.056Z - Extension - WARN - Node.js version check failed - some features may not work properly
+2025-07-10T06:19:03.554Z - ProgressStateManager - INFO - ProgressStateManager initialized
+2025-07-10T06:19:03.555Z - ProgressMessageManager - INFO - ProgressMessageManager initialized
+2025-07-10T06:19:03.557Z - ProgressService - INFO - ProgressService initialized with component managers
+2025-07-10T06:19:03.562Z - PromptManager - INFO - All prompt templates loaded successfully
+2025-07-10T06:24:35.822Z - DocumentEventHandler - INFO - Active Text Editor does not contain Zingle CSV, reset selected table
+2025-07-10T06:24:44.769Z - DocumentEventHandler - INFO - All text editors closed, reset selected table
+2025-07-10T06:24:44.894Z - DocumentEventHandler - INFO - Active Text Editor does not contain Zingle CSV, reset selected table
+2025-07-10T06:24:52.875Z - DocumentEventHandler - INFO - All text editors closed, reset selected table
+2025-07-10T06:24:52.909Z - DocumentEventHandler - INFO - Active Text Editor does not contain Zingle CSV, reset selected table
+2025-07-10T06:25:18.695Z - DocumentEventHandler - INFO - All text editors closed, reset selected table
+2025-07-10T06:25:18.721Z - DocumentEventHandler - INFO - Active Text Editor does not contain Zingle CSV, reset selected table
+2025-07-10T06:25:22.458Z - DocumentEventHandler - INFO - All text editors closed, reset selected table
+2025-07-10T06:25:22.484Z - DocumentEventHandler - INFO - Active Text Editor does not contain Zingle CSV, reset selected table
+2025-07-10T06:25:27.813Z - DocumentEventHandler - INFO - All text editors closed, reset selected table
+2025-07-10T06:25:27.842Z - DocumentEventHandler - INFO - Active Text Editor does not contain Zingle CSV, reset selected table
+2025-07-10T06:25:34.032Z - DocumentEventHandler - INFO - All text editors closed, reset selected table
+2025-07-10T06:26:47.616Z - ProcessManager - INFO - All processes killed

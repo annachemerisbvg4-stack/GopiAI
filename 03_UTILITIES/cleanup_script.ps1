@@ -12,7 +12,7 @@ Write-Host "🧹 НАЧИНАЕМ УБОРКУ ПРОЕКТА GOPI_AI" -Foregrou
 Write-Host "=" * 50 -ForegroundColor Cyan
 
 # Проверяем наличие файла списка
-$deleteListFile = "files_to_delete.txt"
+$deleteListFile = "C:\Users\crazy\GOPI_AI_MODULES\03_UTILITIES\files_to_delete.txt"
 if (-not (Test-Path $deleteListFile)) {
     Write-Host "❌ Файл '$deleteListFile' не найден!" -ForegroundColor Red
     Write-Host "💡 Создайте файл со списком файлов для удаления" -ForegroundColor Yellow
