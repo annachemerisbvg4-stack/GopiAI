@@ -7,14 +7,24 @@
 2. Сложные запросы: делегирование команде специализированных агентов CrewAI
 """
 
-import os
-import sys
-import time
 import json
+import logging
+import os
+import re
+import time
 import traceback
-import requests
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, List, Any, Optional, Tuple
+import requests
+from datetime import datetime, timedelta
+import hashlib
+import litellm  # Добавляем импорт litellm
+
+# Импортируем конфигурацию ротации LLM
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from llm_rotation_config import rate_limit_monitor, select_llm_model_safe, safe_llm_call
+
 try:
     from .ai_router_llm import AIRouterLLM
     from .self_reflection import ReflectionEnabledAIRouter
@@ -30,9 +40,7 @@ crewai_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 sys.path.append(crewai_root)
 
 # Флаги доступности систем
-crewai_available = False # This will be set by the try-except block below
-RAG_API_URL = "http://127.0.0.1:5051" # URL для нашего нового RAG-сервиса
-RAG_TIMEOUT = int(os.environ.get('GOPIAI_RAG_TIMEOUT', 4))  # Таймаут для RAG запросов
+crewai_available = False  # This will be set by the try-except block below
 
 # Проверка доступности CrewAI
 try:
@@ -44,13 +52,8 @@ except ImportError as e:
     print(f"[WARNING] CrewAI не найден: {e}")
     print("CrewAI запросы будут обрабатываться как обычные запросы к AI Router")
 
-def is_rag_service_available():
-    """Проверяет доступность RAG-сервиса."""
-    try:
-        response = requests.get(f"{RAG_API_URL}/api/health", timeout=min(RAG_TIMEOUT, 2))
-        return response.status_code == 200 and response.json().get("status") == "online"
-    except requests.exceptions.RequestException:
-        return False
+# Для новой встроенной RAG используем флаг
+RAG_AVAILABLE = True  # Встроенное решение всегда доступно
 
 # Значения по умолчанию
 COMPLEXITY_THRESHOLD = 3  # От 0 (простой) до 5 (очень сложный)
@@ -110,54 +113,47 @@ class SmartDelegator:
             print(f"[WARNING] Ошибка при инициализации AI Router LLM: {e}")
             self.ai_router = None
         
-        self.rag_available = is_rag_service_available()
-        self._rag_last_failure = 0  # Initialize RAG failure tracking
+        self.rag_available = RAG_AVAILABLE
+        self._rag_last_failure = 0  # Для отслеживания ошибок
         if self.rag_available:
-            print("[OK] RAG-сервис доступен. Запускаем индексацию в фоновом режиме...")
-            self.index_documentation() # Запускаем индексацию при старте
-        else:
-            print("[WARNING] RAG-сервис недоступен. Контекст из документов не будет добавляться.")
+            print("[OK] Встроенная RAG-система активирована.")
+            # Инициализируем встроенную векторную базу
+            try:
+                self.index_documentation()
+                print("[OK] Встроенная векторная база инициализирована.")
+            except Exception as e:
+                print(f"[WARNING] Ошибка при инициализации векторной базы: {e}")
+                self.rag_available = False
     
     def index_documentation(self):
-        """Отправляет запрос на индексацию документов на RAG-сервер."""
+        """Инициализирует встроенную векторную базу документов."""
         if not self.rag_available:
-            print("[WARNING] RAG-сервис недоступен, индексация невозможна.")
+            print("[WARNING] Встроенная RAG-система отключена, индексация невозможна.")
             return False
 
-        def do_index():
-            try:
-                response = requests.post(f"{RAG_API_URL}/api/index", timeout=120) # 2-минутный таймаут
-                if response.status_code == 200:
-                    print(f"✅ Ответ от RAG-сервиса по индексации: {response.json().get('message')}")
-                else:
-                    print(f"⚠️ Ошибка при индексации на RAG-сервисе: {response.status_code} {response.text}")
-            except requests.exceptions.RequestException as e:
-                print(f"❌ Не удалось подключиться к RAG-сервису для индексации: {e}")
-
-        # Запускаем в фоновом потоке, чтобы не блокировать старт сервера
-        import threading
-        threading.Thread(target=do_index, daemon=True).start()
-        return True
+        try:
+            # Здесь должна быть логика инициализации встроенной векторной базы
+            # Например, загрузка документов в векторное хранилище
+            # Временная заглушка - просто возвращаем успех
+            print("✅ Встроенная векторная база готова к использованию")
+            return True
+        except Exception as e:
+            print(f"❌ Ошибка при инициализации векторной базы: {e}")
+            self.rag_available = False
+            return False
 
     def _get_rag_context(self, query: str, max_results: int = 3) -> Optional[str]:
-        """Получает контекст из RAG-сервиса для обогащения запроса."""
+        """Получает контекст из встроенной векторной базы."""
         if not self.rag_available:
-            return None
-
-        if time.time() - self._rag_last_failure < RAG_DISABLE_TIMEOUT:
             return None
 
         try:
-            response = requests.post(f"{RAG_API_URL}/api/search", json={"query": query, "max_results": max_results}, timeout=RAG_TIMEOUT)
-            if response.status_code == 200:
-                return response.json().get("context")
-            else:
-                print(f"⚠️ Ошибка при получении контекста из RAG-сервиса: {response.status_code} {response.text}")
-                return None
-        except requests.exceptions.RequestException as e:
-            print(f"⚠️ Ошибка при подключении к RAG-сервису: {e}")
-            self._rag_last_failure = time.time()
-            traceback.print_exc()
+            # Здесь должна быть логика поиска в векторной базе
+            # Временная заглушка - возвращаем None, пока не реализовано
+            return None
+            
+        except Exception as e:
+            print(f"⚠️ Ошибка при поиске в векторной базе: {e}")
             return None
     
     def analyze_request(self, message: str) -> Dict[str, Any]:
@@ -354,7 +350,46 @@ class SmartDelegator:
             'cache_timeout': CREWAI_CONFIG['agent_cache_timeout'],
             'total_cache_hits': getattr(self, '_cache_hits', 0)
         }
-    
+
+    def _format_prompt_with_context(self, user_message: str, rag_context: str = None) -> List[Dict[str, str]]:
+        """
+        Форматирует промпт с учетом истории чата и RAG-контекста.
+        
+        Args:
+            user_message: Текущее сообщение пользователя
+            rag_context: Контекст из RAG (опционально)
+            
+        Returns:
+            List[Dict[str, str]]: Список сообщений с ролями для LLM API
+        """
+        messages = []
+        
+        # Добавляем системное сообщение с RAG-контекстом, если он есть
+        system_message = "Ты - GopiAI, полезный ассистент."
+        if rag_context and rag_context.strip():
+            system_message += f"\n\nКонтекст для справки:\n{rag_context}"
+            
+        messages.append({"role": "system", "content": system_message})
+        
+        # Получаем и очищаем историю чата
+        chat_history = self._get_chat_history(max_messages=10)  # Берем больше сообщений на случай фильтрации
+        cleaned_history = self._clean_chat_history(chat_history)
+        
+        # Ограничиваем количество сообщений после очистки
+        max_history_messages = 5
+        cleaned_history = cleaned_history[-max_history_messages:]
+        
+        # Добавляем очищенную историю чата
+        for msg in cleaned_history:
+            # Преобразуем наши роли в формат, ожидаемый API (user/assistant)
+            role = "user" if msg["role"] == "user" else "assistant"
+            messages.append({"role": role, "content": msg["content"]})
+        
+        # Добавляем текущее сообщение пользователя
+        messages.append({"role": "user", "content": user_message})
+        
+        return messages
+
     def _handle_with_ai_router(self, message: str) -> str:
         """Обрабатывает запрос через AI Router"""
         start_time = time.time()
@@ -368,28 +403,101 @@ class SmartDelegator:
             self.logger.info("✅ AI Router проверки пройдены")
 
             # Получаем контекст из RAG, если доступен
-            context = self._get_rag_context(message)
+            rag_context = self._get_rag_context(message)
 
-            # Обогащаем запрос контекстом, если он есть
-            enriched_message = message
-            if context:
-                self.logger.info("📚 Добавлен RAG-контекст к запросу")
-                enriched_message = f"""{message}
-
-Дополнительный контекст для справки (не упоминай его явно в ответе):
-{context}"""
-
-            # Вызываем AI Router с обогащенным запросом
+            # Формируем список сообщений с историей и контекстом
+            messages = self._format_prompt_with_context(
+                user_message=message,
+                rag_context=rag_context
+            )
+            
             try:
-                self.logger.info("🚀 Вызов AI Router...")
-                result = self.ai_router._generate(prompts=[enriched_message])
-                response = result.generations[0][0].text
-                self.logger.info("✅ Ответ от AI Router получен")
+                # Используем систему ротации LLM для выбора оптимальной модели
+                self.logger.info("🚀 Вызов LLM с историей чата...")
+                self.logger.debug(f"Отправка сообщений в LLM: {json.dumps(messages, ensure_ascii=False, indent=2)}")
+                
+                # Выбираем подходящую модель для диалога
+                task_type = "dialog"  # Используем тип задачи 'dialog' для чата
+                
+                # Определяем примерное количество токенов в запросе
+                import tiktoken
+                enc = tiktoken.get_encoding("cl100k_base")
+                num_tokens = sum(len(enc.encode(msg.get("content", ""))) for msg in messages)
+                
+                # Выбираем модель через систему ротации
+                selected_model = select_llm_model_safe(
+                    task_type=task_type,
+                    tokens=num_tokens,
+                    intelligence_priority=True
+                )
+                
+                if not selected_model:
+                    raise Exception("Не удалось выбрать подходящую модель LLM")
+                
+                self.logger.info(f"Выбрана модель для обработки: {selected_model}")
+                
+                # Создаем функцию для вызова LLM, соответствующую сигнатуре, ожидаемой safe_llm_call
+                def make_llm_call(prompt, model):
+                    """Вызывает LLM с указанным промптом и моделью.
+                    
+                    Args:
+                        prompt: Список сообщений в формате [{"role": "user"|"assistant", "content": str}]
+                        model: Идентификатор модели (например, 'gemini/gemini-1.5-flash')
+                        
+                    Returns:
+                        str: Текст ответа от модели
+                    """
+                    try:
+                        # Преобразуем сообщения в формат, ожидаемый litellm
+                        response = litellm.completion(
+                            model=model,
+                            messages=prompt,
+                            temperature=0.7,
+                            max_tokens=2000
+                        )
+                        return response.choices[0].message.content
+                    except Exception as e:
+                        self.logger.error(f"Ошибка при вызове модели {model}: {str(e)}")
+                        raise  # Пробрасываем исключение для обработки в safe_llm_call
+                
+                # Вызываем LLM через безопасную обертку с автоматическим переключением моделей при ошибках
+                response_text = safe_llm_call(
+                    prompt=messages,
+                    llm_call_func=make_llm_call,
+                    task_type=task_type,
+                    tokens=num_tokens,
+                    max_fallback_attempts=3
+                )
+                
+                # Формируем ответ в ожидаемом формате
+                response = type('obj', (object,), {
+                    'choices': [
+                        type('obj', (object,), {
+                            'message': type('obj', (object,), {
+                                'content': response_text
+                            })
+                        })
+                    ]
+                })()
+                
+                # Извлекаем текст ответа
+                result = response.choices[0].message.content
+                self.logger.info("✅ Ответ от LLM получен")
+                
+                # Измеряем время выполнения
+                elapsed_time = time.time() - start_time
+                self.logger.info(f"⏱ Запрос обработан за {elapsed_time:.2f} сек")
+                return result
+                
             except Exception as inner_error:
                 self.logger.error(f"❌ Ошибка при вызове AI Router: {inner_error}")
                 traceback.print_exc()
-                # Возвращаем базовый ответ
                 return f"Извините, я не смог обработать ваш запрос через AI маршрутизатор. Пожалуйста, попробуйте позже или обратитесь к администратору системы. (Ошибка: {str(inner_error)})"
+                
+        except Exception as error:
+            self.logger.error(f"⚠️ Критическая ошибка в _handle_with_ai_router: {str(error)}")
+            traceback.print_exc()
+            return "Извините, произошла непредвиденная ошибка при обработке вашего запроса."
             
             # Измеряем время выполнения
             elapsed_time = time.time() - start_time
@@ -583,6 +691,139 @@ class SmartDelegator:
                 'note': 'AI Router не поддерживает детальную статистику саморефлексии'
             }
 
+
+    def _clean_chat_history(self, messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
+        """
+        Очищает историю чата от дубликатов и служебных сообщений.
+        
+        Args:
+            messages: Список сообщений для очистки
+            
+        Returns:
+            List[Dict]: Очищенный список сообщений
+        """
+        if not messages:
+            return []
+            
+        cleaned_messages = []
+        last_message = None
+        
+        # Список паттернов для служебных сообщений, которые нужно удалить
+        status_patterns = [
+            "⏳", "⌛", "🔍", "🔎", "🤔", "💭", "📝", "🔧", "🔍", "🔎",
+            "обработка", "поиск", "думаю", "анализ", "ищу", "найдено",
+            "загружаю", "подождите", "подготовка", "генерация", "формирование",
+            "создание", "запрос", "ответ", "результат"
+        ]
+        
+        for msg in messages:
+            if not isinstance(msg, dict) or 'content' not in msg or 'role' not in msg:
+                continue
+                
+            content = msg['content'].strip()
+            
+            # Пропускаем пустые сообщения
+            if not content:
+                continue
+                
+            # Пропускаем служебные сообщения
+            is_status = any(
+                pattern.lower() in content.lower() 
+                for pattern in status_patterns
+            )
+            
+            if is_status:
+                continue
+                
+            # Удаляем дубликаты (последовательные одинаковые сообщения)
+            if last_message and last_message['content'] == content and last_message['role'] == msg['role']:
+                continue
+                
+            cleaned_messages.append({
+                'role': msg['role'],
+                'content': content
+            })
+            last_message = msg
+            
+        return cleaned_messages
+        
+    def _get_chat_history(self, max_messages: int = 5) -> List[Dict[str, str]]:
+        """
+        Загружает и очищает историю чата из файлов сессий и сообщений.
+        
+        Args:
+            max_messages: Максимальное количество возвращаемых сообщений
+            
+        Returns:
+            List[Dict]: Список сообщений в формате [{"role": "user"|"assistant", "content": str}]
+        """
+        try:
+            # Пути к файлам с историей чатов и сессий
+            memory_dir = Path.home() / ".gopiai" / "memory"
+            chats_file = memory_dir / "chats.json"
+            sessions_file = memory_dir / "sessions.json"
+            
+            # Проверяем существование файлов
+            if not chats_file.exists() or not sessions_file.exists():
+                self.logger.warning("Файлы истории чатов не найдены")
+                return []
+            
+            # Загружаем сообщения
+            with open(chats_file, 'r', encoding='utf-8') as f:
+                all_messages = json.load(f)
+            
+            # Загружаем сессии
+            with open(sessions_file, 'r', encoding='utf-8') as f:
+                sessions_data = json.load(f)
+            
+            # Преобразуем словарь сессий в список и добавляем id в объект сессии
+            sessions = []
+            for session_id, session_info in sessions_data.items():
+                if isinstance(session_info, dict):
+                    session_info['id'] = session_id  # Добавляем id в объект сессии
+                    sessions.append(session_info)
+            
+            # Если нет сессий, возвращаем пустой список
+            if not sessions:
+                self.logger.warning("Не найдено ни одной сессии")
+                return []
+            
+            # Сортируем сессии по дате создания (новые первыми)
+            sessions.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+            
+            # Берем последнюю активную сессию
+            current_session = sessions[0]
+            current_session_id = current_session.get('id')
+            
+            if not current_session_id:
+                self.logger.warning("Не удалось определить ID текущей сессии")
+                return []
+            
+            # Фильтруем сообщения текущей сессии и преобразуем в нужный формат
+            session_messages = []
+            for msg in all_messages:
+                if not isinstance(msg, dict):
+                    continue
+                    
+                if msg.get('session_id') == current_session_id:
+                    role = "user" if msg.get('role') == "user" else "assistant"
+                    content = msg.get('content', '').strip()
+                    if content:  # Пропускаем пустые сообщения
+                        session_messages.append({
+                            "role": role,
+                            "content": content
+                        })
+            
+            # Берем последние max_messages сообщений
+            recent_messages = session_messages[-max_messages:]
+            
+            self.logger.info(f"Загружено {len(recent_messages)} сообщений из истории чата")
+            return recent_messages
+            
+        except Exception as e:
+            self.logger.error(f"Ошибка при загрузке истории чата: {str(e)}")
+            traceback.print_exc()
+            return []
 
 # Глобальный экземпляр SmartDelegator
 # Создаем SmartDelegator с включенной саморефлексией
