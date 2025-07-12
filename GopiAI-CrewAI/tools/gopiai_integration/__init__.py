@@ -8,7 +8,6 @@ from .filesystem_tools import GopiAIFileSystemTool
 from .ai_router_tools import GopiAIRouterTool
 from .memory_tools import GopiAIMemoryTool
 from .communication_tools import GopiAICommunicationTool
-from .huggingface_tools import GopiAIHuggingFaceTool
 
 __all__ = [
     'GopiAIBrowserTool',

@@ -143,17 +143,54 @@ class SmartDelegator:
             return False
 
     def _get_rag_context(self, query: str, max_results: int = 3) -> Optional[str]:
-        """Получает контекст из встроенной векторной базы."""
-        if not self.rag_available:
+        """
+        Получает релевантный контекст из векторной базы с использованием SimpleMemoryManager.
+        
+        Args:
+            query: Поисковый запрос
+            max_results: Максимальное количество возвращаемых результатов
+            
+        Returns:
+            str: Отформатированный контекст или None в случае ошибки
+        """
+        if not self.rag_available or not query.strip():
             return None
-
+            
+        # Пропускаем очень короткие запросы, которые могут давать шумные результаты
+        if len(query.split()) < 2:
+            return None
+            
         try:
-            # Здесь должна быть логика поиска в векторной базе
-            # Временная заглушка - возвращаем None, пока не реализовано
-            return None
+            # Импортируем SimpleMemoryManager
+            try:
+                from rag_memory_system.simple_memory_manager import get_memory_manager
+                memory_manager = get_memory_manager()
+            except ImportError as e:
+                print(f"⚠️ Не удалось импортировать SimpleMemoryManager: {e}")
+                return None
+                
+            # Получаем релевантные сообщения из памяти
+            results = memory_manager.search(query, limit=max_results)
+            
+            if not results:
+                return None
+                
+            # Форматируем результаты в читаемый вид
+            context_parts = []
+            for i, (text, score) in enumerate(results, 1):
+                # Округляем оценку релевантности
+                relevance = round(score * 100, 1)
+                # Ограничиваем длину текста, чтобы не перегружать контекст
+                if len(text) > 300:
+                    text = text[:297] + '...'
+                context_parts.append(f"{i}. {text} (релевантность: {relevance}%)")
+            
+            return "\n".join(context_parts)
             
         except Exception as e:
             print(f"⚠️ Ошибка при поиске в векторной базе: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     def analyze_request(self, message: str) -> Dict[str, Any]:
@@ -353,35 +390,83 @@ class SmartDelegator:
 
     def _format_prompt_with_context(self, user_message: str, rag_context: str = None) -> List[Dict[str, str]]:
         """
-        Форматирует промпт с учетом истории чата и RAG-контекста.
+        Формирует промпт с учетом контекста и истории чата.
         
         Args:
             user_message: Текущее сообщение пользователя
-            rag_context: Контекст из RAG (опционально)
+            rag_context: Контекст из векторной базы (если есть)
             
         Returns:
-            List[Dict[str, str]]: Список сообщений с ролями для LLM API
+            List[Dict[str, str]]: Список сообщений для отправки в LLM
         """
         messages = []
         
-        # Добавляем системное сообщение с RAG-контекстом, если он есть
-        system_message = "Ты - GopiAI, полезный ассистент."
+        # Формируем системное сообщение с контекстом
+        system_parts = [
+            "Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.",
+            "Отвечай кратко и по делу, используя предоставленный контекст."
+        ]
+        
+        # Добавляем контекст, если он есть
         if rag_context and rag_context.strip():
-            system_message += f"\n\nКонтекст для справки:\n{rag_context}"
-            
-        messages.append({"role": "system", "content": system_message})
+            system_parts.extend([
+                "",
+                "=== КОНТЕКСТ ИЗ БАЗЫ ЗНАНИЙ ===",
+                "Следующая информация может быть полезна для ответа:",
+                rag_context,
+                "================================",
+                ""
+            ])
+        
+        # Добавляем инструкции по использованию контекста
+        system_parts.extend([
+            "",
+            "ИНСТРУКЦИИ:",
+            "1. Учитывай контекст, но не упоминай его напрямую в ответе",
+            "2. Если контекст не релевантен, полагайся на свои знания",
+            "3. Будь краток и точен в ответах"
+        ])
+        
+        messages.append({
+            "role": "system",
+            "content": "\n".join(system_parts)
+        })
         
         # Получаем и очищаем историю чата
-        chat_history = self._get_chat_history(max_messages=10)  # Берем больше сообщений на случай фильтрации
+        chat_history = self._get_chat_history(max_messages=15)  # Берем больше сообщений для лучшего контекста
         cleaned_history = self._clean_chat_history(chat_history)
         
-        # Ограничиваем количество сообщений после очистки
-        max_history_messages = 5
-        cleaned_history = cleaned_history[-max_history_messages:]
+        # Ограничиваем историю по токенам, а не по количеству сообщений
+        max_history_tokens = 2000  # Ориентировочное значение, можно настроить
+        current_tokens = 0
+        filtered_history = []
         
-        # Добавляем очищенную историю чата
-        for msg in cleaned_history:
-            # Преобразуем наши роли в формат, ожидаемый API (user/assistant)
+        # Идем с конца истории, чтобы взять самые последние релевантные сообщения
+        for msg in reversed(cleaned_history):
+            # Пропускаем системные сообщения и пустые сообщения
+            if not msg.get("content") or msg.get("role") == "system":
+                continue
+                
+            # Оцениваем длину сообщения в токенах (грубая оценка: 1 токен ≈ 4 символа)
+            msg_tokens = len(msg["content"]) // 4
+            
+            # Пропускаем очень длинные сообщения, чтобы не перегружать контекст
+            if msg_tokens > 500:  # ~2000 символов
+                continue
+                
+            # Проверяем, не превысим ли лимит токенов
+            if current_tokens + msg_tokens > max_history_tokens:
+                break
+                
+            # Добавляем сообщение в историю
+            filtered_history.append(msg)
+            current_tokens += msg_tokens
+        
+        # Разворачиваем историю обратно в хронологическом порядке
+        filtered_history = list(reversed(filtered_history))
+        
+        # Добавляем историю в промпт
+        for msg in filtered_history:
             role = "user" if msg["role"] == "user" else "assistant"
             messages.append({"role": role, "content": msg["content"]})
         

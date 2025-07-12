@@ -166,9 +166,19 @@ class UniversalIconManager:
                         painter.end()
                     else:
                         # Создаем QIcon напрямую из SVG данных, если цвет не указан
-                        from PySide6.QtSvg import QSvgWidget
-                        icon = QIcon()
-                        icon.addData(svg_data.encode('utf-8'))
+                        from PySide6.QtSvg import QSvgRenderer
+                        from PySide6.QtGui import QPixmap, QPainter
+
+                        pixmap = QPixmap(size)
+                        pixmap.fill(Qt.GlobalColor.transparent)
+                        
+                        renderer = QSvgRenderer(bytes(svg_data, 'utf-8'))
+                        
+                        painter = QPainter(pixmap)
+                        renderer.render(painter)
+                        painter.end()
+                        
+                        icon = QIcon(pixmap)
                     
                     logger.debug(f"Загружена Lucide иконка: {icon_name}")
                 else:

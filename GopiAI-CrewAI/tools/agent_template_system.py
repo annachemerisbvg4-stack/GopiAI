@@ -15,7 +15,6 @@ from gopiai_integration.filesystem_tools import GopiAIFileSystemTool
 from gopiai_integration.memory_tools import GopiAIMemoryTool
 from gopiai_integration.communication_tools import GopiAICommunicationTool
 from gopiai_integration.ai_router_tools import GopiAIRouterTool
-from gopiai_integration.huggingface_tools import GopiAIHuggingFaceTool
 
 
 class AgentTemplateSystem:

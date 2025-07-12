@@ -184,7 +184,10 @@ class CrewAIClient:
                 if 'metadata' not in message:
                     message['metadata'] = {}
                 message['metadata']['emotion_analysis'] = emotion_analysis
-            
+        
+        # Добавляем флаг асинхронной обработки
+        message['async_processing'] = True
+        
         # Добавляем системный промпт, если его нет
         system_prompt = (
             "Ты - полезный ассистент. "
@@ -210,10 +213,13 @@ class CrewAIClient:
         logger.debug(f"Отправка запроса в CrewAI: {message}")
         
         try:
+            # Увеличиваем таймаут для первого запроса, так как сервер может обрабатывать его дольше
+            first_request_timeout = max(30, (timeout or self.timeout) * 2)
+            
             response = requests.post(
                 f"{self.base_url}/api/process",
                 json=message,
-                timeout=timeout or self.timeout
+                timeout=first_request_timeout
             )
             response.raise_for_status()
             
@@ -224,7 +230,12 @@ class CrewAIClient:
             if isinstance(result, str):
                 result = {"response": result}
             
-            # Добавляем анализ эмоций в результат, если он есть
+            # Проверяем, вернул ли сервер task_id для асинхронной обработки
+            if 'task_id' in result and 'status' in result:
+                logger.info(f"🔄 [TASK] Получен task_id для асинхронной обработки: {result['task_id']}")
+                return result
+                
+            # Если это синхронный ответ, добавляем анализ эмоций
             if 'metadata' in message and 'emotion_analysis' in message['metadata']:
                 result['emotion_analysis'] = message['metadata']['emotion_analysis']
                 
@@ -240,6 +251,7 @@ class CrewAIClient:
                 result['response'] = ""
                 
             return result
+            
         except requests.exceptions.RequestException as e:
             logger.error(f"Ошибка при отправке запроса в CrewAI: {str(e)}")
             return {
@@ -247,6 +259,35 @@ class CrewAIClient:
                 "error": "request_error",
                 "processed_with_crewai": False
             }
+            
+    def check_task_status(self, task_id):
+        """
+        Проверяет статус асинхронной задачи
+        
+        Args:
+            task_id: ID задачи для проверки
+            
+        Returns:
+            dict: Состояние задачи или сообщение об ошибке
+        """
+        if not self.is_available():
+            return {"error": "Сервер CrewAI недоступен", "status": "error"}
+            
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/task/{task_id}",
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"Ошибка при проверке статуса задачи: {response.status_code} - {response.text}")
+                return {"error": f"Ошибка сервера: {response.status_code}", "status": "error"}
+                
+        except requests.RequestException as e:
+            logger.error(f"Ошибка при проверке статуса задачи: {str(e)}")
+            return {"error": f"Ошибка соединения: {str(e)}", "status": "error"}
             
     def index_documentation(self):
         """Запускает индексацию документации CrewAI"""

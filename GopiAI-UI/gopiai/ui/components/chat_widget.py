@@ -226,6 +226,12 @@ class ChatWidget(QWidget):
         
         # Инициализируем переменные для отслеживания состояния чата
         self._waiting_message_id = None
+        self._current_task_id = None
+        self._polling_timer = QTimer(self)
+        self._polling_timer.timeout.connect(self._check_task_status)
+        self._polling_interval = 1000  # 1 секунда между опросами
+        self._max_polling_attempts = 300  # Максимальное количество попыток опроса (5 минут при интервале 1с)
+        self._current_polling_attempt = 0
 
         # История сообщений
         self.history = QTextEdit(self)
@@ -485,11 +491,31 @@ class ChatWidget(QWidget):
                 response_message = response_data.get("response", f"Выполняю команду: {command}")
                 self._update_assistant_response(self._waiting_message_id, response_message, False)
             
-            # Если это обычный текстовый ответ
+            # Если это ответ от сервера с task_id (асинхронная обработка)
+            elif isinstance(response_data, dict) and "status" in response_data and "task_id" in response_data:
+                task_id = response_data["task_id"]
+                status = response_data["status"]
+                
+                if status == "processing":
+                    # Запускаем опрос статуса задачи
+                    self._current_task_id = task_id
+                    self._current_polling_attempt = 0
+                    self._polling_timer.start(self._polling_interval)
+                    logger.info(f"🔄 [TASK] Запущен опрос статуса задачи {task_id}")
+                else:
+                    # Обработка других статусов, если нужно
+                    logger.warning(f"⚠️ [TASK] Неожиданный статус задачи: {status}")
+                    self._update_assistant_response(
+                        self._waiting_message_id,
+                        f"Получен неожиданный статус задачи: {status}",
+                        True
+                    )
+            
+            # Если это обычный текстовый ответ (синхронный режим)
             elif isinstance(response_data, str):
                 self._update_assistant_response(self._waiting_message_id, response_data, error_occurred)
             
-            # Если это словарь с ответом от CrewAI
+            # Если это словарь с ответом от CrewAI (синхронный режим)
             elif isinstance(response_data, dict):
                 response_text = response_data.get("response", "")
                 if not response_text and "error" in response_data:
@@ -541,6 +567,83 @@ class ChatWidget(QWidget):
             timestamp = str(int(time.time() * 1000))
             self._browser_command_result[timestamp] = f"Ошибка: {str(e)}"
 
+    def _check_task_status(self):
+        """Проверяет статус текущей задачи и обновляет UI при завершении"""
+        if not self._current_task_id:
+            self._polling_timer.stop()
+            return
+            
+        # Увеличиваем счетчик попыток
+        self._current_polling_attempt += 1
+        
+        # Проверяем, не превышено ли максимальное количество попыток
+        if self._current_polling_attempt > self._max_polling_attempts:
+            logger.error(f"❌ [TASK] Превышено максимальное количество попыток опроса для задачи {self._current_task_id}")
+            self._polling_timer.stop()
+            self._update_assistant_response(
+                self._waiting_message_id,
+                "Превышено время ожидания ответа от сервера. Пожалуйста, попробуйте еще раз.",
+                True
+            )
+            self._current_task_id = None
+            return
+            
+        # Проверяем статус задачи
+        try:
+            status_response = self.crew_ai_client.check_task_status(self._current_task_id)
+            logger.info(f"🔄 [TASK] Статус задачи {self._current_task_id}: {status_response}")
+            
+            if not status_response or "status" not in status_response:
+                logger.error(f"❌ [TASK] Неверный формат ответа о статусе задачи: {status_response}")
+                return
+                
+            status = status_response["status"]
+            
+            # Если задача завершена
+            if status in ["completed", "failed"]:
+                self._polling_timer.stop()
+                
+                if status == "completed":
+                    # Получаем результат из ответа
+                    result = status_response.get("result", "")
+                    if not result and "response" in status_response:
+                        result = status_response["response"]
+                    
+                    # Обновляем UI с результатом
+                    self._update_assistant_response(
+                        self._waiting_message_id,
+                        result,
+                        False
+                    )
+                else:
+                    # Обработка ошибки
+                    error_msg = status_response.get("error", "Неизвестная ошибка при выполнении задачи")
+                    logger.error(f"❌ [TASK] Ошибка при выполнении задачи {self._current_task_id}: {error_msg}")
+                    self._update_assistant_response(
+                        self._waiting_message_id,
+                        f"Ошибка при обработке запроса: {error_msg}",
+                        True
+                    )
+                
+                # Сбрасываем текущую задачу
+                self._current_task_id = None
+                
+            # Если задача все еще выполняется, продолжаем опрос
+            elif status == "processing":
+                # Обновляем сообщение о статусе
+                progress = status_response.get("progress", 0)
+                message = f"⏳ Обработка запроса... ({progress}%)" if progress > 0 else "⏳ Обработка запроса..."
+                
+                # Находим и обновляем сообщение о статусе
+                cursor = self.history.textCursor()
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                cursor.select(QTextCursor.SelectionType.BlockUnderCursor)
+                cursor.insertHtml(f"<b>Ассистент:</b> {message}<br>")
+                self._scroll_history_to_end()
+                
+        except Exception as e:
+            logger.error(f"❌ [TASK] Ошибка при проверке статуса задачи: {str(e)}", exc_info=True)
+            
     def _scroll_history_to_end(self):
         """Прокручивает историю чата в конец"""
         scrollbar = self.history.verticalScrollBar()
@@ -869,23 +972,33 @@ class ChatWidget(QWidget):
     def show_context_stats(self):
         """Показывает статистику текущего контекста чата"""
         try:
-            # Получаем статистику из ChatContext
-            stats = self.chat_context.get_stats()
+            # Инициализируем переменные для статистики
+            stats = {}
+            message = ""
             
-            # Получаем статистику из MemoryManager
-            memory_stats = {}
-            if RAG_AVAILABLE:
+            # Пытаемся получить статистику из ChatContext, если он доступен
+            if hasattr(self, 'chat_context'):
                 try:
-                    memory_stats = memory_manager.get_stats()
+                    stats = self.chat_context.get_stats()
+                    # Формируем сообщение о статистике контекста
+                    message = "<b>Статистика контекста:</b>\n"
+                    message += f"• Сообщений в текущем контексте: {stats.get('total_messages', 0)}\n"
+                    # Добавляем информацию о токенах, если доступна
+                    if 'total_tokens' in stats and 'max_tokens' in stats:
+                        message += f"• Всего токенов: {stats['total_tokens']}/{stats['max_tokens']}\n"
+                except Exception as e:
+                    logger.error(f"Ошибка при получении статистики контекста: {e}")
+                    message = "<b>Ошибка:</b> Не удалось получить статистику контекста\n"
+            else:
+                message = "<b>Информация:</b> Контекст чата не инициализирован\n"
+            
+            # Получаем статистику из MemoryManager, если RAG доступен
+            memory_stats = {}
+            if RAG_AVAILABLE and hasattr(self, 'memory_manager'):
+                try:
+                    memory_stats = self.memory_manager.get_stats()
                 except Exception as e:
                     memory_stats = {"error": str(e)}
-            
-            # Формируем сообщение
-            message = "<b>Статистика контекста:</b>\n"
-            message += f"• Сообщений в текущем контексте: {stats['total_messages']}\n"
-            # Добавляем информацию о токенах, если доступна
-            if 'total_tokens' in stats and 'max_tokens' in stats:
-                message += f"• Всего токенов: {stats['total_tokens']}/{stats['max_tokens']}\n"
             
             # Добавляем информацию о долгосрочной памяти
             message += f"\n<b>Долгосрочная память (txtai):</b>\n"

@@ -106,7 +106,16 @@ class SecurityManager:
         return True, ""
     
     def validate_file_path(self, file_path: str, operation: str = 'read') -> Tuple[bool, str]:
-        """Validate that a file path is safe for the specified operation."""
+        """
+        Validate that a file path is safe for the specified operation.
+        
+        Args:
+            file_path: The file path to validate
+            operation: The operation to perform ('read', 'write', etc.)
+            
+        Returns:
+            Tuple[bool, str]: (is_valid, error_message)
+        """
         try:
             # Convert to absolute path and normalize
             abs_path = str(Path(file_path).absolute())
@@ -118,13 +127,59 @@ class SecurityManager:
             # Additional checks based on operation
             if operation == 'write':
                 # Additional restrictions for write operations
-                if abs_path.startswith((r'C:\Windows\', '/etc/', '/usr/', '/bin/', '/sbin/')):
+                parent_dir = os.path.dirname(abs_path)
+                if not os.path.exists(parent_dir) or not os.access(parent_dir, os.W_OK):
+                    return False, f"Cannot write to path: '{abs_path}'. Parent directory is not writable"
+                    
+                # Check if file exists and is writable
+                if os.path.exists(abs_path) and not os.access(abs_path, os.W_OK):
+                    return False, f"File '{abs_path}' is not writable"
+                
+                # Prevent writing to system directories
+                restricted_paths = [
+                    r'C:\\Windows\\',
+                    r'C:\\Program Files\\',
+                    r'C:\\Program Files (x86)\\',
+                    '/etc/',
+                    '/usr/',
+                    '/bin/',
+                    '/sbin/',
+                    '/System/Library/',
+                    '/Library/',
+                    '/Applications/'
+                ]
+                
+                if any(abs_path.startswith(path) for path in restricted_paths):
                     return False, "Writing to system directories is not allowed"
+                
+                # Prevent writing dangerous file types
+                dangerous_extensions = ['.exe', '.dll', '.bat', '.sh', '.py', '.js']
+                if any(abs_path.lower().endswith(ext) for ext in dangerous_extensions):
+                    return False, "Writing executable files is not allowed"
             
+            # For read operations, check if file exists and is readable
+            elif operation == 'read':
+                if not os.path.exists(abs_path):
+                    return False, f"File '{abs_path}' does not exist"
+                if not os.access(abs_path, os.R_OK):
+                    return False, f"File '{abs_path}' is not readable"
+                
+                # Prevent reading sensitive files
+                sensitive_paths = [
+                    '/etc/passwd', '/etc/shadow', '/etc/sudoers',
+                    'C:\\Windows\\System32\\config\\SAM',
+                    '~/.ssh/', '/root/.ssh/'
+                ]
+                
+                for sensitive_path in sensitive_paths:
+                    if abs_path.startswith(os.path.expanduser(sensitive_path)):
+                        return False, "Access to sensitive files is not allowed"
+                
+            # All checks passed
             return True, ""
             
         except Exception as e:
-            return False, f"Invalid path: {str(e)}"
+            return False, f"Error validating file path: {str(e)}"
     
     def check_permission(self, context: SecurityContext, operation: OperationType) -> Tuple[bool, str]:
         """Check if the current context has permission to perform the operation."""

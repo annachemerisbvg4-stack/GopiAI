@@ -35,7 +35,7 @@ try:
     from tools.gopiai_integration.ai_router_tools import GopiAIRouterTool
     from tools.gopiai_integration.memory_tools import GopiAIMemoryTool
     from tools.gopiai_integration.communication_tools import GopiAICommunicationTool
-    from tools.gopiai_integration.huggingface_tools import GopiAIHuggingFaceTool
+    
     print("🔍 === ПРОВЕРКА ОКРУЖЕНИЯ ===")
 except ImportError as e:
     print(f"❌ Ошибка импорта инструментов: {e}")

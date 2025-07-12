@@ -106,23 +106,32 @@ class MemoryManager:
             logger.error(f"Error saving data: {e}")
     
     def _init_embeddings(self):
-        """Initialize txtai embeddings for semantic search"""
+        """Initialize txtai embeddings for semantic search with persistent storage"""
         try:
             from txtai.embeddings import Embeddings
             
-            # Configure embeddings
+            # Create directory for vector storage if it doesn't exist
+            vectors_dir = self.data_dir / "vectors"
+            vectors_dir.mkdir(exist_ok=True)
+            
+            # Configure embeddings with persistent storage
             self.embeddings = Embeddings({
                 'path': 'sentence-transformers/all-MiniLM-L6-v2',
                 'gpu': False,  # Disable GPU for testing
                 'batch': 8,
-                'content': True  # Store original content
+                'content': True,  # Store original content
+                'store': True,    # Enable persistent storage
+                'path': str(vectors_dir)  # Store vectors in persistent location
             })
             
-            # Index existing messages if any
-            if self.chats:
+            # If we have chats but no vectors, index existing messages
+            if self.chats and not any(vectors_dir.iterdir()):
+                logger.info("No existing vector index found, creating new index...")
                 self._index_messages()
+            elif self.chats:
+                logger.info("Found existing vector index, loading...")
                 
-            logger.info("Initialized txtai embeddings")
+            logger.info(f"Initialized txtai embeddings with {len(self.chats)} messages")
             
         except ImportError:
             logger.warning("txtai not available, semantic search disabled")
@@ -132,7 +141,7 @@ class MemoryManager:
             self.embeddings = None
     
     def _index_messages(self):
-        """Index chat messages for semantic search"""
+        """Index chat messages for semantic search and persist to disk"""
         if not self.embeddings or not self.chats:
             return
             
@@ -140,20 +149,27 @@ class MemoryManager:
             # Create documents for indexing
             documents = []
             for i, msg in enumerate(self.chats):
-                if 'content' in msg and 'role' in msg:
+                if 'content' in msg and 'role' in msg and 'id' in msg:
                     documents.append((
-                        str(i),  # Use index as ID
+                        msg['id'],  # Use message ID as document ID for consistency
                         msg['content'],
-                        {'role': msg['role'], 'timestamp': msg.get('timestamp', '')}
+                        {
+                            'role': msg['role'],
+                            'timestamp': msg.get('timestamp', ''),
+                            'session_id': msg.get('session_id', '')
+                        }
                     ))
             
-            # Index documents
+            # Index documents in batches to handle large chat histories
             if documents:
-                self.embeddings.index(documents)
-                logger.info(f"Indexed {len(documents)} messages for semantic search")
+                logger.info(f"Indexing {len(documents)} messages...")
+                self.embeddings.upsert(documents)  # Use upsert to handle updates
+                self.embeddings.save()  # Explicitly save to disk
+                logger.info(f"Successfully indexed {len(documents)} messages")
                 
         except Exception as e:
             logger.error(f"Error indexing messages: {e}")
+            raise  # Re-raise to allow caller to handle the error
     
     def add_message(self, session_id: str, role: str, content: str, **kwargs) -> str:
         """
@@ -210,15 +226,25 @@ class MemoryManager:
         if self.embeddings is not None:
             try:
                 self.embeddings.upsert([(
-                    message_id,
+                    message_id,  # Use message ID as document ID
                     content,
-                    {'role': role, 'timestamp': message['timestamp']}
+                    {
+                        'role': role,
+                        'timestamp': message['timestamp'],
+                        'session_id': session_id
+                    }
                 )])
+                # Save the index to disk after each update
+                self.embeddings.save()
+                logger.debug(f"Indexed message {message_id} in session {session_id}")
             except Exception as e:
                 logger.error(f"Error indexing message: {e}")
         
-        # Save to disk
-        self._save_data()
+        # Save chat history to disk
+        try:
+            self._save_data()
+        except Exception as e:
+            logger.error(f"Error saving chat data: {e}")
         
         return message_id
     

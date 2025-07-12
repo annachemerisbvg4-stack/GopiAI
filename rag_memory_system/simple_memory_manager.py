@@ -9,6 +9,8 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+import numpy as np
+
 
 # Проверяем доступность txtai
 try:
@@ -16,306 +18,113 @@ try:
     TXTAI_AVAILABLE = True
 except ImportError:
     TXTAI_AVAILABLE = False
-    print("⚠️ txtai не установлен. Установите: pip install txtai sentence-transformers")
+    print(" txtai не установлен. Установите: pip install txtai sentence-transformers")
 
 # Проверяем доступность FAISS
 try:
     import faiss
     import numpy as np
     FAISS_AVAILABLE = True
-    print("FAISS доступен")
 except ImportError:
     FAISS_AVAILABLE = False
-    print("FAISS не установлен. Работаем в txtai-only режиме")
+    print(" FAISS не установлен. Для лучшей производительности: pip install faiss-cpu")
+
 
 class SimpleMemoryManager:
-    """Простой менеджер памяти на основе txtai"""
-    
+    """Простой менеджер памяти, полностью основанный на txtai для персистентности."""
+
     def __init__(self, data_dir: str = "conversations"):
         """Инициализация"""
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(exist_ok=True)
-        
-        # Файл для хранения чатов
+
         self.chats_file = self.data_dir / "chats.json"
-        
-        # Данные в памяти
-        self.chats = []  # Список всех сообщений
-        self.sessions = {}  # Словарь сессий
-        
-        # Проверяем флаг отключения векторизации
+        self.chats = []
+        self.sessions = {}
+
         disable_embeddings = os.getenv('GOPI_DISABLE_EMBEDDINGS', 'false').lower() == 'true'
-        
-        # txtai embeddings (инициализируем только если не отключено)
+        self.embeddings = None
+
         if TXTAI_AVAILABLE and not disable_embeddings:
             try:
-                print("🔄 Инициализация txtai embeddings...")
-                # Используем ту же модель что в примере
-                self.embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
-                print("✅ txtai инициализирован")
+                print(" Инициализация txtai embeddings...")
+                embeddings_path = self.data_dir.joinpath("vectors").as_posix()
+                self.embeddings = Embeddings({
+                    "path": embeddings_path,
+                    "model": "sentence-transformers/nli-mpnet-base-v2",
+                    "content": True,
+                    "objects": True,
+                    "backend": "faiss" if FAISS_AVAILABLE else "annoy",
+                })
+                print(f" txtai инициализирован. Векторов в базе: {self.embeddings.count()}")
             except Exception as e:
-                print(f"❌ Ошибка инициализации txtai: {e}")
-                print("⚠️ Работаем без векторного поиска")
-                self.embeddings = None
+                print(f" Ошибка инициализации txtai: {e}")
         else:
-            self.embeddings = None
             if disable_embeddings:
-                print("⚠️ Векторизация отключена через GOPI_DISABLE_EMBEDDINGS")
+                print(" Векторизация отключена через GOPI_DISABLE_EMBEDDINGS")
             else:
-                print("⚠️ txtai недоступен - работаем без поиска")
-        
-        # Инициализация FAISS-индекса и структур хранения
-        self.dim = 768  # размерность векторов для nli-mpnet-base-v2
-        
-        if FAISS_AVAILABLE and self.embeddings:
-            # Создаем FAISS индекс для косинусной близости (Inner Product)
-            self.index = faiss.IndexFlatIP(self.dim)
-            self.vector_ids = []  # список для соответствия позиция ↔ id сообщения
-            print("✅ FAISS индекс инициализирован")
-        else:
-            self.index = None
-            self.vector_ids = []
-            if not FAISS_AVAILABLE:
-                print("⚠️ FAISS недоступен - работаем только с txtai")
-        
-        # Пути к файлам для хранения векторов
-        self.vectors_file = self.data_dir / "vectors.npy"
-        self.idmap_file = self.data_dir / "vector_ids.json"
-        self.migration_done_file = self.data_dir / "migration_complete.flag"  # Флаг завершения миграции
-        
-        # Загружаем сохраненные данные
+                print(" txtai недоступен - работаем без поиска")
+
         self._load_data()
-        
-        # Загружаем векторы FAISS (если файл отсутствует, будет ленивое перестроение)
+
         if self.embeddings:
-            self._load_embeddings()
-            
-            # Миграция существующих сообщений в FAISS индекс (только если нужно и не было выполнено)
-            self._rebuild_embeddings_if_needed()
-        
-        # Добавляем атрибут для совместимости
-        self.session_id = "default_session"  # Текущая сессия
+            self._migrate_old_chats_to_txtai()
+
+        self.session_id = "default_session"
 
     def _load_data(self):
         """Загрузка данных из JSON"""
-        if self.chats_file.exists():
-            try:
+        try:
+            if self.chats_file.exists():
                 with open(self.chats_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     self.chats = data.get('chats', [])
                     self.sessions = data.get('sessions', {})
-                print(f"📂 Загружено {len(self.chats)} сообщений")
-            except Exception as e:
-                print(f"❌ Ошибка загрузки: {e}")
-    
+                    print(f" Загружено {len(self.chats)} сообщений и {len(self.sessions)} сессий")
+            else:
+                print(" Файл чатов не найден, начинаем с чистого листа")
+        except (json.JSONDecodeError, IOError) as e:
+            print(f" Ошибка загрузки чатов: {e}")
+            self.chats = []
+            self.sessions = {}
+
     def _save_data(self):
         """Сохранение данных в JSON"""
         try:
-            data = {
-                'chats': self.chats,
-                'sessions': self.sessions
-            }
             with open(self.chats_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2, default=str)
-        except Exception as e:
-            print(f"❌ Ошибка сохранения: {e}")
+                json.dump({'chats': self.chats, 'sessions': self.sessions}, f, ensure_ascii=False, indent=2)
+        except IOError as e:
+            print(f" Ошибка сохранения чатов: {e}")
 
-    def _compute_embedding(self, text: str) -> np.ndarray:
-        """
-        Получить единично-нормированный вектор через self.embeddings.transform([text])[0]
-        
-        Args:
-            text: Текст для векторизации
-            
-        Returns:
-            Единично-нормированный numpy массив размерности self.dim
-        """
-        if not self.embeddings:
-            raise RuntimeError("Embeddings не инициализированы")
-        
-        try:
-            # Получаем вектор через transform (как указано в задаче)
-            vector = self.embeddings.transform([text])[0]
-            
-            # Конвертируем в numpy array если это не так
-            if not isinstance(vector, np.ndarray):
-                vector = np.array(vector)
-            
-            # Нормализуем вектор до единичной длины
-            norm = np.linalg.norm(vector)
-            if norm > 0:
-                vector = vector / norm
-            else:
-                # В случае нулевого вектора возвращаем нули
-                vector = np.zeros_like(vector)
-            
-            return vector.astype(np.float32)
-        
-        except Exception as e:
-            print(f"❌ Ошибка вычисления эмбеддинга: {e}")
-            # Возвращаем нулевой вектор в случае ошибки
-            return np.zeros(self.dim, dtype=np.float32)
-    
-    def _save_embeddings(self):
-        """
-        Сохранять faiss индекс (через faiss.write_index) ИЛИ np.save матрицу + json id-mapping
-        
-        Используем второй вариант (np.save + json) так как он более универсален
-        и не требует дополнительных зависимостей для сохранения faiss индексов
-        """
-        if not FAISS_AVAILABLE or self.index is None:
-            print("⚠️ FAISS недоступен - сохранение векторов пропущено")
+    def _migrate_old_chats_to_txtai(self):
+        """Мигрирует старые чаты из chats.json в индекс txtai, если их там еще нет."""
+        if not self.chats or not self.embeddings:
             return
-        
-        try:
-            # Получаем все векторы из FAISS индекса
-            if self.index.ntotal > 0:
-                # Извлекаем векторы из индекса
-                vectors = self.index.reconstruct_n(0, self.index.ntotal)
-                
-                # Сохраняем векторы в numpy файл
-                np.save(self.vectors_file, vectors)
-                print(f"✅ Сохранено {len(vectors)} векторов в {self.vectors_file}")
-                
-                # Сохраняем маппинг ID в JSON
-                with open(self.idmap_file, 'w', encoding='utf-8') as f:
-                    json.dump(self.vector_ids, f, ensure_ascii=False, indent=2)
-                print(f"✅ Сохранен маппинг ID в {self.idmap_file}")
-            else:
-                print("📁 Нет векторов для сохранения")
-                
-        except Exception as e:
-            print(f"❌ Ошибка сохранения векторов: {e}")
 
-    def _load_embeddings(self):
-        """
-        При наличии файлов восстанавливать индекс и self.vector_ids.
-        Если файлов нет — оставить пустыми, чтобы их можно было построить позже.
-        """
-        if not FAISS_AVAILABLE or self.index is None:
-            print("⚠️ FAISS недоступен - инициализация пустого индекса")
-            return
-        
+        print(" Проверка необходимости миграции старых сообщений в txtai...")
         try:
-            # Проверяем наличие сохраненных файлов
-            if self.vectors_file.exists() and self.idmap_file.exists():
-                # Загружаем векторы
-                vectors = np.load(self.vectors_file)
-                
-                # Загружаем маппинг ID
-                with open(self.idmap_file, 'r', encoding='utf-8') as f:
-                    self.vector_ids = json.load(f)
-                
-                # Добавляем векторы в FAISS индекс
-                if len(vectors) > 0:
-                    # Нормализуем векторы для косинусной близости
-                    norms = np.linalg.norm(vectors, axis=1, keepdims=True)
-                    vectors_normalized = vectors / (norms + 1e-8)  # избегаем деления на ноль
-                    
-                    self.index.add(vectors_normalized.astype(np.float32))
-                    print(f"✅ Загружено {len(vectors)} векторов в FAISS индекс")
-                else:
-                    print("📁 Файл векторов пуст - оставляем индекс пустым")
+            # Получаем все ID из существующего индекса
+            if self.embeddings.count() > 0:
+                existing_ids = {str(row["id"]) for row in self.embeddings.search("select id from txtai", limit=self.embeddings.count() + 1)}
             else:
-                print("📁 Файлы векторов не найдены - оставляем индекс пустым для построения позже")
-                # Инициализируем пустые структуры
-                self.vector_ids = []
-        
-        except Exception as e:
-            print(f"❌ Ошибка загрузки векторов: {e}")
-            # В случае ошибки инициализируем пустые структуры
-            self.index = faiss.IndexFlatIP(self.dim)
-            self.vector_ids = []
-
-    def _rebuild_embeddings_if_needed(self):
-        """
-        Миграция существующих сообщений: если FAISS доступен и индекс пуст,
-        пройти по всем self.chats, вычислить embedding, добавить в индекс, пополнить self.vector_ids.
-        
-        Вызывается автоматически при инициализации после загрузки чатов.
-        Теперь с проверкой флага завершения миграции.
-        """
-        if not FAISS_AVAILABLE or self.index is None:
-            print("⚠️ FAISS недоступен - миграция эмбеддингов пропущена")
-            return
+                existing_ids = set()
             
-        # Проверяем флаг завершения миграции
-        if self.migration_done_file.exists():
-            print("✅ Миграция уже завершена ранее (найден флаг)")
-            return
-            
-        if self.index.ntotal > 0:
-            print(f"📊 FAISS индекс уже содержит {self.index.ntotal} векторов - создаем флаг миграции")
-            # Создаем флаг, чтобы не повторять миграцию
-            self.migration_done_file.touch()
-            return
-            
-        if not self.chats:
-            print("📝 Нет сообщений для миграции - создаем флаг")
-            # Создаем флаг, чтобы не пытаться мигрировать пустые данные
-            self.migration_done_file.touch()
-            return
-            
-        if not self.embeddings:
-            print("⚠️ Embeddings модель недоступна - миграция пропущена")
-            return
-            
-        print(f"🔄 Начинаем ЕДИНОКРАТНУЮ миграцию {len(self.chats)} существующих сообщений в FAISS индекс...")
-        
-        try:
-            migrated_count = 0
-            failed_count = 0
-            
+            new_data_to_index = []
             for chat in self.chats:
-                try:
-                    # Извлекаем текст сообщения
-                    content = chat.get('content', '')
-                    if not content.strip():
-                        continue
-                        
-                    # Вычисляем эмбеддинг
-                    embedding = self._compute_embedding(content)
-                    
-                    # Добавляем в FAISS индекс
-                    # embedding должен быть 2D массивом для faiss
-                    embedding_2d = embedding.reshape(1, -1)
-                    self.index.add(embedding_2d)
-                    
-                    # Добавляем соответствие позиция -> id сообщения
-                    chat_id = chat.get('id', str(len(self.vector_ids)))
-                    self.vector_ids.append(chat_id)
-                    
-                    migrated_count += 1
-                    
-                except Exception as e:
-                    failed_count += 1
-                    # Убираем подробное логирование ошибок - слишком много спама
-                    if failed_count <= 5:  # Показываем только первые 5 ошибок
-                        print(f"⚠️ Ошибка при миграции сообщения {chat.get('id', 'unknown')}: {e}")
-                    elif failed_count == 6:
-                        print("⚠️ ... (скрываем дальнейшие ошибки миграции)")
-                    continue
-                    
-            print(f"✅ Миграция завершена: {migrated_count} успешно, {failed_count} ошибок")
-            
-            # Сохраняем результат
-            if migrated_count > 0:
-                self._save_embeddings()
-                print(f"💾 Эмбеддинги сохранены в файлы")
-            
-            # Создаем флаг завершения миграции независимо от результата
-            self.migration_done_file.touch()
-            print(f"🏁 Флаг завершения миграции создан: {self.migration_done_file}")
-            
+                if self._should_index_message(chat.get('content', ''), chat.get('role', '')):
+                    if chat['id'] not in existing_ids:
+                        new_data_to_index.append((chat['id'], chat, None)) # Индексируем весь объект сообщения
+
+            if new_data_to_index:
+                print(f" Найдены {len(new_data_to_index)} новых сообщений для индексации. Индексируем...")
+                self.embeddings.index(new_data_to_index)
+                self.embeddings.save() # Принудительно сохраняем после массовой индексации
+                print(" Миграция завершена.")
+            else:
+                print(" Все сообщения уже в индексе.")
         except Exception as e:
-            print(f"❌ Критическая ошибка при миграции эмбеддингов: {e}")
-            # В случае ошибки очищаем поврежденные данные
-            if FAISS_AVAILABLE:
-                self.index = faiss.IndexFlatIP(self.dim)
-                self.vector_ids = []
-            # Все равно создаем флаг, чтобы не повторять попытки
-            self.migration_done_file.touch()
-    
+            print(f" Ошибка миграции: {e}")
+
     def create_session(self, title: str = "Новый чат") -> str:
         """Создание новой сессии"""
         session_id = str(uuid.uuid4())
@@ -326,126 +135,69 @@ class SimpleMemoryManager:
             'message_count': 0
         }
         self._save_data()
-        print(f"✅ Создана сессия: {title}")
         return session_id
-    
-    def add_message(self, session_id: str, role: str, content: str) -> str:
-        """Добавление сообщения"""
-        if session_id not in self.sessions:
-            # Автосоздаем сессию
-            self.sessions[session_id] = {
-                'id': session_id,
-                'title': 'Auto Session',
-                'created_at': datetime.now().isoformat(),
-                'message_count': 0
-            }
-        
+
+    def _should_index_message(self, content: str, role: str) -> bool:
+        """Определяет, нужно ли индексировать сообщение"""
+        if not content or len(content.strip()) < 10 or role in ['system', 'assistant']:
+            return False
+        return True
+
+    def add_message(self, session_id: str, content: str, role: str = "user") -> str:
+        """Добавление сообщения в историю и в индекс txtai."""
         message_id = str(uuid.uuid4())
+        should_index = self._should_index_message(content, role)
+
         message = {
             'id': message_id,
             'session_id': session_id,
             'role': role,
             'content': content,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'should_index': should_index
         }
-        
         self.chats.append(message)
-        self.sessions[session_id]['message_count'] += 1
+
+        if session_id in self.sessions:
+            self.sessions[session_id]['message_count'] += 1
+
+        if should_index and self.embeddings:
+            try:
+                # Индексируем (id, object, tags). txtai обработает эмбеддинг и сохранение.
+                self.embeddings.index([(message_id, message, None)])
+                self.embeddings.save()
+                print(f" Сообщение '{content[:30]}...' добавлено в векторную базу.")
+            except Exception as e:
+                print(f" Ошибка при добавлении в векторную базу txtai: {e}")
+
         self._save_data()
-        
-        print(f"📝 Добавлено сообщение в сессию {session_id}")
         return message_id
-    
-    def search_memory(self, query: str, limit: int = 5) -> List[Dict]:
-        """
-        Семантический поиск по памяти с векторным поиском через FAISS
-        
-        Новая логика:
-        1. Если FAISS_AVAILABLE и self.index.ntotal > 0 — векторный поиск
-        2. Fallback: старая txtai или «нет поиска»
-        3. Возвращаем результаты в прежнем формате
-        """
-        if not self.chats:
-            print("⚠️ Поиск недоступен - нет сообщений")
+
+    def search(self, query: str, limit: int = 5) -> List[Dict]:
+        """Поиск в памяти с использованием txtai."""
+        if not self.embeddings or self.embeddings.count() == 0:
+            print(" Поиск недоступен - векторная база пуста или не готова.")
             return []
-        
-        # 1. Если FAISS доступен и в индексе есть векторы - используем векторный поиск
-        if FAISS_AVAILABLE and self.index.ntotal > 0:
-            try:
-                # Вычисляем embedding запроса
-                query_vector = self._compute_embedding(query)
-                
-                # Преобразуем в нужный формат для FAISS (добавляем размерность batch)
-                query_vector = query_vector.reshape(1, -1)
-                
-                # Выполняем поиск: D - расстояния, I - индексы
-                D, I = self.index.search(query_vector, limit)
-                
-                # Формируем список результатов
-                results = []
-                for k in range(len(I[0])):
-                    idx = I[0][k]
-                    if idx != -1 and idx < len(self.vector_ids):  # Проверяем валидность индекса
-                        real_id = self.vector_ids[idx]  # Получаем real-id сообщения
-                        score = float(D[0][k])  # Получаем score
-                        
-                        # Ищем сообщение по real_id в self.chats
-                        chat = None
-                        for chat_item in self.chats:
-                            if chat_item.get('id') == real_id:
-                                chat = chat_item
-                                break
-                        
-                        if chat:
-                            results.append({
-                                'content': chat['content'],
-                                'score': score,
-                                'session_id': chat['session_id'],
-                                'role': chat['role'],
-                                'timestamp': chat['timestamp']
-                            })
-                
-                print(f"🔍 FAISS поиск: найдено {len(results)} результатов для '{query}'")
-                return results
-                
-            except Exception as e:
-                print(f"❌ Ошибка FAISS поиска: {e}")
-                # Падаем на fallback
-        
-        # 2. Fallback: старая txtai или «нет поиска»
-        if self.embeddings:
-            try:
-                # Готовим данные для поиска (как в старой версии)
-                data = [chat['content'] for chat in self.chats]
-                
-                if not data:
-                    return []
-                
-                # Выполняем поиск (метод из similarity.py)
-                similarities = self.embeddings.similarity(query, data)
-                
-                # Формируем результаты
-                results = []
-                for idx, score in similarities[:limit]:
-                    chat = self.chats[idx]
-                    results.append({
-                        'content': chat['content'],
-                        'score': score,
-                        'session_id': chat['session_id'],
-                        'role': chat['role'],
-                        'timestamp': chat['timestamp']
-                    })
-                
-                print(f"🔍 txtai поиск: найдено {len(results)} результатов для '{query}'")
-                return results
-                
-            except Exception as e:
-                print(f"❌ Ошибка txtai поиска: {e}")
-                return []
-        else:
-            print("⚠️ Поиск недоступен - ни FAISS, ни txtai не инициализированы")
+
+        try:
+            # Важно: для similar() нужно экранировать одинарные кавычки в запросе
+            safe_query = query.replace("'", "''")
+            # Ищем и возвращаем весь объект
+            results = self.embeddings.search(f"select object, score from txtai where similar('{safe_query}') limit {limit}")
+            
+            # Добавляем score к объекту и возвращаем
+            formatted_results = []
+            for res in results:
+                message_object = res['object']
+                message_object['score'] = res['score']
+                formatted_results.append(message_object)
+            
+            print(f" Найдено {len(formatted_results)} результатов в txtai для: '{query[:30]}...' ")
+            return formatted_results
+        except Exception as e:
+            print(f" Ошибка поиска в txtai: {e}")
             return []
-    
+
     def get_session_messages(self, session_id: str, limit: int = 20) -> List[Dict]:
         """Получение сообщений сессии"""
         messages = [chat for chat in self.chats if chat['session_id'] == session_id]
@@ -457,11 +209,18 @@ class SimpleMemoryManager:
     
     def get_stats(self) -> Dict[str, Any]:
         """Статистика"""
+        vector_count = 0
+        if self.embeddings:
+            try:
+                vector_count = self.embeddings.count()
+            except Exception as e:
+                print(f"Не удалось получить кол-во векторов: {e}")
+
         return {
             'total_messages': len(self.chats),
             'total_sessions': len(self.sessions),
             'txtai_available': self.embeddings is not None,
-            'vector_messages': self.index.ntotal if self.index is not None else 0,
+            'vector_messages': vector_count,
             'faiss_available': FAISS_AVAILABLE,
             'data_dir': str(self.data_dir)
         }
@@ -487,7 +246,7 @@ class SimpleMemoryManager:
             recent_messages = self._format_recent_messages(self.session_id, 5)
             
             # Поиск релевантных воспоминаний по запросу (до 3 результатов)
-            memory_results = self.search_memory(message, limit=3)
+            memory_results = self.search(message, limit=3)
             memory_context = self._format_memory_results(memory_results)
             
             # Собираем все вместе
