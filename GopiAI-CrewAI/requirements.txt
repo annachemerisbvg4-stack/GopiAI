@@ -2,5 +2,6 @@ crewai>=0.28.0
 flask>=2.0.0
 requests>=2.25.0
 python-dotenv>=0.19.0
-txtai>=5.5.0; platform_system != "Windows"  # Опционально, для RAG
-sentence-transformers>=2.2.2; platform_system != "Windows"  # Опционально, для RAG
+txtai>=5.5.0
+faiss-cpu>=1.7.4
+sentence-transformers>=2.2.2

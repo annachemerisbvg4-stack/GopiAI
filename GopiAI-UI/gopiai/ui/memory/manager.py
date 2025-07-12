@@ -38,7 +38,6 @@ class MemoryManager:
         # Initialize data structures
         self.chats = []
         self.sessions = {}
-        self.embeddings = None
         
         # Initialize emotional classifier
         self.emotion_classifier = None
@@ -46,9 +45,6 @@ class MemoryManager:
         
         # Load existing data
         self._load_data()
-        
-        # Initialize txtai embeddings
-        self._init_embeddings()
     
     def _init_emotion_classifier(self):
         """Initialize the emotion classifier"""
@@ -76,51 +72,7 @@ class MemoryManager:
                 logger.warning("⚠️ Could not initialize emotion classifier. Emotion analysis will be disabled.")
                 self.emotion_classifier = None
 
-    def _init_embeddings(self):
-        """Initialize txtai embeddings with persistent storage."""
-        if os.getenv("GOPI_DISABLE_EMBEDDINGS", "false").lower() == "true":
-            logger.info("Embeddings are disabled by GOPI_DISABLE_EMBEDDINGS environment variable.")
-            self.embeddings = None
-            return
 
-        try:
-            from txtai.embeddings import Embeddings
-            
-            embeddings_path = self.data_dir / "vectors"
-            logger.info(f"Initializing embeddings at {embeddings_path.as_posix()}")
-
-            faiss_avx2 = False
-            try:
-                import faiss
-                faiss_avx2 = hasattr(faiss, "StandardGpuResources") or "AVX2" in faiss.get_compile_options()
-                logger.info(f"FAISS found, AVX2 support: {faiss_avx2}")
-            except ImportError:
-                logger.warning("FAISS not found, falling back to Annoy. For better performance, install 'faiss-cpu' or 'faiss-gpu'.")
-
-            config = {
-                "path": "sentence-transformers/nli-mpnet-base-v2",
-                "content": True,
-                "objects": True,
-                "backend": "faiss" if faiss_avx2 else "annoy"
-            }
-            
-            self.embeddings = Embeddings(config)
-            
-            if (embeddings_path / "config").exists():
-                self.embeddings.load(embeddings_path.as_posix())
-                logger.info(f"✅ Loaded existing txtai embeddings from: {embeddings_path.as_posix()}")
-            else:
-                logger.info("No existing embeddings found, will create a new index.")
-
-            if self.chats:
-                self._update_embeddings()
-
-        except ImportError:
-            logger.warning("⚠️ txtai is not installed. Semantic search will be disabled. Please run 'pip install txtai'.")
-            self.embeddings = None
-        except Exception as e:
-            logger.error(f"❌ Failed to initialize txtai embeddings: {e}", exc_info=True)
-            self.embeddings = None
 
     def _load_data(self):
         """Load existing chat and session data"""
@@ -154,28 +106,7 @@ class MemoryManager:
         except Exception as e:
             logger.error(f"Error saving data: {e}")
 
-    def _save_embeddings(self):
-        """Save the embeddings index to disk."""
-        if self.embeddings:
-            try:
-                embeddings_path = self.data_dir / "vectors"
-                self.embeddings.save(embeddings_path.as_posix())
-                logger.info(f"Saved embeddings to {embeddings_path.as_posix()}")
-            except Exception as e:
-                logger.error(f"Error saving embeddings: {e}")
 
-    def _update_embeddings(self):
-        """Update embeddings with current chat messages."""
-        if not self.embeddings or not self.chats:
-            return
-            
-        try:
-            upserts = [(msg['id'], msg) for msg in self.chats]
-            self.embeddings.upsert(upserts)
-            self._save_embeddings()
-            logger.info(f"Updated and saved {len(upserts)} items to embeddings index.")
-        except Exception as e:
-            logger.error(f"Error updating embeddings: {e}")
     
     def add_message(self, session_id: str, role: str, content: str, **metadata) -> str:
         """
@@ -217,42 +148,12 @@ class MemoryManager:
         self.chats.append(message)
         self.sessions[session_id]['message_count'] += 1
         
-        if self.embeddings:
-            try:
-                self.embeddings.upsert([(message['id'], message)])
-                self._save_embeddings() # Save after every addition
-            except Exception as e:
-                logger.error(f"Error updating embeddings with new message: {e}")
+
         
         self._save_data()
         return message['id']
     
-    def search_memory(self, query: str, limit: int = 5, min_score: float = 0.0) -> List[Dict]:
-        """
-        Search the chat history using semantic search.
-        """
-        if not self.embeddings or self.embeddings.count() == 0:
-            logger.warning("Search unavailable - vector store is empty or not initialized.")
-            return []
-            
-        try:
-            safe_query = query.replace("'", "''")
-            results = self.embeddings.search(f"select object, score from txtai where similar('{safe_query}') limit {limit}")
-            
-            search_results = []
-            for res in results:
-                if res['score'] >= min_score:
-                    message_object = res.get('object')
-                    if message_object:
-                        message_object['score'] = res['score']
-                        search_results.append(message_object)
-            
-            logger.info(f"Found {len(search_results)} results for query: '{query[:30]}...' (min_score={min_score})")
-            return search_results
-            
-        except Exception as e:
-            logger.error(f"Error in semantic search: {e}")
-            return []
+
     
     def get_chat_history(self, session_id: str = None, limit: int = 20) -> List[Dict]:
         """Get chat history for a session or all sessions"""
@@ -279,7 +180,6 @@ class MemoryManager:
             del self.sessions[session_id]
             self.chats = [msg for msg in self.chats if msg['session_id'] != session_id]
             self._save_data()
-            self._update_embeddings()
             return True
         return False
     
@@ -288,7 +188,7 @@ class MemoryManager:
         return {
             'total_messages': len(self.chats),
             'total_sessions': len(self.sessions),
-            'embeddings_available': self.embeddings is not None,
+            'embeddings_available': False,
             'emotion_analyzer_available': self.emotion_classifier is not None,
             'data_dir': str(self.data_dir.absolute())
         }

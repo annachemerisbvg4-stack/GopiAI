@@ -132,11 +132,15 @@ class SmartDelegator:
             return False
 
         try:
-            # Здесь должна быть логика инициализации встроенной векторной базы
-            # Например, загрузка документов в векторное хранилище
-            # Временная заглушка - просто возвращаем успех
-            print("✅ Встроенная векторная база готова к использованию")
-            return True
+            # Импортируем SimpleMemoryManager
+            from rag_memory_system.simple_memory_manager import get_memory_manager
+            memory_manager = get_memory_manager()
+            if memory_manager and memory_manager.embeddings is not None:
+                print(f"✅ Встроенная векторная база готова. Записей в индексе: {memory_manager.embeddings.count()}")
+                return True
+            else:
+                print("❌ Не удалось инициализировать векторную базу.")
+                return False
         except Exception as e:
             print(f"❌ Ошибка при инициализации векторной базы: {e}")
             self.rag_available = False
@@ -154,6 +158,10 @@ class SmartDelegator:
             str: Отформатированный контекст или None в случае ошибки
         """
         if not self.rag_available or not query.strip():
+            return None
+        
+        # Проверяем, не было ли недавних сбоев RAG
+        if time.time() - self._rag_last_failure < RAG_DISABLE_TIMEOUT:
             return None
             
         # Пропускаем очень короткие запросы, которые могут давать шумные результаты
@@ -189,6 +197,7 @@ class SmartDelegator:
             
         except Exception as e:
             print(f"⚠️ Ошибка при поиске в векторной базе: {e}")
+            self._rag_last_failure = time.time() # Отключаем RAG на время
             import traceback
             traceback.print_exc()
             return None
@@ -357,6 +366,18 @@ class SmartDelegator:
             # Логируем время обработки
             elapsed = time.time() - start_time
             print(f"⏱ Запрос обработан за {elapsed:.2f} сек")
+
+            # --- Сохранение в семантическую память ---
+            try:
+                from rag_memory_system.simple_memory_manager import get_memory_manager
+                memory_manager = get_memory_manager()
+                # Сохраняем и запрос пользователя, и ответ ассистента
+                memory_manager.add_message("user", message)
+                memory_manager.add_message("assistant", response)
+                print("💾 Диалог сохранен в семантическую память.")
+            except Exception as mem_e:
+                print(f"⚠️ Не удалось сохранить диалог в память: {mem_e}")
+            # ----------------------------------------
             
             return response
             
