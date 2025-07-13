@@ -10,7 +10,8 @@ import asyncio
 from typing import Type, Any, List, Dict, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
-from crewai.tools.base_tool import BaseTool
+# Используем локальную заглушку BaseTool вместо импорта из crewai
+from .base.base_tool import BaseTool
 
 class CommunicationInput(BaseModel):
     """Схема входных данных для коммуникации"""

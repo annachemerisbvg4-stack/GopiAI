@@ -6,10 +6,16 @@ import time
 import traceback
 from typing import Dict, List, Any, Optional
 
-import litellm
-from rag_system import get_rag_system, RAGSystem
-
+# Инициализируем логгер перед использованием
 logger = logging.getLogger(__name__)
+
+# Используем локальную заглушку litellm вместо реального модуля
+try:
+    import litellm
+except ImportError:
+    from .base import litellm_stub as litellm
+    logger.warning("WARNING: Using litellm stub instead of actual litellm module")
+from rag_system import get_rag_system, RAGSystem
 
 class SmartDelegator:
     
@@ -19,9 +25,9 @@ class SmartDelegator:
         self.rag_available = self.rag_system is not None and self.rag_system.embeddings is not None
         
         if self.rag_available:
-            logger.info(f"✅ RAG-система передана в SmartDelegator. Записей: {self.rag_system.embeddings.count()}")
+            logger.info(f"[OK] RAG system passed to SmartDelegator. Records: {self.rag_system.embeddings.count()}")
         else:
-            logger.warning("⚠️ RAG-система не передана или не инициализирована.")
+            logger.warning("[WARNING] RAG system not passed or not initialized.")
 
     def process_request(self, message: str, metadata: Dict) -> Dict:
         """
@@ -42,7 +48,7 @@ class SmartDelegator:
         response_text = self._call_llm(messages)
         
         elapsed = time.time() - start_time
-        logger.info(f"⏱ Запрос обработан за {elapsed:.2f} сек")
+        logger.info(f"[TIMING] Request processed in {elapsed:.2f} sec")
         
         # 5. Возвращаем результат в стандартном формате
         analysis['analysis_time'] = elapsed
@@ -85,7 +91,7 @@ class SmartDelegator:
             # Здесь можно добавить логику выбора модели из llm_rotation_config, если нужно
             selected_model = "gemini/gemini-1.5-flash"
             
-            logger.info(f"Вызов модели {selected_model}...")
+            logger.info(f"Calling model {selected_model}...")
             response = litellm.completion(
                 model=selected_model,
                 messages=messages,
@@ -95,14 +101,14 @@ class SmartDelegator:
             )
             
             result = response.choices[0].message.content
-            logger.info("✅ Ответ от LLM получен.")
+            logger.info("[OK] Response from LLM received.")
             return result.strip()
             
         except Exception as e:
-            logger.error(f"❌ Ошибка при вызове LLM: {e}", exc_info=True)
+            logger.error(f"[ERROR] Error calling LLM: {e}", exc_info=True)
             # Возвращаем пользователю понятное сообщение об ошибке
             if "Timeout" in str(e):
-                return "Извините, сервер модели не отвечает. Попробуйте позже."
-            return f"Произошла внутренняя ошибка при обращении к языковой модели."
+                return "Sorry, the model server is not responding. Please try again later."
+            return f"An internal error occurred when accessing the language model."
 
 # --- END OF FILE smart_delegator.py ---

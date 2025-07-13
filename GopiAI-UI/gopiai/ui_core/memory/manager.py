@@ -11,6 +11,9 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple, Union
 
+# Импортируем новую конфигурацию памяти
+from .memory_config import MEMORY_BASE_DIR, CHATS_FILE_PATH, VECTOR_INDEX_PATH
+
 logger = logging.getLogger(__name__)
 
 class MemoryManager:
@@ -25,14 +28,15 @@ class MemoryManager:
         """Initialize the memory manager"""
         # Set up data directory
         if data_dir is None:
-            self.data_dir = Path.home() / ".gopiai" / "memory"
+            # Используем новую конфигурацию с общими путями
+            self.data_dir = MEMORY_BASE_DIR
         else:
             self.data_dir = Path(data_dir)
             
         self.data_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize file paths
-        self.chats_file = self.data_dir / "chats.json"
+        self.chats_file = CHATS_FILE_PATH
         self.sessions_file = self.data_dir / "sessions.json"
         
         # Initialize data structures
@@ -111,7 +115,7 @@ class MemoryManager:
             from txtai.embeddings import Embeddings
             
             # Create directory for vector storage if it doesn't exist
-            vectors_dir = self.data_dir / "vectors"
+            vectors_dir = VECTOR_INDEX_PATH
             vectors_dir.mkdir(exist_ok=True)
             
             # Configure embeddings with persistent storage
@@ -164,7 +168,7 @@ class MemoryManager:
             if documents:
                 logger.info(f"Indexing {len(documents)} messages...")
                 self.embeddings.upsert(documents)  # Use upsert to handle updates
-                self.embeddings.save()  # Explicitly save to disk
+                self.embeddings.save(str(VECTOR_INDEX_PATH))  # Explicitly save to disk
                 logger.info(f"Successfully indexed {len(documents)} messages")
                 
         except Exception as e:
@@ -235,7 +239,7 @@ class MemoryManager:
                     }
                 )])
                 # Save the index to disk after each update
-                self.embeddings.save()
+                self.embeddings.save(str(VECTOR_INDEX_PATH))
                 logger.debug(f"Indexed message {message_id} in session {session_id}")
             except Exception as e:
                 logger.error(f"Error indexing message: {e}")

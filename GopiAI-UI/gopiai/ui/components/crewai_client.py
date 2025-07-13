@@ -44,7 +44,7 @@ class CrewAIClient:
     запущенного в отдельном окружении через REST API.
     """
 
-    def __init__(self, base_url="http://127.0.0.1:5051"):  # Изменено с 5050 на 5051 для теста
+    def __init__(self, base_url="http://127.0.0.1:5052"):  # Изменено с 5051 на 5052 для избежания конфликтов
         self.base_url = base_url
         self.timeout = 30  # Таймаут для API запросов (в секундах)
         self._server_available = None  # Кеш статуса сервера
@@ -222,6 +222,7 @@ class CrewAIClient:
             response = requests.post(
                 f"{self.base_url}/api/process",
                 json=message,
+                headers={"Content-Type": "application/json; charset=utf-8"},
                 timeout=first_request_timeout
             )
             response.raise_for_status()

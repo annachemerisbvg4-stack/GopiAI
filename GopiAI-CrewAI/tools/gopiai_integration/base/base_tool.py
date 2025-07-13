@@ -20,7 +20,7 @@ try:
     CREWAI_AVAILABLE = True
 except ImportError:
     # Если crewai недоступен, создаем заглушку BaseTool
-    print("⚠️ Модуль crewai не найден, используем заглушку BaseTool")
+    print("WARNING: Module crewai not found, using BaseTool stub")
     class BaseTool:
         def __init__(self, **kwargs):
             for key, value in kwargs.items():
@@ -46,7 +46,7 @@ class GopiAIBaseTool(BaseTool):
         try:
             super().__init__(**data)
         except Exception as e:
-            print(f"⚠️ Ошибка при инициализации базового класса: {e}")
+            print(f"WARNING: Error initializing base class: {e}")
             # Устанавливаем атрибуты вручную, если super().__init__ не сработал
             for key, value in data.items():
                 setattr(self, key, value)
@@ -66,17 +66,17 @@ class GopiAIBaseTool(BaseTool):
             "total_time": 0,
             "last_call": None
         }
-        self.logger.info(f"Инструмент {self.__class__.__name__} инициализирован")
+        self.logger.info(f"Tool {self.__class__.__name__} initialized")
     
     def _setup_logger(self, log_level: int) -> logging.Logger:
         """
         Настройка логгера для инструмента
         
         Args:
-            log_level: Уровень логирования
+            log_level: Logging level
             
         Returns:
-            Настроенный логгер
+            Configured logger
         """
         logger_name = f"gopiai.tools.{self.__class__.__name__}"
         logger = logging.getLogger(logger_name)
@@ -85,11 +85,11 @@ class GopiAIBaseTool(BaseTool):
         if not logger.handlers:
             logger.setLevel(log_level)
             
-            # Создаем директорию для логов, если её нет
+            # Create logs directory if it doesn't exist
             log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs")
             os.makedirs(log_dir, exist_ok=True)
             
-            # Файловый обработчик
+            # File handler
             log_file = os.path.join(log_dir, f"{self.__class__.__name__.lower()}.log")
             file_handler = logging.FileHandler(log_file)
             file_handler.setLevel(log_level)

@@ -1,6 +1,6 @@
 """
-🚀 GopiAI Integration Tools для CrewAI
-Набор специализированных инструментов для интеграции CrewAI с GopiAI
+GopiAI Integration Tools for CrewAI
+Set of specialized tools for integrating CrewAI with GopiAI
 """
 
 from .browser_tools import GopiAIBrowserTool
@@ -19,39 +19,39 @@ __all__ = [
 
 __version__ = '1.0.0'
 __author__ = 'GopiAI Team'
-__description__ = 'Полный набор инструментов для интеграции CrewAI с GopiAI платформой'
+__description__ = 'Complete set of tools for integrating CrewAI with GopiAI platform'
 
-# Информация об инструментах
+# Information about tools
 TOOLS_INFO = {
     'browser': {
         'class': 'GopiAIBrowserTool',
-        'description': 'Поиск информации в интернете и работа с веб-страницами',
+        'description': 'Search for information on the internet and work with web pages',
         'capabilities': ['search', 'fetch', 'extract', 'cache']
     },
     'filesystem': {
         'class': 'GopiAIFileSystemTool', 
-        'description': 'Безопасная работа с файловой системой',
+        'description': 'Safe work with the file system',
         'capabilities': ['read', 'write', 'create', 'delete', 'find', 'list']
     },
     'ai_router': {
         'class': 'GopiAIRouterTool',
-        'description': 'Ротация между LLM провайдерами с автоматическим fallback',
+        'description': 'Rotation between LLM providers with automatic fallback',
         'capabilities': ['route', 'fallback', 'monitor', 'optimize']
     },
     'memory': {
         'class': 'GopiAIMemoryTool',
-        'description': 'Долговременная память и RAG система',
+        'description': 'Long-term memory and RAG system',
         'capabilities': ['store', 'search', 'retrieve', 'categorize', 'summarize']
     },
     'communication': {
         'class': 'GopiAICommunicationTool',
-        'description': 'Коммуникация между агентами и с UI',
+        'description': 'Communication between agents and with UI',
         'capabilities': ['send', 'receive', 'broadcast', 'notify', 'monitor']
     }
 }
 
 def get_all_tools():
-    """Возвращает все доступные GopiAI инструменты"""
+    """Returns all available GopiAI tools"""
     return [
         GopiAIBrowserTool(),
         GopiAIFileSystemTool(),
@@ -61,7 +61,7 @@ def get_all_tools():
     ]
 
 def get_tool_by_name(tool_name: str):
-    """Получить инструмент по имени"""
+    """Get tool by name"""
     tools_map = {
         'browser': GopiAIBrowserTool,
         'filesystem': GopiAIFileSystemTool,
@@ -73,6 +73,6 @@ def get_tool_by_name(tool_name: str):
     if tool_name in tools_map:
         return tools_map[tool_name]()
     else:
-        raise ValueError(f"Неизвестный инструмент: {tool_name}")
+        raise ValueError(f"Unknown tool: {tool_name}")
 
 print("GopiAI Integration Tools loaded successfully!")

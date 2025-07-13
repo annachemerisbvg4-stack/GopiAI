@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-ReflectionEnabledAIRouter - AI Router с саморефлексией и улучшением качества ответов
+ReflectionEnabledAIRouter - AI Router with self-reflection and improved response quality
 
-Основан на паттернах:
-1. Reflection Pattern (Andrew Ng) - циклы генерации и самокритики
-2. CrewAI Reasoning - планирование и рефлексия перед выполнением
-3. Self-Refine - итеративное улучшение с самооценкой
-4. CRITIC - использование инструментов для проверки качества
+Based on patterns:
+1. Reflection Pattern (Andrew Ng) - cycles of generation and self-criticism
+2. CrewAI Reasoning - planning and reflection before execution
+3. Self-Refine - iterative improvement with self-assessment
+4. CRITIC - using tools to check quality
 
-Процесс работы:
-1. Генерация первичного ответа
-2. Критическая оценка качества (по нескольким критериям)
-3. Если качество ниже порога - генерация улучшенного ответа
-4. Повторение до достижения нужного качества или лимита итераций
+Work process:
+1. Generation of initial response
+2. Critical quality assessment (by several criteria)
+3. If quality is below threshold - generation of improved response
+4. Repeat until achieving desired quality or iteration limit
 """
 
 import logging

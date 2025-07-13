@@ -22,14 +22,14 @@ try:
     from txtai.embeddings import Embeddings
     TXT_AI_AVAILABLE = True
 except ImportError:
-    logger.warning("⚠️ txtai не установлен. Семантическая память будет отключена. Выполните: pip install txtai[faiss]")
+    logger.warning("[WARNING] txtai is not installed. Semantic memory will be disabled. Run: pip install txtai[faiss]")
     Embeddings = None
     TXT_AI_AVAILABLE = False
 
 class RAGSystem:
     """
-    Единая самовосстанавливающаяся система RAG для GopiAI.
-    При запуске проверяет наличие всех необходимых файлов и папок и создает их, если нужно.
+    Unified self-healing RAG system for GopiAI.
+    At startup, it checks for all necessary files and folders and creates them if needed.
     """
     _instance: Optional['RAGSystem'] = None
 
@@ -54,60 +54,58 @@ class RAGSystem:
         self._initialized = True
 
     def _ensure_memory_structure(self):
-        """Проверяет и создает необходимые папки и файлы для работы памяти."""
+        """Checks and creates necessary folders and files for memory to work."""
         try:
-            logger.info(f"Проверка структуры памяти в директории: {MEMORY_BASE_DIR}")
+            logger.info("Checking memory structure in directory: {}".format(MEMORY_BASE_DIR))
             
-            # 1. Создаем базовую директорию /memory
+            # 1. Create base directory /memory
             MEMORY_BASE_DIR.mkdir(parents=True, exist_ok=True)
             
-            # 2. Создаем директорию для векторов /memory/vectors
+            # 2. Create directory for vectors /memory/vectors
             VECTOR_INDEX_PATH.mkdir(parents=True, exist_ok=True)
             
-            # 3. Проверяем и создаем chats.json, если его нет
+            # 3. Check and create chats.json if it doesn't exist
             if not CHATS_FILE_PATH.exists():
-                logger.warning(f"Файл {CHATS_FILE_PATH} не найден. Создаю новый пустой файл.")
+                logger.warning("File {} not found. Creating a new empty file.".format(CHATS_FILE_PATH))
                 with open(CHATS_FILE_PATH, 'w', encoding='utf-8') as f:
-                    json.dump([], f) # Создаем файл с пустым списком
+                    json.dump([], f) # Create file with an empty list
             
-            logger.info("✅ Структура папок и файлов памяти в порядке.")
+            logger.info("[OK] Memory folder and file structure is in order.")
             
         except Exception as e:
-            logger.error(f"❌ Не удалось создать структуру памяти: {e}", exc_info=True)
-            raise # Если не можем создать папки, дальше работать бессмысленно
+            logger.error("Failed to create memory structure: {}".format(e), exc_info=True)
+            raise # If we can't create folders, it's pointless to continue
 
     def _safe_count(self) -> int:
-        """Безопасно возвращает количество векторов, даже если backend ещё не инициализирован"""
+        """Safely returns the number of vectors, even if the backend is not initialized"""
         try:
             return self.embeddings.count() if self.embeddings else 0
         except Exception:
             return 0
 
     def _initialize_embeddings(self):
-        """Инициализирует или загружает базу эмбеддингов."""
+        """Initializes or loads the embeddings database."""
         try:
-            logger.info(f"Инициализация embeddings. Модель: {EMBEDDING_MODEL}")
+            logger.info("Initializing embeddings. Model: {}".format(EMBEDDING_MODEL))
             
             config = {"path": EMBEDDING_MODEL, "content": True}
             self.embeddings = Embeddings(config)
             
-            # Попытка загрузить существующий индекс
+            # Attempt to load existing index
             if (VECTOR_INDEX_PATH / "config.json").exists():
-                logger.info(f"Найден существующий индекс. Попытка загрузки из {VECTOR_INDEX_PATH}...")
+                logger.info("Found existing index. Attempting to load from {}...".format(VECTOR_INDEX_PATH))
                 try:
                     self.embeddings.load(str(VECTOR_INDEX_PATH))
-                    logger.info(f"✅ Индекс успешно загружен. Записей в памяти: {self.embeddings.count()}")
+                    logger.info("Index loaded successfully. Records in memory: {}".format(self.embeddings.count()))
                 except Exception as load_err:
-                    # Индекс повреждён или неполный (часто отсутствует файл embeddings)
-                    logger.warning(
-                        f"⚠️ Не удалось загрузить существующий индекс: {load_err}. "
-                        "Будет выполнена переиндексация с нуля."
-                    )
-                    # Очищаем каталог с повреждённым индексом
+                    # Index is damaged or incomplete (often missing embeddings file)
+                    logger.warning("Failed to load existing index: {}. Will reindex from scratch.".format(load_err))
+                    # Clear the directory with the damaged index
                     for item in VECTOR_INDEX_PATH.glob("*"):
                         try:
                             item.unlink(missing_ok=True)
                         except IsADirectoryError:
+                            # In case FAISS creates subfolders – remove recursively
                             # На случай, если FAISS создаст подпапки – удаляем рекурсивно
                             import shutil
                             shutil.rmtree(item, ignore_errors=True)
@@ -118,7 +116,7 @@ class RAGSystem:
                 
             # Если база пуста (после загрузки или изначально), индексируем данные
             if self._safe_count() == 0:
-                logger.info("База векторов пуста. Запускаю индексацию истории чатов...")
+                logger.info("Vector database is empty. Starting chat history indexing...")
                 self.reindex_all_chats()
 
         except Exception as e:
@@ -136,7 +134,7 @@ class RAGSystem:
                 all_messages = json.load(f)
             
             if not all_messages:
-                logger.info("Файл истории чатов пуст, нечего индексировать.")
+                logger.info("Chat history file is empty, nothing to index.")
                 # Создаем пустой индекс, чтобы система работала корректно
                 self.embeddings.index([("dummy_id", {"content": "dummy_text"}, None)])
                 self.embeddings.delete(["dummy_id"])

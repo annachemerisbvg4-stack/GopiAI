@@ -1,72 +1,89 @@
-# --- START OF FILE manager.py (ФИНАЛЬНАЯ ВЕРСИЯ ДЛЯ ОТЛАДКИ) ---
+# --- START OF FILE manager.py (УНИФИЦИРОВАННАЯ ВЕРСИЯ) ---
 
 """
 Memory Manager for GopiAI UI
 
 This module provides an interface for managing chat history for the current UI session.
-It operates entirely in-memory and does not create any files or folders on disk,
-making it completely isolated from the server-side RAG system.
+Использует общую конфигурацию памяти с сервером CrewAI API для обеспечения
+согласованности данных между клиентом и сервером.
 """
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+from datetime import datetime
+import uuid
+
+# Импортируем общую конфигурацию памяти
+from ...ui_core.memory.memory_config import MEMORY_BASE_DIR, CHATS_FILE_PATH, VECTOR_INDEX_PATH
 
 logger = logging.getLogger(__name__)
 
 class MemoryManager:
     """
-    In-memory-only memory management for GopiAI UI.
-    Does not create or write to any files on disk.
+    Unified memory management for GopiAI UI.
+    Uses shared memory configuration with CrewAI API server.
     """
     
     def __init__(self):
-        """Initialize the memory manager without disk interaction."""
-        # ### ИЗМЕНЕНО ###
-        # Больше не создаем папки Path.home() / ".gopiai"
-        logger.info("[CLIENT-SIDE MEMORY] Initializing in-memory manager. No files will be created.")
+        """Initialize the memory manager with shared configuration."""
+        # Используем общую конфигурацию памяти
+        logger.info(f"[UNIFIED-MEMORY] Initializing memory manager with shared config. Path: {MEMORY_BASE_DIR}")
         
-        # Данные существуют только в оперативной памяти
+        # Создаем директорию, если она не существует
+        MEMORY_BASE_DIR.mkdir(parents=True, exist_ok=True)
+        
+        # Инициализируем структуры данных
         self.chats: List[Dict[str, Any]] = []
         self.sessions: Dict[str, Any] = {}
         
-        # Пытаемся загрузить историю из локального файла для удобства отображения,
-        # но не падаем, если его нет.
-        self._load_local_data_for_display()
+        # Загружаем историю из общего файла
+        self._load_chat_history()
         
-    def _load_local_data_for_display(self):
+    def _load_chat_history(self):
         """
-        Tries to load a local chats.json for display purposes only.
-        This is a convenience for debugging and does not affect the server.
+        Loads chat history from the shared chats.json file.
+        Uses the same file as the CrewAI API server.
         """
         try:
-            # Ищем chats.json рядом с этим файлом
-            local_chats_file = Path(__file__).parent / "chats.json"
-            if local_chats_file.exists():
-                with open(local_chats_file, 'r', encoding='utf-8') as f:
+            if CHATS_FILE_PATH.exists():
+                with open(CHATS_FILE_PATH, 'r', encoding='utf-8') as f:
                     self.chats = json.load(f)
-                logger.info(f"[CLIENT-SIDE MEMORY] For display only: Loaded {len(self.chats)} messages from local {local_chats_file}")
+                logger.info(f"[UNIFIED-MEMORY] Loaded {len(self.chats)} messages from shared file: {CHATS_FILE_PATH}")
+                
+                # Создаем словарь сессий на основе загруженных чатов
+                session_ids = set(msg.get('session_id') for msg in self.chats if msg.get('session_id'))
+                for session_id in session_ids:
+                    session_msgs = [msg for msg in self.chats if msg.get('session_id') == session_id]
+                    if session_msgs:
+                        first_msg = min(session_msgs, key=lambda x: x.get('timestamp', '0'))
+                        self.sessions[session_id] = {
+                            'id': session_id,
+                            'title': first_msg.get('content', '')[:30],
+                            'created_at': first_msg.get('timestamp')
+                        }
             else:
-                 logger.info("[CLIENT-SIDE MEMORY] No local chats.json found for display. Starting with a clean slate.")
+                logger.info(f"[UNIFIED-MEMORY] No shared chats file found at {CHATS_FILE_PATH}. Creating a new one.")
+                # Создаем пустой файл
+                with open(CHATS_FILE_PATH, 'w', encoding='utf-8') as f:
+                    json.dump([], f)
         except Exception as e:
-            logger.error(f"Error loading local chats for display: {e}")
+            logger.error(f"[UNIFIED-MEMORY] Error loading shared chat history: {e}")
 
     def add_message(self, session_id: str, role: str, content: str, **metadata) -> str:
         """
-        Adds a message to the IN-MEMORY list for the current UI session.
-        Does NOT save to disk.
+        Adds a message to the chat history and saves it to the shared file.
         """
-        import uuid
-        from datetime import datetime
-        
         if not content.strip():
             return ""
 
-        # Управляем сессиями только в памяти
+        # Управляем сессиями
         if session_id not in self.sessions:
             self.sessions[session_id] = {
-                'id': session_id, 'title': content[:30], # Название чата - первые 30 символов
+                'id': session_id, 
+                'title': content[:30], # Название чата - первые 30 символов
                 'created_at': datetime.now().isoformat()
             }
         
@@ -80,7 +97,15 @@ class MemoryManager:
         }
         
         self.chats.append(message)
-        logger.info("[CLIENT-SIDE MEMORY] Added message to in-memory list. Disk saving is OFF.")
+        
+        # Сохраняем в общий файл
+        try:
+            with open(CHATS_FILE_PATH, 'w', encoding='utf-8') as f:
+                json.dump(self.chats, f, ensure_ascii=False, indent=2)
+            logger.info(f"[UNIFIED-MEMORY] Added message and saved to shared file: {CHATS_FILE_PATH}")
+        except Exception as e:
+            logger.error(f"[UNIFIED-MEMORY] Error saving to shared file: {e}")
+            
         return message['id']
 
     def get_chat_history(self, session_id: str) -> List[Dict]:
@@ -93,8 +118,7 @@ class MemoryManager:
             return session_messages
         return []
 
-    # Остальные методы могут быть упрощены или возвращать пустые значения,
-    # так как они больше не управляют персистентностью.
+    # Дополнительные методы для работы с общей памятью
     def list_sessions(self) -> List[Dict]:
         return list(self.sessions.values())
         
@@ -108,4 +132,4 @@ def get_memory_manager() -> MemoryManager:
         _memory_manager_instance = MemoryManager()
     return _memory_manager_instance
 
-# --- END OF FILE manager.py ---
+# --- END OF FILE manager.py (УНИФИЦИРОВАННАЯ ВЕРСИЯ) ---

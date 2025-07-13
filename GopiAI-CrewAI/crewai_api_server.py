@@ -26,7 +26,7 @@ from tools.gopiai_integration.smart_delegator import SmartDelegator
 
 # --- Настройки сервера ---
 HOST = "127.0.0.1"
-PORT = 5051  # Изменено с 5050 на 5051 для проверки
+PORT = 5052  # Изменено с 5051 на 5052 для избежания конфликтов
 DEBUG = False
 TASK_CLEANUP_INTERVAL = 300
 
@@ -112,14 +112,14 @@ try:
     SERVER_IS_READY = True
     print("[ДИАГНОСТИКА] SERVER_IS_READY = True")
 except Exception as e:
-    print(f"[ДИАГНОСТИКА] КРИТИЧЕСКАЯ ОШИБКА: {e}")
-    logger.error(f"❌ КРИТИЧЕСКАЯ ОШИБКА ПРИ ЗАПУСКЕ СЕРВЕРА: {e}", exc_info=True)
+    print(f"[DIAGNOSTIC] CRITICAL ERROR: {e}")
+    logger.error(f"CRITICAL ERROR DURING SERVER STARTUP: {e}", exc_info=True)
     rag_system_instance = None
     smart_delegator_instance = None
     SERVER_IS_READY = False
-    print("[ДИАГНОСТИКА] SERVER_IS_READY = False")
+    print("[DIAGNOSTIC] SERVER_IS_READY = False, server will not be started")
 
-# --- Роуты Flask ---
+# --- Flask routes ---
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -131,38 +131,38 @@ def health_check():
     })
 
 def process_task(task_id: str):
-    """Выполняет задачу в отдельном потоке."""
+    """Processes a task in a separate thread."""
     task = TASKS.get(task_id)
     if not task: return
         
     if not smart_delegator_instance:
-        task.fail("Smart Delegator не инициализирован.")
+        task.fail("Smart Delegator not initialized.")
         return
 
     try:
         task.start_processing()
-        logger.info(f"Начинаю обработку задачи {task_id} для сообщения: '{task.message}'")
+        logger.info(f"Starting task {task_id} for message: '{task.message}'")
         
         response_data = smart_delegator_instance.process_request(
             message=task.message,
             metadata=task.metadata
         )
         
-        logger.info(f"✅ Задача {task_id} успешно обработана.")
+        logger.info(f"Task {task_id} processed successfully.")
         task.complete(response_data)
         
     except Exception as e:
-        logger.error(f"❌ Ошибка при обработке задачи {task_id}: {e}", exc_info=True)
+        logger.error(f"[ERROR] Error processing task {task_id}: {e}", exc_info=True)
         task.fail(str(e))
 
 @app.route('/api/process', methods=['POST'])
 def process_request():
     if not SERVER_IS_READY:
-        return jsonify({"error": "Сервер запущен в ограниченном режиме из-за ошибки инициализации."}), 503
+        return jsonify({"error": "Server started in limited mode due to initialization error."}), 503
 
     data = request.json
     if not data or 'message' not in data:
-        return jsonify({"error": "Отсутствует поле 'message'"}), 400
+        return jsonify({"error": "Missing 'message' field"}), 400
 
     message = data.get('message')
     metadata = data.get('metadata', {})
@@ -179,7 +179,7 @@ def process_request():
     return jsonify({
         "task_id": task_id,
         "status": TaskStatus.PENDING,
-        "message": "Задача поставлена в очередь на обработку",
+        "message": "Task queued for processing",
         "created_at": task.created_at.isoformat()
     })
 
@@ -187,24 +187,24 @@ def process_request():
 def get_task_status(task_id):
     task = TASKS.get(task_id)
     if not task:
-        return jsonify({"error": "Задача не найдена"}), 404
+        return jsonify({"error": "Task not found"}), 404
     return jsonify(task.to_dict())
 
 if __name__ == '__main__':
-    print(f"[ДИАГНОСТИКА] __main__ блок, SERVER_IS_READY = {SERVER_IS_READY}")
+    print(f"[DIAGNOSTIC] __main__ block, SERVER_IS_READY = {SERVER_IS_READY}")
     if SERVER_IS_READY:
-        print(f"[ДИАГНОСТИКА] Запуск сервера на http://{HOST}:{PORT}")
-        logger.info(f"🚀 Сервер запускается на http://{HOST}:{PORT}")
+        print(f"[DIAGNOSTIC] Starting server on http://{HOST}:{PORT}")
+        logger.info(f"[STARTUP] Server starting on http://{HOST}:{PORT}")
         try:
-            print("[ДИАГНОСТИКА] Вызов app.run()")
-            app.run(host=HOST, port=PORT, debug=DEBUG)
-            print("[ДИАГНОСТИКА] После app.run() - это сообщение не должно появиться")
+            print("[DIAGNOSTIC] Calling app.run()")
+            app.run(host=HOST, port=PORT, debug=DEBUG, threaded=True)
+            print("[DIAGNOSTIC] After app.run() - this message should not appear")
         except Exception as e:
-            print(f"[ДИАГНОСТИКА] Ошибка при запуске Flask: {e}")
+            print(f"[DIAGNOSTIC] Error starting server: {e}")
     else:
-        print("[ДИАГНОСТИКА] Сервер не запущен из-за ошибок инициализации")
-        logger.error("❌ Сервер не запущен из-за ошибок инициализации.")
-        print("КРИТИЧЕСКАЯ ОШИБКА: Сервер не может быть запущен из-за ошибок инициализации.")
+        print("[DIAGNOSTIC] Server not started due to initialization errors")
+        logger.error("Server not started due to initialization errors.")
+        print("CRITICAL ERROR: Server cannot be started due to initialization errors.")
         sys.exit(1)
 
 # --- END OF FILE crewai_api_server.py ---

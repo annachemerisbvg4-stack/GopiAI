@@ -1,4 +1,0 @@
-Тест Flask с системным Python и абсолютными путями
-Python версия: 3.12.0 (tags/v3.12.0:0fb18b0, Oct  2 2023, 13:03:39) [MSC v.1935 64 bit (AMD64)]
-Текущая директория: c:\Users\crazy\GOPI_AI_MODULES
-Путь к файлу: c:\Users\crazy\GOPI_AI_MODULES\flask_absolute_test.txt

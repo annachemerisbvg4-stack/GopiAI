@@ -1,1 +1,23 @@
-[]
+[
+  {
+    "id": "cb073b99-07af-49c3-8b30-8b9ece9dc540",
+    "session_id": "session_1752433741",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-14T00:39:10.811198"
+  },
+  {
+    "id": "a3a8d981-2882-4c11-a99f-6f0827687a90",
+    "session_id": "session_1752433741",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-14T00:39:10.818325"
+  },
+  {
+    "id": "b892c3c4-dd30-4c6d-a0a1-98df2a14d0e3",
+    "session_id": "session_1752433741",
+    "role": "assistant",
+    "content": "Произошла ошибка: 'CrewAIClient' object has no attribute 'get_task_status'",
+    "timestamp": "2025-07-14T00:39:11.884629"
+  }
+]

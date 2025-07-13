@@ -7,7 +7,8 @@ import os
 import yaml
 import logging
 from typing import Dict, List, Any, Optional
-from crewai import Agent, Task, Crew
+# Используем локальные заглушки вместо импорта из crewai
+from .base.base_agent import Agent, Task, Crew
 
 class AgentTemplateSystem:
     """

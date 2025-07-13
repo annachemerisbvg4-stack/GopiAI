@@ -14,7 +14,8 @@ from llm_rotation_config import (
     get_models_by_intelligence,
     get_next_available_model
 )
-from crewai import LLM # Assuming this is litellm's LLM
+# Используем локальную заглушку LLM вместо импорта из crewai
+from .base.base_llm import LLM # Локальная заглушка LLM
 from .base.base_tool import GopiAIBaseTool # Keeping this for now, as _run method might use it
 class AIRouterLLM(BaseLLM):
     """
