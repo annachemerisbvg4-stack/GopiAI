@@ -14,18 +14,9 @@ import json
 import tempfile
 import subprocess
 
-# Пытаемся импортировать BaseTool из crewai
-try:
-    from crewai.tools.base_tool import BaseTool
-    CREWAI_AVAILABLE = True
-except ImportError:
-    # Если crewai недоступен, создаем заглушку BaseTool
-    print("WARNING: Module crewai not found, using BaseTool stub")
-    class BaseTool:
-        def __init__(self, **kwargs):
-            for key, value in kwargs.items():
-                setattr(self, key, value)
-    CREWAI_AVAILABLE = False
+# Импортируем BaseTool из crewai
+from crewai.tools.base_tool import BaseTool
+CREWAI_AVAILABLE = True
 
 class GopiAIBaseTool(BaseTool):
     """

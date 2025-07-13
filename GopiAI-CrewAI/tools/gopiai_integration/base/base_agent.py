@@ -1,33 +1,19 @@
 #!/usr/bin/env python3
 """
-Заглушки для Agent, Task, Crew из crewai
+Прокси-модуль для импорта классов Agent, Task, Crew из crewai
 Используется для совместимости с кодом, который импортирует эти классы из crewai
 """
 
 import logging
 from typing import Any, Dict, List, Optional
 
+# Импортируем реальные классы из crewai
+from crewai import Agent, Task, Crew
+
 logger = logging.getLogger(__name__)
 
-class Agent:
-    """
-    Заглушка для Agent из crewai
-    """
-    
-    def __init__(self, name: str, role: str, goal: str, **kwargs):
-        """
-        Инициализирует заглушку Agent
-        
-        Args:
-            name: Имя агента
-            role: Роль агента
-            goal: Цель агента
-            **kwargs: Дополнительные параметры
-        """
-        self.name = name
-        self.role = role
-        self.goal = goal
-        self.kwargs = kwargs
+# Теперь этот модуль просто ре-экспортирует классы из crewai
+# Все заглушки удалены и заменены на реальные классы
         logger.warning("WARNING: Using Agent stub instead of crewai.Agent")
     
     def __str__(self) -> str:

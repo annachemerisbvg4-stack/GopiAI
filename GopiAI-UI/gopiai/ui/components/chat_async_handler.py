@@ -65,7 +65,7 @@ class ChatAsyncHandler(QObject):
             return
 
         try:
-            status = self.crew_ai_client.get_task_status(self._current_task_id)
+            status = self.crew_ai_client.check_task_status(self._current_task_id)
             # Ожидаем, что сервер возвращает словарь с ключами `done` и `result`
             if status.get("done"):
                 self._polling_timer.stop()

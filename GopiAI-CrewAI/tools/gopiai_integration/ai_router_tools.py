@@ -7,8 +7,8 @@ import os
 import logging
 from typing import Type, Any, Dict, Optional
 from pydantic import BaseModel, Field
-# Используем локальную заглушку BaseTool вместо импорта из crewai
-from .base.base_tool import BaseTool
+# Импортируем BaseTool из crewai
+from crewai.tools.base_tool import BaseTool
 from .ai_router_llm import AIRouterLLM
 
 # Настройка логгера

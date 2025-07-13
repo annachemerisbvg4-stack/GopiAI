@@ -14,8 +14,8 @@ from bs4 import BeautifulSoup
 
 # Импортируем базовый класс
 from .base import GopiAIBaseTool
-# Используем локальную заглушку BaseTool вместо импорта из crewai
-from .base.base_tool import BaseTool
+# Импортируем BaseTool из crewai
+from crewai.tools.base_tool import BaseTool
 
 class BrowserInput(BaseModel):
     """Схема входных данных для браузер-инструмента"""

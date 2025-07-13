@@ -14,12 +14,11 @@ from llm_rotation_config import (
     get_models_by_intelligence,
     get_next_available_model
 )
-# Используем локальную заглушку LLM вместо импорта из crewai
-from .base.base_llm import LLM # Локальная заглушка LLM
-from .base.base_tool import GopiAIBaseTool # Keeping this for now, as _run method might use it
+# Импортируем LLM из crewai
+from crewai.llm import LLM
 class AIRouterLLM(BaseLLM):
     """
-    🚨 ИСПРАВЛЕННЫЙ AI Router с bulletproof системой ротации моделей
+    ИСПРАВЛЕННЫЙ AI Router с bulletproof системой ротации моделей
     
     Основные улучшения:
     - Автоматическое блокирование моделей при ошибках API 429
