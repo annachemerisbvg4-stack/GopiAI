@@ -10,6 +10,8 @@ import requests.exceptions
 import threading
 import time
 import json
+import logging
+import logging.handlers
 import os
 import sys
 from pathlib import Path
@@ -19,10 +21,37 @@ EMOTIONAL_CLASSIFIER_AVAILABLE = False
 EmotionalClassifier = None
 EmotionalState = None
 
-# Set up logging
-import logging
+# Настройка логирования для CrewAI клиента
 logger = logging.getLogger(__name__)
 
+# Создаем директорию для логов, если её нет
+logs_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'logs')
+os.makedirs(logs_dir, exist_ok=True)
+
+# Настраиваем файловый обработчик для логов CrewAI клиента
+crewai_log_file = os.path.join(logs_dir, 'crewai_client.log')
+file_handler = logging.handlers.RotatingFileHandler(
+    crewai_log_file, 
+    maxBytes=5 * 1024 * 1024,  # 5 МБ
+    backupCount=3,  # Хранить 3 файла ротации
+    encoding='utf-8'
+)
+
+# Форматтер для логов
+formatter = logging.Formatter(
+    '%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+file_handler.setFormatter(formatter)
+
+# Устанавливаем уровень логирования для файла
+file_handler.setLevel(logging.DEBUG)
+
+# Добавляем обработчик к логгеру
+logger.addHandler(file_handler)
+
+# Устанавливаем уровень логирования для логгера
+logger.setLevel(logging.DEBUG)
 
 # --- NLP (spaCy) ---
 try:
@@ -158,38 +187,59 @@ class CrewAIClient:
         Returns:
             dict: Ответ от API с полями 'response', 'command' (опционально) и 'emotion_analysis' (при наличии)
         """
+        # Добавляем расширенное логирование
+        logger.debug(f"[REQUEST] Начало обработки запроса. force_crewai={force_crewai}, timeout={timeout}")
+        
+        # Преобразуем сообщение в строку для логирования
+        if isinstance(message, dict):
+            msg_text = message.get('message', '')
+            msg_log = f"{msg_text[:50]}..." if len(msg_text) > 50 else msg_text
+        else:
+            msg_log = f"{message[:50]}..." if len(str(message)) > 50 else message
+            
+        logger.debug(f"[REQUEST] Сообщение: {msg_log}")
+        
         if not self.is_available():
+            logger.error("[REQUEST-ERROR] Сервер CrewAI недоступен")
             return {"response": "Ошибка: Сервер CrewAI недоступен", "error": "CrewAI server not available"}
             
         # Обработка JSON-строки, если она пришла
         if isinstance(message, str):
             try:
+                logger.debug("[REQUEST] Попытка парсинга JSON из строки")
                 message_data = json.loads(message)
                 if 'message' in message_data:
                     message = message_data
+                    logger.debug("[REQUEST] Успешный парсинг JSON")
             except json.JSONDecodeError:
+                logger.debug("[REQUEST] Не удалось парсить JSON, используем как обычную строку")
                 message = {"message": message}
         
         # Если message не словарь, делаем его словарем
         if not isinstance(message, dict):
+            logger.debug("[REQUEST] Преобразование не-словаря в словарь")
             message = {"message": str(message)}
             
         # Извлекаем текст сообщения для анализа эмоций
         message_text = message.get('message', '')
+        logger.debug(f"[REQUEST] Извлеченный текст сообщения: {message_text[:50]}..." if len(message_text) > 50 else message_text)
         
         # Анализируем эмоциональное состояние, если это не команда
         emotion_analysis = None
         if not any(message_text.startswith(prefix) for prefix in ('/', '!', '#')):
+            logger.debug("[REQUEST] Анализ эмоционального состояния...")
             emotion_analysis = self.analyze_emotion(message_text)
             
             # Добавляем информацию об эмоциях в метаданные запроса
             if emotion_analysis:
+                logger.debug(f"[REQUEST] Результат анализа эмоций: {emotion_analysis['primary_emotion']}")
                 if 'metadata' not in message:
                     message['metadata'] = {}
                 message['metadata']['emotion_analysis'] = emotion_analysis
         
         # Добавляем флаг асинхронной обработки
         message['async_processing'] = True
+        logger.debug("[REQUEST] Установлен флаг async_processing=True")
         
         # Добавляем системный промпт, если его нет
         system_prompt = (
@@ -202,6 +252,7 @@ class CrewAIClient:
         # Адаптируем системный промпт на основе эмоционального анализа
         if emotion_analysis:
             emotion = emotion_analysis['primary_emotion']
+            logger.debug(f"[REQUEST] Адаптация системного промпта на основе эмоции: {emotion}")
             
             if emotion in ['depressed', 'sad', 'anxious']:
                 system_prompt += " Пользователь выглядит расстроенным, прояви сочувствие и поддержку."
@@ -212,35 +263,48 @@ class CrewAIClient:
                 
         if 'system_prompt' not in message:
             message['system_prompt'] = system_prompt
+            logger.debug("[REQUEST] Добавлен стандартный системный промпт")
+        else:
+            logger.debug("[REQUEST] Используется пользовательский системный промпт")
             
-        logger.debug(f"Отправка запроса в CrewAI: {message}")
+        logger.debug(f"[REQUEST] Подготовка к отправке запроса в CrewAI API")
         
         try:
             # Увеличиваем таймаут для первого запроса, так как сервер может обрабатывать его дольше
             first_request_timeout = max(30, (timeout or self.timeout) * 2)
+            logger.debug(f"[REQUEST] Установлен таймаут {first_request_timeout} секунд для запроса")
+            
+            url = f"{self.base_url}/api/process"
+            logger.debug(f"[REQUEST] Отправка POST запроса на {url} с заголовком Content-Type: application/json; charset=utf-8")
             
             response = requests.post(
-                f"{self.base_url}/api/process",
+                url,
                 json=message,
                 headers={"Content-Type": "application/json; charset=utf-8"},
                 timeout=first_request_timeout
             )
+            
+            logger.debug(f"[REQUEST] Получен ответ от сервера: HTTP {response.status_code}")
             response.raise_for_status()
             
             # Обработка ответа
             result = response.json()
+            logger.debug(f"[REQUEST] Успешно парсим JSON ответ: {result}")
             
             # Если ответ содержит только текст, оборачиваем его в словарь
             if isinstance(result, str):
+                logger.debug("[REQUEST] Получен текстовый ответ, преобразуем в словарь")
                 result = {"response": result}
             
             # Проверяем, вернул ли сервер task_id для асинхронной обработки
             if 'task_id' in result and 'status' in result:
-                logger.info(f"🔄 [TASK] Получен task_id для асинхронной обработки: {result['task_id']}")
+                logger.info(f"[TASK-START] 🔄 Получен task_id для асинхронной обработки: {result['task_id']}")
+                logger.debug(f"[TASK-START] Начальный статус задачи: {result['status']}")
                 return result
                 
             # Если это синхронный ответ, добавляем анализ эмоций
             if 'metadata' in message and 'emotion_analysis' in message['metadata']:
+                logger.debug("[REQUEST] Добавляем анализ эмоций в синхронный ответ")
                 result['emotion_analysis'] = message['metadata']['emotion_analysis']
                 
                 # Добавляем рекомендации по ответу на основе эмоций
@@ -248,16 +312,20 @@ class CrewAIClient:
                 if recommendations and 'metadata' not in result:
                     result['metadata'] = {}
                 if recommendations:
+                    logger.debug(f"[REQUEST] Добавлены рекомендации по ответу: {recommendations}")
                     result['metadata']['recommended_responses'] = recommendations
             
             # Убедимся, что ответ содержит хотя бы пустую строку, а не None
             if 'response' not in result or result['response'] is None:
+                logger.debug("[REQUEST] Ответ не содержит 'response', добавляем пустую строку")
                 result['response'] = ""
+            else:
+                logger.debug(f"[REQUEST] Получен ответ: {result['response'][:50]}..." if len(result['response']) > 50 else result['response'])
                 
             return result
             
         except requests.exceptions.RequestException as e:
-            logger.error(f"Ошибка при отправке запроса в CrewAI: {str(e)}")
+            logger.error(f"[REQUEST-ERROR] Ошибка при отправке запроса в CrewAI: {str(e)}")
             return {
                 "response": f"Ошибка при отправке запроса: {str(e)}",
                 "error": "request_error",
@@ -274,23 +342,35 @@ class CrewAIClient:
         Returns:
             dict: Состояние задачи или сообщение об ошибке
         """
+        logger.debug(f"[TASK-CHECK] Проверка статуса задачи: {task_id}")
+        
         if not self.is_available():
+            logger.error(f"[TASK-CHECK] Сервер CrewAI недоступен при проверке задачи {task_id}")
             return {"error": "Сервер CrewAI недоступен", "status": "error"}
             
         try:
-            response = requests.get(
-                f"{self.base_url}/api/task/{task_id}",
-                timeout=10
-            )
+            url = f"{self.base_url}/api/task/{task_id}"
+            logger.debug(f"[TASK-CHECK] Отправка GET запроса на: {url}")
+            
+            response = requests.get(url, timeout=10)
             
             if response.status_code == 200:
-                return response.json()
+                result = response.json()
+                logger.debug(f"[TASK-CHECK] Получен ответ для задачи {task_id}: {result}")
+                
+                # Подробное логирование состояния задачи
+                if result.get("done"):
+                    logger.info(f"[TASK-COMPLETE] Задача {task_id} завершена. Результат: {result.get('result', {}).get('response', '')[:100]}...")
+                else:
+                    logger.info(f"[TASK-PROGRESS] Задача {task_id} в процессе. Статус: {result.get('status', 'неизвестно')}")
+                
+                return result
             else:
-                logger.error(f"Ошибка при проверке статуса задачи: {response.status_code} - {response.text}")
+                logger.error(f"[TASK-ERROR] Ошибка при проверке статуса задачи {task_id}: HTTP {response.status_code} - {response.text}")
                 return {"error": f"Ошибка сервера: {response.status_code}", "status": "error"}
                 
         except requests.RequestException as e:
-            logger.error(f"Ошибка при проверке статуса задачи: {str(e)}")
+            logger.error(f"[TASK-ERROR] Ошибка соединения при проверке задачи {task_id}: {str(e)}")
             return {"error": f"Ошибка соединения: {str(e)}", "status": "error"}
             
     def index_documentation(self):

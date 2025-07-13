@@ -33,5 +33,19 @@
     "role": "assistant",
     "content": "⏳ Обрабатываю запрос...",
     "timestamp": "2025-07-14T01:18:03.365823"
+  },
+  {
+    "id": "f0310c60-7a47-4f47-8b7f-a7694f5b6fe6",
+    "session_id": "session_1752436158",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-14T01:27:41.472552"
+  },
+  {
+    "id": "e7ceb117-3574-4a80-a6af-20050da0f012",
+    "session_id": "session_1752436158",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-14T01:27:41.479553"
   }
 ]
