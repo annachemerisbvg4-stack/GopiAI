@@ -7,9 +7,10 @@
 import os
 import sys
 import yaml
+import uuid
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 
 # Добавляем пути для импорта
 current_dir = Path(__file__).parent
@@ -26,6 +27,9 @@ load_dotenv(env_path, override=True)
 from crewai import Agent, Task, Crew, LLM
 from tools.gopiai_integration.ai_router_llm import AIRouterLLM
 from crewai.tasks.task_output import TaskOutput
+
+# Импорт RAG системы
+from rag_system import RAGSystem, get_rag_system
 
 # Импорт всех GopiAI инструментов
 try:
@@ -419,31 +423,98 @@ def run_advanced_demo():
         traceback.print_exc()
         return False
 
+def chat_interface():
+    """Интерактивный чат-интерфейс с поддержкой RAG"""
+    print("\n🤖 Добро пожаловать в GopiAI Chat!")
+    print("Введите ваш вопрос или 'выход' для завершения.\n")
+    
+    # Инициализация LLM
+    try:
+        ai_router_llm = AIRouterLLM()
+        llm = ai_router_llm.get_llm_instance()
+        print("✅ Модель для генерации ответов загружена")
+    except Exception as e:
+        print(f"❌ Ошибка инициализации модели: {e}")
+        return
+    
+    # Основной цикл чата
+    while True:
+        try:
+            # Получаем ввод пользователя
+            user_input = input("\nВы: ").strip()
+            
+            # Проверяем на команду выхода
+            if user_input.lower() in ['выход', 'exit', 'quit', 'q']:
+                print("\nДо свидания!")
+                break
+                
+            if not user_input:
+                continue
+                
+            # Индексируем сообщение пользователя
+            message_id = f"user_{uuid.uuid4().hex}"
+            index_chat_message(user_input, message_id, {
+                'type': 'user_message',
+                'timestamp': datetime.now().isoformat()
+            })
+            
+            # Генерируем ответ с использованием RAG
+            print("\n🤖 Думаю...")
+            response = crewai_rag_query(user_input, llm)
+            
+            # Выводим ответ
+            print(f"\n🤖 {response}")
+            
+        except KeyboardInterrupt:
+            print("\nЗавершение работы...")
+            break
+        except Exception as e:
+            print(f"\n❌ Произошла ошибка: {e}")
+            import traceback
+            traceback.print_exc()
+            print("Попробуйте еще раз или введите 'выход' для завершения.")
+
 def main():
     """Главная функция"""
-    print("🎯 === GOPIAI-CREWAI ADVANCED INTEGRATION ===")
-    print(f"⏰ Время запуска: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("🚀 Запуск GopiAI-CrewAI интеграции...")
     
-    # Проверяем окружение
+    # Проверка окружения
     if not check_environment():
-        print("❌ Проблемы с окружением, остановка")
+        print("❌ Проверка окружения не пройдена. Завершение работы.")
         return
+    
+    # Инициализация RAG системы
+    try:
+        rag = get_rag_system()
+        print("✅ RAG система инициализирована")
+    except Exception as e:
+        print(f"❌ Ошибка инициализации RAG системы: {e}")
+        print("⚠️ Функциональность RAG будет недоступна")
     
     # Тестируем инструменты
     if not test_all_tools():
         print("❌ Критические проблемы с инструментами, остановка")
         return
     
-    # Вместо input — всегда режим 2
-    mode = "2"
-    print("Выбран режим: 2 (Продвинутая демонстрация)")
+    # Меню выбора режима
+    print("\n🔹 Доступные режимы:")
+    print("1. Простая демонстрация")
+    print("2. Продвинутая демонстрация")
+    print("3. Чат с RAG (новое!)")
+    
+    # Вместо input — всегда режим 3 (чат с RAG)
+    mode = "3"
+    print("\nВыбран режим: 3 (Чат с RAG)")
+    
     if mode == "1":
         run_simple_demo()
     elif mode == "2":
         run_advanced_demo()
-    # elif mode == "3":
-    #     run_tools_tests()
+    elif mode == "3":
+        chat_interface()
     # elif mode == "4":
+    #     run_tools_tests()
+    # elif mode == "5":
     #     show_templates()
     else:
         print("❌ Неизвестный режим!")
@@ -451,24 +522,151 @@ def main():
 # Пример: учёт использования моделей (rpm/tpm)
 current_llm_usage = {}
 
-# Пример функции для CrewAI/агентов: выбор модели и генерация ответа через txtai+LLM
-# (можно вызывать из агента или инструмента)
-def crewai_rag_query(query, txtai_index, llm, task_type="dialog"):
+def index_chat_message(message: str, message_id: str, metadata: Optional[Dict] = None) -> bool:
+    """
+    Индексирует сообщение чата в RAG системе.
+    
+    Args:
+        message: Текст сообщения для индексации
+        message_id: Уникальный идентификатор сообщения
+        metadata: Дополнительные метаданные (например, timestamp, отправитель и т.д.)
+        
+    Returns:
+        True, если индексация прошла успешно, иначе False
+    """
+    try:
+        rag = get_rag_system()
+        if not metadata:
+            metadata = {}
+            
+        # Добавляем временную метку, если её нет
+        if 'timestamp' not in metadata:
+            metadata['timestamp'] = datetime.now().isoformat()
+            
+        # Индексируем сообщение
+        success = rag.index_document(message, message_id, metadata)
+        if success:
+            print(f"[RAG] Сообщение {message_id} успешно проиндексировано")
+        else:
+            print(f"[RAG] Не удалось проиндексировать сообщение {message_id}")
+            
+        return success
+    except Exception as e:
+        print(f"❌ Ошибка при индексации сообщения: {e}")
+        return False
+
+def get_rag_context(query: str, max_results: int = 3, min_score: float = 0.3) -> List[Dict[str, Any]]:
+    """
+    Получает релевантный контекст из RAG системы.
+    
+    Args:
+        query: Запрос для поиска релевантного контекста
+        max_results: Максимальное количество возвращаемых результатов
+        min_score: Минимальный показатель релевантности (0-1)
+        
+    Returns:
+        Список релевантных документов с их метаданными
+    """
+    try:
+        rag = get_rag_system()
+        results = rag.search(query, limit=max_results)
+        
+        # Фильтруем результаты по минимальному показателю релевантности
+        filtered_results = [
+            {
+                'text': result['text'],
+                'score': result['score'],
+                'metadata': result.get('metadata', {})
+            }
+            for result in results
+            if result['score'] >= min_score
+        ]
+        
+        return filtered_results
+    except Exception as e:
+        print(f"❌ Ошибка при получении контекста: {e}")
+        return []
+
+def crewai_rag_query(query: str, llm, task_type: str = "dialog", max_context_length: int = 4000) -> str:
+    """
+    Выполняет семантический поиск по базе знаний и генерирует ответ с использованием LLM.
+    
+    Args:
+        query: Пользовательский запрос
+        llm: Объект LLM для генерации ответа
+        task_type: Тип задачи (dialog, code, summarize и т.д.)
+        max_context_length: Максимальная длина контекста в символах
+        
+    Returns:
+        Сгенерированный ответ с учётом контекста из базы знаний
+    """
+    # Получаем релевантный контекст
+    context_results = get_rag_context(query)
+    
+    # Форматируем контекст для промпта
+    context_parts = []
+    current_length = 0
+    
+    for result in context_results:
+        context_str = f"История: {result['text']}\n"
+        if 'metadata' in result and result['metadata']:
+            metadata_str = ", ".join(f"{k}={v}" for k, v in result['metadata'].items())
+            context_str += f"Метаданные: {metadata_str}\n"
+            
+        context_str += f"Релевантность: {result['score']:.2f}\n"
+        
+        # Проверяем, не превысим ли мы максимальную длину
+        if current_length + len(context_str) > max_context_length:
+            break
+            
+        context_parts.append(context_str)
+        current_length += len(context_str)
+    
+    context = "\n---\n".join(context_parts) if context_parts else "Релевантный контекст не найден."
+    
+    # Выбираем модель для генерации ответа
     model_id = select_llm_model(task_type, current_llm_usage)
     if not model_id:
         return "Все лимиты LLM исчерпаны, попробуйте позже."
-    # Здесь llm_call_func должен быть функцией, принимающей prompt и model (id)
-    # Например, можно сделать обёртку вокруг LLMLoggerWrapper или напрямую llm.call
-    def llm_call_func(prompt, model=None):
-        # Здесь пример для LLMLoggerWrapper (если он поддерживает model)
-        # Если нет — доработать обёртку
-        return llm.call(prompt, model=model) if model else llm.call(prompt)
-    answer = rag_answer(query, txtai_index, llm_call_func, model_id)
-    # Учёт использования (упрощённо)
-    current_llm_usage.setdefault(model_id, {"rpm": 0, "tpm": 0})
-    current_llm_usage[model_id]["rpm"] += 1
-    # tpm можно считать по длине prompt+answer
-    return answer
+    
+    # Формируем промпт с контекстом
+    prompt = f"""Ты - GopiAI, продвинутый ИИ-ассистент. Используй предоставленный контекст, чтобы ответить на вопрос.
+    Если в контексте нет нужной информации, вежливо извинись и ответь на основе своих знаний.
+    
+    Контекст из базы знаний:
+    {context}
+    
+    Вопрос пользователя: {query}
+    
+    Полезный и информативный ответ:"""
+    
+    # Генерируем ответ с использованием выбранной модели
+    def llm_call_func(prompt_text, model=None):
+        return llm.call(prompt_text, model=model) if model else llm.call(prompt_text)
+    
+    try:
+        answer = llm_call_func(prompt, model=model_id)
+        
+        # Обновляем статистику использования
+        current_llm_usage.setdefault(model_id, {"rpm": 0, "tpm": 0})
+        current_llm_usage[model_id]["rpm"] += 1
+        current_llm_usage[model_id]["tpm"] += len(prompt) + len(answer)  # Упрощённый расчёт токенов
+        
+        # Индексируем ответ в RAG системе
+        answer_id = f"ans_{uuid.uuid4().hex}"
+        index_chat_message(answer, answer_id, {
+            'type': 'ai_response',
+            'query': query,
+            'model': model_id,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+        return answer.strip()
+    except Exception as e:
+        print(f"❌ Ошибка при генерации ответа: {e}")
+        import traceback
+        traceback.print_exc()
+        return "Извините, не удалось сгенерировать ответ. Пожалуйста, попробуйте позже."
 
 if __name__ == "__main__":
     main()

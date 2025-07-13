@@ -44,7 +44,7 @@ class CrewAIClient:
     запущенного в отдельном окружении через REST API.
     """
 
-    def __init__(self, base_url="http://127.0.0.1:5050"):
+    def __init__(self, base_url="http://127.0.0.1:5051"):  # Изменено с 5050 на 5051 для теста
         self.base_url = base_url
         self.timeout = 30  # Таймаут для API запросов (в секундах)
         self._server_available = None  # Кеш статуса сервера
@@ -90,9 +90,12 @@ class CrewAIClient:
 
     def is_available(self, force_check=False):
         """Проверяет доступность CrewAI API сервера"""
-        # Используем кеш, если проверка была недавно
+        # Перепроверяем чаще, если предыдущая попытка показала, что сервер недоступен.
         current_time = time.time()
-        if not force_check and self._server_available is not None and (current_time - self._last_check) < 30:
+        cache_window = 5 if self._server_available is False else 30  # 5 сек, если сервер был оффлайн
+        if (not force_check
+                and self._server_available is not None
+                and (current_time - self._last_check) < cache_window):
             return self._server_available
 
         try:

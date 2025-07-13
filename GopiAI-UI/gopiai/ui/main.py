@@ -83,12 +83,11 @@ try:
 
     print("[OK] Все основные модули UI загружены успешно")
     
-    # Инициализация системы памяти GopiAI с использованием нового MemoryManager
+    # Инициализация системы памяти GopiAI
     try:
         from gopiai.ui.memory import get_memory_manager
         memory_manager = get_memory_manager()
         print("[MEMORY] Инициализирован MemoryManager")
-        print(f"[MEMORY] Данные хранятся в: {memory_manager.data_dir}")
         
         # Простой тест работы памяти
         try:

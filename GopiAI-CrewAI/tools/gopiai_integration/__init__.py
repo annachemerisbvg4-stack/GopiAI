@@ -14,8 +14,7 @@ __all__ = [
     'GopiAIFileSystemTool', 
     'GopiAIRouterTool',
     'GopiAIMemoryTool',
-    'GopiAICommunicationTool',
-    'GopiAIHuggingFaceTool'
+    'GopiAICommunicationTool'
 ]
 
 __version__ = '1.0.0'
@@ -48,11 +47,6 @@ TOOLS_INFO = {
         'class': 'GopiAICommunicationTool',
         'description': 'Коммуникация между агентами и с UI',
         'capabilities': ['send', 'receive', 'broadcast', 'notify', 'monitor']
-    },
-    'huggingface': {
-        'class': 'GopiAIHuggingFaceTool',
-        'description': 'Доступ к тысячам бесплатных моделей Hugging Face',
-        'capabilities': ['text-generation', 'conversational', 'code', 'summarization', 'qa']
     }
 }
 
@@ -63,8 +57,7 @@ def get_all_tools():
         GopiAIFileSystemTool(),
         GopiAIRouterTool(),
         GopiAIMemoryTool(),
-        GopiAICommunicationTool(),
-        GopiAIHuggingFaceTool()
+        GopiAICommunicationTool()
     ]
 
 def get_tool_by_name(tool_name: str):
@@ -74,8 +67,7 @@ def get_tool_by_name(tool_name: str):
         'filesystem': GopiAIFileSystemTool,
         'ai_router': GopiAIRouterTool,
         'memory': GopiAIMemoryTool,
-        'communication': GopiAICommunicationTool,
-        'huggingface': GopiAIHuggingFaceTool
+        'communication': GopiAICommunicationTool
     }
     
     if tool_name in tools_map:

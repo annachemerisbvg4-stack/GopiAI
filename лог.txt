@@ -9,35 +9,8 @@
 🐍 Environment: C:\Users\crazy\GOPI_AI_MODULES\gopiai_env
 
 🚀 Starting GopiAI-UI Application...
-2025-07-12 05:38:36,629 - GopiAI - INFO - [GOPIAI] GopiAI Unified Logger initialized
-2025-07-12 05:38:37,345 - gopiai.ui.components.crewai_client - WARNING - ⚠️ Не удалось загрузить spaCy или языковые модели: No module named 'spacy'
-2025-07-12 05:38:37,356 - gopiai.ui.memory.manager - INFO - ✅ Simple emotion classifier initialized
-2025-07-12 05:38:37,364 - gopiai.ui.memory.manager - INFO - Loaded 542 messages from C:\Users\crazy\.gopiai\memory\chats.json
-2025-07-12 05:38:37,364 - gopiai.ui.memory.manager - INFO - Loaded 52 sessions from C:\Users\crazy\.gopiai\memory\sessions.json
-2025-07-12 05:38:37,547 - faiss.loader - DEBUG - Environment variable FAISS_OPT_LEVEL is not set, so let's pick the instruction set according to the current CPU
-2025-07-12 05:38:37,624 - faiss.loader - INFO - Loading faiss with AVX2 support.
-2025-07-12 05:38:37,678 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
-2025-07-12 05:38:37,688 - faiss - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
-2025-07-12 05:38:49,096 - gopiai.ui.memory.manager - INFO - Initializing embeddings at C:/Users/crazy/.gopiai/memory/vectors
-2025-07-12 05:38:49,096 - gopiai.ui.memory.manager - INFO - FAISS found, AVX2 support: True
-2025-07-12 05:38:49,105 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): huggingface.co:443
-2025-07-12 05:38:49,944 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/nli-mpnet-base-v2/resolve/main/config.json HTTP/1.1" 307 0
-2025-07-12 05:38:49,989 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/nli-mpnet-base-v2/20bdd570b61882341b3cedf7fe1246b109f26517/config.json HTTP/1.1" 200 0
-2025-07-12 05:38:50,714 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/nli-mpnet-base-v2/resolve/main/config.json HTTP/1.1" 307 0
-2025-07-12 05:38:50,758 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/nli-mpnet-base-v2/20bdd570b61882341b3cedf7fe1246b109f26517/config.json HTTP/1.1" 200 0
-2025-07-12 05:38:51,035 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/nli-mpnet-base-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
-2025-07-12 05:38:51,078 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/nli-mpnet-base-v2/20bdd570b61882341b3cedf7fe1246b109f26517/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
-2025-07-12 05:38:51,789 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/nli-mpnet-base-v2/resolve/main/config.json HTTP/1.1" 307 0
-2025-07-12 05:38:51,838 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/nli-mpnet-base-v2/20bdd570b61882341b3cedf7fe1246b109f26517/config.json HTTP/1.1" 200 0
-2025-07-12 05:38:53,695 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/nli-mpnet-base-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
-2025-07-12 05:38:53,738 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/nli-mpnet-base-v2/20bdd570b61882341b3cedf7fe1246b109f26517/tokenizer_config.json HTTP/1.1" 200 0
-2025-07-12 05:38:54,463 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "GET /api/models/sentence-transformers/nli-mpnet-base-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
-2025-07-12 05:38:54,524 - gopiai.ui.memory.manager - INFO - No existing embeddings found, will create a new index.
-2025-07-12 05:38:54,551 - gopiai.ui.memory.manager - INFO - Saved embeddings to C:/Users/crazy/.gopiai/memory/vectors
-2025-07-12 05:38:54,552 - gopiai.ui.memory.manager - INFO - Updated and saved 542 items to embeddings index.
-2025-07-12 05:38:54,557 - gopiai.ui.components.chat_widget - INFO - ✅ Memory manager initialized
-🔧 Enhanced DEBUG logging enabled for chat_widget.py (console + file)
-2025-07-12 05:38:54,564 - gopiai.ui.components.chat_widget - INFO - === Chat Widget Debug Session Started ===
+2025-07-13 19:42:54,336 - GopiAI - INFO - [GOPIAI] GopiAI Unified Logger initialized
+2025-07-13 19:42:54,976 - gopiai.ui.components.crewai_client - WARNING - ⚠️ Не удалось загрузить spaCy или языковые модели: No module named 'spacy'
 Модульная версия GopiAI v0.3.2 с централизованной системой тем
 Добавленные пути для модулей:
 - C:\Users\crazy\GOPI_AI_MODULES\GopiAI-Core (существует: True)
@@ -47,72 +20,66 @@
 - C:\Users\crazy\GOPI_AI_MODULES\rag_memory_system (существует: True)
 - C:\Users\crazy\GOPI_AI_MODULES (существует: True)
 [OK] Все основные модули UI загружены успешно
+2025-07-13 19:42:55,027 - gopiai.ui.memory.manager - INFO - [CLIENT-SIDE MEMORY] Initializing in-memory manager. No files will be created.
+2025-07-13 19:42:55,029 - gopiai.ui.memory.manager - INFO - [CLIENT-SIDE MEMORY] No local chats.json found for display. Starting with a clean slate.
 [MEMORY] Инициализирован MemoryManager
-[MEMORY] Данные хранятся в: C:\Users\crazy\.gopiai\memory
 [WARNING] Предупреждение при тестировании памяти: name 'datetime' is not defined
 [LAUNCH] Запуск модульного GopiAI...
 🚀 Инициализация модульного интерфейса GopiAI с централизованной системой тем...
 [WARNING] Система иконок недоступна
-2025-07-12 05:38:54,635 - gopiai.ui.utils.theme_manager - INFO - Загружена тема: Indigo Candy (dark)
+2025-07-13 19:42:55,304 - gopiai.ui.utils.theme_manager - INFO - Загружена тема: Material Sky (dark)
 ✅ Менеджер тем инициализирован
-2025-07-12 05:38:54,637 - gopiai.ui.utils.theme_manager - INFO - Применение темы к QApplication/QCoreApplication
+2025-07-13 19:42:55,338 - gopiai.ui.utils.theme_manager - INFO - Применение темы к QApplication/QCoreApplication
 ✅ Применена тема из файла настроек
 [SETUP] Настройка UI из модулей...
 INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-12 05:38:55,210 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+2025-07-13 19:42:55,818 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-12 05:38:55,218 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-13 19:42:55,823 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
 ✅ Titlebar: Загружена система иконок UniversalIconManager
 INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-12 05:38:55,584 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+2025-07-13 19:42:56,335 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-12 05:38:55,588 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-13 19:42:56,348 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
 ✅ Titlebar: Загружена система иконок UniversalIconManager
 INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-12 05:38:55,952 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+2025-07-13 19:42:56,808 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-12 05:38:55,955 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-13 19:42:56,808 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
 INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-12 05:38:56,368 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+2025-07-13 19:42:57,197 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-12 05:38:56,371 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-13 19:42:57,202 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
 ✅ Загружена система иконок UniversalIconManager
 🎨 CustomFileSystemModel инициализирована с icon_manager: <class 'gopiai.ui.components.icon_file_system_model.UniversalIconManager'>
 INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-12 05:38:56,766 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+2025-07-13 19:42:57,661 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-12 05:38:56,770 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-13 19:42:57,665 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
 [OK] Terminal: Загружена система иконок UniversalIconManager
+2025-07-13 19:42:57,692 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant visual feedback elements created.
+2025-07-13 19:42:57 - UIAssistant_20250713_194257 - INFO - ==================================================
+2025-07-13 19:42:57,702 - UIAssistant_20250713_194257 - INFO - ==================================================
+2025-07-13 19:42:57 - UIAssistant_20250713_194257 - INFO - UI Assistant Session Started: 20250713_194257
+2025-07-13 19:42:57,707 - UIAssistant_20250713_194257 - INFO - UI Assistant Session Started: 20250713_194257
+2025-07-13 19:42:57 - UIAssistant_20250713_194257 - INFO - ==================================================
+2025-07-13 19:42:57,708 - UIAssistant_20250713_194257 - INFO - ==================================================
+2025-07-13 19:42:57 - UIAssistant_20250713_194257 - INFO - Removed old log file: ui_assistant_20250710_161930.log
+2025-07-13 19:42:57,724 - UIAssistant_20250713_194257 - INFO - Removed old log file: ui_assistant_20250710_161930.log
+2025-07-13 19:42:57 - UIAssistant_20250713_194257 - INFO - Initializing UIAssistantTool
+2025-07-13 19:42:57,726 - UIAssistant_20250713_194257 - INFO - Initializing UIAssistantTool
+2025-07-13 19:42:57,733 - gopiai.ui_core.llm - INFO - LLM client initialized
+2025-07-13 19:42:57 - UIAssistant_20250713_194257 - INFO - UIAssistantTool initialized successfully
+2025-07-13 19:42:57,738 - UIAssistant_20250713_194257 - INFO - UIAssistantTool initialized successfully
+2025-07-13 19:42:57,743 - gopiai.utils.performance - DEBUG - Cached result for get_ui_assistant (TTL: 300s)
+2025-07-13 19:42:57,743 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant initialized and signals connected.
 INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-12 05:38:57,133 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+2025-07-13 19:42:58,219 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-12 05:38:57,133 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-2025-07-12 05:38:57 - UIAssistant_20250712_053857 - INFO - ==================================================
-2025-07-12 05:38:57,160 - UIAssistant_20250712_053857 - INFO - ==================================================
-2025-07-12 05:38:57 - UIAssistant_20250712_053857 - INFO - UI Assistant Session Started: 20250712_053857
-2025-07-12 05:38:57,167 - UIAssistant_20250712_053857 - INFO - UI Assistant Session Started: 20250712_053857
-2025-07-12 05:38:57 - UIAssistant_20250712_053857 - INFO - ==================================================
-2025-07-12 05:38:57,175 - UIAssistant_20250712_053857 - INFO - ==================================================
-2025-07-12 05:38:57 - UIAssistant_20250712_053857 - INFO - Initializing UIAssistantTool
-2025-07-12 05:38:57,187 - UIAssistant_20250712_053857 - INFO - Initializing UIAssistantTool
-2025-07-12 05:38:57,288 - gopiai.ui_core.llm - INFO - LLM client initialized
-2025-07-12 05:38:57 - UIAssistant_20250712_053857 - INFO - UIAssistantTool initialized successfully
-2025-07-12 05:38:57,298 - UIAssistant_20250712_053857 - INFO - UIAssistantTool initialized successfully
-2025-07-12 05:38:57,305 - gopiai.utils.performance - DEBUG - Cached result for get_ui_assistant (TTL: 300s)
-2025-07-12 05:38:57,327 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:38:57,408 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/health HTTP/1.1" 200 98
-2025-07-12 05:38:57,410 - gopiai.ui.components.chat_widget - INFO - ✅ CrewAI API server is available.
- Инициализация txtai embeddings...
-2025-07-12 05:38:58,013 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /conversations/vectors/resolve/main/config.json HTTP/1.1" 401 0
-2025-07-12 05:38:58,320 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /conversations/vectors/resolve/main/config.json HTTP/1.1" 401 0
-2025-07-12 05:38:58,597 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /conversations/vectors/resolve/main/1_Pooling/config.json HTTP/1.1" 401 0
-2025-07-12 05:38:58,866 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /conversations/vectors/resolve/main/config.json HTTP/1.1" 401 0
- Ошибка инициализации txtai: conversations/vectors is not a local folder and is not a valid model identifier listed on 'https://huggingface.co/models'
-If this is a private repository, make sure to pass a token having permission to this repo either by logging in with `huggingface-cli login` or by passing `token=<your_token>`
- Загружено 126 сообщений и 1 сессий
-2025-07-12 05:38:58,874 - gopiai.ui.components.chat_widget - WARNING - ⚠️ Embedded memory system initialized but txtai not available.
+2025-07-13 19:42:58,224 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
 🔍 ChatWidget создан успешно
 🔍 Передаем theme_manager в ChatWidget...
+2025-07-13 19:42:58,243 - gopiai.ui.components.chat_widget - INFO - Theme applied to ChatWidget (placeholder method).
 🔍 theme_manager передан успешно
 [OK] Поведение сплиттеров настроено с ограничениями
 [OK] Дополнительные ограничения сплиттеров установлены
@@ -126,80 +93,19 @@ If this is a private repository, make sure to pass a token having permission to 
 [OK] Сигнал file_selected подключен
 [OK] Сигналы файлового проводника подключены
 [OK] Модульный UI настроен
-[OK] AI Assistant инициализирован в основном чате
+[WARNING] Основной виджет чата не найден или не содержит UI Assistant
 [OK] FramelessGopiAIStandaloneWindow готов к работе!
 🔄 Иконки меню обновлены
 [SUCCESS] GopiAI v0.3.0 успешно запущен!
 [INFO] Модульная архитектура активна
 [INFO] Размер основного файла значительно уменьшен
-2025-07-12 05:38:59,296 - gopiai.ui.utils.theme_manager - INFO - Тема успешно применена при инициализации
-2025-07-12 05:41:05,813 - gopiai.ui.memory.manager - INFO - Saved embeddings to C:/Users/crazy/.gopiai/memory/vectors
-2025-07-12 05:41:05,833 - gopiai.ui.memory.manager - INFO - Saved embeddings to C:/Users/crazy/.gopiai/memory/vectors
-2025-07-12 05:41:05,853 - gopiai.ui.memory.manager - WARNING - Search unavailable - vector store is empty or not initialized.
-2025-07-12 05:41:05,856 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:05,860 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/health HTTP/1.1" 200 98
-2025-07-12 05:41:05,861 - gopiai.ui.components.crewai_client - DEBUG - Отправка запроса в CrewAI: {'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'metadata': {'session_id': 'session_1752278936', 'chat_history': [{'role': 'system', 'content': 'Ты - полезный ассистент, который помогает пользователю. Будь дружелюбным и отзывчивым.'}, {'role': 'assistant', 'content': '⏳ Обрабатываю запрос...'}, {'role': 'assistant', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}, {'role': 'user', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}]}, 'async_processing': True, 'system_prompt': 'Ты - полезный ассистент. Отвечай на русском языке. Будь вежливым и кратким. Если не знаешь ответа, так и скажи.'}
-2025-07-12 05:41:05,864 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:05,864 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "POST /api/process HTTP/1.1" 200 343
-2025-07-12 05:41:05,871 - gopiai.ui.components.crewai_client - INFO - 🔄 [TASK] Получен task_id для асинхронной обработки: 7e22da8f-872d-4efd-a6aa-23739982f7e8
-2025-07-12 05:41:06,374 - gopiai.ui.components.chat_widget - INFO - 🔄 [SIGNAL_HANDLER] Получен ответ в основном потоке: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'Задача поставлена в очередь на обработку', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:06,375 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Запущен опрос статуса задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8
-2025-07-12 05:41:07,382 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:07,395 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:07,396 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:08,390 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:08,392 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:08,396 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:09,392 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:09,401 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:09,403 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:10,384 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:10,388 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:10,390 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:11,385 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:11,433 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:11,435 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:12,396 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:12,404 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:12,405 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:13,382 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:13,386 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:13,386 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:14,388 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:14,393 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:14,395 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:15,401 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:15,409 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:15,411 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:16,417 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:16,422 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:16,424 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:17,437 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:17,441 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:17,443 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:18,456 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:18,461 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:18,462 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:19,471 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:19,474 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:19,474 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:20,474 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:20,474 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:20,474 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:21,475 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:21,475 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:21,480 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:22,476 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:22,480 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 527
-2025-07-12 05:41:22,480 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'created_at': '2025-07-12T05:41:05.864215', 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'started_at': '2025-07-12T05:41:05.864215', 'status': 'processing', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:23,495 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
-2025-07-12 05:41:23,496 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5050 "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 1027
-2025-07-12 05:41:23,496 - gopiai.ui.components.chat_widget - INFO - 🔄 [TASK] Статус задачи 7e22da8f-872d-4efd-a6aa-23739982f7e8: {'completed_at': '2025-07-12T05:41:22.963723', 'created_at': '2025-07-12T05:41:05.864215', 'error': None, 'message': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?', 'result': {'analysis': {'analysis_time': 0.0, 'complexity': 0, 'requires_crewai': False, 'type': 'general'}, 'processed_with_crewai': False, 'response': 'Я запомнил, что ты просила меня быть полезным ассистентом.\n'}, 'started_at': '2025-07-12T05:41:05.864215', 'status': 'completed', 'task_id': '7e22da8f-872d-4efd-a6aa-23739982f7e8'}
-2025-07-12 05:41:23,513 - gopiai.ui.memory.manager - INFO - Saved embeddings to C:/Users/crazy/.gopiai/memory/vectors
-2025-07-12 05:41:23,535 - gopiai.ui.memory.manager - INFO - Saved embeddings to C:/Users/crazy/.gopiai/memory/vectors
+2025-07-13 19:42:58,806 - gopiai.ui.utils.theme_manager - INFO - Тема успешно применена при инициализации
+2025-07-13 19:43:07,698 - gopiai.ui.memory.manager - INFO - [CLIENT-SIDE MEMORY] Added message to in-memory list. Disk saving is OFF.
+2025-07-13 19:43:07,702 - gopiai.ui.memory.manager - INFO - [CLIENT-SIDE MEMORY] Added message to in-memory list. Disk saving is OFF.
+2025-07-13 19:43:07,707 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5050
+2025-07-13 19:43:09,729 - gopiai.ui.memory.manager - INFO - [CLIENT-SIDE MEMORY] Added message to in-memory list. Disk saving is OFF.
 
 (gopiai_env) C:\Users\crazy\GOPI_AI_MODULES\GopiAI-UI>
-
 
 
 ═══════════════════════════════════════
@@ -212,484 +118,28 @@ If this is a private repository, make sure to pass a token having permission to 
 🐍 Environment: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\crewai_env
 
 🚀 Starting CrewAI API Server...
-DEBUG: Content of llm_rotation_config.py at C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\llm_rotation_config.py:
-import os
-import time
-import threading
-# Конфиг моделей Gemini/Gemma для ротации и задач
-LLM_MODELS_CONFIG = [
-    {
-        "name": "Gemini 1.5 Flash",
-        "id": "gemini/gemini-1.5-flash",
-        "provider": "google",
-        "rpm": 15,
-        "tpm": 250000,
-        "type": ["simple", "dialog", "code", "summarize"],
-        "multimodal": False,
-        "embedding": False,
-        "priority": 3,
-        "rpd": 50,
-        "deprecated": False,
-        "base_score": 0.5
-    },
-    {
-  ...
-←[92m05:38:40 - LiteLLM:DEBUG←[0m: http_handler.py:533 - Using AiohttpTransport...
-2025-07-12 05:38:40,609 - LiteLLM - DEBUG - Using AiohttpTransport...
-←[92m05:38:40 - LiteLLM:DEBUG←[0m: http_handler.py:557 - Creating AiohttpTransport...
-2025-07-12 05:38:40,612 - LiteLLM - DEBUG - Creating AiohttpTransport...
-2025-07-12 05:38:41,471 - httpcore.connection - DEBUG - connect_tcp.started host='raw.githubusercontent.com' port=443 local_address=None timeout=5 socket_options=None
-2025-07-12 05:38:41,507 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001E79938E330>
-2025-07-12 05:38:41,510 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x000001E79931CB50> server_hostname='raw.githubusercontent.com' timeout=5
-2025-07-12 05:38:41,551 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001E79938E240>
-2025-07-12 05:38:41,558 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'GET']>
-2025-07-12 05:38:41,560 - httpcore.http11 - DEBUG - send_request_headers.complete
-2025-07-12 05:38:41,566 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'GET']>
-2025-07-12 05:38:41,569 - httpcore.http11 - DEBUG - send_request_body.complete
-2025-07-12 05:38:41,570 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'GET']>
-2025-07-12 05:38:41,598 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Connection', b'keep-alive'), (b'Content-Length', b'26669'), (b'Cache-Control', b'max-age=300'), (b'Content-Security-Policy', b"default-src 'none'; style-src 'unsafe-inline'; sandbox"), (b'Content-Type', b'text/plain; charset=utf-8'), (b'ETag', b'W/"e0ddf9b9734f7b6410fd3f9fc8939dcf7a4add8d889a448efe4d9d1ccbed517f"'), (b'Strict-Transport-Security', b'max-age=31536000'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'deny'), (b'X-XSS-Protection', b'1; mode=block'), (b'X-GitHub-Request-Id', b'6EF7:31DCEC:327EA:D61FE:6870A0A1'), (b'Content-Encoding', b'gzip'), (b'Accept-Ranges', b'bytes'), (b'Date', b'Sat, 12 Jul 2025 00:08:37 GMT'), (b'Via', b'1.1 varnish'), (b'X-Served-By', b'cache-del21748-DEL'), (b'X-Cache', b'HIT'), (b'X-Cache-Hits', b'1'), (b'X-Timer', b'S1752278917.226131,VS0,VE1'), (b'Vary', b'Authorization,Accept-Encoding'), (b'Access-Control-Allow-Origin', b'*'), (b'Cross-Origin-Resource-Policy', b'cross-origin'), (b'X-Fastly-Request-ID', b'b638f35329932cf6d3dc5ce28ea9bd3ce65aab0f'), (b'Expires', b'Sat, 12 Jul 2025 00:13:37 GMT'), (b'Source-Age', b'59')])
-2025-07-12 05:38:41,602 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
-2025-07-12 05:38:41,604 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'GET']>
-2025-07-12 05:38:41,610 - httpcore.http11 - DEBUG - receive_response_body.complete
-2025-07-12 05:38:41,611 - httpcore.http11 - DEBUG - response_closed.started
-2025-07-12 05:38:41,611 - httpcore.http11 - DEBUG - response_closed.complete
-2025-07-12 05:38:41,612 - httpcore.connection - DEBUG - close.started
-2025-07-12 05:38:41,613 - httpcore.connection - DEBUG - close.complete
-←[92m05:38:42 - LiteLLM:DEBUG←[0m: http_handler.py:533 - Using AiohttpTransport...
-2025-07-12 05:38:42,122 - LiteLLM - DEBUG - Using AiohttpTransport...
-←[92m05:38:42 - LiteLLM:DEBUG←[0m: http_handler.py:557 - Creating AiohttpTransport...
-2025-07-12 05:38:42,124 - LiteLLM - DEBUG - Creating AiohttpTransport...
-←[92m05:38:42 - LiteLLM:DEBUG←[0m: litellm_logging.py:169 - [Non-Blocking] Unable to import GenericAPILogger - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
-2025-07-12 05:38:42,583 - LiteLLM - DEBUG - [Non-Blocking] Unable to import GenericAPILogger - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
-←[92m05:38:43 - LiteLLM:DEBUG←[0m: transformation.py:17 - [Non-Blocking] Unable to import _ENTERPRISE_ResponsesSessionHandler - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
-2025-07-12 05:38:43,064 - LiteLLM - DEBUG - [Non-Blocking] Unable to import _ENTERPRISE_ResponsesSessionHandler - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
-←[92m05:38:43 - LiteLLM:DEBUG←[0m: http_handler.py:533 - Using AiohttpTransport...
-2025-07-12 05:38:43,074 - LiteLLM - DEBUG - Using AiohttpTransport...
-←[92m05:38:43 - LiteLLM:DEBUG←[0m: http_handler.py:557 - Creating AiohttpTransport...
-2025-07-12 05:38:43,080 - LiteLLM - DEBUG - Creating AiohttpTransport...
-←[92m05:38:43 - LiteLLM:DEBUG←[0m: http_handler.py:533 - Using AiohttpTransport...
-2025-07-12 05:38:43,089 - LiteLLM - DEBUG - Using AiohttpTransport...
-←[92m05:38:43 - LiteLLM:DEBUG←[0m: http_handler.py:557 - Creating AiohttpTransport...
-2025-07-12 05:38:43,089 - LiteLLM - DEBUG - Creating AiohttpTransport...
+2025-07-13 19:42:54,187 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2025-07-13 19:42:54,221 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
+2025-07-13 19:42:54,228 - faiss - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
+2025-07-13 19:43:09,580 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
+2025-07-13 19:43:12,174 - opentelemetry.trace - WARNING - Overriding of current TracerProvider is not allowed
 DEBUG: LLM_MODELS_CONFIG loaded: [{'name': 'Gemini 1.5 Flash', 'id': 'gemini/gemini-1.5-flash', 'provider': 'google', 'rpm': 15, 'tpm': 250000, 'type': ['simple', 'dialog', 'code', 'summarize'], 'multimodal': False, 'embedding': False, 'priority': 3, 'rpd': 50, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini 2.0 Flash-Lite', 'id': 'gemini/gemini-2.0-flash-lite', 'provider': 'google', 'rpm': 30, 'tpm': 1000000, 'type': ['simple', 'dialog', 'code', 'summarize'], 'multimodal': False, 'embedding': False, 'priority': 4, 'rpd': 200, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemma 3', 'id': 'gemini/gemma-3', 'provider': 'google', 'rpm': 30, 'tpm': 14400, 'type': ['simple', 'lookup', 'short_answer'], 'multimodal': False, 'embedding': False, 'priority': 1, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemma 3n', 'id': 'gemini/gemma-3n', 'provider': 'google', 'rpm': 30, 'tpm': 14400, 'type': ['simple', 'lookup', 'short_answer'], 'multimodal': False, 'embedding': False, 'priority': 2, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini 2.5 Flash-Lite Preview', 'id': 'gemini/gemini-2.5-flash-lite-preview', 'provider': 'google', 'rpm': 15, 'tpm': 60000, 'type': ['dialog', 'code', 'summarize'], 'multimodal': False, 'embedding': False, 'priority': 5, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini 2.5 Flash', 'id': 'gemini/gemini-2.5-flash', 'provider': 'google', 'rpm': 10, 'tpm': 60000, 'type': ['dialog', 'code', 'multimodal', 'vision', 'long_answer'], 'multimodal': True, 'embedding': False, 'priority': 6, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini Embedding Experimental', 'id': 'gemini/gemini-embedding-experimental', 'provider': 'google', 'rpm': 5, 'tpm': 10000, 'type': ['embedding'], 'multimodal': False, 'embedding': True, 'priority': 10, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}]
 [OK] RateLimitMonitor инициализирован с blacklist механизмом
 [OK] Валидация конфигурации LLM прошла успешно
 GopiAI Integration Tools loaded successfully!
-[OK] CrewAI успешно импортирован!
-2025-07-12 05:38:44,641 - tools.gopiai_integration.ai_router_llm - INFO - ✅ AIRouterLLM инициализирован с улучшенной системой ротации
-2025-07-12 05:38:44,641 - tools.gopiai_integration.self_reflection - INFO - ReflectionEnabledAIRouter инициализирован (reflection=enabled)
-2025-07-12 05:38:44,643 - tools.gopiai_integration.self_reflection - INFO - Порог качества: 8.0/10
-[OK] AI Router с саморефлексией загружен (порог качества: 8.0)
-[OK] Встроенная RAG-система активирована.
-✅ Встроенная векторная база готова к использованию
-[OK] Встроенная векторная база инициализирована.
-Smart Delegator успешно импортирован
-Starting CrewAI API server at http://127.0.0.1:5050
-This server should be run from the CrewAI environment (crewai_env)
-Using Python: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\crewai_env\Scripts\python.exe
-CrewAI module is available
-Langchain module is available
-Request timeout: 300 seconds
-Connection timeout: 60 seconds
+2025-07-13 19:43:13,376 - __main__ - INFO - --- ИНИЦИАЛИЗАЦИЯ СИСТЕМ ---
+2025-07-13 19:43:13,376 - rag_system - INFO - Создание первого и единственного экземпляра RAGSystem.
+2025-07-13 19:43:13,377 - rag_system - INFO - --- Инициализация экземпляра RAGSystem (Singleton) ---
+2025-07-13 19:43:13,378 - rag_system - INFO - Проверка структуры памяти в директории: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory
+2025-07-13 19:43:13,380 - rag_system - INFO - ✅ Структура папок и файлов памяти в порядке.
+2025-07-13 19:43:13,380 - rag_system - INFO - Инициализация embeddings. Модель: sentence-transformers/nli-mpnet-base-v2
+2025-07-13 19:43:16,988 - rag_system - INFO - База векторов пуста. Запускаю индексацию истории чатов...
+2025-07-13 19:43:16,989 - rag_system - INFO - Файл истории чатов пуст, нечего индексировать.
+2025-07-13 19:43:17,024 - tools.gopiai_integration.smart_delegator - INFO - ✅ RAG-система передана в SmartDelegator. Записей: 0
+2025-07-13 19:43:17,026 - __main__ - INFO - ✅ Smart Delegator и RAG System успешно инициализированы.
+2025-07-13 19:43:17,031 - __main__ - INFO - 🚀 Сервер запускается на http://127.0.0.1:5050
  * Serving Flask app 'crewai_api_server'
  * Debug mode: off
-2025-07-12 05:38:44,676 - werkzeug - INFO - ←[31m←[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.←[0m
+2025-07-13 19:43:17,048 - werkzeug - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
  * Running on http://127.0.0.1:5050
-2025-07-12 05:38:44,677 - werkzeug - INFO - ←[33mPress CTRL+C to quit←[0m
-2025-07-12 05:38:57,400 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:38:57] "GET /api/health HTTP/1.1" 200 -
-2025-07-12 05:41:05,859 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:05] "GET /api/health HTTP/1.1" 200 -
-2025-07-12 05:41:05,864 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:05] "POST /api/process HTTP/1.1" 200 -
-📊 Анализ запроса: сложность=0, тип=general, CrewAI=False
-📊 [Задача 7e22da8f-872d-4efd-a6aa-23739982f7e8] Анализ запроса: сложность=0, тип=general
-📊 Анализ запроса: сложность=0, тип=general, CrewAI=False
-📊 Анализ запроса: сложность=0, тип=general, CrewAI=False
-2025-07-12 05:41:05,874 - tools.gopiai_integration.smart_delegator - INFO - 🔍 Проверка AI Router...
-2025-07-12 05:41:05,874 - tools.gopiai_integration.smart_delegator - INFO - ✅ AI Router проверки пройдены
-2025-07-12 05:41:05,902 - faiss.loader - DEBUG - Environment variable FAISS_OPT_LEVEL is not set, so let's pick the instruction set according to the current CPU
-2025-07-12 05:41:05,905 - faiss.loader - INFO - Loading faiss with AVX2 support.
-2025-07-12 05:41:05,942 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
-2025-07-12 05:41:05,946 - faiss - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
-2025-07-12 05:41:07,385 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:07] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:08,392 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:08] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:09,395 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:09] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:10,387 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:10] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:11,431 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:11] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:12,400 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:12] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:13,386 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:13] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:14,330 - opentelemetry.trace - WARNING - Overriding of current TracerProvider is not allowed
-2025-07-12 05:41:14,392 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:14] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:15,405 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:15] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
- Инициализация txtai embeddings...
-2025-07-12 05:41:15,626 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): huggingface.co:443
-2025-07-12 05:41:16,009 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /conversations/vectors/resolve/main/config.json HTTP/1.1" 401 0
-2025-07-12 05:41:16,420 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:16] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:16,669 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /conversations/vectors/resolve/main/config.json HTTP/1.1" 401 0
-2025-07-12 05:41:16,929 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /conversations/vectors/resolve/main/1_Pooling/config.json HTTP/1.1" 401 0
-2025-07-12 05:41:17,195 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /conversations/vectors/resolve/main/config.json HTTP/1.1" 401 0
- Ошибка инициализации txtai: conversations/vectors is not a local folder and is not a valid model identifier listed on 'https://huggingface.co/models'
-If this is a private repository, make sure to pass a token having permission to this repo either by logging in with `huggingface-cli login` or by passing `token=<your_token>`
- Файл чатов не найден, начинаем с чистого листа
- Поиск недоступен - векторная база пуста или не готова.
-2025-07-12 05:41:17,214 - tools.gopiai_integration.smart_delegator - INFO - Загружено 2 сообщений из истории чата
-2025-07-12 05:41:17,215 - tools.gopiai_integration.smart_delegator - INFO - 🚀 Вызов LLM с историей чата...
-2025-07-12 05:41:17,216 - tools.gopiai_integration.smart_delegator - DEBUG - Отправка сообщений в LLM: [
-  {
-    "role": "system",
-    "content": "Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах"
-  },
-  {
-    "role": "assistant",
-    "content": "привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?"
-  },
-  {
-    "role": "user",
-    "content": "привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?"
-  }
-]
-[AVAILABLE] Доступные модели для 'dialog': ['gemini/gemini-1.5-flash', 'gemini/gemini-2.0-flash-lite', 'gemini/gemini-2.5-flash-lite-preview', 'gemini/gemini-2.5-flash']
-[CHECK] Проверка модели gemini/gemini-1.5-flash с 215 токенами...
-[STATS] Модель gemini/gemini-1.5-flash: текущее использование RPM=0/15, TPM=0/250000, RPD=0/50
-[OK] Модель gemini/gemini-1.5-flash: RPM_OK=True, TPM_OK=True, RPD_OK=True -> RESULT=True
-[SELECTED] AI Router: Выбрана модель 'gemini/gemini-1.5-flash' (приоритет 3)
-2025-07-12 05:41:17,233 - tools.gopiai_integration.smart_delegator - INFO - Выбрана модель для обработки: gemini/gemini-1.5-flash
-[AVAILABLE] Доступные модели для 'dialog': ['gemini/gemini-1.5-flash', 'gemini/gemini-2.0-flash-lite', 'gemini/gemini-2.5-flash-lite-preview', 'gemini/gemini-2.5-flash']
-[CHECK] Проверка модели gemini/gemini-1.5-flash с 215 токенами...
-[STATS] Модель gemini/gemini-1.5-flash: текущее использование RPM=0/15, TPM=0/250000, RPD=0/50
-[OK] Модель gemini/gemini-1.5-flash: RPM_OK=True, TPM_OK=True, RPD_OK=True -> RESULT=True
-[SELECTED] AI Router: Выбрана модель 'gemini/gemini-1.5-flash' (приоритет 3)
-🔄 Попытка 1: Используем модель gemini/gemini-1.5-flash
-05:41:17 - LiteLLM:DEBUG: utils.py:340 -
-
-2025-07-12 05:41:17,244 - LiteLLM - DEBUG -
-
-05:41:17 - LiteLLM:DEBUG: utils.py:340 - Request to litellm:
-2025-07-12 05:41:17,247 - LiteLLM - DEBUG - Request to litellm:
-05:41:17 - LiteLLM:DEBUG: utils.py:340 - litellm.completion(model='gemini/gemini-1.5-flash', messages=[{'role': 'system', 'content': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}, {'role': 'assistant', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}, {'role': 'user', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}], temperature=0.7, max_tokens=2000)
-2025-07-12 05:41:17,271 - LiteLLM - DEBUG - litellm.completion(model='gemini/gemini-1.5-flash', messages=[{'role': 'system', 'content': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}, {'role': 'assistant', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}, {'role': 'user', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}], temperature=0.7, max_tokens=2000)
-05:41:17 - LiteLLM:DEBUG: utils.py:340 -
-
-2025-07-12 05:41:17,312 - LiteLLM - DEBUG -
-
-05:41:17 - LiteLLM:DEBUG: litellm_logging.py:461 - self.optional_params: {}
-2025-07-12 05:41:17,352 - LiteLLM - DEBUG - self.optional_params: {}
-05:41:17 - LiteLLM:DEBUG: utils.py:340 - SYNC kwargs[caching]: False; litellm.cache: None; kwargs.get('cache')['no-cache']: False
-2025-07-12 05:41:17,367 - LiteLLM - DEBUG - SYNC kwargs[caching]: False; litellm.cache: None; kwargs.get('cache')['no-cache']: False
-05:41:17 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-1.5-flash', 'combined_model_name': 'vertex_ai/gemini-1.5-flash', 'stripped_model_name': 'gemini-1.5-flash', 'combined_stripped_model_name': 'vertex_ai/gemini-1.5-flash', 'custom_llm_provider': 'vertex_ai'}
-2025-07-12 05:41:17,379 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-1.5-flash', 'combined_model_name': 'vertex_ai/gemini-1.5-flash', 'stripped_model_name': 'gemini-1.5-flash', 'combined_stripped_model_name': 'vertex_ai/gemini-1.5-flash', 'custom_llm_provider': 'vertex_ai'}
-05:41:17 - LiteLLM:INFO: utils.py:3119 -
-LiteLLM completion() model= gemini-1.5-flash; provider = gemini
-2025-07-12 05:41:17,383 - LiteLLM - INFO -
-LiteLLM completion() model= gemini-1.5-flash; provider = gemini
-05:41:17 - LiteLLM:DEBUG: utils.py:3122 -
-LiteLLM: Params passed to completion() {'model': 'gemini-1.5-flash', 'functions': None, 'function_call': None, 'temperature': 0.7, 'top_p': None, 'n': None, 'stream': None, 'stream_options': None, 'stop': None, 'max_tokens': 2000, 'max_completion_tokens': None, 'modalities': None, 'prediction': None, 'audio': None, 'presence_penalty': None, 'frequency_penalty': None, 'logit_bias': None, 'user': None, 'custom_llm_provider': 'gemini', 'response_format': None, 'seed': None, 'tools': None, 'tool_choice': None, 'max_retries': None, 'logprobs': None, 'top_logprobs': None, 'extra_headers': None, 'api_version': None, 'parallel_tool_calls': None, 'drop_params': None, 'allowed_openai_params': None, 'reasoning_effort': None, 'additional_drop_params': None, 'messages': [{'role': 'system', 'content': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}, {'role': 'assistant', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}, {'role': 'user', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}], 'thinking': None, 'web_search_options': None}
-2025-07-12 05:41:17,385 - LiteLLM - DEBUG -
-LiteLLM: Params passed to completion() {'model': 'gemini-1.5-flash', 'functions': None, 'function_call': None, 'temperature': 0.7, 'top_p': None, 'n': None, 'stream': None, 'stream_options': None, 'stop': None, 'max_tokens': 2000, 'max_completion_tokens': None, 'modalities': None, 'prediction': None, 'audio': None, 'presence_penalty': None, 'frequency_penalty': None, 'logit_bias': None, 'user': None, 'custom_llm_provider': 'gemini', 'response_format': None, 'seed': None, 'tools': None, 'tool_choice': None, 'max_retries': None, 'logprobs': None, 'top_logprobs': None, 'extra_headers': None, 'api_version': None, 'parallel_tool_calls': None, 'drop_params': None, 'allowed_openai_params': None, 'reasoning_effort': None, 'additional_drop_params': None, 'messages': [{'role': 'system', 'content': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}, {'role': 'assistant', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}, {'role': 'user', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}], 'thinking': None, 'web_search_options': None}
-05:41:17 - LiteLLM:DEBUG: utils.py:3125 -
-LiteLLM: Non-Default params passed to completion() {'temperature': 0.7, 'max_tokens': 2000}
-2025-07-12 05:41:17,396 - LiteLLM - DEBUG -
-LiteLLM: Non-Default params passed to completion() {'temperature': 0.7, 'max_tokens': 2000}
-05:41:17 - LiteLLM:DEBUG: utils.py:340 - Final returned optional params: {'temperature': 0.7, 'max_output_tokens': 2000}
-2025-07-12 05:41:17,398 - LiteLLM - DEBUG - Final returned optional params: {'temperature': 0.7, 'max_output_tokens': 2000}
-05:41:17 - LiteLLM:DEBUG: litellm_logging.py:461 - self.optional_params: {'temperature': 0.7, 'max_tokens': 2000}
-2025-07-12 05:41:17,400 - LiteLLM - DEBUG - self.optional_params: {'temperature': 0.7, 'max_tokens': 2000}
-05:41:17 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-1.5-flash', 'combined_model_name': 'gemini/gemini-1.5-flash', 'stripped_model_name': 'gemini-1.5-flash', 'combined_stripped_model_name': 'gemini/gemini-1.5-flash', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:17,401 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-1.5-flash', 'combined_model_name': 'gemini/gemini-1.5-flash', 'stripped_model_name': 'gemini-1.5-flash', 'combined_stripped_model_name': 'gemini/gemini-1.5-flash', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:17,440 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:17] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-05:41:17 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-1.5-flash', 'combined_model_name': 'gemini/gemini-1.5-flash', 'stripped_model_name': 'gemini-1.5-flash', 'combined_stripped_model_name': 'gemini/gemini-1.5-flash', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:17,772 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-1.5-flash', 'combined_model_name': 'gemini/gemini-1.5-flash', 'stripped_model_name': 'gemini-1.5-flash', 'combined_stripped_model_name': 'gemini/gemini-1.5-flash', 'custom_llm_provider': 'gemini'}
-05:41:17 - LiteLLM:DEBUG: litellm_logging.py:908 -
-
-POST Request Sent from LiteLLM:
-curl -X POST \
-https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=*****gu0Q \
--H 'Content-Type: ap****on' \
--d '{'contents': [{'role': 'model', 'parts': [{'text': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}]}, {'role': 'user', 'parts': [{'text': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}]}], 'system_instruction': {'parts': [{'text': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}]}, 'generationConfig': {'temperature': 0.7, 'max_output_tokens': 2000}}'
-
-
-2025-07-12 05:41:17,777 - LiteLLM - DEBUG -
-
-POST Request Sent from LiteLLM:
-curl -X POST \
-https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=*****gu0Q \
--H 'Content-Type: ap****on' \
--d '{'contents': [{'role': 'model', 'parts': [{'text': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}]}, {'role': 'user', 'parts': [{'text': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}]}], 'system_instruction': {'parts': [{'text': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}]}, 'generationConfig': {'temperature': 0.7, 'max_output_tokens': 2000}}'
-
-
-2025-07-12 05:41:18,145 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=600.0 socket_options=None
-2025-07-12 05:41:18,174 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001E7C8A1A300>
-2025-07-12 05:41:18,176 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x000001E7C8A37BD0> server_hostname='generativelanguage.googleapis.com' timeout=600.0
-2025-07-12 05:41:18,217 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001E7C873E4E0>
-2025-07-12 05:41:18,217 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
-2025-07-12 05:41:18,220 - httpcore.http11 - DEBUG - send_request_headers.complete
-2025-07-12 05:41:18,220 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
-2025-07-12 05:41:18,220 - httpcore.http11 - DEBUG - send_request_body.complete
-2025-07-12 05:41:18,220 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
-2025-07-12 05:41:18,458 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:18] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:19,474 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:19] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:19,870 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 429, b'Too Many Requests', [(b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 12 Jul 2025 00:11:15 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=1610'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
-2025-07-12 05:41:19,874 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyD2taiOJ6Z7nLcVQrz_U0ct4G0HlyLgu0Q "HTTP/1.1 429 Too Many Requests"
-2025-07-12 05:41:19,874 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
-2025-07-12 05:41:19,876 - httpcore.http11 - DEBUG - receive_response_body.complete
-2025-07-12 05:41:19,876 - httpcore.http11 - DEBUG - response_closed.started
-2025-07-12 05:41:19,876 - httpcore.http11 - DEBUG - response_closed.complete
-
-
-
-
-05:41:19 - LiteLLM:DEBUG: exception_mapping_utils.py:2300 - Logging Details: logger_fn - None | callable(logger_fn) - False
-2025-07-12 05:41:19,876 - LiteLLM - DEBUG - Logging Details: logger_fn - None | callable(logger_fn) - False
-05:41:19 - LiteLLM:DEBUG: litellm_logging.py:2216 - Logging Details LiteLLM-Failure Call: []
-2025-07-12 05:41:19,892 - LiteLLM - DEBUG - Logging Details LiteLLM-Failure Call: []
-2025-07-12 05:41:19,898 - tools.gopiai_integration.smart_delegator - ERROR - Ошибка при вызове модели gemini/gemini-1.5-flash: litellm.RateLimitError: litellm.RateLimitError: VertexAIException - {
-  "error": {
-    "code": 429,
-    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.",
-    "status": "RESOURCE_EXHAUSTED",
-    "details": [
-      {
-        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
-        "violations": [
-          {
-            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
-            "quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
-            "quotaDimensions": {
-              "location": "global",
-              "model": "gemini-1.5-flash"
-            },
-            "quotaValue": "50"
-          }
-        ]
-      },
-      {
-        "@type": "type.googleapis.com/google.rpc.Help",
-        "links": [
-          {
-            "description": "Learn more about Gemini API quotas",
-            "url": "https://ai.google.dev/gemini-api/docs/rate-limits"
-          }
-        ]
-      },
-      {
-        "@type": "type.googleapis.com/google.rpc.RetryInfo",
-        "retryDelay": "44s"
-      }
-    ]
-  }
-}
-
-
-🚫 Модель gemini/gemini-1.5-flash заблокирована на 3600 секунд до 06:41:19
-[AVAILABLE] Доступные модели для 'dialog': ['gemini/gemini-2.0-flash-lite', 'gemini/gemini-2.5-flash-lite-preview', 'gemini/gemini-2.5-flash']
-[CHECK] Проверка модели gemini/gemini-2.0-flash-lite с 215 токенами...
-[STATS] Модель gemini/gemini-2.0-flash-lite: текущее использование RPM=0/30, TPM=0/1000000, RPD=0/200
-[OK] Модель gemini/gemini-2.0-flash-lite: RPM_OK=True, TPM_OK=True, RPD_OK=True -> RESULT=True
-[SELECTED] AI Router: Выбрана модель 'gemini/gemini-2.0-flash-lite' (приоритет 4)
-🔄 Попытка 2: Используем модель gemini/gemini-2.0-flash-lite
-05:41:19 - LiteLLM:DEBUG: utils.py:340 -
-
-2025-07-12 05:41:19,913 - LiteLLM - DEBUG -
-
-05:41:19 - LiteLLM:DEBUG: utils.py:340 - Request to litellm:
-2025-07-12 05:41:19,913 - LiteLLM - DEBUG - Request to litellm:
-05:41:19 - LiteLLM:DEBUG: utils.py:340 - litellm.completion(model='gemini/gemini-2.0-flash-lite', messages=[{'role': 'system', 'content': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}, {'role': 'assistant', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}, {'role': 'user', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}], temperature=0.7, max_tokens=2000)
-2025-07-12 05:41:19,921 - LiteLLM - DEBUG - litellm.completion(model='gemini/gemini-2.0-flash-lite', messages=[{'role': 'system', 'content': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}, {'role': 'assistant', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}, {'role': 'user', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}], temperature=0.7, max_tokens=2000)
-05:41:19 - LiteLLM:DEBUG: utils.py:340 -
-
-2025-07-12 05:41:19,924 - LiteLLM - DEBUG -
-
-05:41:19 - LiteLLM:DEBUG: litellm_logging.py:461 - self.optional_params: {}
-2025-07-12 05:41:19,924 - LiteLLM - DEBUG - self.optional_params: {}
-05:41:19 - LiteLLM:DEBUG: utils.py:340 - SYNC kwargs[caching]: False; litellm.cache: None; kwargs.get('cache')['no-cache']: False
-2025-07-12 05:41:19,928 - LiteLLM - DEBUG - SYNC kwargs[caching]: False; litellm.cache: None; kwargs.get('cache')['no-cache']: False
-05:41:19 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'custom_llm_provider': 'vertex_ai'}
-2025-07-12 05:41:19,930 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'custom_llm_provider': 'vertex_ai'}
-05:41:19 - LiteLLM:INFO: utils.py:3119 -
-LiteLLM completion() model= gemini-2.0-flash-lite; provider = gemini
-2025-07-12 05:41:19,930 - LiteLLM - INFO -
-LiteLLM completion() model= gemini-2.0-flash-lite; provider = gemini
-05:41:19 - LiteLLM:DEBUG: utils.py:3122 -
-LiteLLM: Params passed to completion() {'model': 'gemini-2.0-flash-lite', 'functions': None, 'function_call': None, 'temperature': 0.7, 'top_p': None, 'n': None, 'stream': None, 'stream_options': None, 'stop': None, 'max_tokens': 2000, 'max_completion_tokens': None, 'modalities': None, 'prediction': None, 'audio': None, 'presence_penalty': None, 'frequency_penalty': None, 'logit_bias': None, 'user': None, 'custom_llm_provider': 'gemini', 'response_format': None, 'seed': None, 'tools': None, 'tool_choice': None, 'max_retries': None, 'logprobs': None, 'top_logprobs': None, 'extra_headers': None, 'api_version': None, 'parallel_tool_calls': None, 'drop_params': None, 'allowed_openai_params': None, 'reasoning_effort': None, 'additional_drop_params': None, 'messages': [{'role': 'system', 'content': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}, {'role': 'assistant', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}, {'role': 'user', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}], 'thinking': None, 'web_search_options': None}
-2025-07-12 05:41:19,930 - LiteLLM - DEBUG -
-LiteLLM: Params passed to completion() {'model': 'gemini-2.0-flash-lite', 'functions': None, 'function_call': None, 'temperature': 0.7, 'top_p': None, 'n': None, 'stream': None, 'stream_options': None, 'stop': None, 'max_tokens': 2000, 'max_completion_tokens': None, 'modalities': None, 'prediction': None, 'audio': None, 'presence_penalty': None, 'frequency_penalty': None, 'logit_bias': None, 'user': None, 'custom_llm_provider': 'gemini', 'response_format': None, 'seed': None, 'tools': None, 'tool_choice': None, 'max_retries': None, 'logprobs': None, 'top_logprobs': None, 'extra_headers': None, 'api_version': None, 'parallel_tool_calls': None, 'drop_params': None, 'allowed_openai_params': None, 'reasoning_effort': None, 'additional_drop_params': None, 'messages': [{'role': 'system', 'content': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}, {'role': 'assistant', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}, {'role': 'user', 'content': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}], 'thinking': None, 'web_search_options': None}
-05:41:19 - LiteLLM:DEBUG: utils.py:3125 -
-LiteLLM: Non-Default params passed to completion() {'temperature': 0.7, 'max_tokens': 2000}
-2025-07-12 05:41:19,945 - LiteLLM - DEBUG -
-LiteLLM: Non-Default params passed to completion() {'temperature': 0.7, 'max_tokens': 2000}
-05:41:19 - LiteLLM:DEBUG: utils.py:340 - Final returned optional params: {'temperature': 0.7, 'max_output_tokens': 2000}
-2025-07-12 05:41:19,945 - LiteLLM - DEBUG - Final returned optional params: {'temperature': 0.7, 'max_output_tokens': 2000}
-05:41:19 - LiteLLM:DEBUG: litellm_logging.py:461 - self.optional_params: {'temperature': 0.7, 'max_tokens': 2000}
-2025-07-12 05:41:19,945 - LiteLLM - DEBUG - self.optional_params: {'temperature': 0.7, 'max_tokens': 2000}
-05:41:19 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:19,945 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-05:41:20 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:20,306 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-05:41:20 - LiteLLM:DEBUG: litellm_logging.py:908 -
-
-POST Request Sent from LiteLLM:
-curl -X POST \
-https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=*****gu0Q \
--H 'Content-Type: ap****on' \
--d '{'contents': [{'role': 'model', 'parts': [{'text': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}]}, {'role': 'user', 'parts': [{'text': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}]}], 'system_instruction': {'parts': [{'text': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}]}, 'generationConfig': {'temperature': 0.7, 'max_output_tokens': 2000}}'
-
-
-2025-07-12 05:41:20,310 - LiteLLM - DEBUG -
-
-POST Request Sent from LiteLLM:
-curl -X POST \
-https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=*****gu0Q \
--H 'Content-Type: ap****on' \
--d '{'contents': [{'role': 'model', 'parts': [{'text': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}]}, {'role': 'user', 'parts': [{'text': 'привет! я просила тебя кое-что запомнить в прошлой сессии. Что это было?'}]}], 'system_instruction': {'parts': [{'text': 'Ты - GopiAI, полезный ассистент с доступом к контексту беседы и базе знаний.\nОтвечай кратко и по делу, используя предоставленный контекст.\n\nИНСТРУКЦИИ:\n1. Учитывай контекст, но не упоминай его напрямую в ответе\n2. Если контекст не релевантен, полагайся на свои знания\n3. Будь краток и точен в ответах'}]}, 'generationConfig': {'temperature': 0.7, 'max_output_tokens': 2000}}'
-
-
-2025-07-12 05:41:20,474 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:20] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:20,673 - httpcore.connection - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=600.0 socket_options=None
-2025-07-12 05:41:20,705 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001E7C8A86CC0>
-2025-07-12 05:41:20,705 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x000001E7C8BF6DD0> server_hostname='generativelanguage.googleapis.com' timeout=600.0
-2025-07-12 05:41:20,746 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001E7C8A86960>
-2025-07-12 05:41:20,746 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'POST']>
-2025-07-12 05:41:20,746 - httpcore.http11 - DEBUG - send_request_headers.complete
-2025-07-12 05:41:20,752 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'POST']>
-2025-07-12 05:41:20,752 - httpcore.http11 - DEBUG - send_request_body.complete
-2025-07-12 05:41:20,753 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
-2025-07-12 05:41:21,475 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:21] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:22,480 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:22] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
-2025-07-12 05:41:22,871 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 12 Jul 2025 00:11:18 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=2090'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
-2025-07-12 05:41:22,874 - httpx - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=AIzaSyD2taiOJ6Z7nLcVQrz_U0ct4G0HlyLgu0Q "HTTP/1.1 200 OK"
-2025-07-12 05:41:22,874 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'POST']>
-2025-07-12 05:41:22,874 - httpcore.http11 - DEBUG - receive_response_body.complete
-2025-07-12 05:41:22,877 - httpcore.http11 - DEBUG - response_closed.started
-2025-07-12 05:41:22,877 - httpcore.http11 - DEBUG - response_closed.complete
-05:41:22 - LiteLLM:DEBUG: utils.py:340 - RAW RESPONSE:
-{
-  "candidates": [
-    {
-      "content": {
-        "parts": [
-          {
-            "text": "Я запомнил, что ты просила меня быть полезным ассистентом.\n"
-          }
-        ],
-        "role": "model"
-      },
-      "finishReason": "STOP",
-      "avgLogprobs": -0.52399921417236328
-    }
-  ],
-  "usageMetadata": {
-    "promptTokenCount": 141,
-    "candidatesTokenCount": 18,
-    "totalTokenCount": 159,
-    "promptTokensDetails": [
-      {
-        "modality": "TEXT",
-        "tokenCount": 141
-      }
-    ],
-    "candidatesTokensDetails": [
-      {
-        "modality": "TEXT",
-        "tokenCount": 18
-      }
-    ]
-  },
-  "modelVersion": "gemini-2.0-flash-lite",
-  "responseId": "JahxaNisNpecmecPgfSQmQc"
-}
-
-
-
-2025-07-12 05:41:22,877 - LiteLLM - DEBUG - RAW RESPONSE:
-{
-  "candidates": [
-    {
-      "content": {
-        "parts": [
-          {
-            "text": "Я запомнил, что ты просила меня быть полезным ассистентом.\n"
-          }
-        ],
-        "role": "model"
-      },
-      "finishReason": "STOP",
-      "avgLogprobs": -0.52399921417236328
-    }
-  ],
-  "usageMetadata": {
-    "promptTokenCount": 141,
-    "candidatesTokenCount": 18,
-    "totalTokenCount": 159,
-    "promptTokensDetails": [
-      {
-        "modality": "TEXT",
-        "tokenCount": 141
-      }
-    ],
-    "candidatesTokensDetails": [
-      {
-        "modality": "TEXT",
-        "tokenCount": 18
-      }
-    ]
-  },
-  "modelVersion": "gemini-2.0-flash-lite",
-  "responseId": "JahxaNisNpecmecPgfSQmQc"
-}
-
-
-
-2025-07-12 05:41:22,903 - httpcore.connection - DEBUG - close.started
-2025-07-12 05:41:22,905 - httpcore.connection - DEBUG - close.complete
-05:41:22 - LiteLLM:INFO: utils.py:1215 - Wrapper: Completed Call, calling success_handler
-2025-07-12 05:41:22,905 - LiteLLM - INFO - Wrapper: Completed Call, calling success_handler
-05:41:22 - LiteLLM:DEBUG: litellm_logging.py:1394 - Logging Details LiteLLM-Success Call: Cache_hit=None
-2025-07-12 05:41:22,905 - LiteLLM - DEBUG - Logging Details LiteLLM-Success Call: Cache_hit=None
-05:41:22 - LiteLLM:INFO: cost_calculator.py:655 - selected model name for cost calculation: gemini/gemini-2.0-flash-lite
-2025-07-12 05:41:22,907 - LiteLLM - INFO - selected model name for cost calculation: gemini/gemini-2.0-flash-lite
-05:41:22 - LiteLLM:INFO: cost_calculator.py:655 - selected model name for cost calculation: gemini/gemini-2.0-flash-lite
-2025-07-12 05:41:22,907 - LiteLLM - INFO - selected model name for cost calculation: gemini/gemini-2.0-flash-lite
-05:41:22 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:22,907 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-05:41:22 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:22,911 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-05:41:22 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:22,913 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-05:41:22 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:22,916 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-05:41:22 - LiteLLM:DEBUG: utils.py:4783 - model_info: {'key': 'gemini/gemini-2.0-flash-lite', 'max_tokens': None, 'max_input_tokens': 1048576, 'max_output_tokens': 8192, 'input_cost_per_token': 7.5e-08, 'cache_creation_input_token_cost': None, 'cache_read_input_token_cost': None, 'input_cost_per_character': None, 'input_cost_per_token_above_128k_tokens': None, 'input_cost_per_token_above_200k_tokens': None, 'input_cost_per_query': None, 'input_cost_per_second': None, 'input_cost_per_audio_token': 7.5e-08, 'input_cost_per_token_batches': None, 'output_cost_per_token_batches': None, 'output_cost_per_token': 3e-07, 'output_cost_per_audio_token': None, 'output_cost_per_character': None, 'output_cost_per_reasoning_token': None, 'output_cost_per_token_above_128k_tokens': None, 'output_cost_per_character_above_128k_tokens': None, 'output_cost_per_token_above_200k_tokens': None, 'output_cost_per_second': None, 'output_cost_per_image': None, 'output_vector_size': None, 'litellm_provider': 'gemini', 'mode': 'chat', 'supports_system_messages': True, 'supports_response_schema': True, 'supports_vision': True, 'supports_function_calling': True, 'supports_tool_choice': True, 'supports_assistant_prefill': None, 'supports_prompt_caching': None, 'supports_audio_input': None, 'supports_audio_output': True, 'supports_pdf_input': None, 'supports_embedding_image_input': None, 'supports_native_streaming': None, 'supports_web_search': True, 'supports_url_context': None, 'supports_reasoning': None, 'supports_computer_use': None, 'search_context_cost_per_query': None, 'tpm': 4000000, 'rpm': 4000}
-2025-07-12 05:41:22,916 - LiteLLM - DEBUG - model_info: {'key': 'gemini/gemini-2.0-flash-lite', 'max_tokens': None, 'max_input_tokens': 1048576, 'max_output_tokens': 8192, 'input_cost_per_token': 7.5e-08, 'cache_creation_input_token_cost': None, 'cache_read_input_token_cost': None, 'input_cost_per_character': None, 'input_cost_per_token_above_128k_tokens': None, 'input_cost_per_token_above_200k_tokens': None, 'input_cost_per_query': None, 'input_cost_per_second': None, 'input_cost_per_audio_token': 7.5e-08, 'input_cost_per_token_batches': None, 'output_cost_per_token_batches': None, 'output_cost_per_token': 3e-07, 'output_cost_per_audio_token': None, 'output_cost_per_character': None, 'output_cost_per_reasoning_token': None, 'output_cost_per_token_above_128k_tokens': None, 'output_cost_per_character_above_128k_tokens': None, 'output_cost_per_token_above_200k_tokens': None, 'output_cost_per_second': None, 'output_cost_per_image': None, 'output_vector_size': None, 'litellm_provider': 'gemini', 'mode': 'chat', 'supports_system_messages': True, 'supports_response_schema': True, 'supports_vision': True, 'supports_function_calling': True, 'supports_tool_choice': True, 'supports_assistant_prefill': None, 'supports_prompt_caching': None, 'supports_audio_input': None, 'supports_audio_output': True, 'supports_pdf_input': None, 'supports_embedding_image_input': None, 'supports_native_streaming': None, 'supports_web_search': True, 'supports_url_context': None, 'supports_reasoning': None, 'supports_computer_use': None, 'search_context_cost_per_query': None, 'tpm': 4000000, 'rpm': 4000}
-05:41:22 - LiteLLM:DEBUG: utils.py:4783 - model_info: {'key': 'gemini/gemini-2.0-flash-lite', 'max_tokens': None, 'max_input_tokens': 1048576, 'max_output_tokens': 8192, 'input_cost_per_token': 7.5e-08, 'cache_creation_input_token_cost': None, 'cache_read_input_token_cost': None, 'input_cost_per_character': None, 'input_cost_per_token_above_128k_tokens': None, 'input_cost_per_token_above_200k_tokens': None, 'input_cost_per_query': None, 'input_cost_per_second': None, 'input_cost_per_audio_token': 7.5e-08, 'input_cost_per_token_batches': None, 'output_cost_per_token_batches': None, 'output_cost_per_token': 3e-07, 'output_cost_per_audio_token': None, 'output_cost_per_character': None, 'output_cost_per_reasoning_token': None, 'output_cost_per_token_above_128k_tokens': None, 'output_cost_per_character_above_128k_tokens': None, 'output_cost_per_token_above_200k_tokens': None, 'output_cost_per_second': None, 'output_cost_per_image': None, 'output_vector_size': None, 'litellm_provider': 'gemini', 'mode': 'chat', 'supports_system_messages': True, 'supports_response_schema': True, 'supports_vision': True, 'supports_function_calling': True, 'supports_tool_choice': True, 'supports_assistant_prefill': None, 'supports_prompt_caching': None, 'supports_audio_input': None, 'supports_audio_output': True, 'supports_pdf_input': None, 'supports_embedding_image_input': None, 'supports_native_streaming': None, 'supports_web_search': True, 'supports_url_context': None, 'supports_reasoning': None, 'supports_computer_use': None, 'search_context_cost_per_query': None, 'tpm': 4000000, 'rpm': 4000}
-2025-07-12 05:41:22,922 - LiteLLM - DEBUG - model_info: {'key': 'gemini/gemini-2.0-flash-lite', 'max_tokens': None, 'max_input_tokens': 1048576, 'max_output_tokens': 8192, 'input_cost_per_token': 7.5e-08, 'cache_creation_input_token_cost': None, 'cache_read_input_token_cost': None, 'input_cost_per_character': None, 'input_cost_per_token_above_128k_tokens': None, 'input_cost_per_token_above_200k_tokens': None, 'input_cost_per_query': None, 'input_cost_per_second': None, 'input_cost_per_audio_token': 7.5e-08, 'input_cost_per_token_batches': None, 'output_cost_per_token_batches': None, 'output_cost_per_token': 3e-07, 'output_cost_per_audio_token': None, 'output_cost_per_character': None, 'output_cost_per_reasoning_token': None, 'output_cost_per_token_above_128k_tokens': None, 'output_cost_per_character_above_128k_tokens': None, 'output_cost_per_token_above_200k_tokens': None, 'output_cost_per_second': None, 'output_cost_per_image': None, 'output_vector_size': None, 'litellm_provider': 'gemini', 'mode': 'chat', 'supports_system_messages': True, 'supports_response_schema': True, 'supports_vision': True, 'supports_function_calling': True, 'supports_tool_choice': True, 'supports_assistant_prefill': None, 'supports_prompt_caching': None, 'supports_audio_input': None, 'supports_audio_output': True, 'supports_pdf_input': None, 'supports_embedding_image_input': None, 'supports_native_streaming': None, 'supports_web_search': True, 'supports_url_context': None, 'supports_reasoning': None, 'supports_computer_use': None, 'search_context_cost_per_query': None, 'tpm': 4000000, 'rpm': 4000}
-05:41:22 - LiteLLM:DEBUG: litellm_logging.py:1131 - response_cost: 1.5975e-05
-2025-07-12 05:41:22,930 - LiteLLM - DEBUG - response_cost: 1.5975e-05
-05:41:22 - LiteLLM:DEBUG: litellm_logging.py:1131 - response_cost: 1.5975e-05
-✅ Успешный ответ от модели gemini/gemini-2.0-flash-lite2025-07-12 05:41:22,942 - LiteLLM - DEBUG - response_cost: 1.5975e-05
-
-05:41:22 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'custom_llm_provider': 'vertex_ai'}
-2025-07-12 05:41:22,946 - tools.gopiai_integration.smart_delegator - INFO - ✅ Ответ от LLM получен
-2025-07-12 05:41:22,945 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'custom_llm_provider': 'vertex_ai'}
-05:41:22 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:22,948 - tools.gopiai_integration.smart_delegator - INFO - ⏱ Запрос обработан за 17.07 сек
-⏱ Запрос обработан за 17.08 сек2025-07-12 05:41:22,948 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-
-05:41:22 - LiteLLM:DEBUG: utils.py:4783 - model_info: {'key': 'gemini/gemini-2.0-flash-lite', 'max_tokens': None, 'max_input_tokens': 1048576, 'max_output_tokens': 8192, 'input_cost_per_token': 7.5e-08, 'cache_creation_input_token_cost': None, 'cache_read_input_token_cost': None, 'input_cost_per_character': None, 'input_cost_per_token_above_128k_tokens': None, 'input_cost_per_token_above_200k_tokens': None, 'input_cost_per_query': None, 'input_cost_per_second': None, 'input_cost_per_audio_token': 7.5e-08, 'input_cost_per_token_batches': None, 'output_cost_per_token_batches': None, 'output_cost_per_token': 3e-07, 'output_cost_per_audio_token': None, 'output_cost_per_character': None, 'output_cost_per_reasoning_token': None, 'output_cost_per_token_above_128k_tokens': None, 'output_cost_per_character_above_128k_tokens': None, 'output_cost_per_token_above_200k_tokens': None, 'output_cost_per_second': None, 'output_cost_per_image': None, 'output_vector_size': None, 'litellm_provider': 'gemini', 'mode': 'chat', 'supports_system_messages': True, 'supports_response_schema': True, 'supports_vision': True, 'supports_function_calling': True, 'supports_tool_choice': True, 'supports_assistant_prefill': None, 'supports_prompt_caching': None, 'supports_audio_input': None, 'supports_audio_output': True, 'supports_pdf_input': None, 'supports_embedding_image_input': None, 'supports_native_streaming': None, 'supports_web_search': True, 'supports_url_context': None, 'supports_reasoning': None, 'supports_computer_use': None, 'search_context_cost_per_query': None, 'tpm': 4000000, 'rpm': 4000}
-✅ [Задача 7e22da8f-872d-4efd-a6aa-23739982f7e8] Ответ получен, длина: 59 символов2025-07-12 05:41:22,954 - LiteLLM - DEBUG - model_info: {'key': 'gemini/gemini-2.0-flash-lite', 'max_tokens': None, 'max_input_tokens': 1048576, 'max_output_tokens': 8192, 'input_cost_per_token': 7.5e-08, 'cache_creation_input_token_cost': None, 'cache_read_input_token_cost': None, 'input_cost_per_character': None, 'input_cost_per_token_above_128k_tokens': None, 'input_cost_per_token_above_200k_tokens': None, 'input_cost_per_query': None, 'input_cost_per_second': None, 'input_cost_per_audio_token': 7.5e-08, 'input_cost_per_token_batches': None, 'output_cost_per_token_batches': None, 'output_cost_per_token': 3e-07, 'output_cost_per_audio_token': None, 'output_cost_per_character': None, 'output_cost_per_reasoning_token': None, 'output_cost_per_token_above_128k_tokens': None, 'output_cost_per_character_above_128k_tokens': None, 'output_cost_per_token_above_200k_tokens': None, 'output_cost_per_second': None, 'output_cost_per_image': None, 'output_vector_size': None, 'litellm_provider': 'gemini', 'mode': 'chat', 'supports_system_messages': True, 'supports_response_schema': True, 'supports_vision': True, 'supports_function_calling': True, 'supports_tool_choice': True, 'supports_assistant_prefill': None, 'supports_prompt_caching': None, 'supports_audio_input': None, 'supports_audio_output': True, 'supports_pdf_input': None, 'supports_embedding_image_input': None, 'supports_native_streaming': None, 'supports_web_search': True, 'supports_url_context': None, 'supports_reasoning': None, 'supports_computer_use': None, 'search_context_cost_per_query': None, 'tpm': 4000000, 'rpm': 4000}
-
-05:41:22 - LiteLLM:DEBUG: litellm_logging.py:1423 - Logging Details LiteLLM-Success Call streaming complete
-2025-07-12 05:41:22,963 - LiteLLM - DEBUG - Logging Details LiteLLM-Success Call streaming complete
-05:41:22 - LiteLLM:INFO: cost_calculator.py:655 - selected model name for cost calculation: gemini/gemini-2.0-flash-lite
-2025-07-12 05:41:22,963 - LiteLLM - INFO - selected model name for cost calculation: gemini/gemini-2.0-flash-lite
-05:41:22 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:22,963 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-05:41:22 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:22,971 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-05:41:22 - LiteLLM:DEBUG: utils.py:4783 - model_info: {'key': 'gemini/gemini-2.0-flash-lite', 'max_tokens': None, 'max_input_tokens': 1048576, 'max_output_tokens': 8192, 'input_cost_per_token': 7.5e-08, 'cache_creation_input_token_cost': None, 'cache_read_input_token_cost': None, 'input_cost_per_character': None, 'input_cost_per_token_above_128k_tokens': None, 'input_cost_per_token_above_200k_tokens': None, 'input_cost_per_query': None, 'input_cost_per_second': None, 'input_cost_per_audio_token': 7.5e-08, 'input_cost_per_token_batches': None, 'output_cost_per_token_batches': None, 'output_cost_per_token': 3e-07, 'output_cost_per_audio_token': None, 'output_cost_per_character': None, 'output_cost_per_reasoning_token': None, 'output_cost_per_token_above_128k_tokens': None, 'output_cost_per_character_above_128k_tokens': None, 'output_cost_per_token_above_200k_tokens': None, 'output_cost_per_second': None, 'output_cost_per_image': None, 'output_vector_size': None, 'litellm_provider': 'gemini', 'mode': 'chat', 'supports_system_messages': True, 'supports_response_schema': True, 'supports_vision': True, 'supports_function_calling': True, 'supports_tool_choice': True, 'supports_assistant_prefill': None, 'supports_prompt_caching': None, 'supports_audio_input': None, 'supports_audio_output': True, 'supports_pdf_input': None, 'supports_embedding_image_input': None, 'supports_native_streaming': None, 'supports_web_search': True, 'supports_url_context': None, 'supports_reasoning': None, 'supports_computer_use': None, 'search_context_cost_per_query': None, 'tpm': 4000000, 'rpm': 4000}
-2025-07-12 05:41:22,974 - LiteLLM - DEBUG - model_info: {'key': 'gemini/gemini-2.0-flash-lite', 'max_tokens': None, 'max_input_tokens': 1048576, 'max_output_tokens': 8192, 'input_cost_per_token': 7.5e-08, 'cache_creation_input_token_cost': None, 'cache_read_input_token_cost': None, 'input_cost_per_character': None, 'input_cost_per_token_above_128k_tokens': None, 'input_cost_per_token_above_200k_tokens': None, 'input_cost_per_query': None, 'input_cost_per_second': None, 'input_cost_per_audio_token': 7.5e-08, 'input_cost_per_token_batches': None, 'output_cost_per_token_batches': None, 'output_cost_per_token': 3e-07, 'output_cost_per_audio_token': None, 'output_cost_per_character': None, 'output_cost_per_reasoning_token': None, 'output_cost_per_token_above_128k_tokens': None, 'output_cost_per_character_above_128k_tokens': None, 'output_cost_per_token_above_200k_tokens': None, 'output_cost_per_second': None, 'output_cost_per_image': None, 'output_vector_size': None, 'litellm_provider': 'gemini', 'mode': 'chat', 'supports_system_messages': True, 'supports_response_schema': True, 'supports_vision': True, 'supports_function_calling': True, 'supports_tool_choice': True, 'supports_assistant_prefill': None, 'supports_prompt_caching': None, 'supports_audio_input': None, 'supports_audio_output': True, 'supports_pdf_input': None, 'supports_embedding_image_input': None, 'supports_native_streaming': None, 'supports_web_search': True, 'supports_url_context': None, 'supports_reasoning': None, 'supports_computer_use': None, 'search_context_cost_per_query': None, 'tpm': 4000000, 'rpm': 4000}
-05:41:22 - LiteLLM:DEBUG: litellm_logging.py:1131 - response_cost: 1.5975e-05
-2025-07-12 05:41:22,981 - LiteLLM - DEBUG - response_cost: 1.5975e-05
-05:41:22 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'custom_llm_provider': 'vertex_ai'}
-2025-07-12 05:41:22,981 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'vertex_ai/gemini-2.0-flash-lite', 'custom_llm_provider': 'vertex_ai'}
-05:41:22 - LiteLLM:DEBUG: utils.py:4481 - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-2025-07-12 05:41:22,981 - LiteLLM - DEBUG - checking potential_model_names in litellm.model_cost: {'split_model': 'gemini-2.0-flash-lite', 'combined_model_name': 'gemini/gemini-2.0-flash-lite', 'stripped_model_name': 'gemini-2.0-flash-lite', 'combined_stripped_model_name': 'gemini/gemini-2.0-flash-lite', 'custom_llm_provider': 'gemini'}
-05:41:22 - LiteLLM:DEBUG: utils.py:4783 - model_info: {'key': 'gemini/gemini-2.0-flash-lite', 'max_tokens': None, 'max_input_tokens': 1048576, 'max_output_tokens': 8192, 'input_cost_per_token': 7.5e-08, 'cache_creation_input_token_cost': None, 'cache_read_input_token_cost': None, 'input_cost_per_character': None, 'input_cost_per_token_above_128k_tokens': None, 'input_cost_per_token_above_200k_tokens': None, 'input_cost_per_query': None, 'input_cost_per_second': None, 'input_cost_per_audio_token': 7.5e-08, 'input_cost_per_token_batches': None, 'output_cost_per_token_batches': None, 'output_cost_per_token': 3e-07, 'output_cost_per_audio_token': None, 'output_cost_per_character': None, 'output_cost_per_reasoning_token': None, 'output_cost_per_token_above_128k_tokens': None, 'output_cost_per_character_above_128k_tokens': None, 'output_cost_per_token_above_200k_tokens': None, 'output_cost_per_second': None, 'output_cost_per_image': None, 'output_vector_size': None, 'litellm_provider': 'gemini', 'mode': 'chat', 'supports_system_messages': True, 'supports_response_schema': True, 'supports_vision': True, 'supports_function_calling': True, 'supports_tool_choice': True, 'supports_assistant_prefill': None, 'supports_prompt_caching': None, 'supports_audio_input': None, 'supports_audio_output': True, 'supports_pdf_input': None, 'supports_embedding_image_input': None, 'supports_native_streaming': None, 'supports_web_search': True, 'supports_url_context': None, 'supports_reasoning': None, 'supports_computer_use': None, 'search_context_cost_per_query': None, 'tpm': 4000000, 'rpm': 4000}
-2025-07-12 05:41:22,981 - LiteLLM - DEBUG - model_info: {'key': 'gemini/gemini-2.0-flash-lite', 'max_tokens': None, 'max_input_tokens': 1048576, 'max_output_tokens': 8192, 'input_cost_per_token': 7.5e-08, 'cache_creation_input_token_cost': None, 'cache_read_input_token_cost': None, 'input_cost_per_character': None, 'input_cost_per_token_above_128k_tokens': None, 'input_cost_per_token_above_200k_tokens': None, 'input_cost_per_query': None, 'input_cost_per_second': None, 'input_cost_per_audio_token': 7.5e-08, 'input_cost_per_token_batches': None, 'output_cost_per_token_batches': None, 'output_cost_per_token': 3e-07, 'output_cost_per_audio_token': None, 'output_cost_per_character': None, 'output_cost_per_reasoning_token': None, 'output_cost_per_token_above_128k_tokens': None, 'output_cost_per_character_above_128k_tokens': None, 'output_cost_per_token_above_200k_tokens': None, 'output_cost_per_second': None, 'output_cost_per_image': None, 'output_vector_size': None, 'litellm_provider': 'gemini', 'mode': 'chat', 'supports_system_messages': True, 'supports_response_schema': True, 'supports_vision': True, 'supports_function_calling': True, 'supports_tool_choice': True, 'supports_assistant_prefill': None, 'supports_prompt_caching': None, 'supports_audio_input': None, 'supports_audio_output': True, 'supports_pdf_input': None, 'supports_embedding_image_input': None, 'supports_native_streaming': None, 'supports_web_search': True, 'supports_url_context': None, 'supports_reasoning': None, 'supports_computer_use': None, 'search_context_cost_per_query': None, 'tpm': 4000000, 'rpm': 4000}
-2025-07-12 05:41:23,496 - werkzeug - INFO - 127.0.0.1 - - [12/Jul/2025 05:41:23] "GET /api/task/7e22da8f-872d-4efd-a6aa-23739982f7e8 HTTP/1.1" 200 -
+2025-07-13 19:43:17,048 - werkzeug - INFO - Press CTRL+C to quit
