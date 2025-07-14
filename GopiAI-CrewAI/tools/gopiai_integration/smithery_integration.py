@@ -26,6 +26,50 @@ class SmitheryIntegration:
         """Инициализация интеграции Smithery MCP."""
         self.tools_adapter = get_smithery_tools_adapter()
         self.prompts_manager = get_system_prompts()
+        self.available_tools = {}
+        
+    def initialize(self):
+        """Загружает доступные серверы и инструменты MCP."""
+        try:
+            logger.info("Инициализация интеграции Smithery MCP...")
+            
+            # Проверяем, что адаптер существует
+            if self.tools_adapter is None:
+                logger.warning("Адаптер Smithery MCP не создан. Создаем заглушки инструментов.")
+                # Создаем заглушки для известных серверов и инструментов
+                self.available_tools = {
+                    "brave-search": [
+                        {"name": "brave_web_search", "description": "Поиск в интернете с помощью Brave Search API"},
+                        {"name": "brave_local_search", "description": "Поиск локальных мест и бизнесов"}
+                    ],
+                    "mcp-playwright": [
+                        {"name": "playwright_navigate", "description": "Открыть URL в браузере"},
+                        {"name": "playwright_click", "description": "Кликнуть по элементу на странице"},
+                        {"name": "playwright_screenshot", "description": "Сделать скриншот страницы"}
+                    ],
+                    "puppeteer": [
+                        {"name": "puppeteer_navigate", "description": "Открыть URL в браузере Puppeteer"},
+                        {"name": "puppeteer_screenshot", "description": "Сделать скриншот в Puppeteer"}
+                    ],
+                    "serena": [
+                        {"name": "activate_project", "description": "Активировать проект в Serena"},
+                        {"name": "read_file", "description": "Прочитать содержимое файла"},
+                        {"name": "create_text_file", "description": "Создать новый файл"}
+                    ]
+                }
+                total_tools = sum(len(tools) for tools in self.available_tools.values())
+                logger.info(f"Создано {total_tools} заглушек инструментов для {len(self.available_tools)} известных серверов")
+                return True
+            
+            # Если адаптер существует, попытаемся загрузить инструменты
+            self.available_tools = self.tools_adapter.get_all_available_tools()
+            logger.info(f"Загружено {sum(len(tools) for tools in self.available_tools.values())} инструментов из {len(self.available_tools)} серверов")
+            return True
+        except Exception as e:
+            logger.error(f"Ошибка при инициализации Smithery MCP: {e}")
+            # Если произошла ошибка, создаем пустой словарь
+            self.available_tools = {}
+            return False
         
     def get_available_tools_for_ui(self) -> List[Dict]:
         """
@@ -35,6 +79,20 @@ class SmitheryIntegration:
             Список словарей с описаниями инструментов.
         """
         try:
+            # Если инструменты уже загружены, используем их
+            if self.available_tools:
+                # Формируем список описаний инструментов для UI
+                tools = []
+                for server_name, server_tools in self.available_tools.items():
+                    for tool in server_tools:
+                        tools.append({
+                            'id': f"mcp_{server_name}_{tool['name']}",
+                            'name': tool.get('name', 'Неизвестный инструмент'),
+                            'description': tool.get('description', 'Описание отсутствует'),
+                            'server_name': server_name
+                        })
+                return tools
+            # Иначе получаем описания через адаптер
             return self.tools_adapter.get_tool_descriptions()
         except Exception as e:
             logger.error(f"Ошибка при получении списка MCP инструментов: {e}")
@@ -167,14 +225,26 @@ class SmitheryIntegration:
 # Синглтон для повторного использования интеграции
 _smithery_integration_instance = None
 
-def get_smithery_integration() -> SmitheryIntegration:
+def get_smithery_integration() -> Optional[SmitheryIntegration]:
     """
     Возвращает экземпляр интеграции Smithery.
+    Инициализация выполняется с обработкой ошибок.
     
     Returns:
-        Экземпляр интеграции Smithery.
+        Экземпляр интеграции Smithery или None, если инициализация невозможна.
     """
     global _smithery_integration_instance
-    if _smithery_integration_instance is None:
-        _smithery_integration_instance = SmitheryIntegration()
-    return _smithery_integration_instance
+    try:
+        if _smithery_integration_instance is None:
+            # Для работы интеграции нужен рабочий tools_adapter
+            tools_adapter = get_smithery_tools_adapter()
+            if not tools_adapter:
+                logger.warning("Адаптер инструментов Smithery не инициализирован. Интеграция недоступна.")
+                return None
+                
+            _smithery_integration_instance = SmitheryIntegration()
+            logger.info("Интеграция Smithery MCP успешно инициализирована")
+        return _smithery_integration_instance
+    except Exception as e:
+        logger.error(f"Ошибка при инициализации интеграции Smithery: {e}")
+        return None

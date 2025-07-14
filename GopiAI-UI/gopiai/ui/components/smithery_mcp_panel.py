@@ -149,7 +149,18 @@ class SmitheryMcpPanel(QWidget):
     def load_tools(self):
         """Загружает доступные инструменты Smithery MCP."""
         try:
+            # Проверяем наличие объекта интеграции перед использованием
+            if not self.integration:
+                print("Объект интеграции Smithery MCP не инициализирован")
+                self.show_error_message("Интеграция Smithery MCP недоступна. Проверьте API-ключ и перезапустите приложение.")
+                self.api_key_warning.setVisible(True)
+                self.available_tools = []
+                self.update_tools_ui()
+                return
+                
+            print("Загружаем список инструментов Smithery MCP...")
             self.available_tools = self.integration.get_available_tools_for_ui()
+            print(f"Загружено инструментов: {len(self.available_tools)}")
             self.update_tools_ui()
         except Exception as e:
             print(f"Ошибка при загрузке инструментов Smithery MCP: {e}")
@@ -158,6 +169,16 @@ class SmitheryMcpPanel(QWidget):
     def reload_tools(self):
         """Перезагружает список инструментов."""
         try:
+            # Проверяем наличие интеграции
+            if not self.integration:
+                print("Объект интеграции Smithery MCP не инициализирован")
+                self.show_error_message("Интеграция Smithery MCP недоступна. Проверьте настройки и перезапустите приложение.")
+                # Переинициализируем интеграцию
+                self.integration = get_smithery_integration()
+                if not self.integration:
+                    self.api_key_warning.setVisible(True)
+                    return
+                    
             # Получаем клиент с обновлением кеша
             client = get_smithery_client()
             if not client:
@@ -247,8 +268,90 @@ class SmitheryMcpPanel(QWidget):
     
     def show_api_key_dialog(self):
         """Показывает диалог настройки API ключа."""
-        # Здесь будет код для диалога настройки API ключа
-        print("Показ диалога настройки API ключа")
+        from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel
+        import os
+        
+        # Создаем диалог
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Настройка API ключа Smithery MCP")
+        dialog.setMinimumWidth(400)
+        
+        # Компоновка диалога
+        layout = QVBoxLayout(dialog)
+        
+        # Пояснение
+        info_label = QLabel(
+            "Введите ваш API ключ Smithery MCP. "
+            "Ключ будет сохранен в файле smithery_env.bat "
+            "и автоматически загружен при следующем запуске."
+        )
+        info_label.setWordWrap(True)
+        layout.addWidget(info_label)
+        
+        # Текущий ключ
+        current_key = os.environ.get("SMITHERY_API_KEY", "")
+        
+        # Поле ввода ключа
+        key_label = QLabel("API ключ:")
+        layout.addWidget(key_label)
+        
+        key_input = QLineEdit(current_key)
+        key_input.setPlaceholderText("Введите ваш API ключ Smithery MCP")
+        layout.addWidget(key_input)
+        
+        # Кнопки
+        buttons_layout = QHBoxLayout()
+        cancel_button = QPushButton("Отмена")
+        save_button = QPushButton("Сохранить")
+        save_button.setDefault(True)
+        
+        buttons_layout.addWidget(cancel_button)
+        buttons_layout.addWidget(save_button)
+        layout.addLayout(buttons_layout)
+        
+        # Обработчики событий
+        cancel_button.clicked.connect(dialog.reject)
+        
+        def save_api_key():
+            new_key = key_input.text().strip()
+            if not new_key:
+                self.show_error_message("Введите действующий API ключ Smithery MCP")
+                return
+            
+            try:
+                # Сохраняем в файл smithery_env.bat
+                smithery_env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "smithery_env.bat")
+                
+                with open(smithery_env_path, 'w', encoding='utf-8') as f:
+                    f.write("@echo off\n")
+                    f.write("REM Настройки для Smithery MCP\n")
+                    f.write(f"SET SMITHERY_API_KEY={new_key}\n\n")
+                    f.write("echo API-ключ Smithery установлен\n")
+                
+                # Устанавливаем ключ в текущем сеансе
+                os.environ["SMITHERY_API_KEY"] = new_key
+                
+                # Переинициализируем клиент и интеграцию
+                from .smithery_client import get_smithery_client
+                from .smithery_integration import get_smithery_integration
+                from .smithery_tools import get_smithery_tools_adapter
+                
+                # Скрываем предупреждение о ключе
+                self.api_key_warning.setVisible(False)
+                
+                # Перезагружаем инструменты
+                self.reload_tools()
+                
+                dialog.accept()
+                self.show_error_message(f"API ключ Smithery MCP успешно сохранен! Инструменты будут доступны при следующем запуске приложения.")
+                
+            except Exception as e:
+                self.show_error_message(f"Ошибка при сохранении API ключа: {str(e)}")
+        
+        save_button.clicked.connect(save_api_key)
+        
+        # Показываем диалог
+        dialog.exec_()
     
     def show_error_message(self, message):
         """Показывает сообщение об ошибке."""
