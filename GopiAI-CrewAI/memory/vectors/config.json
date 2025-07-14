@@ -1,5 +1,4 @@
 {
-  "model": "sentence-transformers/nli-mpnet-base-v2",
-  "model_type": "sentence-transformers",
+  "path": "sentence-transformers/nli-mpnet-base-v2",
   "content": true
 }

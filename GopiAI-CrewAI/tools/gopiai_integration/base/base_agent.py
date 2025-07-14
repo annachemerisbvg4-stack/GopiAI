@@ -14,6 +14,23 @@ logger = logging.getLogger(__name__)
 
 # Теперь этот модуль просто ре-экспортирует классы из crewai
 # Все заглушки удалены и заменены на реальные классы
+class Agent:
+    """
+    Заглушка для Agent из crewai
+    """
+    
+    def __init__(self, name: str, role: str, **kwargs):
+        """
+        Инициализирует заглушку Agent
+        
+        Args:
+            name: Имя агента
+            role: Роль агента
+            **kwargs: Дополнительные параметры
+        """
+        self.name = name
+        self.role = role
+        self.kwargs = kwargs
         logger.warning("WARNING: Using Agent stub instead of crewai.Agent")
     
     def __str__(self) -> str:
