@@ -9,15 +9,15 @@
 🐍 Environment: C:\Users\crazy\GOPI_AI_MODULES\gopiai_env
 
 🚀 Starting GopiAI-UI Application...
-2025-07-14 00:38:32,546 - GopiAI - INFO - [GOPIAI] GopiAI Unified Logger initialized
-2025-07-14 00:38:33,610 - gopiai.ui.components.crewai_client - WARNING - ⚠️ Не удалось загрузить spaCy или языковые модели: No module named 'spacy'
-2025-07-14 00:38:33,651 - gopiai.ui_core.memory.manager - INFO - Initialized simplified emotion classifier
-2025-07-14 00:38:33,652 - gopiai.ui_core.memory.manager - INFO - Loaded 0 chat messages from disk
-2025-07-14 00:38:34,111 - faiss.loader - DEBUG - Environment variable FAISS_OPT_LEVEL is not set, so let's pick the instruction set according to the current CPU
-2025-07-14 00:38:34,240 - faiss.loader - INFO - Loading faiss with AVX2 support.
-2025-07-14 00:38:34,356 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
-2025-07-14 00:38:34,370 - faiss - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
-2025-07-14 00:38:58,164 - gopiai.ui_core.memory.manager - ERROR - Error initializing embeddings: Unrecognized model in C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\vectors. Should have a `model_type` key in its config.json, or contain one of the following strings in its name: albert, align, altclip, arcee, aria, aria_text, audio-spectrogram-transformer, autoformer, aya_vision, bamba, bark, bart, beit, bert, bert-generation, big_bird, bigbird_pegasus, biogpt, bit, bitnet, blenderbot, blenderbot-small, blip, blip-2, blip_2_qformer, bloom, bridgetower, bros, camembert, canine, chameleon, chinese_clip, chinese_clip_vision_model, clap, clip, clip_text_model, clip_vision_model, clipseg, clvp, code_llama, codegen, cohere, cohere2, colpali, colqwen2, conditional_detr, convbert, convnext, convnextv2, cpmant, csm, ctrl, cvt, d_fine, dab-detr, dac, data2vec-audio, data2vec-text, data2vec-vision, dbrx, deberta, deberta-v2, decision_transformer, deepseek_v3, deformable_detr, deit, depth_anything, depth_pro, deta, detr, dia, diffllama, dinat, dinov2, dinov2_with_registers, distilbert, donut-swin, dots1, dpr, dpt, efficientformer, efficientnet, electra, emu3, encodec, encoder-decoder, ernie, ernie_m, esm, falcon, falcon_h1, falcon_mamba, fastspeech2_conformer, flaubert, flava, fnet, focalnet, fsmt, funnel, fuyu, gemma, gemma2, gemma3, gemma3_text, gemma3n, gemma3n_audio, gemma3n_text, gemma3n_vision, git, glm, glm4, glm4v, glm4v_text, glpn, got_ocr2, gpt-sw3, gpt2, gpt_bigcode, gpt_neo, gpt_neox, gpt_neox_japanese, gptj, gptsan-japanese, granite, granite_speech, granitemoe, granitemoehybrid, granitemoeshared, granitevision, graphormer, grounding-dino, groupvit, helium, hgnet_v2, hiera, hubert, ibert, idefics, idefics2, idefics3, idefics3_vision, ijepa, imagegpt, informer, instructblip, instructblipvideo, internvl, internvl_vision, jamba, janus, jetmoe, jukebox, kosmos-2, kyutai_speech_to_text, layoutlm, layoutlmv2, layoutlmv3, led, levit, lightglue, lilt, llama, llama4, llama4_text, llava, llava_next, llava_next_video, llava_onevision, longformer, longt5, luke, lxmert, m2m_100, mamba, mamba2, marian, markuplm, mask2former, maskformer, maskformer-swin, mbart, mctct, mega, megatron-bert, mgp-str, mimi, minimax, mistral, mistral3, mixtral, mlcd, mllama, mobilebert, mobilenet_v1, mobilenet_v2, mobilevit, mobilevitv2, modernbert, moonshine, moshi, mpnet, mpt, mra, mt5, musicgen, musicgen_melody, mvp, nat, nemotron, nezha, nllb-moe, nougat, nystromformer, olmo, olmo2, olmoe, omdet-turbo, oneformer, open-llama, openai-gpt, opt, owlv2, owlvit, paligemma, patchtsmixer, patchtst, pegasus, pegasus_x, perceiver, persimmon, phi, phi3, phi4_multimodal, phimoe, pix2struct, pixtral, plbart, poolformer, pop2piano, prompt_depth_anything, prophetnet, pvt, pvt_v2, qdqbert, qwen2, qwen2_5_omni, qwen2_5_vl, qwen2_5_vl_text, qwen2_audio, qwen2_audio_encoder, qwen2_moe, qwen2_vl, qwen2_vl_text, qwen3, qwen3_moe, rag, realm, recurrent_gemma, reformer, regnet, rembert, resnet, retribert, roberta, roberta-prelayernorm, roc_bert, roformer, rt_detr, rt_detr_resnet, rt_detr_v2, rwkv, sam, sam_hq, sam_hq_vision_model, sam_vision_model, seamless_m4t, seamless_m4t_v2, segformer, seggpt, sew, sew-d, shieldgemma2, siglip, siglip2, siglip_vision_model, smollm3, smolvlm, smolvlm_vision, speech-encoder-decoder, speech_to_text, speech_to_text_2, speecht5, splinter, squeezebert, stablelm, starcoder2, superglue, superpoint, swiftformer, swin, swin2sr, swinv2, switch_transformers, t5, t5gemma, table-transformer, tapas, textnet, time_series_transformer, timesfm, timesformer, timm_backbone, timm_wrapper, trajectory_transformer, transfo-xl, trocr, tvlt, tvp, udop, umt5, unispeech, unispeech-sat, univnet, upernet, van, video_llava, videomae, vilt, vipllava, vision-encoder-decoder, vision-text-dual-encoder, visual_bert, vit, vit_hybrid, vit_mae, vit_msn, vitdet, vitmatte, vitpose, vitpose_backbone, vits, vivit, vjepa2, wav2vec2, wav2vec2-bert, wav2vec2-conformer, wavlm, whisper, xclip, xglm, xlm, xlm-prophetnet, xlm-roberta, xlm-roberta-xl, xlnet, xmod, yolos, yoso, zamba, zamba2, zoedepth
+2025-07-14 04:23:34,429 - GopiAI - INFO - [GOPIAI] GopiAI Unified Logger initialized
+2025-07-14 04:23:35,136 - gopiai.ui.components.crewai_client - WARNING - ⚠️ Не удалось загрузить spaCy или языковые модели: No module named 'spacy'
+2025-07-14 04:23:35,156 - gopiai.ui_core.memory.manager - INFO - Initialized simplified emotion classifier
+2025-07-14 04:23:35,158 - gopiai.ui_core.memory.manager - INFO - Loaded 15 chat messages from disk
+2025-07-14 04:23:35,351 - faiss.loader - DEBUG - Environment variable FAISS_OPT_LEVEL is not set, so let's pick the instruction set according to the current CPU
+2025-07-14 04:23:35,421 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2025-07-14 04:23:35,474 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
+2025-07-14 04:23:35,484 - faiss - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
+2025-07-14 04:23:47,899 - gopiai.ui_core.memory.manager - ERROR - Error initializing embeddings: Unrecognized model in C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\vectors. Should have a `model_type` key in its config.json, or contain one of the following strings in its name: albert, align, altclip, arcee, aria, aria_text, audio-spectrogram-transformer, autoformer, aya_vision, bamba, bark, bart, beit, bert, bert-generation, big_bird, bigbird_pegasus, biogpt, bit, bitnet, blenderbot, blenderbot-small, blip, blip-2, blip_2_qformer, bloom, bridgetower, bros, camembert, canine, chameleon, chinese_clip, chinese_clip_vision_model, clap, clip, clip_text_model, clip_vision_model, clipseg, clvp, code_llama, codegen, cohere, cohere2, colpali, colqwen2, conditional_detr, convbert, convnext, convnextv2, cpmant, csm, ctrl, cvt, d_fine, dab-detr, dac, data2vec-audio, data2vec-text, data2vec-vision, dbrx, deberta, deberta-v2, decision_transformer, deepseek_v3, deformable_detr, deit, depth_anything, depth_pro, deta, detr, dia, diffllama, dinat, dinov2, dinov2_with_registers, distilbert, donut-swin, dots1, dpr, dpt, efficientformer, efficientnet, electra, emu3, encodec, encoder-decoder, ernie, ernie_m, esm, falcon, falcon_h1, falcon_mamba, fastspeech2_conformer, flaubert, flava, fnet, focalnet, fsmt, funnel, fuyu, gemma, gemma2, gemma3, gemma3_text, gemma3n, gemma3n_audio, gemma3n_text, gemma3n_vision, git, glm, glm4, glm4v, glm4v_text, glpn, got_ocr2, gpt-sw3, gpt2, gpt_bigcode, gpt_neo, gpt_neox, gpt_neox_japanese, gptj, gptsan-japanese, granite, granite_speech, granitemoe, granitemoehybrid, granitemoeshared, granitevision, graphormer, grounding-dino, groupvit, helium, hgnet_v2, hiera, hubert, ibert, idefics, idefics2, idefics3, idefics3_vision, ijepa, imagegpt, informer, instructblip, instructblipvideo, internvl, internvl_vision, jamba, janus, jetmoe, jukebox, kosmos-2, kyutai_speech_to_text, layoutlm, layoutlmv2, layoutlmv3, led, levit, lightglue, lilt, llama, llama4, llama4_text, llava, llava_next, llava_next_video, llava_onevision, longformer, longt5, luke, lxmert, m2m_100, mamba, mamba2, marian, markuplm, mask2former, maskformer, maskformer-swin, mbart, mctct, mega, megatron-bert, mgp-str, mimi, minimax, mistral, mistral3, mixtral, mlcd, mllama, mobilebert, mobilenet_v1, mobilenet_v2, mobilevit, mobilevitv2, modernbert, moonshine, moshi, mpnet, mpt, mra, mt5, musicgen, musicgen_melody, mvp, nat, nemotron, nezha, nllb-moe, nougat, nystromformer, olmo, olmo2, olmoe, omdet-turbo, oneformer, open-llama, openai-gpt, opt, owlv2, owlvit, paligemma, patchtsmixer, patchtst, pegasus, pegasus_x, perceiver, persimmon, phi, phi3, phi4_multimodal, phimoe, pix2struct, pixtral, plbart, poolformer, pop2piano, prompt_depth_anything, prophetnet, pvt, pvt_v2, qdqbert, qwen2, qwen2_5_omni, qwen2_5_vl, qwen2_5_vl_text, qwen2_audio, qwen2_audio_encoder, qwen2_moe, qwen2_vl, qwen2_vl_text, qwen3, qwen3_moe, rag, realm, recurrent_gemma, reformer, regnet, rembert, resnet, retribert, roberta, roberta-prelayernorm, roc_bert, roformer, rt_detr, rt_detr_resnet, rt_detr_v2, rwkv, sam, sam_hq, sam_hq_vision_model, sam_vision_model, seamless_m4t, seamless_m4t_v2, segformer, seggpt, sew, sew-d, shieldgemma2, siglip, siglip2, siglip_vision_model, smollm3, smolvlm, smolvlm_vision, speech-encoder-decoder, speech_to_text, speech_to_text_2, speecht5, splinter, squeezebert, stablelm, starcoder2, superglue, superpoint, swiftformer, swin, swin2sr, swinv2, switch_transformers, t5, t5gemma, table-transformer, tapas, textnet, time_series_transformer, timesfm, timesformer, timm_backbone, timm_wrapper, trajectory_transformer, transfo-xl, trocr, tvlt, tvp, udop, umt5, unispeech, unispeech-sat, univnet, upernet, van, video_llava, videomae, vilt, vipllava, vision-encoder-decoder, vision-text-dual-encoder, visual_bert, vit, vit_hybrid, vit_mae, vit_msn, vitdet, vitmatte, vitpose, vitpose_backbone, vits, vivit, vjepa2, wav2vec2, wav2vec2-bert, wav2vec2-conformer, wavlm, whisper, xclip, xglm, xlm, xlm-prophetnet, xlm-roberta, xlm-roberta-xl, xlnet, xmod, yolos, yoso, zamba, zamba2, zoedepth
 Модульная версия GopiAI v0.3.2 с централизованной системой тем
 Добавленные пути для модулей:
 - C:\Users\crazy\GOPI_AI_MODULES\GopiAI-Core (существует: True)
@@ -27,66 +27,66 @@
 - C:\Users\crazy\GOPI_AI_MODULES\rag_memory_system (существует: True)
 - C:\Users\crazy\GOPI_AI_MODULES (существует: True)
 [OK] Все основные модули UI загружены успешно
-2025-07-14 00:38:58,240 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Initializing memory manager with shared config. Path: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory
-2025-07-14 00:38:58,246 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Loaded 0 messages from shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
+2025-07-14 04:23:47,923 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Initializing memory manager with shared config. Path: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory
+2025-07-14 04:23:47,924 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Loaded 15 messages from shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
 [MEMORY] Инициализирован MemoryManager
 [WARNING] Предупреждение при тестировании памяти: name 'datetime' is not defined
 [LAUNCH] Запуск модульного GopiAI...
 🚀 Инициализация модульного интерфейса GopiAI с централизованной системой тем...
 [WARNING] Система иконок недоступна
-2025-07-14 00:38:58,329 - gopiai.ui.utils.theme_manager - INFO - Загружена тема: Material Sky (dark)
+2025-07-14 04:23:47,967 - gopiai.ui.utils.theme_manager - INFO - Загружена тема: Material Sky (dark)
 ✅ Менеджер тем инициализирован
-2025-07-14 00:38:58,356 - gopiai.ui.utils.theme_manager - INFO - Применение темы к QApplication/QCoreApplication
+2025-07-14 04:23:47,969 - gopiai.ui.utils.theme_manager - INFO - Применение темы к QApplication/QCoreApplication
 ✅ Применена тема из файла настроек
 [SETUP] Настройка UI из модулей...
-INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-14 00:38:59,372 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+INFO: [OK] Загружено 1597 Lucide иконок
+2025-07-14 04:23:48,437 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-14 00:38:59,411 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-14 04:23:48,441 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
 ✅ Titlebar: Загружена система иконок UniversalIconManager
-INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-14 00:39:00,008 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+INFO: [OK] Загружено 1597 Lucide иконок
+2025-07-14 04:23:48,951 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-14 00:39:00,054 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-14 04:23:48,953 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
 ✅ Titlebar: Загружена система иконок UniversalIconManager
-INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-14 00:39:00,620 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+INFO: [OK] Загружено 1597 Lucide иконок
+2025-07-14 04:23:49,380 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-14 00:39:00,626 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-14 00:39:01,163 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+2025-07-14 04:23:49,383 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+INFO: [OK] Загружено 1597 Lucide иконок
+2025-07-14 04:23:49,851 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-14 00:39:01,170 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-14 04:23:49,855 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
 ✅ Загружена система иконок UniversalIconManager
 🎨 CustomFileSystemModel инициализирована с icon_manager: <class 'gopiai.ui.components.icon_file_system_model.UniversalIconManager'>
-INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-14 00:39:01,736 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+INFO: [OK] Загружено 1597 Lucide иконок
+2025-07-14 04:23:50,321 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-14 00:39:01,746 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-14 04:23:50,323 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
 [OK] Terminal: Загружена система иконок UniversalIconManager
-2025-07-14 00:39:01,770 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant visual feedback elements created.
-2025-07-14 00:39:01 - UIAssistant_20250714_003901 - INFO - ==================================================
-2025-07-14 00:39:01,782 - UIAssistant_20250714_003901 - INFO - ==================================================
-2025-07-14 00:39:01 - UIAssistant_20250714_003901 - INFO - UI Assistant Session Started: 20250714_003901
-2025-07-14 00:39:01,810 - UIAssistant_20250714_003901 - INFO - UI Assistant Session Started: 20250714_003901
-2025-07-14 00:39:01 - UIAssistant_20250714_003901 - INFO - ==================================================
-2025-07-14 00:39:01,821 - UIAssistant_20250714_003901 - INFO - ==================================================
-2025-07-14 00:39:01 - UIAssistant_20250714_003901 - INFO - Removed old log file: ui_assistant_20250712_010800.log
-2025-07-14 00:39:01,847 - UIAssistant_20250714_003901 - INFO - Removed old log file: ui_assistant_20250712_010800.log
-2025-07-14 00:39:01 - UIAssistant_20250714_003901 - INFO - Initializing UIAssistantTool
-2025-07-14 00:39:01,855 - UIAssistant_20250714_003901 - INFO - Initializing UIAssistantTool
-2025-07-14 00:39:01,859 - gopiai.ui_core.llm - INFO - LLM client initialized
-2025-07-14 00:39:01 - UIAssistant_20250714_003901 - INFO - UIAssistantTool initialized successfully
-2025-07-14 00:39:01,863 - UIAssistant_20250714_003901 - INFO - UIAssistantTool initialized successfully
-2025-07-14 00:39:01,864 - gopiai.utils.performance - DEBUG - Cached result for get_ui_assistant (TTL: 300s)
-2025-07-14 00:39:01,865 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant initialized and signals connected.
-INFO: ✅ Загружено 1597 Lucide иконок
-2025-07-14 00:39:02,578 - icon_manager - INFO - ✅ Загружено 1597 Lucide иконок
+2025-07-14 04:23:50,333 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant visual feedback elements created.
+2025-07-14 04:23:50 - UIAssistant_20250714_042350 - INFO - ==================================================
+2025-07-14 04:23:50,341 - UIAssistant_20250714_042350 - INFO - ==================================================
+2025-07-14 04:23:50 - UIAssistant_20250714_042350 - INFO - UI Assistant Session Started: 20250714_042350
+2025-07-14 04:23:50,342 - UIAssistant_20250714_042350 - INFO - UI Assistant Session Started: 20250714_042350
+2025-07-14 04:23:50 - UIAssistant_20250714_042350 - INFO - ==================================================
+2025-07-14 04:23:50,342 - UIAssistant_20250714_042350 - INFO - ==================================================
+2025-07-14 04:23:50 - UIAssistant_20250714_042350 - INFO - Removed old log file: ui_assistant_20250712_035947.log
+2025-07-14 04:23:50,357 - UIAssistant_20250714_042350 - INFO - Removed old log file: ui_assistant_20250712_035947.log
+2025-07-14 04:23:50 - UIAssistant_20250714_042350 - INFO - Initializing UIAssistantTool
+2025-07-14 04:23:50,361 - UIAssistant_20250714_042350 - INFO - Initializing UIAssistantTool
+2025-07-14 04:23:50,362 - gopiai.ui_core.llm - INFO - LLM client initialized
+2025-07-14 04:23:50 - UIAssistant_20250714_042350 - INFO - UIAssistantTool initialized successfully
+2025-07-14 04:23:50,366 - UIAssistant_20250714_042350 - INFO - UIAssistantTool initialized successfully
+2025-07-14 04:23:50,367 - gopiai.utils.performance - DEBUG - Cached result for get_ui_assistant (TTL: 300s)
+2025-07-14 04:23:50,368 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant initialized and signals connected.
+INFO: [OK] Загружено 1597 Lucide иконок
+2025-07-14 04:23:50,746 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
 INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-14 00:39:02,589 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-14 04:23:50,750 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
 🔍 ChatWidget создан успешно
 🔍 Передаем theme_manager в ChatWidget...
-2025-07-14 00:39:02,618 - gopiai.ui.components.chat_widget - INFO - Theme applied to ChatWidget (placeholder method).
+2025-07-14 04:23:50,762 - gopiai.ui.components.chat_widget - INFO - Theme applied to ChatWidget (placeholder method).
 🔍 theme_manager передан успешно
 [OK] Поведение сплиттеров настроено с ограничениями
 [OK] Дополнительные ограничения сплиттеров установлены
@@ -106,22 +106,93 @@ INFO: Инициализирован UniversalIconManager с Lucide иконка
 [SUCCESS] GopiAI v0.3.0 успешно запущен!
 [INFO] Модульная архитектура активна
 [INFO] Размер основного файла значительно уменьшен
-2025-07-14 00:39:03,251 - gopiai.ui.utils.theme_manager - INFO - Тема успешно применена при инициализации
-2025-07-14 00:39:10,812 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-2025-07-14 00:39:10,818 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-2025-07-14 00:39:10,824 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5052
-2025-07-14 00:39:10,833 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5052 "GET /api/health HTTP/1.1" 200 60
-2025-07-14 00:39:10,834 - gopiai.ui.components.crewai_client - DEBUG - Отправка запроса в CrewAI: {'message': 'привет', 'metadata': {'session_id': 'session_1752433741'}, 'async_processing': True, 'system_prompt': 'Ты - полезный ассистент. Отвечай на русском языке. Будь вежливым и кратким. Если не знаешь ответа, так и скажи.'}
-2025-07-14 00:39:10,840 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5052
-2025-07-14 00:39:10,852 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5052 "POST /api/process HTTP/1.1" 200 151
-2025-07-14 00:39:10,854 - gopiai.ui.components.crewai_client - INFO - 🔄 [TASK] Получен task_id для асинхронной обработки: 2cdfa9ae-26c2-45aa-8542-a6f81c67126a
-2025-07-14 00:39:10,858 - gopiai.ui.components.chat_async_handler - INFO - Task polling started for task_id: 2cdfa9ae-26c2-45aa-8542-a6f81c67126a
-2025-07-14 00:39:11,876 - gopiai.ui.components.chat_async_handler - ERROR - Error while polling task status: 'CrewAIClient' object has no attribute 'get_task_status'
-Traceback (most recent call last):
-  File "C:\Users\crazy\GOPI_AI_MODULES\GopiAI-UI\gopiai\ui\components\chat_async_handler.py", line 68, in _check_task_status
-    status = self.crew_ai_client.get_task_status(self._current_task_id)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'CrewAIClient' object has no attribute 'get_task_status'. Did you mean: 'check_task_status'?
-2025-07-14 00:39:11,886 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
+2025-07-14 04:23:51,535 - gopiai.ui.utils.theme_manager - INFO - Тема успешно применена при инициализации
+[DEBUG] Vyizvan metod send_message v ChatWidget
+2025-07-14 04:24:13,346 - gopiai.ui.components.chat_widget - INFO - [DEBUG] Vyizvan metod send_message v ChatWidget
+[DEBUG] Tekst soobscheniya: привет
+2025-07-14 04:24:13,348 - gopiai.ui.components.chat_widget - INFO - [DEBUG] Tekst soobscheniya: привет
+2025-07-14 04:24:13,351 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
+2025-07-14 04:24:13,356 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
+[DEBUG] Podgotovlenyi dannyie dlya otpravki: {'message': 'привет', 'metadata': {'session_id': 'session_1752447230'}}
+2025-07-14 04:24:13,358 - gopiai.ui.components.chat_widget - INFO - [DEBUG] Podgotovlenyi dannyie dlya otpravki: {'message': 'привет', 'metadata': {'session_id': 'session_1752447230'}}
+[DEBUG] Vyzyvaem async_handler.process_message...
+2025-07-14 04:24:13,360 - gopiai.ui.components.chat_widget - INFO - [DEBUG] Vyzyvaem async_handler.process_message...
+[DEBUG-ASYNC] Vyizvan metod process_message v ChatAsyncHandler
+2025-07-14 04:24:13,361 - gopiai.ui.components.chat_async_handler - INFO - [DEBUG-ASYNC] Vyizvan metod process_message v ChatAsyncHandler
+[DEBUG-ASYNC] Dannyie soobscheniya: {'message': 'привет', 'metadata': {'session_id': 'session_1752447230'}}
+2025-07-14 04:24:13,362 - gopiai.ui.components.chat_async_handler - INFO - [DEBUG-ASYNC] Dannyie soobscheniya: {'message': 'привет', 'metadata': {'session_id': 'session_1752447230'}}
+[DEBUG-ASYNC] Zapuskaem potok dlya obrabotki soobscheniya...
+2025-07-14 04:24:13,364 - gopiai.ui.components.chat_async_handler - INFO - [DEBUG-ASYNC] Zapuskaem potok dlya obrabotki soobscheniya...
+[DEBUG-ASYNC] Potok zapuschen uspeshno[DEBUG-ASYNC-BG] Nachalo fonovoy obrabotki soobscheniya
 
+2025-07-14 04:24:13,369 - gopiai.ui.components.chat_async_handler - INFO - [DEBUG-ASYNC] Potok zapuschen uspeshno
+[DEBUG] async_handler.process_message vyzvan uspeshno2025-07-14 04:24:13,369 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Nachalo fonovoy obrabotki soobscheniya
 
+[DEBUG-ASYNC-BG] Otpravka soobscheniya v CrewAI: привет2025-07-14 04:24:13,371 - gopiai.ui.components.chat_widget - INFO - [DEBUG] async_handler.process_message vyzvan uspeshno
+
+2025-07-14 04:24:13,373 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Otpravka soobscheniya v CrewAI: привет
+[DEBUG-ASYNC-BG] Proveryaem dostupnost CrewAI API...
+2025-07-14 04:24:13,379 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5052
+2025-07-14 04:24:13,385 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5052 "GET /api/health HTTP/1.1" 200 60
+[DEBUG-ASYNC-BG] CrewAI API dostupen: True
+2025-07-14 04:24:13,390 - gopiai.ui.components.chat_async_handler - DEBUG - [DEBUG-ASYNC-BG] CrewAI API dostupen: True
+[DEBUG-ASYNC-BG] Vyzyvaem crew_ai_client.process_request...
+2025-07-14 04:24:13,394 - gopiai.ui.components.chat_async_handler - DEBUG - [DEBUG-ASYNC-BG] Vyzyvaem crew_ai_client.process_request...
+2025-07-14 04:24:13,396 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Начало обработки запроса. force_crewai=False, timeout=None
+2025-07-14 04:24:13,397 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Сообщение: привет
+2025-07-14 04:24:13,399 - gopiai.ui.components.crewai_client - DEBUG - привет
+2025-07-14 04:24:13,401 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Анализ эмоционального состояния...
+2025-07-14 04:24:13,402 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Установлен флаг async_processing=True
+2025-07-14 04:24:13,404 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Добавлен стандартный системный промпт в metadata
+2025-07-14 04:24:13,406 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Подготовка к отправке запроса в CrewAI API
+2025-07-14 04:24:13,407 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Установлен таймаут 60 секунд для запроса
+2025-07-14 04:24:13,408 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Отправка POST запроса на http://127.0.0.1:5052/api/process с заголовком Content-Type: application/json; charset=utf-8
+2025-07-14 04:24:13,412 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5052
+2025-07-14 04:24:13,418 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5052 "POST /api/process HTTP/1.1" 200 151
+2025-07-14 04:24:13,422 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Получен ответ от сервера: HTTP 200
+2025-07-14 04:24:13,423 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Успешно парсим JSON ответ: {'created_at': '2025-07-14T04:24:13.416301', 'message': 'Task queued for processing', 'status': 'pending', 'task_id': '57742049-2ebf-4313-9012-04dc8030aa0b'}
+2025-07-14 04:24:13,425 - gopiai.ui.components.crewai_client - INFO - [TASK-START] 🔄 Получен task_id для асинхронной обработки: 57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:13,427 - gopiai.ui.components.crewai_client - DEBUG - [TASK-START] Начальный статус задачи: pending
+[DEBUG-ASYNC-BG] Poluchen otvet ot CrewAI: {'created_at': '2025-07-14T04:24:13.416301', 'message': 'Task queued for processing', 'status': 'pending', 'task_id': '57742049-2ebf-4313-9012-04dc8030aa0b'}
+2025-07-14 04:24:13,438 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Poluchen otvet ot CrewAI: {'created_at': '2025-07-14T04:24:13.416301', 'message': 'Task queued for processing', 'status': 'pending', 'task_id': '57742049-2ebf-4313-9012-04dc8030aa0b'}
+[DEBUG-ASYNC-BG] Poluchen task_id: 57742049-2ebf-4313-9012-04dc8030aa0b, zapusk oprosa statusa
+2025-07-14 04:24:13,442 - gopiai.ui.components.chat_async_handler - INFO - [ASYNC] Poluchen task_id: 57742049-2ebf-4313-9012-04dc8030aa0b, zapusk oprosa statusa
+2025-07-14 04:24:13,444 - gopiai.ui.components.chat_async_handler - INFO - Task polling started for task_id: 57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:14,457 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #1 проверки статуса задачи 57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:14,459 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:14,461 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5052/api/task/57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:14,464 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5052
+2025-07-14 04:24:14,467 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5052 "GET /api/task/57742049-2ebf-4313-9012-04dc8030aa0b HTTP/1.1" 200 253
+2025-07-14 04:24:14,469 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 57742049-2ebf-4313-9012-04dc8030aa0b: {'completed_at': None, 'created_at': '2025-07-14T04:24:13.416301', 'error': None, 'message': 'привет', 'result': None, 'started_at': '2025-07-14T04:24:13.417327', 'status': 'processing', 'task_id': '57742049-2ebf-4313-9012-04dc8030aa0b'}
+2025-07-14 04:24:14,472 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 57742049-2ebf-4313-9012-04dc8030aa0b в процессе. Статус: processing
+2025-07-14 04:24:14,477 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': None, 'created_at': '2025-07-14T04:24:13.416301', 'error': None, 'message': 'привет', 'result': None, 'started_at': '2025-07-14T04:24:13.417327', 'status': 'processing', 'task_id': '57742049-2ebf-4313-9012-04dc8030aa0b'}
+2025-07-14 04:24:14,479 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 57742049-2ebf-4313-9012-04dc8030aa0b в процессе: processing
+2025-07-14 04:24:15,457 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #2 проверки статуса задачи 57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:15,458 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:15,460 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5052/api/task/57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:15,463 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5052
+2025-07-14 04:24:15,467 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5052 "GET /api/task/57742049-2ebf-4313-9012-04dc8030aa0b HTTP/1.1" 200 253
+2025-07-14 04:24:15,468 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 57742049-2ebf-4313-9012-04dc8030aa0b: {'completed_at': None, 'created_at': '2025-07-14T04:24:13.416301', 'error': None, 'message': 'привет', 'result': None, 'started_at': '2025-07-14T04:24:13.417327', 'status': 'processing', 'task_id': '57742049-2ebf-4313-9012-04dc8030aa0b'}
+2025-07-14 04:24:15,470 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 57742049-2ebf-4313-9012-04dc8030aa0b в процессе. Статус: processing
+2025-07-14 04:24:15,476 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': None, 'created_at': '2025-07-14T04:24:13.416301', 'error': None, 'message': 'привет', 'result': None, 'started_at': '2025-07-14T04:24:13.417327', 'status': 'processing', 'task_id': '57742049-2ebf-4313-9012-04dc8030aa0b'}
+2025-07-14 04:24:15,480 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 57742049-2ebf-4313-9012-04dc8030aa0b в процессе: processing
+2025-07-14 04:24:16,453 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #3 проверки статуса задачи 57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:16,453 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:16,455 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5052/api/task/57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:16,458 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5052
+2025-07-14 04:24:16,462 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5052 "GET /api/task/57742049-2ebf-4313-9012-04dc8030aa0b HTTP/1.1" 200 457
+2025-07-14 04:24:16,464 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 57742049-2ebf-4313-9012-04dc8030aa0b: {'completed_at': '2025-07-14T04:24:16.211893', 'created_at': '2025-07-14T04:24:13.416301', 'error': None, 'message': 'привет', 'result': {'analysis': {'analysis_time': 2.792449951171875, 'complexity': 1, 'requires_crewai': False, 'type': 'general'}, 'processed_with_crewai': False, 'response': 'Привет!'}, 'started_at': '2025-07-14T04:24:13.417327', 'status': 'completed', 'task_id': '57742049-2ebf-4313-9012-04dc8030aa0b'}
+2025-07-14 04:24:16,467 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 57742049-2ebf-4313-9012-04dc8030aa0b в процессе. Статус: completed
+2025-07-14 04:24:16,468 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': '2025-07-14T04:24:16.211893', 'created_at': '2025-07-14T04:24:13.416301', 'error': None, 'message': 'привет', 'result': {'analysis': {'analysis_time': 2.792449951171875, 'complexity': 1, 'requires_crewai': False, 'type': 'general'}, 'processed_with_crewai': False, 'response': 'Привет!'}, 'started_at': '2025-07-14T04:24:13.417327', 'status': 'completed', 'task_id': '57742049-2ebf-4313-9012-04dc8030aa0b'}
+2025-07-14 04:24:16,472 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 57742049-2ebf-4313-9012-04dc8030aa0b в процессе: completed
+2025-07-14 04:24:17,479 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #4 проверки статуса задачи 57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:17,479 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:17,481 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5052/api/task/57742049-2ebf-4313-9012-04dc8030aa0b
+2025-07-14 04:24:17,484 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5052
+2025-07-14 04:24:17,488 - urllib3.connectionpool - DEBUG - http://127.0.0.1:5052 "GET /api/task/57742049-2ebf-4313-9012-04dc8030aa0b HTTP/1.1" 200 457
+2025-07-14 04:24:17,489 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 57742049-2ebf-4313-9012-04dc8030aa0b: {'completed_at': '2025-07-14T04:24:16.211893', 'created_at': '2025-07-14T04:24:13.416301', 'error': None, 'message': 'привет', 'result': {'analysis': {'analysis_time': 2.792449951171875, 'complexity': 1, 'requires_crewai': False, 'type': 'general'}, 'processed_with_crewai': False, 'response': 'Привет!'}, 'started_at': '2025-07-14T04:24:13.417327', 'status': 'completed', 'task_id': '57742049-2ebf-4313-9012-04dc8030aa0b'}
+2025-07-14 04:24:17,493 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 57742049-2ebf-4313-9012-04dc8030aa0b в процессе. Статус: completed
+2025-07-14 04:24:17,496 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': '2025-07-14T04:24:16.211893', 'created_at': '2025-07-14T04:24:13.416301', 'error': None, 'message': 'привет', 'result': {'analysis': {'analysis_time': 2.792449951171875, 'complexity': 1, 'requires_crewai': False, 'type': 'general'}, 'processed_with_crewai': False, 'response': 'Привет!'}, 'started_at': '2025-07-14T04:24:13.417327', 'status': 'completed', 'task_id': '57742049-2ebf-4313-9012-04dc8030aa0b'}
+2025-07-14 04:24:17,498 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 57742049-2ebf-4313-9012-04dc8030aa0b в процессе: completed
+
+(gopiai_env) C:\Users\crazy\GOPI_AI_MODULES\GopiAI-UI>

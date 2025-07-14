@@ -30,21 +30,36 @@ class ChatWidget(QWidget):
         self.setObjectName("ChatWidget")
         self.setAcceptDrops(True)
         
+        # Инициализируем базовые переменные
+        self.session_id = f"session_{int(time.time())}"
+        self._waiting_message_id = None
+        self.theme_manager = None
+        
+        logger.info("[CHAT] Инициализация ChatWidget начата")
+        
+        # Сначала настраиваем UI, чтобы все элементы были готовы
+        self._setup_ui()
+        
+        # Затем инициализируем менеджер памяти
+        logger.info("[CHAT] Инициализация менеджера памяти")
         self.memory_manager = get_memory_manager()
+        
+        # Инициализируем клиент CrewAI
+        logger.info("[CHAT] Инициализация CrewAI клиента")
         self.crew_ai_client = CrewAIClient()
         
+        # Создаем обработчики в правильном порядке
+        logger.info("[CHAT] Инициализация обработчиков сообщений")
         self.async_handler = ChatAsyncHandler(self.crew_ai_client, self)
         self.ui_assistant_handler = ChatUIAssistantHandler(self)
         self.browser_handler = ChatBrowserHandler(self)
         
-        self.session_id = f"session_{int(time.time())}"
-        self._waiting_message_id = None
-        self.theme_manager = None
-
-        self._setup_ui()
-        
+        # Подключаем сигналы в конце, когда все компоненты уже созданы
+        logger.info("[CHAT] Подключение сигналов обработчиков")
         self.async_handler.response_ready.connect(self._handle_response)
         self.async_handler.status_update.connect(self._update_status_message)
+        
+        logger.info("[CHAT] Инициализация ChatWidget завершена")
 
     def _setup_ui(self):
         """Создает и настраивает все элементы интерфейса, как в оригинальной версии."""
@@ -126,14 +141,34 @@ class ChatWidget(QWidget):
     # send_message, _handle_response, append_message, и т.д.
 
     def send_message(self):
+        print("[DEBUG] Вызван метод send_message в ChatWidget")
+        logger.info("[CHAT] Вызван метод send_message в ChatWidget")
+        
         text = self.input.toPlainText().strip()
         if not text: return
+        
+        print(f"[DEBUG] Текст сообщения: {text}")
+        logger.info(f"[CHAT] Текст сообщения: {text}")
+        
         self.append_message("Вы", text)
         self.input.clear()
         self.send_btn.setEnabled(False)
         self._waiting_message_id = self.append_message("Ассистент", "⏳ Обрабатываю запрос...")
+        
         message_data = {"message": text, "metadata": {"session_id": self.session_id}}
-        self.async_handler.process_message(message_data)
+        print(f"[DEBUG] Подготовлены данные для отправки: {message_data}")
+        logger.info(f"[CHAT] Подготовлены данные для отправки: {message_data}")
+        
+        print("[DEBUG] Вызываем async_handler.process_message...")
+        logger.info("[CHAT] Вызываем async_handler.process_message...")
+        
+        try:
+            self.async_handler.process_message(message_data)
+            print("[DEBUG] async_handler.process_message вызван успешно")
+            logger.info("[CHAT] async_handler.process_message вызван успешно")
+        except Exception as e:
+            print(f"[DEBUG-ERROR] Ошибка при вызове async_handler.process_message: {e}")
+            logger.error(f"[CHAT-ERROR] Ошибка при вызове async_handler.process_message: {e}", exc_info=True)
 
     @Slot(str)
     def _update_status_message(self, status_text: str):

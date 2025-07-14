@@ -8,6 +8,7 @@ and long-term (semantic search) memory using txtai, without any UI dependencies.
 import os
 import json
 import logging
+import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple, Union
 
@@ -120,7 +121,7 @@ class MemoryManager:
             
             # Configure embeddings with persistent storage
             self.embeddings = Embeddings({
-                'path': 'sentence-transformers/all-MiniLM-L6-v2',
+                'model': 'sentence-transformers/all-MiniLM-L6-v2',  # Используем 'model' вместо 'path' для модели
                 'gpu': False,  # Disable GPU for testing
                 'batch': 8,
                 'content': True,  # Store original content

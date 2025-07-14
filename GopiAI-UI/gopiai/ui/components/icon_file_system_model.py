@@ -34,6 +34,7 @@ QtConstants = {
 # Настройка логгера
 logger = logging.getLogger("icon_manager")
 handler = logging.StreamHandler(sys.stdout)
+# Убираем параметр encoding, так как он не поддерживается в logging.Formatter
 handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
@@ -84,7 +85,7 @@ class UniversalIconManager:
                     with open(svg_file, 'r', encoding='utf-8') as f:
                         self.lucide_icons[icon_name] = f.read()
                 
-                logger.info(f"✅ Загружено {len(self.lucide_icons)} Lucide иконок")
+                logger.info(f"[OK] Загружено {len(self.lucide_icons)} Lucide иконок")
                 self.lucide_manager = self  # Используем себя в качестве менеджера
                 return True
             else:
@@ -223,15 +224,15 @@ class UniversalIconManager:
         
         for svg_path in icon_paths:
             if svg_path.exists():
-                # print(f"✅ Загружаем SVG иконку: {svg_path}")
+                # print(f"[OK] Загружаем SVG иконку: {svg_path}")
                 icon = QIcon(str(svg_path))
                 if not icon.isNull():
                     return icon
                 else:
-                    # print(f"❌ Не удалось загрузить SVG: {svg_path}")
+                    # print(f"[ERROR] Не удалось загрузить SVG: {svg_path}")
                     pass
         
-        # print(f"❌ SVG иконка не найдена: {icon_name}")
+        # print(f"[ERROR] SVG иконка не найдена: {icon_name}")
         return None
     
     def _create_fallback_icon(self, icon_name: str, size: QSize) -> QIcon:

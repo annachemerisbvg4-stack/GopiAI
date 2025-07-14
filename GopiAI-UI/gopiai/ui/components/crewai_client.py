@@ -25,8 +25,22 @@ EmotionalState = None
 logger = logging.getLogger(__name__)
 
 # Создаем директорию для логов, если её нет
-logs_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'logs')
-os.makedirs(logs_dir, exist_ok=True)
+# Используем текущую директорию или директорию приложения
+try:
+    # Пробуем получить путь к директории приложения
+    app_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    logs_dir = os.path.join(app_dir, 'logs')
+    print(f"[DEBUG-LOGS-PATH] CrewAIClient пробуем путь 1: {logs_dir}")
+    
+    # Проверяем, что можем создать директорию по этому пути
+    os.makedirs(logs_dir, exist_ok=True)
+except Exception as e:
+    print(f"[DEBUG-LOGS-PATH] Ошибка при создании первичного пути: {e}")
+    
+    # Используем текущую директорию
+    logs_dir = os.path.join(os.getcwd(), 'logs')
+    print(f"[DEBUG-LOGS-PATH] CrewAIClient используем текущую директорию: {logs_dir}")
+    os.makedirs(logs_dir, exist_ok=True)
 
 # Настраиваем файловый обработчик для логов CrewAI клиента
 crewai_log_file = os.path.join(logs_dir, 'crewai_client.log')
@@ -260,12 +274,20 @@ class CrewAIClient:
                 system_prompt += " Пользователь раздражен, сохраняй спокойствие и будь особенно вежливым."
             elif emotion == 'happy':
                 system_prompt += " Пользователь в хорошем настроении, можно быть немного более неформальным."
-                
-        if 'system_prompt' not in message:
-            message['system_prompt'] = system_prompt
-            logger.debug("[REQUEST] Добавлен стандартный системный промпт")
+        
+        # Перемещаем system_prompt в metadata вместо корня запроса, так как сервер ожидает только message и metadata
+        if 'metadata' not in message:
+            message['metadata'] = {}
+            
+        # Добавляем system_prompt в metadata
+        if 'system_prompt' in message:
+            # Если system_prompt уже есть в корне запроса, перемещаем его в metadata
+            message['metadata']['system_prompt'] = message.pop('system_prompt')
+            logger.debug("[REQUEST] Пользовательский системный промпт перемещен в metadata")
         else:
-            logger.debug("[REQUEST] Используется пользовательский системный промпт")
+            # Добавляем стандартный системный промпт в metadata
+            message['metadata']['system_prompt'] = system_prompt
+            logger.debug("[REQUEST] Добавлен стандартный системный промпт в metadata")
             
         logger.debug(f"[REQUEST] Подготовка к отправке запроса в CrewAI API")
         

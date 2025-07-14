@@ -10,8 +10,22 @@ from PySide6.QtCore import QObject, Signal, QTimer, Slot
 logger = logging.getLogger(__name__)
 
 # Создаем директорию для логов, если её нет
-logs_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'logs')
-os.makedirs(logs_dir, exist_ok=True)
+# Используем текущую директорию или директорию приложения
+try:
+    # Пробуем получить путь к директории приложения
+    app_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    logs_dir = os.path.join(app_dir, 'logs')
+    print(f"[DEBUG-LOGS-PATH] ChatAsyncHandler пробуем путь 1: {logs_dir}")
+    
+    # Проверяем, что можем создать директорию по этому пути
+    os.makedirs(logs_dir, exist_ok=True)
+except Exception as e:
+    print(f"[DEBUG-LOGS-PATH] Ошибка при создании первичного пути: {e}")
+    
+    # Используем текущую директорию
+    logs_dir = os.path.join(os.getcwd(), 'logs')
+    print(f"[DEBUG-LOGS-PATH] ChatAsyncHandler используем текущую директорию: {logs_dir}")
+    os.makedirs(logs_dir, exist_ok=True)
 
 # Настраиваем файловый обработчик для логов асинхронного обработчика
 async_log_file = os.path.join(logs_dir, 'chat_async_handler.log')
@@ -57,15 +71,34 @@ class ChatAsyncHandler(QObject):
 
     def process_message(self, message_data: dict):
         """Запускает асинхронную обработку сообщения в отдельном потоке."""
-        worker = threading.Thread(
-            target=self._process_in_background,
-            args=(message_data,),
-            daemon=True,
-        )
-        worker.start()
+        print("[DEBUG-ASYNC] Вызван метод process_message в ChatAsyncHandler")
+        logger.info("[ASYNC] Вызван метод process_message в ChatAsyncHandler")
+        
+        try:
+            print(f"[DEBUG-ASYNC] Данные сообщения: {message_data}")
+            logger.info(f"[ASYNC] Данные сообщения: {message_data}")
+            
+            worker = threading.Thread(
+                target=self._process_in_background,
+                args=(message_data,),
+                daemon=True,
+            )
+            
+            print("[DEBUG-ASYNC] Запускаем поток для обработки сообщения...")
+            logger.info("[ASYNC] Запускаем поток для обработки сообщения...")
+            
+            worker.start()
+            
+            print("[DEBUG-ASYNC] Поток запущен успешно")
+            logger.info("[ASYNC] Поток запущен успешно")
+            
+        except Exception as e:
+            print(f"[DEBUG-ASYNC-ERROR] Ошибка при запуске потока: {e}")
+            logger.error(f"[ASYNC-ERROR] Ошибка при запуске потока: {e}", exc_info=True)
 
     def _process_in_background(self, message_data: dict):
         try:
+            print("[DEBUG-ASYNC-BG] Начало фоновой обработки сообщения")
             logger.debug(f"[ASYNC] Начало фоновой обработки сообщения")
             
             # Преобразуем сообщение в строку для логирования
@@ -74,36 +107,57 @@ class ChatAsyncHandler(QObject):
                 msg_log = f"{msg_text[:50]}..." if len(msg_text) > 50 else msg_text
             else:
                 msg_log = f"{message_data[:50]}..." if len(str(message_data)) > 50 else message_data
-                
+            
+            print(f"[DEBUG-ASYNC-BG] Отправка сообщения в CrewAI: {msg_log}")
             logger.debug(f"[ASYNC] Отправка сообщения в CrewAI: {msg_log}")
             
-            response = self.crew_ai_client.process_request(message_data)
-            if not response:
-                logger.error("[ASYNC] Получен пустой ответ от сервера")
-                raise ValueError("Received an empty response from the server.")
+            print("[DEBUG-ASYNC-BG] Проверяем доступность CrewAI API...")
+            is_available = self.crew_ai_client.is_available(force_check=True)
+            print(f"[DEBUG-ASYNC-BG] CrewAI API доступен: {is_available}")
+            logger.debug(f"[ASYNC] CrewAI API доступен: {is_available}")
             
+            if not is_available:
+                print("[DEBUG-ASYNC-BG-ERROR] CrewAI API недоступен!")
+                logger.error("[ASYNC-ERROR] CrewAI API недоступен!")
+                self.response_ready.emit({"response": "Ошибка: Сервер CrewAI недоступен"}, True)
+                return
+            
+            print("[DEBUG-ASYNC-BG] Вызываем crew_ai_client.process_request...")
+            logger.debug("[ASYNC] Вызываем crew_ai_client.process_request...")
+            
+            response = self.crew_ai_client.process_request(message_data)
+            
+            print(f"[DEBUG-ASYNC-BG] Получен ответ от CrewAI: {response}")
             logger.debug(f"[ASYNC] Получен ответ от CrewAI: {response}")
+            
+            if not response:
+                print("[DEBUG-ASYNC-BG-ERROR] Получен пустой ответ от сервера")
+                logger.error("[ASYNC-ERROR] Получен пустой ответ от сервера")
+                raise ValueError("Received an empty response from the server.")
             
             if isinstance(response, dict) and "task_id" in response:
                 # ### ИЗМЕНЕНО: Не запускаем таймер напрямую, а испускаем сигнал ###
+                print(f"[DEBUG-ASYNC-BG] Получен task_id: {response['task_id']}, запуск опроса статуса")
                 logger.info(f"[ASYNC] Получен task_id: {response['task_id']}, запуск опроса статуса")
                 self.start_polling_signal.emit(response["task_id"])
             else:
+                print("[DEBUG-ASYNC-BG] Получен синхронный ответ, отправка в UI")
                 logger.info("[ASYNC] Получен синхронный ответ, отправка в UI")
                 self.response_ready.emit(response, False)
 
         except Exception as e:
+            print(f"[DEBUG-ASYNC-BG-ERROR] Ошибка в фоновой обработке: {e}")
             logger.error(f"[ASYNC-ERROR] Ошибка в фоновой обработке: {e}", exc_info=True)
             self.response_ready.emit(str(e), True)
             
     # ### ИЗМЕНЕНО: Создаем новый слот, который будет выполняться в основном потоке ###
     @Slot(str)
     def _start_polling_from_main_thread(self, task_id: str):
-        """Starts the timer to poll for a task's status. Must be called from the main UI thread."""
+        """Запускает таймер для опроса статуса задачи. Должен вызываться из основного UI потока."""
         self._current_task_id = task_id
         self._current_polling_attempt = 0
         self._polling_timer.start(1000) # 1 секунда
-        logger.info(f"Task polling started for task_id: {task_id}")
+        logger.info(f"[POLLING] Запущен опрос статуса для task_id: {task_id}")
         self.status_update.emit("⏳ Обрабатываю запрос...")
 
     def _check_task_status(self):
@@ -125,7 +179,8 @@ class ChatAsyncHandler(QObject):
             logger.debug(f"[POLLING] Получен статус: {status}")
             
             # Ожидаем, что сервер возвращает словарь с ключами `done` и `result`
-            if status.get("done"):
+            # Также проверяем статус на "completed" или "error" для завершения опроса
+            if status.get("done") or status.get("status") == "completed" or status.get("status") == "error":
                 logger.info(f"[POLLING-COMPLETE] Задача {self._current_task_id} завершена после {self._current_polling_attempt} попыток")
                 self._polling_timer.stop()
                 
@@ -149,6 +204,15 @@ class ChatAsyncHandler(QObject):
                 status_text = status.get("status", "⏳ Обрабатываю запрос...")
                 logger.debug(f"[POLLING-PROGRESS] Задача {self._current_task_id} в процессе: {status_text}")
                 self.status_update.emit(status_text)
+                
+                # Проверяем статус на "completed" или "error" для завершения опроса
+                if status_text == "completed" or status_text == "error":
+                    logger.info(f"[POLLING-STATUS-COMPLETE] Задача {self._current_task_id} завершена со статусом: {status_text}")
+                    self._polling_timer.stop()
+                    result = status.get("result", {"response": f"Задача завершена со статусом: {status_text}"})
+                    self._current_task_id = None
+                    self._current_polling_attempt = 0
+                    self.response_ready.emit(result, status_text == "error")
                 
                 # Проверяем на зацикливание - если больше 30 попыток, останавливаем
                 if self._current_polling_attempt > 30:
