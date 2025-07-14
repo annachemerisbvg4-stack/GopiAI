@@ -74,8 +74,30 @@ class SmartDelegator:
         messages = [{"role": "system", "content": system_prompt}]
         
         # Добавляем краткосрочную память (историю чата)
-        # Убираем системные сообщения и берем последние 10 реплик
-        history_to_add = [msg for msg in chat_history if msg.get("role") != "system"][-10:]
+        # Убираем системные сообщения и берем последние 20 реплик
+        # Фильтруем сообщения: отсеиваем системные и служебные сообщения
+        filtered_history = []
+        for msg in chat_history:
+            if msg.get("role") == "system":
+                continue  # Пропускаем системные сообщения
+                
+            # Проверяем содержимое на наличие служебных сообщений
+            content = msg.get("content", "")
+            if content and isinstance(content, str):
+                if "⏳ Обрабатываю запрос" in content:
+                    continue  # Пропускаем заглушки запросов
+                if "Произошла ошибка" in content:
+                    continue  # Пропускаем сообщения об ошибках
+            
+            filtered_history.append(msg)
+            
+        # Берем только последние 20 сообщений после фильтрации
+        history_to_add = filtered_history[-20:]  # Увеличено с 10 до 20 сообщений
+        
+        # Добавляем логирование размера окна кратковременной памяти
+        logger.info(f"Окно кратковременной памяти: добавлено {len(history_to_add)} сообщений из {len(chat_history)} в истории")
+        if len(history_to_add) > 0:
+            logger.debug(f"Первое сообщение в окне: {history_to_add[0].get('role')}: {history_to_add[0].get('content')[:30]}...")
         messages.extend(history_to_add)
         
         # Добавляем текущий вопрос пользователя, если его еще нет в истории
