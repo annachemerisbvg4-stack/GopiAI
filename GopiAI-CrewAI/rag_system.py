@@ -4,6 +4,7 @@ import os
 import json
 import logging
 import uuid
+import datetime
 from pathlib import Path
 from typing import List, Dict, Optional
 
@@ -133,6 +134,8 @@ class RAGSystem:
             with open(CHATS_FILE_PATH, 'r', encoding='utf-8') as f:
                 all_messages = json.load(f)
             
+            logger.info(f"Загружено сообщений из chats.json: {len(all_messages)}")
+            
             if not all_messages:
                 logger.info("Chat history file is empty, nothing to index.")
                 # Создаем пустой индекс, чтобы система работала корректно
@@ -141,18 +144,79 @@ class RAGSystem:
                 self.embeddings.save(str(VECTOR_INDEX_PATH))
                 return
 
-            documents_to_index = [
-                (msg.get("id", f"msg_{i}_{uuid.uuid4()}"), msg, None)
-                for i, msg in enumerate(all_messages) if isinstance(msg, dict) and msg.get("content")
-            ]
+            # Отладочный вывод: проверяем содержимое первого сообщения
+            if len(all_messages) > 0:
+                first_msg = all_messages[0]
+                logger.info(f"Пример сообщения: {first_msg}")
             
-            if documents_to_index:
-                logger.info(f"Начинаю индексацию {len(documents_to_index)} сообщений...")
-                self.embeddings.index(documents_to_index)
-                self.embeddings.save(str(VECTOR_INDEX_PATH))
-                logger.info(f"✅ Индексация завершена. База сохранена. Записей: {self.embeddings.count()}")
+            # Подсчитываем, сколько сообщений проходят каждый этап фильтрации
+            dict_count = sum(1 for msg in all_messages if isinstance(msg, dict))
+            content_count = sum(1 for msg in all_messages if isinstance(msg, dict) and "content" in msg)
+            non_empty_count = sum(1 for msg in all_messages if isinstance(msg, dict) and msg.get("content") and msg["content"].strip())
+            non_placeholder_count = sum(1 for msg in all_messages if isinstance(msg, dict) and msg.get("content") 
+                                     and msg["content"].strip() and "⏳" not in msg["content"])
+            
+            logger.info(f"Статистика фильтрации: всего={len(all_messages)}, dict={dict_count}, "
+                      f"с полем content={content_count}, непустые={non_empty_count}, без заглушек={non_placeholder_count}")
+
+            # Добавляем более строгую фильтрацию служебных сообщений
+            # Исправленная фильтрация и подготовка данных для индексации
+            valid_messages = []
+            for i, msg in enumerate(all_messages):
+                # Проверка структуры и содержания сообщения
+                if not isinstance(msg, dict):
+                    continue
+                if not msg.get("content") or not msg["content"].strip():
+                    continue
+                if "⏳ Обрабатываю запрос" in msg["content"]:
+                    continue
+                if "Произошла ошибка" in msg["content"]:
+                    continue
+                
+                # Если прошли все проверки, добавляем сообщение
+                msg_id = msg.get("id", f"msg_{i}_{uuid.uuid4()}")
+                valid_messages.append((msg_id, msg["content"], None))
+            
+            # Показываем примеры сообщений, которые мы пытаемся индексировать
+            if valid_messages:
+                logger.info(f"Пример сообщения для индексации: {valid_messages[0]}")
+                
+            if valid_messages:
+                logger.info(f"Начинаю индексацию {len(valid_messages)} сообщений...")
+                
+                # Добавляем каждое сообщение по одному для диагностики
+                try:
+                    # Сначала пробуем простой тестовый документ
+                    test_doc = [("test_msg", "This is a test message", None)]
+                    self.embeddings.index(test_doc)
+                    logger.info(f"Test document indexed. Count: {self.embeddings.count()}")
+                    
+                    # Теперь индексируем все сообщения
+                    self.embeddings.index(valid_messages)
+                    self.embeddings.save(str(VECTOR_INDEX_PATH))
+                    logger.info(f"✅ Индексация завершена. База сохранена. Записей: {self.embeddings.count()}")
+                except Exception as e:
+                    logger.error(f"Ошибка при индексации: {e}", exc_info=True)
+                    
+                    # Пробуем индексировать по одному
+                    logger.info("Пробуем индексировать по одному сообщению...")
+                    for idx, (doc_id, content, _) in enumerate(valid_messages[:5]):  # Первые 5 сообщений для теста
+                        try:
+                            self.embeddings.index([(doc_id, content, None)])
+                            logger.info(f"  - Сообщение {idx} добавлено. Записей: {self.embeddings.count()}")
+                        except Exception as e2:
+                            logger.error(f"  - Ошибка при индексации сообщения {idx}: {e2}")
+                    
+                    self.embeddings.save(str(VECTOR_INDEX_PATH))
+                    logger.info(f"Записей после попытки индексировать по одному: {self.embeddings.count()}")
+
             else:
                 logger.warning("В файле истории не найдено валидных сообщений для индексации.")
+                # Создаем пустой индекс, чтобы система работала корректно
+                self.embeddings.index([("dummy_id", {"content": "dummy_text"}, None)])
+                self.embeddings.delete(["dummy_id"])
+                self.embeddings.save(str(VECTOR_INDEX_PATH))
+                logger.info("Создан пустой индекс для корректной работы системы.")
 
         except Exception as e:
             logger.error(f"❌ Ошибка при переиндексации чатов: {e}", exc_info=True)
