@@ -1,8 +1,21 @@
 # --- START OF FILE side_panel.py (ФИНАЛЬНАЯ ВЕРСИЯ) ---
 
 import logging
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
-from PySide6.QtCore import QRect, QPoint, Qt
+import json
+import os
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QFrame, QTabWidget
+from PySide6.QtCore import QRect, QPoint, Qt, Signal
+
+# Импортируем менеджер инструментов
+from gopiai.ui.components.tools_panel_utils import get_tools_manager
+
+# Импортируем панель инструментов Smithery MCP
+try:
+    from gopiai.ui.components.smithery_mcp_panel import SmitheryMcpPanel
+    SMITHERY_AVAILABLE = True
+except ImportError:
+    logging.warning("Панель инструментов Smithery MCP не доступна.")
+    SMITHERY_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -55,16 +68,72 @@ class SlidingPanel(QWidget):
         
         self.main_layout.addLayout(header_layout)
         
-        # Контейнер для кнопок, которые будут добавлены извне
-        self.content_layout = QVBoxLayout()
+        # Создаем вкладки для разных типов инструментов
+        self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("background-color: transparent;")
+        
+        # Вкладка стандартных инструментов
+        self.standard_tools_tab = QWidget()
+        self.standard_tools_tab.setStyleSheet("background-color: transparent;")
+        self.standard_tools_layout = QVBoxLayout(self.standard_tools_tab)
+        self.standard_tools_layout.setContentsMargins(0, 0, 0, 0)
+        self.standard_tools_layout.setSpacing(5)
+        
+        # Создаем область прокрутки для стандартных инструментов
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QFrame.NoFrame)
+        self.scroll_area.setStyleSheet("background-color: transparent;")
+        
+        # Контейнер для карточек инструментов
+        self.tools_container = QWidget()
+        self.tools_container.setStyleSheet("background-color: transparent;")
+        self.content_layout = QVBoxLayout(self.tools_container)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.setSpacing(10)
-        self.main_layout.addLayout(self.content_layout)
+        self.content_layout.addStretch()
+        
+        self.scroll_area.setWidget(self.tools_container)
+        self.standard_tools_layout.addWidget(self.scroll_area)
+        
+        self.tabs.addTab(self.standard_tools_tab, "Стандартные")
+        
+        # Вкладка инструментов Smithery MCP
+        if SMITHERY_AVAILABLE:
+            try:
+                self.smithery_tab = QWidget()
+                self.smithery_tab.setStyleSheet("background-color: transparent;")
+                self.smithery_layout = QVBoxLayout(self.smithery_tab)
+                self.smithery_layout.setContentsMargins(0, 0, 0, 0)
+                self.smithery_layout.setSpacing(5)
+                
+                # Создаем панель инструментов Smithery MCP
+                self.smithery_panel = SmitheryMcpPanel()
+                self.smithery_layout.addWidget(self.smithery_panel)
+                
+                # Подключаем сигнал выбора инструмента
+                self.smithery_panel.tool_selected.connect(self._on_smithery_tool_selected)
+                
+                self.tabs.addTab(self.smithery_tab, "Smithery MCP")
+            except Exception as e:
+                logging.error(f"Ошибка при инициализации панели Smithery MCP: {e}")
+        
+        self.main_layout.addWidget(self.tabs, 1)
+        
+        # Загружаем и отображаем инструменты
+        self._load_tools()
         
         self.main_layout.addStretch()
 
     def add_button(self, button: QPushButton):
         """Добавляет кнопку в панель."""
-        self.content_layout.addWidget(button)
+        # Вставляем перед растягивающим элементом (stretch)
+        self.content_layout.insertWidget(self.content_layout.count() - 1, button)
+        
+    def add_widget(self, widget: QWidget):
+        """Добавляет виджет в панель."""
+        # Вставляем перед растягивающим элементом (stretch)
+        self.content_layout.insertWidget(self.content_layout.count() - 1, widget)
         
     def toggle_visibility(self):
         """Переключает видимость панели."""
@@ -73,12 +142,77 @@ class SlidingPanel(QWidget):
         else:
             self.show()
             self.raise_() # Поднимаем панель наверх
+            
+    def _load_tools(self):
+        """Загружает и отображает инструменты на панели."""
+        try:
+            # Получаем менеджер инструментов
+            tools_manager = get_tools_manager()
+            
+            if not tools_manager:
+                return
+            
+            # Для каждой категории создаем заголовок и добавляем инструменты
+            for category in tools_manager.get_tools_categories():
+                # Заголовок категории
+                category_label = QLabel(category)
+                category_label.setStyleSheet("font-weight: bold; font-size: 13px; color: #ff79c6; padding-top: 10px;")
+                self.add_widget(category_label)
+                
+                # Инструменты в категории
+                tools = tools_manager.get_tools_in_category(category)
+                for tool_id, tool_info in tools:
+                    if tool_info.get("available", True):  # Пропускаем недоступные инструменты
+                        tool_card = tools_manager.create_tool_card(tool_id, tool_info)
+                        self.add_widget(tool_card)
+                        
+            # Подключаем сигнал выбора инструмента
+            tools_manager.tool_selected.connect(self._on_tool_selected)
+            
+        except Exception as e:
+            logging.error(f"Ошибка при загрузке инструментов: {e}")
+            
+    def _on_tool_selected(self, tool_id: str, tool_data: dict):
+        """
+        Обрабатывает выбор стандартного инструмента пользователем.
+        Скрывает панель и отправляет сигнал родительскому виджету.
+        
+        Args:
+            tool_id: Идентификатор выбранного инструмента
+            tool_data: Данные выбранного инструмента
+        """
+        # Скрываем панель после выбора
+        self.hide()
+        
+        # Отправляем сигнал родительскому виджету
+        if hasattr(self.parent(), "on_tool_selected"):
+            self.parent().on_tool_selected(tool_id, tool_data)
+            
+    def _on_smithery_tool_selected(self, tool_data: dict):
+        """
+        Обрабатывает выбор инструмента Smithery MCP пользователем.
+        Скрывает панель и отправляет сигнал родительскому виджету.
+        
+        Args:
+            tool_data: Данные выбранного инструмента
+        """
+        # Скрываем панель после выбора
+        self.hide()
+        
+        # Формируем ID для инструмента MCP (префикс mcp_ + server + tool)
+        tool_id = tool_data.get('id', '')
+        
+        # Отправляем сигнал родительскому виджету
+        if hasattr(self.parent(), "on_tool_selected"):
+            self.parent().on_tool_selected(tool_id, tool_data)
 
 class SidePanelContainer(QWidget):
     """
     Контейнер, который содержит кнопку-триггер и управляет SlidingPanel.
     Этот виджет НЕ добавляется в layout, а позиционируется вручную.
     """
+    # Сигнал, отправляемый при выборе инструмента
+    tool_selected = Signal(str, dict)
     def __init__(self, parent: QWidget):
         super().__init__(parent)
         # Делаем сам контейнер невидимым, нам нужна только его кнопка
@@ -130,5 +264,16 @@ class SidePanelContainer(QWidget):
             x = parent_size.width() - button_size.width() - 15
             y = parent_size.height() - button_size.height() - 15
             self.trigger_button.move(x, y)
+            
+    def on_tool_selected(self, tool_id: str, tool_data: dict):
+        """
+        Обрабатывает выбор инструмента на панели и отправляет сигнал.
+        
+        Args:
+            tool_id: Идентификатор выбранного инструмента
+            tool_data: Данные выбранного инструмента
+        """
+        # Отправляем сигнал наружу (в ChatWidget)
+        self.tool_selected.emit(tool_id, tool_data)
 
 # --- КОНЕЦ ФАЙЛА side_panel.py ---

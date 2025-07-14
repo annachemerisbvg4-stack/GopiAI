@@ -6,6 +6,15 @@ echo     🚀 GOPI_AI Auto Development Launcher
 echo ═══════════════════════════════════════════════════════
 echo.
 
+REM Загружаем переменные окружения для Smithery MCP
+IF EXIST "%~dp0smithery_env.bat" (
+    echo 🔑 Loading Smithery API settings...
+    call "%~dp0smithery_env.bat"
+) ELSE (
+    echo ⚠️  Smithery API settings not found
+    echo    Create smithery_env.bat with your Smithery API key to enable MCP tools
+)
+
 REM Настройка путей к виртуальным окружениям
 set "CREWAI_VENV=C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\crewai_env"
 set "UI_VENV=C:\Users\crazy\GOPI_AI_MODULES\gopiai_env"

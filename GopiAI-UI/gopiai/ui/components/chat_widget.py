@@ -34,6 +34,7 @@ class ChatWidget(QWidget):
         self.session_id = f"session_{int(time.time())}"
         self._waiting_message_id = None
         self.theme_manager = None
+        self.current_tool = None  # Текущий выбранный инструмент
         
         logger.info("[CHAT] Инициализация ChatWidget начата")
         
@@ -129,6 +130,9 @@ class ChatWidget(QWidget):
         #    Это заставит ее позиционироваться поверх истории чата.
         self.side_panel_container = SidePanelContainer(self.chat_area_widget)
         
+        # Подключаем сигнал выбора инструмента
+        self.side_panel_container.tool_selected.connect(self.on_tool_selected)
+        
         # Добавляем кнопку статистики внутрь панели
         stats_button = QPushButton(icon_mgr.get_icon("info"), " Статистика", self)
         stats_button.setToolTip("Показать статистику контекста")
@@ -155,7 +159,16 @@ class ChatWidget(QWidget):
         self.send_btn.setEnabled(False)
         self._waiting_message_id = self.append_message("Ассистент", "⏳ Обрабатываю запрос...")
         
-        message_data = {"message": text, "metadata": {"session_id": self.session_id}}
+        # Формируем метаданные с информацией о сессии и выбранном инструменте
+        metadata = {"session_id": self.session_id}
+        
+        # Добавляем информацию о выбранном инструменте, если он есть
+        if self.current_tool:
+            metadata["tool"] = self.current_tool
+            # После использования инструмента сбрасываем его
+            self.current_tool = None
+            
+        message_data = {"message": text, "metadata": metadata}
         print(f"[DEBUG] Подготовлены данные для отправки: {message_data}")
         logger.info(f"[CHAT] Подготовлены данные для отправки: {message_data}")
         
@@ -238,5 +251,23 @@ class ChatWidget(QWidget):
     def apply_theme(self):
         logger.info("Theme applied to ChatWidget (placeholder method).")
         pass
+        
+    def on_tool_selected(self, tool_id: str, tool_data: dict):
+        """
+        Обрабатывает сигнал выбора инструмента и добавляет его в метаданные следующего запроса.
+        
+        Args:
+            tool_id: Идентификатор выбранного инструмента
+            tool_data: Данные о выбранном инструменте
+        """
+        # Сохраняем выбранный инструмент для следующего запроса
+        self.current_tool = tool_data
+        
+        # Добавляем подсказку в поле ввода
+        tool_name = tool_data.get("name", tool_id)
+        self.input.setPlaceholderText(f"Используется инструмент: {tool_name}. Введите запрос...")
+        
+        # Показываем уведомление пользователю
+        self.append_message("Система", f"Выбран инструмент: {tool_name}. Следующий запрос будет обработан с использованием этого инструмента.")
 
 # --- КОНЕЦ ФАЙЛА chat_widget.py ---

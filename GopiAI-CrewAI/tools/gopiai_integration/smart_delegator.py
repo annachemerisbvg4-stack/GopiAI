@@ -6,6 +6,9 @@ import time
 import traceback
 from typing import Dict, List, Any, Optional
 
+# Импортируем наш модуль системных промптов
+from .system_prompts import get_system_prompts
+
 # Инициализируем логгер перед использованием
 logger = logging.getLogger(__name__)
 
@@ -61,15 +64,31 @@ class SmartDelegator:
     def _format_prompt(self, user_message: str, rag_context: Optional[str], chat_history: List[Dict]) -> List[Dict]:
         """Формирует итоговый список сообщений для LLM."""
         
-        system_prompt = (
-            "Ты - GopiAI, полезный ассистент. "
-            "Твой ответ ДОЛЖЕН СТРОГО ОСНОВЫВАТЬСЯ на информации из блока 'КОНТЕКСТ ИЗ ПАМЯТИ', если он предоставлен. "
-            "Если в контексте нет ответа, используй свои общие знания. "
-            "Будь краток и точен."
-        )
+        # Получаем системные промпты из модуля system_prompts
+        prompts_manager = get_system_prompts()
         
-        if rag_context and "No relevant context" not in rag_context:
-            system_prompt += f"\n\nКОНТЕКСТ ИЗ ПАМЯТИ:\n{rag_context}"
+        # Проверяем наличие выбранного инструмента в метаданных
+        tool_info = None
+        for msg in chat_history[-5:]:  # Ищем в последних 5 сообщениях
+            if isinstance(msg, dict) and msg.get('metadata') and msg['metadata'].get('tool'):
+                tool_info = msg['metadata']['tool']
+                break
+        
+        # Получаем системный промпт с контекстом из RAG
+        system_prompt = prompts_manager.get_assistant_prompt_with_context(rag_context)
+        
+        # Если есть информация об инструменте, добавляем ее в промпт
+        if tool_info and isinstance(tool_info, dict):
+            tool_name = tool_info.get('name', '') or tool_info.get('tool_id', '')
+            tool_description = tool_info.get('description', '')
+            tool_usage = tool_info.get('usage', '')
+            
+            if tool_name:
+                system_prompt += f"\n\n## Выбранный инструмент: {tool_name}"
+                if tool_description:
+                    system_prompt += f"\n{tool_description}"
+                if tool_usage:
+                    system_prompt += f"\n\nПримеры использования:\n```\n{tool_usage}\n```"
             
         messages = [{"role": "system", "content": system_prompt}]
         
