@@ -8,6 +8,7 @@ from typing import Dict, List, Any, Optional
 
 # Импортируем наш модуль системных промптов
 from .system_prompts import get_system_prompts
+from .smithery_integration import SmitheryIntegration
 
 # Инициализируем логгер перед использованием
 logger = logging.getLogger(__name__)
@@ -27,6 +28,18 @@ class SmartDelegator:
         self.rag_system = rag_system
         self.rag_available = self.rag_system is not None and self.rag_system.embeddings is not None
         
+        # Инициализируем SmitheryIntegration для доступа к MCP инструментам
+        try:
+            self.smithery = SmitheryIntegration()
+            self.smithery.initialize()
+            self.smithery_available = True
+            mcp_tools_count = len(self.smithery.get_available_tools_for_ui())
+            logger.info(f"[OK] Smithery MCP интеграция инициализирована. Доступно инструментов: {mcp_tools_count}")
+        except Exception as e:
+            self.smithery = None
+            self.smithery_available = False
+            logger.warning(f"[WARNING] Не удалось инициализировать Smithery MCP: {str(e)}")
+        
         if self.rag_available:
             logger.info(f"[OK] RAG system passed to SmartDelegator. Records: {self.rag_system.embeddings.count()}")
         else:
@@ -44,11 +57,42 @@ class SmartDelegator:
         # 2. Получение RAG-контекста
         rag_context = self.rag_system.get_context_for_prompt(message) if self.rag_available else None
         
-        # 3. Формирование промпта
-        messages = self._format_prompt(message, rag_context, metadata.get("chat_history", []))
+        # 3. Проверяем наличие запроса на вызов MCP инструмента
+        tool_request = self._check_for_tool_request(message, metadata)
         
-        # 4. Вызов LLM
-        response_text = self._call_llm(messages)
+        if tool_request and self.smithery_available:
+            logger.info(f"Обнаружен запрос на использование MCP инструмента: {tool_request['tool_name']}")
+            
+            # Вызываем MCP инструмент
+            try:
+                tool_response = self._call_mcp_tool(
+                    tool_request['tool_name'], 
+                    tool_request['server_name'],
+                    tool_request['params']
+                )
+                
+                # Формируем ответ с результатами инструмента
+                messages = self._format_prompt_with_tool_result(
+                    message, 
+                    rag_context, 
+                    metadata.get("chat_history", []),
+                    tool_request,
+                    tool_response
+                )
+                
+                # Вызываем LLM для формирования итогового ответа
+                response_text = self._call_llm(messages)
+                
+            except Exception as e:
+                logger.error(f"Ошибка при вызове MCP инструмента: {str(e)}")
+                traceback.print_exc()
+                response_text = f"Извините, произошла ошибка при использовании инструмента {tool_request['tool_name']}: {str(e)}"
+        else:
+            # 3. Обычное формирование промпта без инструментов
+            messages = self._format_prompt(message, rag_context, metadata.get("chat_history", []))
+            
+            # 4. Вызов LLM
+            response_text = self._call_llm(messages)
         
         elapsed = time.time() - start_time
         logger.info(f"[TIMING] Request processed in {elapsed:.2f} sec")
@@ -126,30 +170,92 @@ class SmartDelegator:
         logger.debug(f"Итоговый промпт для LLM: {json.dumps(messages, indent=2, ensure_ascii=False)}")
         return messages
 
+    def _check_for_tool_request(self, message: str, metadata: Dict) -> Optional[Dict]:
+        """
+        Проверяет, содержит ли сообщение запрос на использование MCP инструмента.
+        Возвращает словарь с информацией об инструменте или None.
+        """
+        # Проверяем явный запрос в метаданных
+        if metadata and isinstance(metadata, dict):
+            tool_info = metadata.get('tool', None)
+            if tool_info and isinstance(tool_info, dict):
+                tool_name = tool_info.get('name', '') or tool_info.get('tool_id', '')
+                server_name = tool_info.get('server_name', '')
+                params = tool_info.get('params', {})
+                
+                if tool_name and server_name:
+                    return {
+                        'tool_name': tool_name,
+                        'server_name': server_name,
+                        'params': params
+                    }
+        
+        # TODO: Можно добавить анализ текста сообщения для автоматического определения
+        # запроса на использование инструмента
+        
+        return None
+        
+    def _call_mcp_tool(self, tool_name: str, server_name: str, params: Dict) -> Dict:
+        """
+        Вызывает MCP инструмент через SmitheryIntegration и возвращает результат.
+        """
+        if not self.smithery_available or not self.smithery:
+            raise Exception("Smithery MCP не инициализирован или недоступен")
+        
+        logger.info(f"Вызов MCP инструмента {tool_name} на сервере {server_name} с параметрами: {params}")
+        
+        # Вызываем инструмент через SmitheryIntegration
+        result = self.smithery.call_tool(server_name, tool_name, params)
+        
+        logger.info(f"Получен результат от MCP инструмента: {str(result)[:200]}...")
+        
+        return result
+    
+    def _format_prompt_with_tool_result(self, user_message: str, rag_context: Optional[str], 
+                                      chat_history: List[Dict], tool_request: Dict, 
+                                      tool_response: Dict) -> List[Dict]:
+        """
+        Формирует промпт с результатами выполнения инструмента.
+        """
+        # Получаем базовый промпт
+        messages = self._format_prompt(user_message, rag_context, chat_history)
+        
+        # Добавляем результаты инструмента к запросу пользователя
+        tool_result_message = {
+            "role": "assistant",
+            "content": f"Я использовал инструмент '{tool_request['tool_name']}' и получил следующий результат:\n```json\n{json.dumps(tool_response, ensure_ascii=False, indent=2)}\n```\n\nТеперь я проанализирую этот результат и отвечу на ваш запрос."
+        }
+        
+        messages.append(tool_result_message)
+        
+        return messages
+    
     def _call_llm(self, messages: List[Dict]) -> str:
-        """Безопасно вызывает LLM через litellm с таймаутом."""
+        """
+        Вызывает языковую модель, используя litellm.
+        """
         try:
-            # Здесь можно добавить логику выбора модели из llm_rotation_config, если нужно
-            selected_model = "gemini/gemini-1.5-flash"
+            # Выводим длину системного промпта для диагностики
+            system_prompt_len = len(messages[0]['content']) if messages and messages[0]['role'] == 'system' else 0
+            logger.info(f"Длина системного промпта: {system_prompt_len} символов")
             
-            logger.info(f"Calling model {selected_model}...")
+            # Вызов LLM через litellm
             response = litellm.completion(
-                model=selected_model,
+                model="gemini/gemini-1.5-flash",
                 messages=messages,
-                temperature=0.5,
-                max_tokens=2000,
-                timeout=30  # Таймаут 30 секунд
+                temperature=0.2,
+                max_tokens=2000
             )
             
-            result = response.choices[0].message.content
-            logger.info("[OK] Response from LLM received.")
-            return result.strip()
+            logger.debug(f"Получен ответ от LLM: {str(response)[:200]}...")
+            
+            # Извлекаем текст ответа
+            response_text = response.choices[0].message.content if response and response.choices else ""
+            return response_text
             
         except Exception as e:
-            logger.error(f"[ERROR] Error calling LLM: {e}", exc_info=True)
-            # Возвращаем пользователю понятное сообщение об ошибке
-            if "Timeout" in str(e):
-                return "Sorry, the model server is not responding. Please try again later."
-            return f"An internal error occurred when accessing the language model."
+            logger.error(f"Ошибка при вызове LLM: {str(e)}")
+            traceback.print_exc()
+            return f"Произошла ошибка при обработке запроса: {str(e)}"
 
 # --- END OF FILE smart_delegator.py ---

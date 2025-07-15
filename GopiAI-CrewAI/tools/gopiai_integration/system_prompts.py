@@ -8,6 +8,9 @@ import json
 import os
 from typing import Dict, List, Optional
 
+# Импортируем новый модуль MCP интеграции
+from tools.gopiai_integration.mcp_integration import get_mcp_tools_manager, get_mcp_tools_info
+
 logger = logging.getLogger(__name__)
 
 # Путь к файлу с инструментами (будет создаваться и обновляться динамически)
@@ -27,6 +30,7 @@ class SystemPrompts:
         # Кеш информации об инструментах
         self._tools_info_cache = None
         self._tools_cache_timestamp = 0
+        self._mcp_tools_cache = None
     
     def get_base_assistant_prompt(self) -> str:
         """
@@ -77,6 +81,11 @@ class SystemPrompts:
         
         if rag_context and "No relevant context" not in rag_context:
             prompt += f"\n\n## КОНТЕКСТ ИЗ ПАМЯТИ\n{rag_context}"
+        
+        # Добавляем информацию о доступных MCP инструментах
+        mcp_tools_info = self.get_mcp_tools_info()
+        if mcp_tools_info:
+            prompt += f"\n\n## ДОСТУПНЫЕ ИНСТРУМЕНТЫ MCP\n{mcp_tools_info}"
         
         return prompt
     
@@ -186,6 +195,112 @@ class SystemPrompts:
         except Exception as e:
             self.logger.error(f"Ошибка при загрузке информации об инструментах: {e}")
             return {}
+    
+    def get_search_prompt(self, query: str) -> str:
+        """
+        Возвращает промпт для поискового агента.
+        
+        Args:
+            query: Поисковый запрос пользователя
+            
+        Returns:
+            Промпт для поискового агента
+        """
+        return f"""
+# Поисковый агент
+
+Ты - поисковый агент, твоя цель - найти наиболее релевантную информацию по запросу пользователя.
+
+## Запрос пользователя
+{query}
+
+## Инструкции
+1. Проанализируй запрос и выдели ключевые слова и фразы для поиска
+2. Используй различные источники для поиска информации
+3. Оцени релевантность найденной информации
+4. Представь результаты в структурированном виде
+5. Если информация неполная, укажи это и предложи дополнительные источники
+"""
+    
+    def update_mcp_tools_info(self, mcp_tools: List[Dict]):
+        """
+        Обновляет кеш MCP инструментов.
+        
+        Args:
+            mcp_tools: Список словарей с информацией о MCP инструментах
+        """
+        self._mcp_tools_cache = mcp_tools
+        self.logger.info(f"Обновлен кеш MCP инструментов, доступно {len(mcp_tools)} инструментов")
+    
+    def get_mcp_tools_info(self) -> str:
+        """
+        Формирует строку с информацией о доступных MCP инструментах.
+        Используем функцию из нового модуля mcp_integration.
+        
+        Returns:
+            Строка с описанием MCP инструментов или пустая строка, если инструменты недоступны
+        """
+        # Вызываем функцию из нового модуля
+        return get_mcp_tools_info()
+    
+    def save_tools_info(self, tools_info: List[Dict]):
+        """
+        Сохраняет информацию об инструментах в файл.
+        
+        Args:
+            tools_info: Список словарей с информацией об инструментах
+        """
+        try:
+            # Создаем директорию, если ее нет
+            os.makedirs(os.path.dirname(TOOLS_INFO_PATH), exist_ok=True)
+            
+            with open(TOOLS_INFO_PATH, 'w', encoding='utf-8') as f:
+                json.dump(tools_info, f, ensure_ascii=False, indent=2)
+                
+            self.logger.info(f"Информация о {len(tools_info)} инструментах сохранена в {TOOLS_INFO_PATH}")
+            
+            # Обновляем кеш
+            self._tools_info_cache = tools_info
+            self._tools_cache_timestamp = os.path.getmtime(TOOLS_INFO_PATH)
+            
+        except Exception as e:
+            self.logger.error(f"Ошибка при сохранении информации об инструментах: {e}")
+    
+    def load_tools_info(self) -> List[Dict]:
+        """
+        Загружает информацию об инструментах из файла.
+        
+        Returns:
+            Список словарей с информацией об инструментах
+        """
+        try:
+            # Проверяем, есть ли закешированная информация
+            if self._tools_info_cache and os.path.exists(TOOLS_INFO_PATH):
+                file_timestamp = os.path.getmtime(TOOLS_INFO_PATH)
+                
+                # Если кеш актуален, возвращаем его
+                if file_timestamp <= self._tools_cache_timestamp:
+                    return self._tools_info_cache
+            
+            # Если файл существует, загружаем из него
+            if os.path.exists(TOOLS_INFO_PATH):
+                with open(TOOLS_INFO_PATH, 'r', encoding='utf-8') as f:
+                    tools_info = json.load(f)
+                    
+                self.logger.info(f"Загружена информация о {len(tools_info)} инструментах из {TOOLS_INFO_PATH}")
+                
+                # Обновляем кеш
+                self._tools_info_cache = tools_info
+                self._tools_cache_timestamp = os.path.getmtime(TOOLS_INFO_PATH)
+                
+                return tools_info
+            else:
+                self.logger.warning(f"Файл с информацией об инструментах не найден: {TOOLS_INFO_PATH}")
+                return []
+                
+        except Exception as e:
+            self.logger.error(f"Ошибка при загрузке информации об инструментах: {e}")
+            return []
 
 # Создаем экземпляр класса для использования в других модулях
 system_prompts = SystemPrompts()
