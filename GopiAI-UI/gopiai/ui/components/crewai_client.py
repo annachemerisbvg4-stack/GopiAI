@@ -320,7 +320,7 @@ class CrewAIClient:
             
             # Проверяем, вернул ли сервер task_id для асинхронной обработки
             if 'task_id' in result and 'status' in result:
-                logger.info(f"[TASK-START] 🔄 Получен task_id для асинхронной обработки: {result['task_id']}")
+                logger.info(f"[TASK-START] [ASYNC] Получен task_id для асинхронной обработки: {result['task_id']}")
                 logger.debug(f"[TASK-START] Начальный статус задачи: {result['status']}")
                 return result
                 

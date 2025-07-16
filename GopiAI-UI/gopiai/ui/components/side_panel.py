@@ -114,7 +114,7 @@ class SlidingPanel(QWidget):
                 # Подключаем сигнал выбора инструмента
                 self.smithery_panel.tool_selected.connect(self._on_smithery_tool_selected)
                 
-                self.tabs.addTab(self.smithery_tab, "Smithery MCP")
+                self.tabs.addTab(self.smithery_tab, "MCP Tools")
             except Exception as e:
                 logging.error(f"Ошибка при инициализации панели Smithery MCP: {e}")
         
@@ -248,7 +248,7 @@ class SidePanelContainer(QWidget):
         if not self.panel.isVisible():
             # Позиционируем панель относительно родителя контейнера
             parent_rect = self.parent().geometry()
-            panel_width = 250
+            panel_width = 350
             panel_height = parent_rect.height() - 20
             x = parent_rect.width() - panel_width - 10
             y = 10

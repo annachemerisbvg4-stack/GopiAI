@@ -8,9 +8,10 @@
 import os
 import json
 import sys
+import asyncio
 from typing import Dict, List, Any, Optional, Callable
 
-from PySide6.QtCore import Qt, Signal, Slot, QObject
+from PySide6.QtCore import Qt, Signal, Slot, QObject, QTimer
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QScrollArea, QFrame, QSizePolicy, QToolButton, QLineEdit,
@@ -18,32 +19,23 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QIcon, QFont
 
-# Добавляем путь к пакетам GopiAI-CrewAI
+# Добавляем путь к GopiAI-CrewAI для импорта модулей
 crewai_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'GopiAI-CrewAI'))
-sys.path.append(crewai_path)
+if os.path.exists(crewai_path):
+    sys.path.append(crewai_path)
 
 try:
-    # Корректные импорты из директории GopiAI-CrewAI
-    from tools.gopiai_integration.smithery_client import get_smithery_client
-    from tools.gopiai_integration.smithery_tools import get_smithery_tools_adapter
-    from tools.gopiai_integration.smithery_integration import get_smithery_integration
+    # Импортируем MCPToolsManager для работы с MCP серверами
+    from tools.gopiai_integration.mcp_integration import MCPToolsManager
 except ImportError as e:
-    print(f"Ошибка импорта модулей Smithery: {e}")
-    # Фиктивные функции для предотвращения падения при инициализации класса
-    def get_smithery_client():
-        return None
-        
-    def get_smithery_tools_adapter():
-        return None
-        
-    def get_smithery_integration():
-        return None
+    print(f"[ERROR] Ошибка импорта модулей MCP: {e}")
+    MCPToolsManager = None  # Заглушка для предотвращения ошибок
 
 # Константы для UI
 BUTTON_HEIGHT = 30
 TOOL_BUTTON_SIZE = 24
 MIN_PANEL_WIDTH = 200
-MAX_PANEL_WIDTH = 350
+MAX_PANEL_WIDTH = 350  # Увеличено для соответствия с шириной side_panel
 
 class SmitheryMcpPanel(QWidget):
     """
@@ -54,174 +46,342 @@ class SmitheryMcpPanel(QWidget):
     tool_selected = Signal(dict)  # Сигнализирует о выборе инструмента
     
     def __init__(self, parent=None):
+        print("[Создание] SmitheryMcpPanel: Создание объекта панели...")
         super().__init__(parent)
-        self.integration = get_smithery_integration()
-        self.tools_adapter = get_smithery_tools_adapter()
+        self.api_key = None
         self.available_tools = []
+        self.tools_loading = False
+        self.tools_manager = None  # Менеджер инструментов MCP
+        self.load_tools_timer = None
+        self.setup_ui()
+        
+        # Вызываем метод инициализации после создания UI
+        print("[Инициализация] SmitheryMcpPanel: Вызываем метод initialize()...")
+        self.initialize()
+        
         self.current_tool = None
+        self.tools_loading = False  # Флаг загрузки инструментов
+        self.api_key_warning = None  # Предупреждение о ключе API
+        self.loading_label = None    # Метка загрузки
+        self.spinner_movie = None    # Анимация загрузки
         
         self.setup_ui()
-        self.load_tools()
+        # self.load_tools()  # Загрузка будет вызвана из setup_ui
     
     def setup_ui(self):
         """Настраивает пользовательский интерфейс панели."""
         # Основной layout
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(5, 5, 5, 5)
-        main_layout.setSpacing(5)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
         
-        # Заголовок
-        header_layout = QHBoxLayout()
-        title_label = QLabel("Smithery MCP")
-        title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        # Создаем заголовок панели
+        header_frame = QFrame()
+        header_layout = QHBoxLayout(header_frame)
+        header_layout.setContentsMargins(10, 5, 10, 5)
+        
+        # Заголовок панели
+        title_label = QLabel("MCP Tools")
+        title_label.setStyleSheet("font-weight: bold; color: #f8f8f2;")
         header_layout.addWidget(title_label)
         
-        # Кнопка обновления
-        refresh_button = QToolButton()
-        refresh_button.setIcon(QIcon("ui/icons/refresh.png"))  # Предполагается, что иконка существует
-        refresh_button.setToolTip("Обновить список инструментов")
-        refresh_button.clicked.connect(self.reload_tools)
-        header_layout.addWidget(refresh_button)
+        # Кнопка обновления списка инструментов
+        refresh_btn = QPushButton()
+        refresh_btn.setIcon(QIcon.fromTheme("view-refresh"))
+        refresh_btn.setToolTip("Обновить список инструментов")
+        refresh_btn.setMaximumWidth(30)
+        refresh_btn.clicked.connect(self.reload_tools)
+        header_layout.addWidget(refresh_btn)
         
-        # Кнопка настроек
-        settings_button = QToolButton()
-        settings_button.setIcon(QIcon("ui/icons/settings.png"))  # Предполагается, что иконка существует
-        settings_button.setToolTip("Настройки MCP")
-        settings_button.clicked.connect(self.show_settings)
-        header_layout.addWidget(settings_button)
+        layout.addWidget(header_frame)
         
-        main_layout.addLayout(header_layout)
+        # Создаем область поиска
+        search_frame = QFrame()
+        search_layout = QHBoxLayout(search_frame)
+        search_layout.setContentsMargins(10, 0, 10, 0)
+        search_layout.setSpacing(5)
         
-        # Поле поиска
-        search_layout = QHBoxLayout()
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Поиск инструментов...")
         self.search_input.textChanged.connect(self.filter_tools)
         search_layout.addWidget(self.search_input)
         
-        main_layout.addLayout(search_layout)
+        layout.addWidget(search_frame)
         
-        # Область инструментов
-        self.tools_area = QScrollArea()
-        self.tools_area.setWidgetResizable(True)
-        self.tools_area.setFrameShape(QFrame.NoFrame)
-        self.tools_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # Создаем анимацию загрузки и метку
+        loading_frame = QFrame()
+        loading_layout = QHBoxLayout(loading_frame)
+        loading_layout.setContentsMargins(10, 5, 10, 5)
+        loading_layout.setSpacing(5)
         
-        self.tools_container = QWidget()
-        self.tools_layout = QVBoxLayout(self.tools_container)
-        self.tools_layout.setContentsMargins(0, 0, 0, 0)
-        self.tools_layout.setSpacing(2)
-        self.tools_layout.addStretch(1)  # Добавляем растягивающийся элемент в конец
+        # Анимация загрузки (просто текст для простоты)
+        self.loading_label = QLabel("Загрузка инструментов...")
+        self.loading_label.setStyleSheet("color: #cfcfd1;")
+        self.loading_label.hide()  # Изначально скрыта
+        loading_layout.addWidget(self.loading_label)
         
-        self.tools_area.setWidget(self.tools_container)
-        main_layout.addWidget(self.tools_area)
+        # Предупреждение о ключе API (если нужно)
+        self.api_key_warning = QLabel("API ключ не настроен")
+        self.api_key_warning.setStyleSheet("color: #ff6e6e; font-size: 10px;")
+        self.api_key_warning.setVisible(False)  # Изначально скрыто
+        loading_layout.addWidget(self.api_key_warning)
         
-        # Нижняя часть - информация о текущем инструменте
-        self.tool_info_frame = QFrame()
-        self.tool_info_frame.setFrameShape(QFrame.StyledPanel)
-        self.tool_info_layout = QVBoxLayout(self.tool_info_frame)
+        layout.addWidget(loading_frame)
         
+        # Создаем область для списка инструментов
+        tools_scroll_area = QScrollArea()
+        tools_scroll_area.setWidgetResizable(True)
+        tools_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        tools_content = QWidget()
+        self.tools_layout = QVBoxLayout(tools_content)
+        self.tools_layout.setContentsMargins(5, 5, 5, 5)
+        self.tools_layout.setSpacing(5)
+        tools_scroll_area.setWidget(tools_content)
+        
+        layout.addWidget(tools_scroll_area, 1)
+        
+        # Создаем область для информации об инструменте
+        tool_info_frame = QFrame()
+        tool_info_layout = QVBoxLayout(tool_info_frame)
+        tool_info_layout.setContentsMargins(10, 5, 10, 5)
+        
+        # Название инструмента
         self.tool_name_label = QLabel("Выберите инструмент")
-        self.tool_name_label.setStyleSheet("font-weight: bold;")
-        self.tool_info_layout.addWidget(self.tool_name_label)
+        self.tool_name_label.setStyleSheet("font-weight: bold; color: #f8f8f2;")
+        tool_info_layout.addWidget(self.tool_name_label)
         
+        # Описание инструмента
         self.tool_description_label = QLabel("")
+        self.tool_description_label.setStyleSheet("color: #cfcfd1; font-size: 10px;")
         self.tool_description_label.setWordWrap(True)
-        self.tool_info_layout.addWidget(self.tool_description_label)
+        tool_info_layout.addWidget(self.tool_description_label)
         
-        main_layout.addWidget(self.tool_info_frame)
+        layout.addWidget(tool_info_frame)
         
-        # Кнопка "API ключ не настроен"
-        self.api_key_warning = QPushButton("Настроить API ключ Smithery")
-        self.api_key_warning.clicked.connect(self.show_api_key_dialog)
-        self.api_key_warning.setStyleSheet("background-color: #FFD700; color: black;")
-        self.api_key_warning.setVisible(False)  # По умолчанию скрыта
-        main_layout.addWidget(self.api_key_warning)
+        # Создаем футер с информацией
+        footer_frame = QFrame()
+        footer_layout = QHBoxLayout(footer_frame)
+        footer_layout.setContentsMargins(10, 5, 10, 5)
         
-        # Проверяем наличие API ключа
+        # Информация о Smithery
+        info_label = QLabel("Powered by Smithery MCP")
+        info_label.setStyleSheet("color: #cfcfd1; font-size: 10px;")
+        footer_layout.addWidget(info_label)
+        
+        layout.addWidget(footer_frame)
+        
+        # Запускаем загрузку инструментов после настройки UI
+        # Используем QTimer для запуска загрузки в следующем цикле событий
+        QTimer.singleShot(100, self.load_tools)
+    
+    def initialize(self):
+        """Инициализирует панель и подключает сервисы MCP."""
         try:
-            client = get_smithery_client()
-            if not client.api_key:
-                self.api_key_warning.setVisible(True)
+            print("[MCP] Начало инициализации MCP панели...")
+            
+            # Пытаемся создать менеджер инструментов MCP, если модуль доступен
+            self.tools_manager = MCPToolsManager() if MCPToolsManager else None
+            
+            # Определяем список серверов для работы с MCP
+            # Эти URL используются для создания инструментов в UI (ленивая загрузка)
+            servers = [
+                "https://server.smithery.ai/@luminati-io/brightdata-mcp/mcp",
+                "https://server.smithery.ai/@bytedance/mcp-server-browser/mcp",
+                "https://server.smithery.ai/@flight505/mcp-think-tank/mcp",
+                "https://server.smithery.ai/@FutureAtoms/agentic-control-framework/mcp",
+                "https://server.smithery.ai/@mem0ai/mem0-memory-mcp/mcp",
+                "https://server.smithery.ai/@wonderwhy-er/desktop-commander/mcp",
+                "https://server.smithery.ai/@JigsawStack/vocr/mcp"
+            ]
+            
+            # Создаем объект интеграции с серверами
+            self.integration = {
+                "servers": servers
+            }
+            
+            print("[MCP] Объект интеграции MCP успешно создан")
+            
+            # Загружаем инструменты MCP при отображении панели
+            self.tools_loading = False
+            
+            # Заполняем доступные инструменты на основе серверов (ленивая загрузка)
+            self.available_tools = [
+                {
+                    "id": f"mcp_tool_{i}",
+                    "name": f"MCP: {server.split('@')[1].split('/')[0] if '@' in server else server.split('/')[-2]}",
+                    "description": f"Инструменты MCP с сервера {server.split('@')[1].split('/')[0] if '@' in server else server.split('/')[-2]}",
+                    "server_url": server
+                }
+                for i, server in enumerate(servers, 1)
+            ]
+            
+            # Обновляем UI с полученными инструментами
+            print(f"[MCP] Загружено {len(self.available_tools)} инструментов MCP")
+            self.update_tools_ui()
+            
+            print("[MCP] Инициализация MCP панели завершена")
+            
         except Exception as e:
-            print(f"Ошибка при инициализации клиента Smithery: {e}")
+            print(f"Ошибка инициализации Smithery MCP панели: {e}")
+            import traceback
+            traceback.print_exc()
     
     def load_tools(self):
-        """Загружает доступные инструменты Smithery MCP."""
+        """Загружает доступные инструменты Smithery MCP по принципу ленивой загрузки."""
         try:
-            # Проверяем наличие объекта интеграции перед использованием
-            if not self.integration:
-                print("Объект интеграции Smithery MCP не инициализирован")
-                self.show_error_message("Интеграция Smithery MCP недоступна. Проверьте API-ключ и перезапустите приложение.")
-                self.api_key_warning.setVisible(True)
-                self.available_tools = []
-                self.update_tools_ui()
+            # Проверяем уже идет загрузка или виджет невидим
+            if self.tools_loading or not self.isVisible():
                 return
                 
-            print("Загружаем список инструментов Smithery MCP...")
-            self.available_tools = self.integration.get_available_tools_for_ui()
-            print(f"Загружено инструментов: {len(self.available_tools)}")
-            self.update_tools_ui()
+            self.tools_loading = True
+            if self.loading_label:
+                self.loading_label.setText("Загрузка инструментов...")
+                self.loading_label.show()
+            
+            print("Загружаем список инструментов Smithery MCP (ленивая загрузка)...")
+            
+            # В режиме ленивой загрузки создаем инструменты только на основе списка серверов
+            # Этот метод работает без API-ключа и не пытается подключаться к серверам
+            if hasattr(self, 'integration') and self.integration and "servers" in self.integration:
+                servers = self.integration["servers"]
+                
+                # Создаем инструменты по серверам (предоставляем базовую информацию)
+                self.available_tools = []
+                for i, server_url in enumerate(servers, 1):
+                    # Извлекаем имя сервера из URL
+                    server_name = server_url.split('@')[1].split('/')[0] if '@' in server_url else server_url.split('/')[-2]
+                    
+                    # Извлекаем тип сервера для группировки инструментов
+                    server_type = server_name.split('-')[0] if '-' in server_name else server_name
+                    
+                    # Добавляем основной инструмент сервера
+                    self.available_tools.append({
+                        "id": f"mcp_tool_{i}",
+                        "name": f"{server_name}",
+                        "description": f"Инструменты MCP с сервера {server_name}",
+                        "server_url": server_url,
+                        "type": server_type
+                    })
+                    
+                    # Добавляем дополнительные инструменты для крупных серверов
+                    if "browser" in server_name.lower():
+                        self.available_tools.append({
+                            "id": f"mcp_browser_{i}",
+                            "name": f"Браузер MCP",
+                            "description": f"Управление браузером через MCP",
+                            "server_url": server_url,
+                            "type": "browser"
+                        })
+                    
+                    if "mem" in server_name.lower():
+                        self.available_tools.append({
+                            "id": f"mcp_memory_{i}",
+                            "name": f"Память MCP",
+                            "description": f"Работа с долгосрочной памятью через MCP",
+                            "server_url": server_url,
+                            "type": "memory"
+                        })
+                
+                print(f"Загружено {len(self.available_tools)} инструментов MCP (ленивая загрузка)")
+                
+                # Обновляем UI с полученными инструментами
+                self.update_tools_ui()
+            else:
+                print("Нет доступных серверов MCP для загрузки инструментов")
+                
         except Exception as e:
             print(f"Ошибка при загрузке инструментов Smithery MCP: {e}")
-            self.show_error_message(f"Не удалось загрузить инструменты: {str(e)}")
-    
+            import traceback
+            traceback.print_exc()
+        finally:
+            self.tools_loading = False
+            if hasattr(self, 'loading_label') and self.loading_label:
+                self.loading_label.hide()
+        
     def reload_tools(self):
-        """Перезагружает список инструментов."""
+        """Перезагружает список инструментов (ленивая загрузка)."""
         try:
             # Проверяем наличие интеграции
-            if not self.integration:
-                print("Объект интеграции Smithery MCP не инициализирован")
-                self.show_error_message("Интеграция Smithery MCP недоступна. Проверьте настройки и перезапустите приложение.")
-                # Переинициализируем интеграцию
-                self.integration = get_smithery_integration()
-                if not self.integration:
-                    self.api_key_warning.setVisible(True)
-                    return
-                    
-            # Получаем клиент с обновлением кеша
-            client = get_smithery_client()
-            if not client:
-                raise ValueError("Клиент Smithery MCP не инициализирован. Проверьте API-ключ в переменной среды SMITHERY_API_KEY.")
+            if not hasattr(self, 'integration') or not self.integration:
+                print("Выполняется повторная инициализация интеграции MCP...")
+                # Создаем базовый объект интеграции для ленивой загрузки
+                self.integration = {
+                    "servers": [
+                        "https://server.smithery.ai/@luminati-io/brightdata-mcp/mcp",
+                        "https://server.smithery.ai/@bytedance/mcp-server-browser/mcp",
+                        "https://server.smithery.ai/@flight505/mcp-think-tank/mcp",
+                        "https://server.smithery.ai/@FutureAtoms/agentic-control-framework/mcp",
+                        "https://server.smithery.ai/@mem0ai/mem0-memory-mcp/mcp",
+                        "https://server.smithery.ai/@wonderwhy-er/desktop-commander/mcp",
+                        "https://server.smithery.ai/@JigsawStack/vocr/mcp"
+                    ],
+                    "get_available_tools_for_ui": lambda: []
+                }
+                
+                # Обязательно устанавливаем также атрибут smithery_integration для совместимости
+                self.smithery_integration = self.integration
+                
+            # Загружаем инструменты с использованием ленивой загрузки
+            print("Перезагружаем список инструментов MCP (ленивая загрузка)...")
+            self.load_tools()  # Переиспользуем логику load_tools для ленивой загрузки
             
-            # Обновляем список серверов
-            print("Обновляем список серверов Smithery MCP...")
-            servers = client.list_servers(refresh=True)
-            print(f"Найдено серверов: {len(servers)}")
-            
-            # Обновляем инструменты в адаптере
-            self.available_tools = self.integration.get_available_tools_for_ui()
-            print(f"Загружено инструментов: {len(self.available_tools)}")
-            self.update_tools_ui()
         except Exception as e:
             print(f"Ошибка при обновлении инструментов Smithery MCP: {e}")
+            import traceback
+            traceback.print_exc()
             self.show_error_message(f"Не удалось обновить инструменты: {str(e)}")
-            # Проверяем API ключ
-            import os
-            api_key = os.environ.get("SMITHERY_API_KEY")
-            if not api_key:
-                self.show_error_message("SMITHERY_API_KEY не установлен в переменных среды. Установите ключ и перезапустите приложение.")
-                # Показываем предупреждение об API ключе
-                self.api_key_warning.setVisible(True)
+            # Скрываем предупреждение об API ключе, так как оно не требуется для ленивой загрузки
+            if hasattr(self, 'api_key_warning') and self.api_key_warning:
+                self.api_key_warning.setVisible(False)
     
     def update_tools_ui(self):
         """Обновляет UI с загруженными инструментами."""
-        # Очищаем текущие инструменты
-        while self.tools_layout.count() > 1:  # Оставляем только растягивающийся элемент
-            item = self.tools_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+        # Очищаем текущие элементы
+        for i in reversed(range(self.tools_layout.count())):
+            widget = self.tools_layout.itemAt(i).widget()
+            if widget:
+                widget.deleteLater()
         
-        # Добавляем инструменты
+        # Добавляем карточки для каждого инструмента
         for tool in self.available_tools:
-            tool_btn = QPushButton(tool.get('name', 'Неизвестный инструмент'))
-            tool_btn.setToolTip(tool.get('description', ''))
-            tool_btn.setFixedHeight(BUTTON_HEIGHT)
-            tool_btn.setStyleSheet("text-align: left; padding-left: 5px;")
-            tool_btn.setProperty("tool_data", tool)
-            tool_btn.clicked.connect(self.on_tool_clicked)
-            
-            self.tools_layout.insertWidget(self.tools_layout.count() - 1, tool_btn)
+            try:
+                # Создаем карточку инструмента
+                tool_card = QFrame()
+                tool_card.setStyleSheet("""
+                    QFrame {
+                        background-color: rgba(60, 63, 80, 0.5);
+                        border-radius: 8px;
+                        padding: 4px;
+                    }
+                    QFrame:hover {
+                        background-color: rgba(80, 83, 100, 0.7);
+                    }
+                """)
+                
+                card_layout = QVBoxLayout(tool_card)
+                card_layout.setContentsMargins(10, 5, 10, 5)
+                card_layout.setSpacing(2)
+                
+                # Заголовок инструмента
+                title = QLabel(tool["name"])
+                title.setStyleSheet("font-weight: bold; color: #f8f8f2;")
+                card_layout.addWidget(title)
+                
+                # Описание инструмента
+                description = QLabel(tool["description"][:100] + "..." if len(tool["description"]) > 100 else tool["description"])
+                description.setStyleSheet("color: #cfcfd1; font-size: 10px;")
+                description.setWordWrap(True)
+                card_layout.addWidget(description)
+                
+                # Делаем карточку кликабельной
+                tool_card.mousePressEvent = lambda event, t=tool: self.select_tool(t)
+                
+                self.tools_layout.addWidget(tool_card)
+            except Exception as e:
+                print(f"Ошибка при создании карточки инструмента {tool.get('name', 'unknown')}: {e}")
+        
+        # Добавляем растягивающийся элемент в конце
+        self.tools_layout.addStretch()
     
     def filter_tools(self, text):
         """Фильтрует инструменты по тексту."""
@@ -252,12 +412,11 @@ class SmitheryMcpPanel(QWidget):
     
     def select_tool(self, tool_data):
         """Выбирает инструмент и обновляет UI."""
+        # Запоминаем выбранный инструмент
         self.current_tool = tool_data
         
-        # Обновляем информацию об инструменте
-        self.tool_name_label.setText(tool_data.get('name', 'Неизвестный инструмент'))
-        self.tool_description_label.setText(tool_data.get('description', ''))
-        
+        # Эмитим сигнал о выборе инструмента
+        # Информация об инструменте уже в нужном формате
         # Отправляем сигнал о выборе инструмента
         self.tool_selected.emit(tool_data)
     

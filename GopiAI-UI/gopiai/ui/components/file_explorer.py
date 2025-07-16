@@ -60,10 +60,10 @@ class FileExplorerWidget(QWidget):
         try:
             from .icon_file_system_model import UniversalIconManager
             self.icon_manager = UniversalIconManager()
-            print("✅ Загружена система иконок UniversalIconManager")
+            print("[OK] Загружена система иконок UniversalIconManager")
         except ImportError:
             self.icon_manager = None
-            print("❌ Не удалось загрузить UniversalIconManager")
+            print("[ERROR] Не удалось загрузить UniversalIconManager")
 
     def _setup_ui(self):
         """Настройка интерфейса проводника"""

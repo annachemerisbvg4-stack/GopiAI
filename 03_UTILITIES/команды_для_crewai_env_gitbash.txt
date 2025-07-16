@@ -11,7 +11,7 @@ python -m venv crewai_env
 source GopiAI-CrewAI/crewai_env/Scripts/activate
 
 # 3. Установить только нужные зависимости
-pip install crewai groq 'protobuf>=6.30.0,<7.0.0'
+pip install crewai 'protobuf>=6.30.0,<7.0.0'
 # (Добавьте другие LLM по необходимости)
 
 # 4. Запускать тесты CrewAI/LLM только из этого окружения

@@ -22,7 +22,7 @@ class CustomFileSystemModel(QFileSystemModel):
         # Кеш иконок для улучшения производительности
         self._icon_cache = {}
         
-        print(f"🎨 CustomFileSystemModel инициализирована с icon_manager: {type(icon_manager)}")
+        print(f"[FILE SYSTEM] CustomFileSystemModel инициализирована с icon_manager: {type(icon_manager)}")
     
     def data(self, index: QModelIndex, role: int):
         """Переопределенный метод для предоставления иконок"""
@@ -72,4 +72,4 @@ class CustomFileSystemModel(QFileSystemModel):
     def clear_icon_cache(self):
         """Очищает кеш иконок"""
         self._icon_cache.clear()
-        print("🔄 Кеш иконок очищен")
+        print("[REFRESH] Кеш иконок очищен")

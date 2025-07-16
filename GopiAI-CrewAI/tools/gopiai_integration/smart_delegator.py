@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Optional
 
 # Импортируем наш модуль системных промптов
 from .system_prompts import get_system_prompts
-from .smithery_integration import SmitheryIntegration
+from .mcp_integration import MCPToolsManager, get_mcp_tools_manager
 
 # Инициализируем логгер перед использованием
 logger = logging.getLogger(__name__)
@@ -28,17 +28,19 @@ class SmartDelegator:
         self.rag_system = rag_system
         self.rag_available = self.rag_system is not None and self.rag_system.embeddings is not None
         
-        # Инициализируем SmitheryIntegration для доступа к MCP инструментам
+        # Инициализируем MCPToolsManager для доступа к MCP инструментам
         try:
-            self.smithery = SmitheryIntegration()
-            self.smithery.initialize()
-            self.smithery_available = True
-            mcp_tools_count = len(self.smithery.get_available_tools_for_ui())
-            logger.info(f"[OK] Smithery MCP интеграция инициализирована. Доступно инструментов: {mcp_tools_count}")
+            import asyncio
+            self.mcp_manager = get_mcp_tools_manager()
+            self.mcp_available = True
+            # Исправлено: правильный вызов асинхронной функции через asyncio.run
+            mcp_tools = asyncio.run(self.mcp_manager.get_all_tools())
+            mcp_tools_count = len(mcp_tools) if mcp_tools else 0
+            logger.info(f"[OK] MCP интеграция инициализирована. Доступно инструментов: {mcp_tools_count}")
         except Exception as e:
-            self.smithery = None
-            self.smithery_available = False
-            logger.warning(f"[WARNING] Не удалось инициализировать Smithery MCP: {str(e)}")
+            self.mcp_manager = None
+            self.mcp_available = False
+            logger.warning(f"[WARNING] Не удалось инициализировать MCP интеграцию: {str(e)}")
         
         if self.rag_available:
             logger.info(f"[OK] RAG system passed to SmartDelegator. Records: {self.rag_system.embeddings.count()}")
@@ -60,7 +62,7 @@ class SmartDelegator:
         # 3. Проверяем наличие запроса на вызов MCP инструмента
         tool_request = self._check_for_tool_request(message, metadata)
         
-        if tool_request and self.smithery_available:
+        if tool_request and self.mcp_available:
             logger.info(f"Обнаружен запрос на использование MCP инструмента: {tool_request['tool_name']}")
             
             # Вызываем MCP инструмент
@@ -197,15 +199,20 @@ class SmartDelegator:
         
     def _call_mcp_tool(self, tool_name: str, server_name: str, params: Dict) -> Dict:
         """
-        Вызывает MCP инструмент через SmitheryIntegration и возвращает результат.
+        Вызывает MCP инструмент через MCPToolsManager и возвращает результат.
         """
-        if not self.smithery_available or not self.smithery:
-            raise Exception("Smithery MCP не инициализирован или недоступен")
+        if not self.mcp_available or not self.mcp_manager:
+            raise Exception("MCP менеджер не инициализирован или недоступен")
         
         logger.info(f"Вызов MCP инструмента {tool_name} на сервере {server_name} с параметрами: {params}")
         
-        # Вызываем инструмент через SmitheryIntegration
-        result = self.smithery.call_tool(server_name, tool_name, params)
+        # Находим инструмент по имени
+        tool = self.mcp_manager.get_tool_by_name(tool_name)
+        if not tool:
+            raise Exception(f"Инструмент {tool_name} не найден")
+        
+        # Вызываем инструмент через MCPToolsManager
+        result = self.mcp_manager.execute_tool(tool, **params)
         
         logger.info(f"Получен результат от MCP инструмента: {str(result)[:200]}...")
         

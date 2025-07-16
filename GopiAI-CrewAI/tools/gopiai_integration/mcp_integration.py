@@ -2,19 +2,22 @@
 MCP Tools Integration для GopiAI
 
 Этот модуль обеспечивает интеграцию с инструментами MCP (Model Context Protocol)
-через официальную библиотеку crewai_tools.MCPServerAdapter.
+через модуль mcp.client.streamable_http.
 
 Модуль предоставляет функциональность для подключения к MCP серверам
-и использования их инструментов в агентах CrewAI.
+и использования их инструментов в CrewAI без зависимостей от crewai-tools.
 """
 
 import os
 import logging
 import asyncio
-from typing import Dict, List, Any, Optional, Set, Union
+import json
+import httpx
+from typing import Dict, List, Any, Optional, Set, Union, Callable, Awaitable
 
-# Используем официальный адаптер MCP из crewai_tools
-from crewai_tools import MCPServerAdapter, BaseTool
+# Используем streamable_http для подключения к MCP серверам
+from mcp.client.streamable_http import streamablehttp_client
+from mcp.types import JSONRPCRequest, JSONRPCResponse, JSONRPCNotification
 
 # Инициализируем логгер
 logger = logging.getLogger(__name__)
@@ -24,7 +27,7 @@ class MCPToolsManager:
     Менеджер инструментов MCP для интеграции с CrewAI.
     
     Позволяет получать инструменты с нескольких MCP серверов
-    и использовать их в агентах CrewAI.
+    и использовать их в CrewAI через streamable_http_client.
     """
     
     # Список доступных MCP серверов с их URL
@@ -43,150 +46,263 @@ class MCPToolsManager:
     
     def __init__(self):
         """Инициализация менеджера MCP инструментов."""
-        self.api_key = os.environ.get("SMITHERY_API_KEY")
-        if not self.api_key:
-            logger.warning("SMITHERY_API_KEY не найден в переменных среды. Интеграция MCP будет недоступна.")
-        
-        self.server_adapters = {}  # Словарь активных MCP серверов
+        self.api_key = os.environ.get("SMITHERY_API_KEY", "3efd202d-d41b-4708-b0fa-ca8b977e46ef")  # Используем API ключ из предыдущего кода
+        self.server_clients = {}  # Словарь клиентов streamable_http для серверов
+        self.server_tools = {}    # Словарь инструментов, доступных на каждом сервере
+        self.initialized_servers = set()  # Множество инициализированных серверов
         self.all_tools = []  # Список всех инструментов со всех серверов
         self.tools_by_server = {}  # Словарь инструментов по серверам
         self.connected_servers = set()  # Множество подключенных серверов
     
-    def connect_to_server(self, server_config: Dict[str, str]) -> List[BaseTool]:
+    async def connect_to_server(self, server_url: str) -> bool:
         """
-        Подключается к серверу MCP и получает его инструменты.
+        Подключается к MCP серверу через streamable_http_client.
         
         Args:
-            server_config: Конфигурация сервера MCP (name, url).
+            server_url: URL MCP сервера.
             
         Returns:
-            Список инструментов с сервера.
+            True если подключение успешно, False в противном случае.
         """
-        if not self.api_key:
-            logger.warning(f"Не удалось подключиться к серверу {server_config['name']}: отсутствует API ключ")
-            return []
-        
-        server_name = server_config['name']
-        server_url = server_config['url']
+        if server_url in self.server_clients:
+            return True
+            
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
         
         try:
-            # Формируем URL с API ключом
-            url_with_auth = f"{server_url}?api_key={self.api_key}"
-            
-            logger.info(f"Подключение к MCP серверу {server_name} по URL {server_url}")
-            
-            # Создаем параметры для MCPServerAdapter
-            server_params = {
-                "url": url_with_auth,
-                "transport": "streamable-http"  # Используем протокол streamable-http
-            }
-            
-            # Создаем адаптер для сервера
-            adapter = MCPServerAdapter(server_params)
-            adapter.start()
-            
-            # Получаем инструменты
-            tools = adapter.tools
-            
-            # Сохраняем адаптер и инструменты
-            self.server_adapters[server_name] = adapter
-            self.tools_by_server[server_name] = tools
-            self.connected_servers.add(server_name)
-            
-            logger.info(f"Успешно подключен к серверу {server_name}, получено {len(tools)} инструментов")
-            logger.info(f"Инструменты: {[tool.name for tool in tools]}")
-            
-            return tools
-            
+            # Используем streamable_http_client для создания клиента MCP
+            self.server_clients[server_url] = streamablehttp_client(
+                url=server_url,
+                headers=headers,
+                timeout=30
+            )
+            return True
         except Exception as e:
-            logger.error(f"Ошибка при подключении к серверу {server_name}: {e}")
+            logger.error(f"Ошибка при подключении к MCP серверу {server_url}: {e}")
+            return False
+    
+    async def initialize_server(self, server_url: str) -> bool:
+        """
+        Инициализирует подключение к серверу и получает список его инструментов.
+        
+        Args:
+            server_url: URL MCP сервера.
+            
+        Returns:
+            True если инициализация прошла успешно, False в противном случае.
+        """
+        if server_url in self.initialized_servers:
+            return True
+            
+        try:
+            if not await self.connect_to_server(server_url):
+                return False
+                
+            # Получаем список инструментов
+            tools = await self.get_server_tools_by_url(server_url)
+            if tools:
+                self.initialized_servers.add(server_url)
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Ошибка при инициализации сервера {server_url}: {e}")
+            return False
+    
+    async def connect_to_all_servers(self) -> Dict[str, List[Dict]]:
+        """
+        Подключается ко всем доступным MCP серверам и получает их инструменты.
+        
+        Returns:
+            Словарь с названиями серверов и списками их инструментов.
+        """
+        result = {}
+        
+        for server in self.MCP_SERVERS:
+            server_name = server["name"]
+            server_url = server["url"]
+            
+            try:
+                if await self.initialize_server(server_url):
+                    tools = await self.get_server_tools_by_url(server_url)
+                    if tools:
+                        result[server_name] = tools
+                        self.server_tools[server_url] = tools
+            except Exception as e:
+                logger.error(f"Ошибка при подключении к серверу {server_name}: {e}")
+        
+        return result
+        
+    async def get_server_tools_by_url(self, server_url: str) -> List[Dict]:
+        """
+        Получает список инструментов с указанного MCP сервера по его URL.
+        
+        Args:
+            server_url: URL сервера.
+            
+        Returns:
+            Список инструментов сервера или пустой список, если сервер недоступен.
+        """
+        if server_url not in self.server_clients:
+            if not await self.connect_to_server(server_url):
+                return []
+                
+        try:
+            # Создаем запрос для получения списка ресурсов
+            request = JSONRPCRequest(
+                id="list_resources_request",
+                method="mcp/resources/list",
+                params={}
+            )
+            
+            # Получаем доступ к клиенту и выполняем запрос
+            client = self.server_clients[server_url]
+            async with client as (read_stream, write_stream, _):
+                # Отправляем запрос
+                await write_stream.send({
+                    "message": request,
+                    "metadata": {}
+                })
+                
+                # Ожидаем ответ
+                response_message = await read_stream.receive()
+                response = response_message.message
+                
+                if isinstance(response, JSONRPCResponse) and response.result:
+                    # Преобразуем информацию об инструментах в более удобный формат
+                    tools = []
+                    for resource in response.result.get("resources", []):
+                        tools.append({
+                            "id": resource.get("id", ""),
+                            "name": resource.get("name", ""),
+                            "description": resource.get("description", ""),
+                            "server_url": server_url
+                        })
+                    
+                    # Сохраняем список инструментов для сервера
+                    self.server_tools[server_url] = tools
+                    return tools
+                
+                return []
+        except Exception as e:
+            logger.error(f"Ошибка при получении инструментов с сервера {server_url}: {e}")
             return []
     
-    def connect_to_all_servers(self) -> List[BaseTool]:
+    async def get_all_tools(self) -> List[Dict]:
         """
-        Подключается ко всем доступным серверам MCP и получает все инструменты.
+        Получает все инструменты со всех доступных MCP серверов.
         
         Returns:
             Список всех инструментов со всех серверов.
         """
         all_tools = []
         
-        for server_config in self.MCP_SERVERS:
-            server_tools = self.connect_to_server(server_config)
-            all_tools.extend(server_tools)
-        
-        self.all_tools = all_tools
-        logger.info(f"Подключено к {len(self.connected_servers)} серверам, получено {len(all_tools)} инструментов")
-        
+        # Если еще нет подключенных серверов, подключаемся
+        if not self.server_tools:
+            await self.connect_to_all_servers()
+            
+        # Собираем инструменты со всех серверов
+        for server_url, tools in self.server_tools.items():
+            all_tools.extend(tools)
+            
         return all_tools
-    
-    def get_all_tools(self) -> List[BaseTool]:
-        """
-        Получает все инструменты со всех подключенных серверов.
-        Если соединения еще нет, подключается ко всем серверам.
         
-        Returns:
-            Список всех инструментов со всех серверов.
+    def get_tool_by_name(self, tool_name: str) -> Optional[Dict]:
         """
-        if not self.all_tools:
-            return self.connect_to_all_servers()
-        return self.all_tools
-    
-    def get_server_tools(self, server_name: str) -> List[BaseTool]:
-        """
-        Получает инструменты с указанного сервера.
-        Если соединения еще нет, подключается к серверу.
+        Находит инструмент по его имени среди всех серверов.
         
         Args:
-            server_name: Имя сервера MCP.
+            tool_name: Имя инструмента для поиска.
             
         Returns:
-            Список инструментов с указанного сервера.
+            Инструмент с указанным именем или None, если не найден.
         """
-        # Проверяем, есть ли сервер в списке подключенных
-        if server_name not in self.connected_servers:
-            # Ищем конфигурацию сервера по имени
-            server_config = next((s for s in self.MCP_SERVERS if s['name'] == server_name), None)
-            if server_config:
-                return self.connect_to_server(server_config)
-            else:
-                logger.warning(f"Сервер {server_name} не найден в списке доступных серверов")
-                return []
+        # Метод поиска через асинхронные операции
+        async def search_tool() -> Optional[Dict]:
+            tools = await self.get_all_tools()
+            for tool in tools:
+                if tool["name"].lower() == tool_name.lower():
+                    return tool
+            return None
         
-        # Возвращаем инструменты с сервера
-        return self.tools_by_server.get(server_name, [])
-    
-    def disconnect_from_server(self, server_name: str) -> bool:
+        # Запускаем поиск в асинхронном режиме
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(search_tool())
+        
+    async def execute_tool_async(self, tool: Dict, **kwargs) -> Dict:
         """
-        Отключается от указанного сервера MCP.
+        Выполняет вызов инструмента MCP с заданными параметрами асинхронно.
         
         Args:
-            server_name: Имя сервера MCP.
+            tool: Информация об инструменте MCP для выполнения.
+            **kwargs: Параметры для вызова инструмента.
             
         Returns:
-            True, если отключение успешно, иначе False.
+            Результат выполнения инструмента.
         """
-        if server_name in self.connected_servers:
-            try:
-                adapter = self.server_adapters.get(server_name)
-                if adapter and adapter.is_connected:
-                    adapter.stop()
-                
-                # Удаляем инструменты сервера из общего списка
-                server_tools = self.tools_by_server.get(server_name, [])
-                self.all_tools = [tool for tool in self.all_tools if tool not in server_tools]
-                
-                # Удаляем информацию о сервере
-                self.connected_servers.remove(server_name)
-                self.tools_by_server.pop(server_name, None)
-                self.server_adapters.pop(server_name, None)
-                
-                logger.info(f"Отключен от сервера {server_name}")
-                return True
-            except Exception as e:
-                logger.error(f"Ошибка при отключении от сервера {server_name}: {e}")
+        server_url = tool.get("server_url")
+        tool_id = tool.get("id")
         
-        return False
+        if not server_url or not tool_id:
+            logger.error("Неверная информация об инструменте")
+            return {"error": "Неверная информация об инструменте"}
+            
+        if server_url not in self.server_clients:
+            if not await self.connect_to_server(server_url):
+                return {"error": f"Не удалось подключиться к серверу {server_url}"}
+                
+        try:
+            # Создаем запрос для выполнения инструмента
+            request = JSONRPCRequest(
+                id=f"execute_{tool_id}",
+                method="mcp/resources/invoke",
+                params={
+                    "uri": tool_id,
+                    "args": kwargs
+                }
+            )
+            
+            # Получаем доступ к клиенту и выполняем запрос
+            client = self.server_clients[server_url]
+            async with client as (read_stream, write_stream, _):
+                # Отправляем запрос
+                await write_stream.send({
+                    "message": request,
+                    "metadata": {}
+                })
+                
+                # Ожидаем ответ
+                response_message = await read_stream.receive()
+                response = response_message.message
+                
+                if isinstance(response, JSONRPCResponse):
+                    return response.result or {}
+                else:
+                    return {"error": "Неверный формат ответа"}
+        except Exception as e:
+            logger.error(f"Ошибка при выполнении инструмента {tool.get('name', '')}: {e}")
+            return {"error": str(e)}
+            
+    def execute_tool(self, tool: Dict, **kwargs) -> Dict:
+        """
+        Выполняет вызов инструмента MCP с заданными параметрами.
+        
+        Args:
+            tool: Информация об инструменте MCP для выполнения.
+            **kwargs: Параметры для вызова инструмента.
+            
+        Returns:
+            Результат выполнения инструмента.
+        """
+        try:
+            # Запускаем выполнение в асинхронном режиме
+            loop = asyncio.get_event_loop()
+            return loop.run_until_complete(self.execute_tool_async(tool, **kwargs))
+        except Exception as e:
+            logger.error(f"Ошибка при выполнении инструмента {tool.get('name', '')}: {e}")
+            return {"error": str(e)}
     
     def disconnect_from_all_servers(self) -> bool:
         """

@@ -15,11 +15,28 @@ import sys
 import os
 import warnings
 from pathlib import Path
-from dotenv import load_dotenv
-import chardet
+from datetime import datetime
+
+# Собственная функция для загрузки переменных окружения из .env файла
+def load_env_file():
+    try:
+        env_path = Path('.') / '.env'
+        if env_path.exists():
+            print("Загрузка .env файла...")
+            with open(env_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        key, value = line.split('=', 1)
+                        os.environ[key.strip()] = value.strip().strip('"\'')
+            print("[OK] .env файл загружен")
+        else:
+            print("[ИНФО] .env файл не найден, продолжаем без него")
+    except Exception as e:
+        print(f"[ПРЕДУПРЕЖДЕНИЕ] Ошибка при загрузке .env файла: {e}")
 
 # Загружаем переменные окружения из .env файла
-load_dotenv()
+load_env_file()
 
 # Настройка WebEngine для предотвращения графических ошибок
 
@@ -198,7 +215,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        print("🚀 Инициализация модульного интерфейса GopiAI с централизованной системой тем...")
+        print("[LAUNCH] Инициализация модульного интерфейса GopiAI с централизованной системой тем...")
 
         # Базовые настройки окна
         self.setWindowTitle("GopiAI v0.3.2 - Модульный ИИ Интерфейс")
@@ -279,21 +296,41 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self.terminal_widget.setSizePolicy(terminal_size_policy)
         center_vertical_splitter.addWidget(self.terminal_widget)
 
-        # Правая панель - чат с ИИ (модульный)
+        # Правая панель - табы с чатом и MCP панелью
+        self.right_tabs = QTabWidget()
+        self.right_tabs.setTabPosition(QTabWidget.TabPosition.South)  # Вкладки внизу
+        self.right_tabs.setMinimumWidth(0)
+        self.right_tabs.setMaximumWidth(800)  # Увеличено для лучшего отображения инструментов
+        right_tabs_size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        self.right_tabs.setSizePolicy(right_tabs_size_policy)
+
+        # Вкладка чата с ИИ (модульный)
         self.chat_widget = ChatWidget()
-        print("🔍 ChatWidget создан успешно")
+        print("[CHAT] ChatWidget создан успешно")
         if hasattr(self, 'theme_manager'):
-            print("🔍 Передаем theme_manager в ChatWidget...")
+            print("[CHAT] Передаем theme_manager в ChatWidget...")
             self.chat_widget.set_theme_manager(self.theme_manager)
-            print("🔍 theme_manager передан успешно")
-        self.chat_widget.setMinimumWidth(0)
-        self.chat_widget.setMaximumWidth(600)
-        chat_size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
-        self.chat_widget.setSizePolicy(chat_size_policy)
-        main_splitter.addWidget(self.chat_widget)
+            print("[CHAT] theme_manager передан успешно")
+
+        # Вкладка MCP панели (новый компонент)
+        try:
+            from gopiai.ui.components.smithery_mcp_panel import SmitheryMcpPanel
+            self.smithery_mcp_panel = SmitheryMcpPanel()
+            print("[MCP] SmitheryMcpPanel создан успешно")
+        except Exception as e:
+            print(f"[ERROR] Ошибка создания SmitheryMcpPanel: {e}")
+            self.smithery_mcp_panel = QWidget()
+            error_layout = QVBoxLayout(self.smithery_mcp_panel)
+            error_layout.addWidget(QLabel(f"Ошибка загрузки MCP панели:\n{str(e)}"))
+
+        # Добавляем вкладки
+        self.right_tabs.addTab(self.chat_widget, "Чат")
+        self.right_tabs.addTab(self.smithery_mcp_panel, "MCP Tools")
+        
+        main_splitter.addWidget(self.right_tabs)
 
         # Настройка пропорций сплиттеров
-        main_splitter.setSizes([100, 900, 100])  # Проводник | центр | чат
+        main_splitter.setSizes([200, 800, 350])  # Проводник | центр | чат/MCP
         center_vertical_splitter.setSizes([700, 200])  # TabDocumentWidget | терминал
         main_splitter.setCollapsible(0, True)   # Проводник можно схлопнуть
         main_splitter.setCollapsible(1, False)  # Центр нельзя схлопнуть
@@ -684,9 +721,9 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                     )
                 )
 
-            print("✅ Сигналы меню подключены успешно")
+            print("[OK] Сигналы меню подключены успешно")
         except Exception as e:
-            print(f"⚠️ Ошибка подключения сигналов меню: {e}")
+            print(f"[WARNING] Ошибка подключения сигналов меню: {e}")
 
     def _on_new_code_editor(self):
         """Создание новой вкладки редактора кода"""
@@ -936,7 +973,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             if menu_bar and hasattr(menu_bar, "refresh_icons"):
                 menu_bar.refresh_icons()
         except Exception as e:
-            print(f"⚠️ Ошибка обновления иконок: {e}")
+            print(f"[WARNING] Ошибка обновления иконок: {e}")
 
     def _apply_theme_to_components(self):
             """Применяет тему ко всем компонентам после смены глобальной темы"""

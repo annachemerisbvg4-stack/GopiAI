@@ -18,6 +18,7 @@ IF EXIST "%~dp0smithery_env.bat" (
 REM Настройка путей к виртуальным окружениям
 set "CREWAI_VENV=C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\crewai_env"
 set "UI_VENV=C:\Users\crazy\GOPI_AI_MODULES\gopiai_env"
+set "TXTAI_VENV=C:\Users\crazy\GOPI_AI_MODULES\txtai_env"
 
 REM Проверяем окружения
 echo 🔍 Checking virtual environments...
@@ -32,10 +33,17 @@ if exist "%UI_VENV%\Scripts\activate.bat" (
     echo ✅ UI environment found: %UI_VENV%
 ) else (
     echo ⚠️  UI environment not found at %UI_VENV%
-    echo    Using rag_memory_env for UI
+    echo    Using gopiai_env for UI
     set "UI_VENV=%gopiai_env%"
 )
 
+if exist "%TXTAI_VENV%\Scripts\activate.bat" (
+    echo ✅ TXTAI environment found: %TXTAI_VENV%
+) else (
+    echo ⚠️  TXTAI environment not found at %TXTAI_VENV%
+    echo    Using gopiai_env for TXTAI
+    set "TXTAI_VENV=%gopiai_env%"
+)
 echo.
 echo 🚀 Starting development sequence...
 echo.
@@ -64,12 +72,19 @@ if exist "%UI_VENV%\Scripts\activate.bat" (
     start "🖥️ GopiAI-UI" cmd /k "title 🖥️ GopiAI-UI Application && color 0E && cd /d C:\Users\crazy\GOPI_AI_MODULES\GopiAI-UI && echo. && echo ═══════════════════════════════════════ && echo    🖥️ GopiAI-UI Application && echo ═══════════════════════════════════════ && echo. && echo ⚠️  Using global Python environment && echo 📂 Directory: GopiAI-UI && echo. && echo 🚀 Starting GopiAI-UI Application... && python gopiai\ui\main.py"
 )
 
+REM Шаг 3: Активация TXTAI окружения
+if exist "%TXTAI_VENV%\Scripts\activate.bat" (
+    start "🤖 TXTAI API Server" cmd /k "title 🤖 TXTAI API Server && color 09 && cd /d C:\Users\crazy\GOPI_AI_MODULES\txtai_env && echo. && echo ═══════════════════════════════════════ && echo    🤖 TXTAI API Server Environment && echo ═══════════════════════════════════════ && echo. && echo 🔄 Activating TXTAI environment... && call %TXTAI_VENV%\Scripts\activate.bat && echo ✅ Environment activated"
+) else (
+    start "🤖 TXTAI API Server" cmd /k "title 🤖 TXTAI API Server && color 09 && cd /d C:\Users\crazy\GOPI_AI_MODULES\txtai_env && echo. && echo ═══════════════════════════════════════ && echo    🤖 TXTAI API Server Environment && echo ═══════════════════════════════════════ && echo. && echo ⚠️  Using global Python environment"
+)
 echo.
-echo ✅ Both applications launched successfully!
+echo ✅ Applications launched successfully!
 echo.
 echo 📋 What's Running:
 echo    🤖 CrewAI API Server: crewai_api_server.py (Green Terminal)
 echo    🖥️ GopiAI-UI App: gopiai\ui\main.py (Yellow Terminal)
+echo    🤖 TXTAI Environment: Активированное окружение txtai_env (Blue Terminal)
 echo.
 echo 🔧 Control Commands:
 echo    • Use Ctrl+C in any terminal to stop that service
