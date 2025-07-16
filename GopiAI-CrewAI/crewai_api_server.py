@@ -11,8 +11,13 @@ import time
 import traceback
 import uuid
 import threading
+import signal
+import atexit
 from pathlib import Path
 from datetime import datetime, timedelta
+
+# Исправляем конфликт OpenMP библиотек
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 
 # Загружаем переменные окружения из .env файла
 from dotenv import load_dotenv
@@ -138,27 +143,39 @@ def health_check():
 def process_task(task_id: str):
     """Processes a task in a separate thread."""
     task = TASKS.get(task_id)
-    if not task: return
+    if not task:
+        logger.error(f"[TASK-ERROR] Task {task_id} not found in TASKS")
+        return
         
     if not smart_delegator_instance:
-        task.fail("Smart Delegator not initialized.")
+        error_msg = "Smart Delegator not initialized."
+        logger.error(f"[TASK-ERROR] {error_msg}")
+        task.fail(error_msg)
         return
 
     try:
         task.start_processing()
-        logger.info(f"Starting task {task_id} for message: '{task.message}'")
+        logger.info(f"[TASK-START] Starting task {task_id} for message: '{task.message}'")
         
+        # Добавляем дополнительную проверку
+        if not hasattr(smart_delegator_instance, 'process_request'):
+            error_msg = "Smart Delegator missing process_request method"
+            logger.error(f"[TASK-ERROR] {error_msg}")
+            task.fail(error_msg)
+            return
+            
         response_data = smart_delegator_instance.process_request(
             message=task.message,
             metadata=task.metadata
         )
         
-        logger.info(f"Task {task_id} processed successfully.")
+        logger.info(f"[TASK-SUCCESS] Task {task_id} processed successfully.")
         task.complete(response_data)
         
     except Exception as e:
-        logger.error(f"[ERROR] Error processing task {task_id}: {e}", exc_info=True)
-        task.fail(str(e))
+        error_msg = f"Error processing task {task_id}: {str(e)}"
+        logger.error(f"[TASK-ERROR] {error_msg}", exc_info=True)
+        task.fail(error_msg)
 
 @app.route('/api/process', methods=['POST'])
 def process_request():
@@ -195,17 +212,47 @@ def get_task_status(task_id):
         return jsonify({"error": "Task not found"}), 404
     return jsonify(task.to_dict())
 
+@app.route('/api/debug', methods=['GET'])
+def debug_status():
+    """Debug endpoint for system status"""
+    return jsonify({
+        "server_ready": SERVER_IS_READY,
+        "smart_delegator_ready": smart_delegator_instance is not None,
+        "rag_system_ready": rag_system_instance is not None,
+        "active_tasks": len(TASKS),
+        "task_ids": list(TASKS.keys())
+    })
+
+# Обработка сигналов для корректного завершения
+def signal_handler(signum, frame):
+    print(f"\n[SHUTDOWN] Received signal {signum}. Shutting down gracefully...")
+    logger.info(f"Received signal {signum}. Shutting down gracefully...")
+    sys.exit(0)
+
+def cleanup_on_exit():
+    print("[SHUTDOWN] Cleaning up resources...")
+    logger.info("Cleaning up resources...")
+
 if __name__ == '__main__':
+    # Регистрируем обработчики сигналов
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    atexit.register(cleanup_on_exit)
+    
     print(f"[DIAGNOSTIC] __main__ block, SERVER_IS_READY = {SERVER_IS_READY}")
     if SERVER_IS_READY:
         print(f"[DIAGNOSTIC] Starting server on http://{HOST}:{PORT}")
         logger.info(f"[STARTUP] Server starting on http://{HOST}:{PORT}")
         try:
             print("[DIAGNOSTIC] Calling app.run()")
-            app.run(host=HOST, port=PORT, debug=DEBUG, threaded=True)
+            app.run(host=HOST, port=PORT, debug=DEBUG, threaded=True, use_reloader=False)
             print("[DIAGNOSTIC] After app.run() - this message should not appear")
+        except KeyboardInterrupt:
+            print("\n[SHUTDOWN] Received KeyboardInterrupt. Shutting down gracefully...")
+            logger.info("Received KeyboardInterrupt. Shutting down gracefully...")
         except Exception as e:
             print(f"[DIAGNOSTIC] Error starting server: {e}")
+            logger.error(f"Error starting server: {e}")
     else:
         print("[DIAGNOSTIC] Server not started due to initialization errors")
         logger.error("Server not started due to initialization errors.")

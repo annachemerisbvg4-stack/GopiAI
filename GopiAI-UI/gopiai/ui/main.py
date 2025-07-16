@@ -17,6 +17,9 @@ import warnings
 from pathlib import Path
 from datetime import datetime
 
+# Исправляем конфликт OpenMP библиотек
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+
 # Собственная функция для загрузки переменных окружения из .env файла
 def load_env_file():
     try:

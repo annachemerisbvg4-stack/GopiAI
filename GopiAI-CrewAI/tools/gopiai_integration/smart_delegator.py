@@ -248,9 +248,10 @@ class SmartDelegator:
         try:
             # Выводим длину системного промпта для диагностики
             system_prompt_len = len(messages[0]['content']) if messages and messages[0]['role'] == 'system' else 0
-            logger.info(f"Длина системного промпта: {system_prompt_len} символов")
+            logger.info(f"[LLM] Длина системного промпта: {system_prompt_len} символов")
             
             # Вызов LLM через litellm
+            logger.info("[LLM] Отправляем запрос в Gemini...")
             response = litellm.completion(
                 model="gemini/gemini-1.5-flash",
                 messages=messages,
@@ -258,15 +259,21 @@ class SmartDelegator:
                 max_tokens=2000
             )
             
-            logger.debug(f"Получен ответ от LLM: {str(response)[:200]}...")
+            logger.info(f"[LLM] Получен ответ от LLM: {str(response)[:200]}...")
             
             # Извлекаем текст ответа
-            response_text = response.choices[0].message.content if response and response.choices else ""
-            return response_text
+            if response and response.choices and len(response.choices) > 0:
+                response_text = response.choices[0].message.content
+                logger.info(f"[LLM] Извлеченный текст: {response_text[:100]}...")
+                return response_text if response_text else "Пустой ответ от модели"
+            else:
+                logger.error("[LLM] Пустой ответ от модели")
+                return "Пустой ответ от модели"
             
         except Exception as e:
-            logger.error(f"Ошибка при вызове LLM: {str(e)}")
-            traceback.print_exc()
+            error_msg = f"Ошибка при вызове LLM: {str(e)}"
+            logger.error(f"[LLM] {error_msg}")
+            logger.error(f"[LLM] Traceback: {traceback.format_exc()}")
             return f"Произошла ошибка при обработке запроса: {str(e)}"
 
 # --- END OF FILE smart_delegator.py ---
