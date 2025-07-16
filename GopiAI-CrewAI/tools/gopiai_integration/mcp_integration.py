@@ -46,7 +46,11 @@ class MCPToolsManager:
     
     def __init__(self):
         """Инициализация менеджера MCP инструментов."""
-        self.api_key = os.environ.get("SMITHERY_API_KEY", "3efd202d-d41b-4708-b0fa-ca8b977e46ef")  # Используем API ключ из предыдущего кода
+        self.api_key = os.environ.get("SMITHERY_API_KEY")
+        if not self.api_key:
+            logger.warning("SMITHERY_API_KEY не найден в переменных окружения")
+        else:
+            logger.info(f"SMITHERY_API_KEY загружен: {self.api_key[:8]}...{self.api_key[-4:]}")
         self.server_clients = {}  # Словарь клиентов streamable_http для серверов
         self.server_tools = {}    # Словарь инструментов, доступных на каждом сервере
         self.initialized_servers = set()  # Множество инициализированных серверов
@@ -56,7 +60,7 @@ class MCPToolsManager:
     
     async def connect_to_server(self, server_url: str) -> bool:
         """
-        Подключается к MCP серверу через streamable_http_client.
+        Подключается к MCP серверу через Smithery API.
         
         Args:
             server_url: URL MCP сервера.
@@ -73,11 +77,10 @@ class MCPToolsManager:
         }
         
         try:
-            # Используем streamable_http_client для создания клиента MCP
-            self.server_clients[server_url] = streamablehttp_client(
-                url=server_url,
+            # Создаем HTTP клиент для работы с Smithery API
+            self.server_clients[server_url] = httpx.AsyncClient(
                 headers=headers,
-                timeout=30
+                timeout=30.0
             )
             return True
         except Exception as e:
@@ -137,7 +140,7 @@ class MCPToolsManager:
         
     async def get_server_tools_by_url(self, server_url: str) -> List[Dict]:
         """
-        Получает список инструментов с указанного MCP сервера по его URL.
+        Получает список инструментов с указанного MCP сервера через Smithery API.
         
         Args:
             server_url: URL сервера.
@@ -150,35 +153,31 @@ class MCPToolsManager:
                 return []
                 
         try:
-            # Создаем запрос для получения списка ресурсов
-            request = JSONRPCRequest(
-                id="list_resources_request",
-                method="mcp/resources/list",
-                params={}
-            )
+            # Создаем JSON-RPC запрос для получения списка инструментов
+            request_data = {
+                "jsonrpc": "2.0",
+                "id": "list_tools_request",
+                "method": "tools/list",
+                "params": {}
+            }
             
-            # Получаем доступ к клиенту и выполняем запрос
+            # Отправляем POST запрос к Smithery API
             client = self.server_clients[server_url]
-            async with client as (read_stream, write_stream, _):
-                # Отправляем запрос
-                await write_stream.send({
-                    "message": request,
-                    "metadata": {}
-                })
+            response = await client.post(server_url, json=request_data)
+            
+            if response.status_code == 200:
+                response_data = response.json()
                 
-                # Ожидаем ответ
-                response_message = await read_stream.receive()
-                response = response_message.message
-                
-                if isinstance(response, JSONRPCResponse) and response.result:
+                if "result" in response_data and "tools" in response_data["result"]:
                     # Преобразуем информацию об инструментах в более удобный формат
                     tools = []
-                    for resource in response.result.get("resources", []):
+                    for tool in response_data["result"]["tools"]:
                         tools.append({
-                            "id": resource.get("id", ""),
-                            "name": resource.get("name", ""),
-                            "description": resource.get("description", ""),
-                            "server_url": server_url
+                            "id": tool.get("name", ""),
+                            "name": tool.get("name", ""),
+                            "description": tool.get("description", ""),
+                            "server_url": server_url,
+                            "schema": tool.get("inputSchema", {})
                         })
                     
                     # Сохраняем список инструментов для сервера
@@ -186,6 +185,10 @@ class MCPToolsManager:
                     return tools
                 
                 return []
+            else:
+                logger.warning(f"Получен статус {response.status_code} от сервера {server_url}")
+                return []
+                
         except Exception as e:
             logger.error(f"Ошибка при получении инструментов с сервера {server_url}: {e}")
             return []
@@ -219,21 +222,30 @@ class MCPToolsManager:
         Returns:
             Инструмент с указанным именем или None, если не найден.
         """
-        # Метод поиска через асинхронные операции
-        async def search_tool() -> Optional[Dict]:
-            tools = await self.get_all_tools()
-            for tool in tools:
-                if tool["name"].lower() == tool_name.lower():
-                    return tool
+        try:
+            # Метод поиска через асинхронные операции
+            async def search_tool() -> Optional[Dict]:
+                tools = await self.get_all_tools()
+                for tool in tools:
+                    if tool["name"].lower() == tool_name.lower():
+                        return tool
+                return None
+            
+            # Запускаем поиск в асинхронном режиме
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            return loop.run_until_complete(search_tool())
+        except Exception as e:
+            logger.error(f"Ошибка при поиске инструмента {tool_name}: {e}")
             return None
-        
-        # Запускаем поиск в асинхронном режиме
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(search_tool())
         
     async def execute_tool_async(self, tool: Dict, **kwargs) -> Dict:
         """
-        Выполняет вызов инструмента MCP с заданными параметрами асинхронно.
+        Выполняет вызов инструмента MCP с заданными параметрами через Smithery API.
         
         Args:
             tool: Информация об инструменте MCP для выполнения.
@@ -243,9 +255,9 @@ class MCPToolsManager:
             Результат выполнения инструмента.
         """
         server_url = tool.get("server_url")
-        tool_id = tool.get("id")
+        tool_name = tool.get("name")
         
-        if not server_url or not tool_id:
+        if not server_url or not tool_name:
             logger.error("Неверная информация об инструменте")
             return {"error": "Неверная информация об инструменте"}
             
@@ -254,33 +266,33 @@ class MCPToolsManager:
                 return {"error": f"Не удалось подключиться к серверу {server_url}"}
                 
         try:
-            # Создаем запрос для выполнения инструмента
-            request = JSONRPCRequest(
-                id=f"execute_{tool_id}",
-                method="mcp/resources/invoke",
-                params={
-                    "uri": tool_id,
-                    "args": kwargs
+            # Создаем JSON-RPC запрос для выполнения инструмента
+            request_data = {
+                "jsonrpc": "2.0",
+                "id": f"execute_{tool_name}",
+                "method": "tools/call",
+                "params": {
+                    "name": tool_name,
+                    "arguments": kwargs
                 }
-            )
+            }
             
-            # Получаем доступ к клиенту и выполняем запрос
+            # Отправляем POST запрос к Smithery API
             client = self.server_clients[server_url]
-            async with client as (read_stream, write_stream, _):
-                # Отправляем запрос
-                await write_stream.send({
-                    "message": request,
-                    "metadata": {}
-                })
+            response = await client.post(server_url, json=request_data)
+            
+            if response.status_code == 200:
+                response_data = response.json()
                 
-                # Ожидаем ответ
-                response_message = await read_stream.receive()
-                response = response_message.message
-                
-                if isinstance(response, JSONRPCResponse):
-                    return response.result or {}
+                if "result" in response_data:
+                    return response_data["result"]
+                elif "error" in response_data:
+                    return {"error": response_data["error"]}
                 else:
-                    return {"error": "Неверный формат ответа"}
+                    return {"error": "Неожиданный формат ответа"}
+            else:
+                return {"error": f"HTTP {response.status_code}: {response.text}"}
+                
         except Exception as e:
             logger.error(f"Ошибка при выполнении инструмента {tool.get('name', '')}: {e}")
             return {"error": str(e)}
@@ -298,7 +310,12 @@ class MCPToolsManager:
         """
         try:
             # Запускаем выполнение в асинхронном режиме
-            loop = asyncio.get_event_loop()
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
             return loop.run_until_complete(self.execute_tool_async(tool, **kwargs))
         except Exception as e:
             logger.error(f"Ошибка при выполнении инструмента {tool.get('name', '')}: {e}")

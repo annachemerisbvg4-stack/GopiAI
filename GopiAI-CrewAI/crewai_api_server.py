@@ -14,6 +14,11 @@ import threading
 from pathlib import Path
 from datetime import datetime, timedelta
 
+# Загружаем переменные окружения из .env файла
+from dotenv import load_dotenv
+# Загружаем .env из корневой директории проекта
+load_dotenv(dotenv_path="../.env")
+
 from flask import Flask, request, jsonify
 
 # --- Настройка путей и импортов ---
@@ -25,8 +30,8 @@ from rag_system import get_rag_system
 from tools.gopiai_integration.smart_delegator import SmartDelegator
 
 # --- Настройки сервера ---
-HOST = "127.0.0.1"
-PORT = 5052  # Изменено с 5051 на 5052 для избежания конфликтов
+HOST = "0.0.0.0"  # Слушаем на всех интерфейсах
+PORT = 5051  # Стандартный порт для CrewAI API сервера
 DEBUG = False
 TASK_CLEANUP_INTERVAL = 300
 

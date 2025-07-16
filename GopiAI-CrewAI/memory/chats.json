@@ -1237,5 +1237,222 @@
     "role": "assistant",
     "content": "Произошла ошибка: {'response': 'Ошибка: Сервер CrewAI недоступен'}",
     "timestamp": "2025-07-16T09:14:01.136786"
+  },
+  {
+    "id": "b500fc8b-d32d-47cf-99e8-b86fc4a5202c",
+    "session_id": "test_session_2615107107523752044",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-16 11:11:10.762924",
+    "timestamp": "2025-07-16T11:11:10.762924"
+  },
+  {
+    "id": "f059331b-9656-4ffe-95fa-3ad7bfa3477b",
+    "session_id": "test_session_-5218602030337529556",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-16 11:15:24.153395",
+    "timestamp": "2025-07-16T11:15:24.153395"
+  },
+  {
+    "id": "c6965bab-a332-4926-850d-519ddc279692",
+    "session_id": "test_session_684421631218349140",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-16 22:25:08.002439",
+    "timestamp": "2025-07-16T22:25:08.002439"
+  },
+  {
+    "id": "25f5ddb3-98b4-4a42-a8bf-e088e902d9bb",
+    "session_id": "test_session_2204277738569001217",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-16 22:57:41.684142",
+    "timestamp": "2025-07-16T22:57:41.684142"
+  },
+  {
+    "id": "113b4eaf-6cd8-49e4-8560-eccea03ec983",
+    "session_id": "test_session_-4493294970097236810",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-17 01:46:38.663163",
+    "timestamp": "2025-07-17T01:46:38.663163"
+  },
+  {
+    "id": "e32d71df-caf4-4d4c-b27f-86c0de586345",
+    "session_id": "session_1752697001",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-17T01:47:05.079319"
+  },
+  {
+    "id": "dbb45114-bbb5-4471-9b1f-50f3a786d521",
+    "session_id": "session_1752697001",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-17T01:47:05.084007"
+  },
+  {
+    "id": "067bda6b-e7fe-4ab5-a887-ae6431b84efb",
+    "session_id": "session_1752697001",
+    "role": "assistant",
+    "content": "Произошла ошибка: {'response': 'Ошибка: Сервер CrewAI недоступен'}",
+    "timestamp": "2025-07-17T01:47:07.153241"
+  },
+  {
+    "id": "f9afca32-3cf8-4881-8bee-09acb59ffa54",
+    "session_id": "test_session_2730679020318893555",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-17 01:55:07.849802",
+    "timestamp": "2025-07-17T01:55:07.849802"
+  },
+  {
+    "id": "492a40bb-86b2-49e6-b32e-c7e95cdab121",
+    "session_id": "session_1752697510",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-17T01:55:18.182002"
+  },
+  {
+    "id": "12457b86-3b72-4bd1-8bce-7a1d84dcdec7",
+    "session_id": "session_1752697510",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-17T01:55:18.190033"
+  },
+  {
+    "id": "5237a9ba-10d6-41b1-be7b-254147bcdeba",
+    "session_id": "session_1752697510",
+    "role": "assistant",
+    "content": "Произошла ошибка: {'response': 'Ошибка: Сервер CrewAI недоступен'}",
+    "timestamp": "2025-07-17T01:55:20.245933"
+  },
+  {
+    "id": "8bd4574e-e12b-44f4-b7b3-6bcc886fc665",
+    "session_id": "test_session_219561799760864309",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-17 02:02:39.638932",
+    "timestamp": "2025-07-17T02:02:39.639930"
+  },
+  {
+    "id": "3332f5fa-f07d-4a8e-b7c5-97f8af906f6a",
+    "session_id": "session_1752697962",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-17T02:02:50.294741"
+  },
+  {
+    "id": "6af942fe-d002-46f7-8b5a-f98f2c7d5bdd",
+    "session_id": "session_1752697962",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-17T02:02:50.307375"
+  },
+  {
+    "id": "b5dc5807-7e72-4501-89c9-3cd49d70c829",
+    "session_id": "session_1752697962",
+    "role": "assistant",
+    "content": "Произошла ошибка: {'response': 'Ошибка: Сервер CrewAI недоступен'}",
+    "timestamp": "2025-07-17T02:02:52.385623"
+  },
+  {
+    "id": "1caee5b8-842b-408f-ae5c-608a00cc580f",
+    "session_id": "test_session_-359687237746909157",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-17 02:21:15.787826",
+    "timestamp": "2025-07-17T02:21:15.787826"
+  },
+  {
+    "id": "16526d41-f9e2-412f-8298-a9891cb7ecc0",
+    "session_id": "session_1752699082",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-17T02:24:04.061324"
+  },
+  {
+    "id": "ad1a83e2-4395-4ec0-b6e1-b5d0e3cb608c",
+    "session_id": "session_1752699082",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-17T02:24:04.070278"
+  },
+  {
+    "id": "31154d42-97eb-4bc9-9b0a-946c4492121a",
+    "session_id": "session_1752699082",
+    "role": "assistant",
+    "content": "Произошла ошибка: {'response': 'Ошибка: Сервер CrewAI недоступен'}",
+    "timestamp": "2025-07-17T02:24:06.123713"
+  },
+  {
+    "id": "87d87e98-3772-406b-af18-356fcd2d3750",
+    "session_id": "test_session_-616017118762953295",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-17 02:25:15.046067",
+    "timestamp": "2025-07-17T02:25:15.046067"
+  },
+  {
+    "id": "7940704e-fd7d-4f07-a42b-d532ebcc6c19",
+    "session_id": "session_1752699317",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-17T02:25:25.825693"
+  },
+  {
+    "id": "5052516c-4662-4fd3-9737-c4d9ac58db9f",
+    "session_id": "session_1752699317",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-17T02:25:25.833771"
+  },
+  {
+    "id": "c48b9d4e-6b51-45f1-be5b-4a8087028fc2",
+    "session_id": "session_1752699317",
+    "role": "assistant",
+    "content": "None",
+    "timestamp": "2025-07-17T02:25:31.483368"
+  },
+  {
+    "id": "6eee16c9-4098-4a48-ae5e-3b6c281874c2",
+    "session_id": "session_1752699317",
+    "role": "user",
+    "content": "аууу ты тут?",
+    "timestamp": "2025-07-17T02:25:44.336256"
+  },
+  {
+    "id": "f54e27e1-953b-4e18-9a09-faf33e6f7c5a",
+    "session_id": "session_1752699317",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-17T02:25:44.343257"
+  },
+  {
+    "id": "1ed532cf-d778-4c9c-9eae-c987ae23cd52",
+    "session_id": "session_1752699317",
+    "role": "assistant",
+    "content": "Произошла ошибка: {'response': 'Ошибка: Сервер CrewAI недоступен'}",
+    "timestamp": "2025-07-17T02:25:46.418778"
+  },
+  {
+    "id": "87dd0b8c-3a6a-4860-9143-ed7a44441761",
+    "session_id": "test_session_-3675018432849726899",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-17 02:31:31.396353",
+    "timestamp": "2025-07-17T02:31:31.396353"
+  },
+  {
+    "id": "644fd2bd-e112-47a5-898d-5cf366a072e5",
+    "session_id": "session_1752699693",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-17T02:31:41.043779"
+  },
+  {
+    "id": "8e86ea55-e574-46d3-8ae9-66d33f485f59",
+    "session_id": "session_1752699693",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-17T02:31:41.052355"
+  },
+  {
+    "id": "7ee0eb4b-d558-4147-805f-feb84fe97ff7",
+    "session_id": "session_1752699693",
+    "role": "assistant",
+    "content": "Произошла ошибка: {'response': 'Ошибка: Сервер CrewAI недоступен'}",
+    "timestamp": "2025-07-17T02:31:43.148101"
   }
 ]

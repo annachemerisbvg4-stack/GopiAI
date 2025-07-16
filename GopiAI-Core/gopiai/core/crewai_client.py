@@ -2,7 +2,7 @@ import requests
 import json
 
 class CrewAIClient:
-    def __init__(self, base_url="http://127.0.0.1:5050"):
+    def __init__(self, base_url="http://127.0.0.1:5051"):
         self.base_url = base_url
 
     def _send_request(self, endpoint, data):

@@ -53,20 +53,17 @@ class SmitheryMcpPanel(QWidget):
         self.tools_loading = False
         self.tools_manager = None  # Менеджер инструментов MCP
         self.load_tools_timer = None
+        self.current_tool = None
+        self.api_key_warning = None  # Предупреждение о ключе API
+        self.loading_label = None    # Метка загрузки
+        self.spinner_movie = None    # Анимация загрузки
+        
+        # Настраиваем UI только один раз
         self.setup_ui()
         
         # Вызываем метод инициализации после создания UI
         print("[Инициализация] SmitheryMcpPanel: Вызываем метод initialize()...")
         self.initialize()
-        
-        self.current_tool = None
-        self.tools_loading = False  # Флаг загрузки инструментов
-        self.api_key_warning = None  # Предупреждение о ключе API
-        self.loading_label = None    # Метка загрузки
-        self.spinner_movie = None    # Анимация загрузки
-        
-        self.setup_ui()
-        # self.load_tools()  # Загрузка будет вызвана из setup_ui
     
     def setup_ui(self):
         """Настраивает пользовательский интерфейс панели."""

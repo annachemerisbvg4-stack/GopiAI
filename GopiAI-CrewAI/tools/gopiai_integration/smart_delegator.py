@@ -30,12 +30,16 @@ class SmartDelegator:
         
         # Инициализируем MCPToolsManager для доступа к MCP инструментам
         try:
-            import asyncio
             self.mcp_manager = get_mcp_tools_manager()
             self.mcp_available = True
-            # Исправлено: правильный вызов асинхронной функции через asyncio.run
-            mcp_tools = asyncio.run(self.mcp_manager.get_all_tools())
-            mcp_tools_count = len(mcp_tools) if mcp_tools else 0
+            # Пробуем получить инструменты для проверки работоспособности
+            try:
+                import asyncio
+                mcp_tools = asyncio.run(self.mcp_manager.get_all_tools())
+                mcp_tools_count = len(mcp_tools) if mcp_tools else 0
+            except Exception as async_e:
+                logger.warning(f"[WARNING] Не удалось получить MCP инструменты: {str(async_e)}")
+                mcp_tools_count = 0
             logger.info(f"[OK] MCP интеграция инициализирована. Доступно инструментов: {mcp_tools_count}")
         except Exception as e:
             self.mcp_manager = None

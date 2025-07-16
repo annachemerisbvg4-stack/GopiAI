@@ -52,6 +52,8 @@ executing
 faiss-cpu
 fastapi
 fastavro
+txtai>=8.2.0
+mcp>=1.11.0
 filelock
 Flask
 flatbuffers
