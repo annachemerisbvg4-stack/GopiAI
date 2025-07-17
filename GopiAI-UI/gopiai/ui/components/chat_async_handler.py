@@ -158,7 +158,7 @@ class ChatAsyncHandler(QObject):
         self._current_polling_attempt = 0
         self._polling_timer.start(1000) # 1 секунда
         logger.info(f"[POLLING] Запущен опрос статуса для task_id: {task_id}")
-        self.status_update.emit("⏳ Обрабатываю запрос...")
+        self.status_update.emit("Обрабатываю запрос...")
 
     def _check_task_status(self):
         """Периодически опрашивает сервер о ходе выполнения задачи."""
@@ -201,7 +201,7 @@ class ChatAsyncHandler(QObject):
                 logger.info(f"[POLLING-COMPLETE] Результат задачи {task_id} отправлен в UI")
             else:
                 # Обновляем статус в UI
-                status_text = status.get("status", "⏳ Обрабатываю запрос...")
+                status_text = status.get("status", "Обрабатываю запрос...")
                 logger.debug(f"[POLLING-PROGRESS] Задача {self._current_task_id} в процессе: {status_text}")
                 self.status_update.emit(status_text)
                 
