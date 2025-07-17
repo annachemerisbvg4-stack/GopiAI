@@ -79,6 +79,10 @@ class ChatWidget(QWidget):
         self.history = QTextEdit(self)
         self.history.setReadOnly(True)
         self.history.setObjectName("ChatHistory")
+        
+        # Добавляем CSS стили для markdown
+        self._setup_markdown_styles()
+        
         chat_area_layout.addWidget(self.history)
 
         # 3. Добавляем chat_area_widget в основной layout, чтобы он растягивался
@@ -141,8 +145,84 @@ class ChatWidget(QWidget):
 
         # Подключаем прокрутку истории
         self.history.textChanged.connect(self._scroll_history_to_end)
-    # ... (все остальные методы остаются без изменений) ...
-    # send_message, _handle_response, append_message, и т.д.
+
+    def _setup_markdown_styles(self):
+        """Настраивает CSS стили для красивого отображения markdown в чате."""
+        # CSS стили для markdown элементов, адаптированные к теме
+        markdown_css = """
+        QTextEdit {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        /* Стили для HTML элементов в QTextEdit */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: bold;
+            margin-top: 16px;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+        
+        h1 { font-size: 1.8em; }
+        h2 { font-size: 1.5em; }
+        h3 { font-size: 1.3em; }
+        h4 { font-size: 1.1em; }
+        h5 { font-size: 1.0em; }
+        h6 { font-size: 0.9em; }
+        
+        p {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        
+        strong {
+            font-weight: bold;
+        }
+        
+        em {
+            font-style: italic;
+        }
+        
+        code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            padding: 2px 4px;
+            border-radius: 3px;
+            background-color: rgba(128, 128, 128, 0.1);
+        }
+        
+        pre {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: rgba(128, 128, 128, 0.1);
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+            overflow-x: auto;
+        }
+        
+        ul, ol {
+            margin: 8px 0;
+            padding-left: 24px;
+        }
+        
+        li {
+            margin: 4px 0;
+            line-height: 1.4;
+        }
+        
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        """
+        
+        # Применяем стили к истории чата
+        self.history.setStyleSheet(markdown_css)
 
     def send_message(self):
         print("[DEBUG] Вызван метод send_message в ChatWidget")
@@ -201,8 +281,59 @@ class ChatWidget(QWidget):
         self.send_btn.setEnabled(True)
         self._waiting_message_id = None
 
+    def _render_markdown(self, text: str) -> str:
+        """
+        Встроенная функция для рендеринга markdown в HTML.
+        """
+        if not text:
+            return ""
+        
+        # Экранируем HTML символы
+        text = html.escape(text)
+        
+        # Заменяем markdown на HTML
+        # Жирный текст
+        text = text.replace('**', '<strong>', 1)
+        while '**' in text:
+            text = text.replace('**', '</strong>', 1)
+            if '**' in text:
+                text = text.replace('**', '<strong>', 1)
+        
+        # Курсивный текст
+        text = text.replace('*', '<em>', 1)
+        while '*' in text:
+            text = text.replace('*', '</em>', 1)
+            if '*' in text:
+                text = text.replace('*', '<em>', 1)
+        
+        # Код
+        text = text.replace('`', '<code>', 1)
+        while '`' in text:
+            text = text.replace('`', '</code>', 1)
+            if '`' in text:
+                text = text.replace('`', '<code>', 1)
+        
+        # Разбиваем на параграфы
+        paragraphs = []
+        for line in text.split('\n'):
+            if line.strip():
+                paragraphs.append(f'<p>{line}</p>')
+        
+        return '\n'.join(paragraphs)
+    
     def append_message(self, author: str, text: str) -> Optional[str]:
-        self.history.append(f"<b>{author}:</b> {html.escape(text)}")
+        # Для сообщений пользователя просто экранируем HTML
+        if author.lower() == 'вы':
+            formatted_text = html.escape(text)
+        else:
+            # Для сообщений ассистента и системы используем markdown рендеринг
+            try:
+                formatted_text = self._render_markdown(text)
+            except Exception as e:
+                print(f"[ERROR] Ошибка при рендеринге markdown: {e}")
+                formatted_text = html.escape(text)
+        
+        self.history.append(f"<b>{author}:</b> {formatted_text}")
         role = 'user' if author.lower() == 'вы' else 'assistant'
         return self.memory_manager.add_message(self.session_id, role, text)
 
@@ -211,7 +342,18 @@ class ChatWidget(QWidget):
         cursor.movePosition(QTextCursor.MoveOperation.End)
         cursor.select(QTextCursor.SelectionType.LineUnderCursor)
         cursor.removeSelectedText()
-        self.history.append(f"<b>Ассистент:</b> {html.escape(new_text)}")
+        
+        # Для статусных сообщений не используем markdown
+        if is_status:
+            formatted_text = html.escape(new_text)
+        else:
+            try:
+                formatted_text = self._render_markdown(new_text)
+            except Exception as e:
+                print(f"[ERROR] Ошибка при рендеринге markdown: {e}")
+                formatted_text = html.escape(new_text)
+            
+        self.history.append(f"<b>Ассистент:</b> {formatted_text}")
         self._scroll_history_to_end()
 
     def resizeEvent(self, event: QResizeEvent):

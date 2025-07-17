@@ -119,7 +119,15 @@ class ChatAsyncHandler(QObject):
             if not is_available:
                 print("[DEBUG-ASYNC-BG-ERROR] CrewAI API недоступен!")
                 logger.error("[ASYNC-ERROR] CrewAI API недоступен!")
-                self.response_ready.emit({"response": "Ошибка: Сервер CrewAI недоступен"}, True)
+                error_message = {
+                    "response": "**Ошибка подключения к серверу**\n\n"
+                               "Сервер CrewAI в настоящее время недоступен. Пожалуйста, убедитесь, что:\n\n"
+                               "1. Сервер CrewAI запущен и работает\n"
+                               "2. Сервер доступен по адресу http://127.0.0.1:5051\n"
+                               "3. Нет проблем с сетевыми настройками\n\n"
+                               "Вы можете перезапустить сервер с помощью скрипта `start_auto_development.bat`."
+                }
+                self.response_ready.emit(error_message, True)
                 return
             
             print("[DEBUG-ASYNC-BG] Вызываем crew_ai_client.process_request...")
