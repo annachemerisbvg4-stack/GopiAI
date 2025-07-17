@@ -8,7 +8,8 @@ from typing import Dict, List, Any, Optional
 
 # Импортируем наш модуль системных промптов
 from .system_prompts import get_system_prompts
-from .mcp_integration import MCPToolsManager, get_mcp_tools_manager
+from .mcp_integration_fixed import SmitheryMCPManager, get_smithery_mcp_manager
+from .local_mcp_tools import get_local_mcp_tools
 
 # Инициализируем логгер перед использованием
 logger = logging.getLogger(__name__)
@@ -28,23 +29,36 @@ class SmartDelegator:
         self.rag_system = rag_system
         self.rag_available = self.rag_system is not None and self.rag_system.embeddings is not None
         
-        # Инициализируем MCPToolsManager для доступа к MCP инструментам
+        # Инициализируем локальные MCP инструменты
         try:
-            self.mcp_manager = get_mcp_tools_manager()
+            self.local_tools = get_local_mcp_tools()
+            self.local_tools_available = True
+            local_tools_count = len(self.local_tools.get_available_tools())
+            logger.info(f"[OK] Локальные MCP инструменты инициализированы. Доступно: {local_tools_count}")
+        except Exception as e:
+            self.local_tools = None
+            self.local_tools_available = False
+            logger.warning(f"[WARNING] Не удалось инициализировать локальные MCP инструменты: {str(e)}")
+        
+        # Инициализируем SmitheryMCPManager для доступа к внешним MCP инструментам
+        try:
+            self.mcp_manager = get_smithery_mcp_manager()
             self.mcp_available = True
             # Пробуем получить инструменты для проверки работоспособности
             try:
                 import asyncio
+                # Инициализируем менеджер
+                asyncio.run(self.mcp_manager.initialize())
                 mcp_tools = asyncio.run(self.mcp_manager.get_all_tools())
                 mcp_tools_count = len(mcp_tools) if mcp_tools else 0
             except Exception as async_e:
-                logger.warning(f"[WARNING] Не удалось получить MCP инструменты: {str(async_e)}")
+                logger.warning(f"[WARNING] Не удалось получить внешние MCP инструменты: {str(async_e)}")
                 mcp_tools_count = 0
-            logger.info(f"[OK] MCP интеграция инициализирована. Доступно инструментов: {mcp_tools_count}")
+            logger.info(f"[OK] Внешние MCP интеграция инициализирована. Доступно инструментов: {mcp_tools_count}")
         except Exception as e:
             self.mcp_manager = None
             self.mcp_available = False
-            logger.warning(f"[WARNING] Не удалось инициализировать MCP интеграцию: {str(e)}")
+            logger.warning(f"[WARNING] Не удалось инициализировать внешние MCP интеграцию: {str(e)}")
         
         if self.rag_available:
             logger.info(f"[OK] RAG system passed to SmartDelegator. Records: {self.rag_system.embeddings.count()}")
@@ -66,8 +80,8 @@ class SmartDelegator:
         # 3. Проверяем наличие запроса на вызов MCP инструмента
         tool_request = self._check_for_tool_request(message, metadata)
         
-        if tool_request and self.mcp_available:
-            logger.info(f"Обнаружен запрос на использование MCP инструмента: {tool_request['tool_name']}")
+        if tool_request and (self.mcp_available or self.local_tools_available):
+            logger.info(f"Обнаружен запрос на использование MCP инструмента: {tool_request['tool_name']} (сервер: {tool_request['server_name']})")
             
             # Вызываем MCP инструмент
             try:
@@ -186,41 +200,75 @@ class SmartDelegator:
             tool_info = metadata.get('tool', None)
             if tool_info and isinstance(tool_info, dict):
                 tool_name = tool_info.get('name', '') or tool_info.get('tool_id', '')
-                server_name = tool_info.get('server_name', '')
+                server_name = tool_info.get('server_name', 'local')  # По умолчанию локальный
                 params = tool_info.get('params', {})
                 
-                if tool_name and server_name:
+                if tool_name:
                     return {
                         'tool_name': tool_name,
                         'server_name': server_name,
                         'params': params
                     }
         
-        # TODO: Можно добавить анализ текста сообщения для автоматического определения
-        # запроса на использование инструмента
+        # Проверяем простые команды в тексте сообщения
+        message_lower = message.lower()
+        
+        # Проверяем запросы на системную информацию
+        if any(keyword in message_lower for keyword in ['системная информация', 'info', 'статус системы', 'system info']):
+            return {
+                'tool_name': 'system_info',
+                'server_name': 'local',
+                'params': {}
+            }
+        
+        # Проверяем запросы на время
+        if any(keyword in message_lower for keyword in ['время', 'текущее время', 'current time', 'сейчас времени']):
+            return {
+                'tool_name': 'time_helper',
+                'server_name': 'local',
+                'params': {'operation': 'current_time'}
+            }
+        
+        # Проверяем запросы на статус проекта
+        if any(keyword in message_lower for keyword in ['статус проекта', 'здоровье системы', 'project status', 'health check']):
+            return {
+                'tool_name': 'project_helper',
+                'server_name': 'local',
+                'params': {'action': 'health_check'}
+            }
         
         return None
         
     def _call_mcp_tool(self, tool_name: str, server_name: str, params: Dict) -> Dict:
         """
-        Вызывает MCP инструмент через MCPToolsManager и возвращает результат.
+        Вызывает MCP инструмент через MCPToolsManager или локальные инструменты.
         """
-        if not self.mcp_available or not self.mcp_manager:
-            raise Exception("MCP менеджер не инициализирован или недоступен")
-        
         logger.info(f"Вызов MCP инструмента {tool_name} на сервере {server_name} с параметрами: {params}")
         
-        # Находим инструмент по имени
-        tool = self.mcp_manager.get_tool_by_name(tool_name)
-        if not tool:
-            raise Exception(f"Инструмент {tool_name} не найден")
+        # Если это локальный инструмент
+        if server_name == 'local':
+            if not self.local_tools_available or not self.local_tools:
+                raise Exception("Локальные MCP инструменты не инициализированы или недоступны")
+            
+            # Вызываем локальный инструмент
+            result = self.local_tools.call_tool(tool_name, params)
+            logger.info(f"Получен результат от локального инструмента: {str(result)[:200]}...")
+            return result
         
-        # Вызываем инструмент через MCPToolsManager
-        result = self.mcp_manager.execute_tool(tool, **params)
-        
-        logger.info(f"Получен результат от MCP инструмента: {str(result)[:200]}...")
-        
-        return result
+        # Если это внешний инструмент
+        else:
+            if not self.mcp_available or not self.mcp_manager:
+                raise Exception("Внешний MCP менеджер не инициализирован или недоступен")
+            
+            # Находим инструмент по имени
+            tool = self.mcp_manager.get_tool_by_name(tool_name)
+            if not tool:
+                raise Exception(f"Внешний инструмент {tool_name} не найден")
+            
+            # Вызываем инструмент через MCPToolsManager
+            result = self.mcp_manager.execute_tool(tool, **params)
+            logger.info(f"Получен результат от внешнего MCP инструмента: {str(result)[:200]}...")
+            return result
     
     def _format_prompt_with_tool_result(self, user_message: str, rag_context: Optional[str], 
                                       chat_history: List[Dict], tool_request: Dict, 

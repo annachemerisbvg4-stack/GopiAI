@@ -311,7 +311,11 @@ class SystemPrompts:
             Строка с описанием MCP инструментов или пустая строка, если инструменты недоступны
         """
         # Вызываем функцию из нового модуля
-        return get_mcp_tools_info()
+        try:
+            from .mcp_integration_fixed import get_mcp_tools_info
+            return get_mcp_tools_info()
+        except Exception as e:
+            return f"Ошибка получения MCP инструментов: {str(e)}"
     
     def save_tools_info(self, tools_info: List[Dict]):
         """
