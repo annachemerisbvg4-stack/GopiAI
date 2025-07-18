@@ -132,15 +132,9 @@ class MemoryManager:
                 EMBEDDING_MODEL = "sentence-transformers/nli-mpnet-base-v2"
                 logger.warning(f"Не удалось импортировать EMBEDDING_MODEL из rag_config: {e}, используем значение по умолчанию: {EMBEDDING_MODEL}")
             
-            # Configure embeddings with persistent storage
-            self.embeddings = Embeddings({
-                'model': EMBEDDING_MODEL,  # Используем модель из rag_config
-                'gpu': False,  # Disable GPU for testing
-                'batch': 8,
-                'content': True,  # Store original content
-                'store': True,    # Enable persistent storage
-                'path': str(vectors_dir)  # Store vectors in persistent location
-            })
+            # Configure embeddings with persistent storage - используем такую же конфигурацию как в rag_system.py
+            config = {"path": EMBEDDING_MODEL, "content": True}
+            self.embeddings = Embeddings(config)
             
             # If we have chats but no vectors, index existing messages
             if self.chats and not any(vectors_dir.iterdir()):

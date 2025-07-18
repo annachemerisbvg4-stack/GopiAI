@@ -3078,5 +3078,89 @@
     "role": "user",
     "content": "привет",
     "timestamp": "2025-07-18T23:59:35.429589"
+  },
+  {
+    "id": "2ae0fb59-ebdb-4ce3-aeb8-fb9117669fc6",
+    "session_id": "test_session_7773792622805986053",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-19 00:21:06.926768",
+    "timestamp": "2025-07-19T00:21:06.926768"
+  },
+  {
+    "id": "32d97e44-8254-4c94-b129-eedc2ccb2f38",
+    "session_id": "session_1752864669",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T00:21:24.347452"
+  },
+  {
+    "id": "c56ab77d-a91b-4201-8eb1-017b2bba210f",
+    "session_id": "session_1752864669",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-19T00:21:24.364948"
+  },
+  {
+    "id": "193b95e7-6255-42e1-a104-ca34e88459f7",
+    "session_id": "session_1752864669",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T00:21:24.382302"
+  },
+  {
+    "id": "78d65fe7-4311-4e3a-96ff-6b38edab7218",
+    "session_id": "test_session_2900045740698041996",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-19 00:58:05.636549",
+    "timestamp": "2025-07-19T00:58:05.636549"
+  },
+  {
+    "id": "a4737a40-b09d-4148-9568-68a38a2ec671",
+    "session_id": "session_1752866888",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T00:58:20.325596"
+  },
+  {
+    "id": "7f45ea97-a57e-4aff-8c51-5ddc8d9ad9fe",
+    "session_id": "session_1752866888",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-19T00:58:20.337362"
+  },
+  {
+    "id": "07ddc7ed-1f34-4d70-a293-ad555a180e6f",
+    "session_id": "session_1752866888",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T00:58:20.347385"
+  },
+  {
+    "id": "9270f983-5343-4ed4-801e-95463a1690f6",
+    "session_id": "test_session_-6525178270456303781",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-19 01:09:29.736210",
+    "timestamp": "2025-07-19T01:09:29.736210"
+  },
+  {
+    "id": "1cad9c6d-a894-454c-af93-20f689f145fa",
+    "session_id": "session_1752867572",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T01:09:42.793071"
+  },
+  {
+    "id": "174c3245-c1ce-4533-812c-dff794664981",
+    "session_id": "session_1752867572",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-19T01:09:42.800733"
+  },
+  {
+    "id": "57875a33-f8c4-4478-b5c5-e54d93e13b7f",
+    "session_id": "session_1752867572",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T01:09:42.816527"
   }
 ]

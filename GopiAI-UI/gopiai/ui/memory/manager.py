@@ -16,7 +16,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import uuid
 
-# Импортируем общую конфигурацию памяти
+# Импортируем общую конфигурацию памяти напрямую
 from ...ui_core.memory.memory_config import MEMORY_BASE_DIR, CHATS_FILE_PATH, VECTOR_INDEX_PATH
 
 logger = logging.getLogger(__name__)
