@@ -1,7 +1,16 @@
 """Minimal test script for RAG system."""
 import os
 from rag_system import get_rag_system, RAGSystem
-from rag_config import get_rag_config
+from rag_config import MEMORY_BASE_DIR, CHATS_FILE_PATH, VECTOR_INDEX_PATH, EMBEDDING_MODEL
+
+def get_rag_config():
+    """Return RAG configuration as a dictionary."""
+    return {
+        "MEMORY_BASE_DIR": MEMORY_BASE_DIR,
+        "CHATS_FILE_PATH": CHATS_FILE_PATH,
+        "VECTOR_INDEX_PATH": VECTOR_INDEX_PATH,
+        "EMBEDDING_MODEL": EMBEDDING_MODEL
+    }
 
 def test_minimal_rag():
     """Test minimal RAG functionality."""

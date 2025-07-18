@@ -4,7 +4,13 @@ import logging
 import json
 import time
 import traceback
+import sys
+import os
 from typing import Dict, List, Any, Optional
+
+# Импортируем модуль ротации моделей
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from llm_rotation_config import select_llm_model_safe, rate_limit_monitor
 
 # Импортируем наш модуль системных промптов
 from .system_prompts import get_system_prompts
@@ -291,17 +297,37 @@ class SmartDelegator:
     
     def _call_llm(self, messages: List[Dict]) -> str:
         """
-        Вызывает языковую модель, используя litellm.
+        Вызывает языковую модель, используя litellm и систему ротации моделей.
         """
         try:
             # Выводим длину системного промпта для диагностики
             system_prompt_len = len(messages[0]['content']) if messages and messages[0]['role'] == 'system' else 0
             logger.info(f"[LLM] Длина системного промпта: {system_prompt_len} символов")
             
+            # Оценка количества токенов (примерно)
+            total_text = '\n'.join([msg.get('content', '') for msg in messages])
+            estimated_tokens = len(total_text) // 4  # Примерная оценка: 4 символа на токен
+            
+            # Выбор модели с использованием ротации
+            model_id = select_llm_model_safe("dialog", tokens=estimated_tokens)
+            if not model_id:
+                # Если не удалось выбрать модель, пробуем другие типы задач
+                model_id = select_llm_model_safe("code", tokens=estimated_tokens)
+            if not model_id:
+                # Если всё ещё нет модели, используем резервную
+                model_id = "gemini/gemini-1.5-flash"
+                logger.warning(f"[LLM] Не удалось выбрать модель через ротацию, используем резервную: {model_id}")
+            else:
+                logger.info(f"[LLM] Выбрана модель через ротацию: {model_id}")
+            
+            # Регистрируем использование модели
+            if model_id in rate_limit_monitor.models:
+                rate_limit_monitor.register_use(model_id, estimated_tokens)
+            
             # Вызов LLM через litellm
-            logger.info("[LLM] Отправляем запрос в Gemini...")
+            logger.info(f"[LLM] Отправляем запрос в модель {model_id}...")
             response = litellm.completion(
-                model="gemini/gemini-1.5-flash",
+                model=model_id,
                 messages=messages,
                 temperature=0.2,
                 max_tokens=2000
@@ -322,6 +348,28 @@ class SmartDelegator:
             error_msg = f"Ошибка при вызове LLM: {str(e)}"
             logger.error(f"[LLM] {error_msg}")
             logger.error(f"[LLM] Traceback: {traceback.format_exc()}")
+            
+            # Если ошибка связана с моделью, помечаем её как недоступную
+            if model_id and "rate limit" in str(e).lower() or "quota exceeded" in str(e).lower():
+                logger.warning(f"[LLM] Модель {model_id} превысила лимиты, блокируем на 10 минут")
+                rate_limit_monitor.mark_model_unavailable(model_id, duration=600)  # 10 минут
+                
+                # Пробуем другую модель
+                fallback_model = select_llm_model_safe("dialog", tokens=estimated_tokens, exclude_models=[model_id])
+                if fallback_model:
+                    logger.info(f"[LLM] Пробуем запасную модель: {fallback_model}")
+                    try:
+                        response = litellm.completion(
+                            model=fallback_model,
+                            messages=messages,
+                            temperature=0.2,
+                            max_tokens=2000
+                        )
+                        if response and response.choices and len(response.choices) > 0:
+                            return response.choices[0].message.content
+                    except Exception as fallback_error:
+                        logger.error(f"[LLM] Ошибка при использовании запасной модели: {fallback_error}")
+            
             return f"Произошла ошибка при обработке запроса: {str(e)}"
 
 # --- END OF FILE smart_delegator.py ---

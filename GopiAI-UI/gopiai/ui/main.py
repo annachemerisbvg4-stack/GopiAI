@@ -23,18 +23,42 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 # Собственная функция для загрузки переменных окружения из .env файла
 def load_env_file():
     try:
-        env_path = Path('.') / '.env'
-        if env_path.exists():
-            print("Загрузка .env файла...")
-            with open(env_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#'):
-                        key, value = line.split('=', 1)
-                        os.environ[key.strip()] = value.strip().strip('"\'')
-            print("[OK] .env файл загружен")
-        else:
-            print("[ИНФО] .env файл не найден, продолжаем без него")
+        # Список возможных путей для поиска .env файла
+        possible_paths = [
+            Path('.') / '.env',                                  # Текущая директория
+            Path('..') / '.env',                                # Родительская директория
+            Path('..') / '..' / '.env',                         # Родительская директория родительской директории
+            Path('..') / '..' / '..' / '.env',                  # Корень проекта (если запуск из gopiai/ui)
+            Path(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))) / '.env'  # Абсолютный путь к корню проекта
+        ]
+        
+        # Добавляем путь к корню проекта GOPI_AI_MODULES
+        root_path = Path('C:/Users/crazy/GOPI_AI_MODULES/.env')
+        if root_path not in possible_paths:
+            possible_paths.append(root_path)
+        
+        # Ищем .env файл в возможных местах
+        env_loaded = False
+        for env_path in possible_paths:
+            if env_path.exists():
+                print(f"Загрузка .env файла из {env_path}...")
+                with open(env_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#'):
+                            try:
+                                key, value = line.split('=', 1)
+                                os.environ[key.strip()] = value.strip().strip('"\'')
+                            except ValueError:
+                                # Пропускаем строки, которые не соответствуют формату key=value
+                                continue
+                print(f"[OK] .env файл загружен из {env_path}")
+                env_loaded = True
+                break
+        
+        if not env_loaded:
+            print("[ИНФО] .env файл не найден в известных местах, продолжаем без него")
+            
     except Exception as e:
         print(f"[ПРЕДУПРЕЖДЕНИЕ] Ошибка при загрузке .env файла: {e}")
 

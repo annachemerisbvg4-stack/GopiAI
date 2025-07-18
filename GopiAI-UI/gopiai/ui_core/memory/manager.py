@@ -119,9 +119,22 @@ class MemoryManager:
             vectors_dir = VECTOR_INDEX_PATH
             vectors_dir.mkdir(exist_ok=True)
             
+            # Импортируем модель из rag_config для согласованности
+            try:
+                # Используем CREWAI_ROOT из memory_config
+                from .memory_config import CREWAI_ROOT
+                import sys
+                sys.path.append(str(CREWAI_ROOT))
+                from rag_config import EMBEDDING_MODEL
+                logger.info(f"Успешно импортирован EMBEDDING_MODEL из rag_config: {EMBEDDING_MODEL}")
+            except ImportError as e:
+                # Если не удалось, используем значение по умолчанию
+                EMBEDDING_MODEL = "sentence-transformers/nli-mpnet-base-v2"
+                logger.warning(f"Не удалось импортировать EMBEDDING_MODEL из rag_config: {e}, используем значение по умолчанию: {EMBEDDING_MODEL}")
+            
             # Configure embeddings with persistent storage
             self.embeddings = Embeddings({
-                'model': 'sentence-transformers/all-MiniLM-L6-v2',  # Используем 'model' вместо 'path' для модели
+                'model': EMBEDDING_MODEL,  # Используем модель из rag_config
                 'gpu': False,  # Disable GPU for testing
                 'batch': 8,
                 'content': True,  # Store original content

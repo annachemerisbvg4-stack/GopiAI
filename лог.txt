@@ -1,288 +1,191 @@
-2025-07-17 08:37:56,766 - faiss.loader - INFO - Loading faiss with AVX2 support.
-2025-07-17 08:37:56,792 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
-2025-07-17 08:37:56,798 - faiss - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
-2025-07-17 08:38:11,036 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
-2025-07-17 08:38:13,162 - opentelemetry.trace - WARNING - Overriding of current TracerProvider is not allowed
+2025-07-18 23:58:59,453 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2025-07-18 23:58:59,480 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
+2025-07-18 23:58:59,489 - faiss - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
+2025-07-18 23:59:12,019 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
+2025-07-18 23:59:14,033 - opentelemetry.trace - WARNING - Overriding of current TracerProvider is not allowed
 DEBUG: LLM_MODELS_CONFIG loaded: [{'name': 'Gemini 1.5 Flash', 'id': 'gemini/gemini-1.5-flash', 'provider': 'google', 'rpm': 15, 'tpm': 250000, 'type': ['simple', 'dialog', 'code', 'summarize'], 'multimodal': False, 'embedding': False, 'priority': 3, 'rpd': 50, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini 2.0 Flash-Lite', 'id': 'gemini/gemini-2.0-flash-lite', 'provider': 'google', 'rpm': 30, 'tpm': 1000000, 'type': ['simple', 'dialog', 'code', 'summarize'], 'multimodal': False, 'embedding': False, 'priority': 4, 'rpd': 200, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemma 3', 'id': 'gemini/gemma-3', 'provider': 'google', 'rpm': 30, 'tpm': 14400, 'type': ['simple', 'lookup', 'short_answer'], 'multimodal': False, 'embedding': False, 'priority': 1, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemma 3n', 'id': 'gemini/gemma-3n', 'provider': 'google', 'rpm': 30, 'tpm': 14400, 'type': ['simple', 'lookup', 'short_answer'], 'multimodal': False, 'embedding': False, 'priority': 2, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini 2.5 Flash-Lite Preview', 'id': 'gemini/gemini-2.5-flash-lite-preview', 'provider': 'google', 'rpm': 15, 'tpm': 60000, 'type': ['dialog', 'code', 'summarize'], 'multimodal': False, 'embedding': False, 'priority': 5, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini 2.5 Flash', 'id': 'gemini/gemini-2.5-flash', 'provider': 'google', 'rpm': 10, 'tpm': 60000, 'type': ['dialog', 'code', 'multimodal', 'vision', 'long_answer'], 'multimodal': True, 'embedding': False, 'priority': 6, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini Embedding Experimental', 'id': 'gemini/gemini-embedding-experimental', 'provider': 'google', 'rpm': 5, 'tpm': 10000, 'type': ['embedding'], 'multimodal': False, 'embedding': True, 'priority': 10, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}]
 [OK] RateLimitMonitor инициализирован с blacklist механизмом
 [OK] Валидация конфигурации LLM прошла успешно
 GopiAI Integration Tools loaded successfully!
 [OK] CrewAI доступен. Интеграция с агентами активна.
 [ДИАГНОСТИКА] Начало инициализации систем
-2025-07-17 08:38:14,928 - __main__ - INFO - --- ИНИЦИАЛИЗАЦИЯ СИСТЕМ ---
+2025-07-18 23:59:15,774 - __main__ - INFO - --- ИНИЦИАЛИЗАЦИЯ СИСТЕМ ---
 [ДИАГНОСТИКА] Вызов get_rag_system()
-2025-07-17 08:38:14,928 - rag_system - INFO - Создание первого и единственного экземпляра RAGSystem.
-2025-07-17 08:38:14,928 - rag_system - INFO - --- Инициализация экземпляра RAGSystem (Singleton) ---
-2025-07-17 08:38:14,928 - rag_system - INFO - Checking memory structure in directory: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory
-2025-07-17 08:38:14,929 - rag_system - INFO - [OK] Memory folder and file structure is in order.
-2025-07-17 08:38:14,929 - rag_system - INFO - Initializing embeddings. Model: sentence-transformers/nli-mpnet-base-v2
-2025-07-17 08:38:19,750 - rag_system - INFO - Found existing index. Attempting to load from C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\vectors...
-2025-07-17 08:38:21,824 - rag_system - INFO - Index loaded successfully. Records in memory: 68
+2025-07-18 23:59:15,774 - rag_system - INFO - Создание первого и единственного экземпляра RAGSystem.
+2025-07-18 23:59:15,774 - rag_system - INFO - --- Инициализация экземпляра RAGSystem (Singleton) ---
+2025-07-18 23:59:15,774 - rag_system - INFO - Checking memory structure in directory: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory
+2025-07-18 23:59:15,775 - rag_system - INFO - [OK] Memory folder and file structure is in order.
+2025-07-18 23:59:15,775 - rag_system - INFO - Initializing embeddings. Model: sentence-transformers/nli-mpnet-base-v2
+2025-07-18 23:59:20,771 - rag_system - INFO - Found existing index. Attempting to load from C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\vectors...
+2025-07-18 23:59:23,976 - rag_system - INFO - Index loaded successfully. Records in memory: 286
 [ДИАГНОСТИКА] RAGSystem получен: True
 [ДИАГНОСТИКА] Создание SmartDelegator
-2025-07-17 08:38:21,825 - tools.gopiai_integration.smart_delegator - INFO - [OK] Локальные MCP инструменты инициализированы. Доступно: 5
-2025-07-17 08:38:21,826 - tools.gopiai_integration.mcp_integration_fixed - INFO - SMITHERY_API_KEY загружен: 621c15a8...cb64
-2025-07-17 08:38:22,767 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers?q=is:deployed&pageSize=50 "HTTP/1.1 200 OK"
-2025-07-17 08:38:23,599 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@wonderwhy-er/desktop-commander "HTTP/1.1 200 OK"
-2025-07-17 08:38:23,617 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @wonderwhy-er/desktop-commander -> https://server.smithery.ai/@wonderwhy-er/desktop-commander
-2025-07-17 08:38:24,386 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@smithery/toolbox "HTTP/1.1 200 OK"
-2025-07-17 08:38:24,387 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @smithery/toolbox -> https://server.smithery.ai/@smithery/toolbox
-2025-07-17 08:38:25,199 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@ref-tools/ref-tools-mcp "HTTP/1.1 200 OK"
-2025-07-17 08:38:25,200 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @ref-tools/ref-tools-mcp -> https://server.smithery.ai/@ref-tools/ref-tools-mcp
-2025-07-17 08:38:25,953 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@luminati-io/brightdata-mcp "HTTP/1.1 200 OK"
-2025-07-17 08:38:25,961 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @luminati-io/brightdata-mcp -> https://server.smithery.ai/@luminati-io/brightdata-mcp
-2025-07-17 08:38:26,707 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@mem0ai/mem0-memory-mcp "HTTP/1.1 200 OK"
-2025-07-17 08:38:26,709 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @mem0ai/mem0-memory-mcp -> https://server.smithery.ai/@mem0ai/mem0-memory-mcp
-2025-07-17 08:38:27,436 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@bytedance/mcp-server-browser "HTTP/1.1 200 OK"
-2025-07-17 08:38:27,443 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @bytedance/mcp-server-browser -> https://server.smithery.ai/@bytedance/mcp-server-browser
-2025-07-17 08:38:28,204 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@flight505/mcp-think-tank "HTTP/1.1 200 OK"
-2025-07-17 08:38:28,216 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @flight505/mcp-think-tank -> https://server.smithery.ai/@flight505/mcp-think-tank
-2025-07-17 08:38:28,981 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@ropon/minimax-mcp "HTTP/1.1 200 OK"
-2025-07-17 08:38:28,990 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @ropon/minimax-mcp -> https://server.smithery.ai/@ropon/minimax-mcp
-2025-07-17 08:38:29,755 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/exa "HTTP/1.1 200 OK"
-2025-07-17 08:38:29,757 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: exa -> https://server.smithery.ai/exa
-2025-07-17 08:38:30,554 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@upstash/context7-mcp "HTTP/1.1 200 OK"
-2025-07-17 08:38:30,555 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @upstash/context7-mcp -> https://server.smithery.ai/@upstash/context7-mcp
-2025-07-17 08:38:31,361 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@supabase-community/supabase-mcp "HTTP/1.1 200 OK"
-2025-07-17 08:38:31,375 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @supabase-community/supabase-mcp -> https://server.smithery.ai/@supabase-community/supabase-mcp
-2025-07-17 08:38:32,143 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@browserbasehq/mcp-browserbase "HTTP/1.1 200 OK"
-2025-07-17 08:38:32,156 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @browserbasehq/mcp-browserbase -> https://server.smithery.ai/@browserbasehq/mcp-browserbase
-2025-07-17 08:38:32,911 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@antvis/mcp-server-chart "HTTP/1.1 200 OK"
-2025-07-17 08:38:32,914 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @antvis/mcp-server-chart -> https://server.smithery.ai/@antvis/mcp-server-chart
-2025-07-17 08:38:33,704 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@redis/mcp-redis "HTTP/1.1 200 OK"
-2025-07-17 08:38:33,711 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @redis/mcp-redis -> https://server.smithery.ai/@redis/mcp-redis
-2025-07-17 08:38:34,508 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@browserbasehq/mcp-stagehand "HTTP/1.1 200 OK"
-2025-07-17 08:38:34,509 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @browserbasehq/mcp-stagehand -> https://server.smithery.ai/@browserbasehq/mcp-stagehand
-2025-07-17 08:38:35,254 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@Decodo/decodo-mcp-server "HTTP/1.1 200 OK"
-2025-07-17 08:38:35,256 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @Decodo/decodo-mcp-server -> https://server.smithery.ai/@Decodo/decodo-mcp-server
-2025-07-17 08:38:36,049 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@SiliconValleyInsight/amazon-product-search "HTTP/1.1 200 OK"
-2025-07-17 08:38:36,050 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @SiliconValleyInsight/amazon-product-search -> https://server.smithery.ai/@SiliconValleyInsight/amazon-product-search
-2025-07-17 08:38:36,789 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@hugeicons/mcp-server "HTTP/1.1 200 OK"
-2025-07-17 08:38:36,795 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @hugeicons/mcp-server -> https://server.smithery.ai/@hugeicons/mcp-server
-2025-07-17 08:38:37,501 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@ScrapeGraphAI/scrapegraph-mcp "HTTP/1.1 200 OK"
-2025-07-17 08:38:37,503 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @ScrapeGraphAI/scrapegraph-mcp -> https://server.smithery.ai/@ScrapeGraphAI/scrapegraph-mcp
-2025-07-17 08:38:38,299 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@intruder-io/intruder-mcp "HTTP/1.1 200 OK"
-2025-07-17 08:38:38,306 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @intruder-io/intruder-mcp -> https://server.smithery.ai/@intruder-io/intruder-mcp
-2025-07-17 08:38:39,005 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@Fibery-inc/fibery-mcp-server "HTTP/1.1 200 OK"
-2025-07-17 08:38:39,008 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @Fibery-inc/fibery-mcp-server -> https://server.smithery.ai/@Fibery-inc/fibery-mcp-server
-2025-07-17 08:38:39,790 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@makeplane/plane-mcp-server "HTTP/1.1 200 OK"
-2025-07-17 08:38:39,812 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @makeplane/plane-mcp-server -> https://server.smithery.ai/@makeplane/plane-mcp-server
-2025-07-17 08:38:40,545 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@xinzhongyouhai/mcp-sequentialthinking-tools "HTTP/1.1 200 OK"
-2025-07-17 08:38:40,547 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @xinzhongyouhai/mcp-sequentialthinking-tools -> https://server.smithery.ai/@xinzhongyouhai/mcp-sequentialthinking-tools
+2025-07-18 23:59:23,976 - tools.gopiai_integration.smart_delegator - INFO - [OK] Локальные MCP инструменты инициализированы. Доступно: 5
+2025-07-18 23:59:23,980 - tools.gopiai_integration.mcp_integration_fixed - INFO - SMITHERY_API_KEY загружен: 621c15a8...cb64
+2025-07-18 23:59:25,051 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers?q=is:deployed&pageSize=50 "HTTP/1.1 200 OK"
+2025-07-18 23:59:26,104 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@wonderwhy-er/desktop-commander "HTTP/1.1 200 OK"
+2025-07-18 23:59:26,106 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @wonderwhy-er/desktop-commander -> https://server.smithery.ai/@wonderwhy-er/desktop-commander
+2025-07-18 23:59:26,984 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@ref-tools/ref-tools-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:26,990 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @ref-tools/ref-tools-mcp -> https://server.smithery.ai/@ref-tools/ref-tools-mcp
+2025-07-18 23:59:27,697 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@smithery/toolbox "HTTP/1.1 200 OK"
+2025-07-18 23:59:27,703 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @smithery/toolbox -> https://server.smithery.ai/@smithery/toolbox
+2025-07-18 23:59:28,475 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@luminati-io/brightdata-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:28,478 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @luminati-io/brightdata-mcp -> https://server.smithery.ai/@luminati-io/brightdata-mcp
+2025-07-18 23:59:29,221 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@mem0ai/mem0-memory-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:29,222 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @mem0ai/mem0-memory-mcp -> https://server.smithery.ai/@mem0ai/mem0-memory-mcp
+2025-07-18 23:59:30,010 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@bytedance/mcp-server-browser "HTTP/1.1 200 OK"
+2025-07-18 23:59:30,012 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @bytedance/mcp-server-browser -> https://server.smithery.ai/@bytedance/mcp-server-browser
+2025-07-18 23:59:30,779 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@flight505/mcp-think-tank "HTTP/1.1 200 OK"
+2025-07-18 23:59:30,797 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @flight505/mcp-think-tank -> https://server.smithery.ai/@flight505/mcp-think-tank
+2025-07-18 23:59:31,565 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/exa "HTTP/1.1 200 OK"
+2025-07-18 23:59:32,276 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: exa -> https://server.smithery.ai/exa
+2025-07-18 23:59:33,004 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@ropon/minimax-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:33,244 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @ropon/minimax-mcp -> https://server.smithery.ai/@ropon/minimax-mcp
+2025-07-18 23:59:33,993 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@upstash/context7-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:33,995 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @upstash/context7-mcp -> https://server.smithery.ai/@upstash/context7-mcp
+2025-07-18 23:59:34,768 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@browserbasehq/mcp-browserbase "HTTP/1.1 200 OK"
+2025-07-18 23:59:34,793 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @browserbasehq/mcp-browserbase -> https://server.smithery.ai/@browserbasehq/mcp-browserbase
+2025-07-18 23:59:35,497 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@supabase-community/supabase-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:36,142 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @supabase-community/supabase-mcp -> https://server.smithery.ai/@supabase-community/supabase-mcp
+2025-07-18 23:59:36,934 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@redis/mcp-redis "HTTP/1.1 200 OK"
+2025-07-18 23:59:36,952 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @redis/mcp-redis -> https://server.smithery.ai/@redis/mcp-redis
+2025-07-18 23:59:37,744 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@browserbasehq/mcp-stagehand "HTTP/1.1 200 OK"
+2025-07-18 23:59:37,745 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @browserbasehq/mcp-stagehand -> https://server.smithery.ai/@browserbasehq/mcp-stagehand
+2025-07-18 23:59:38,499 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@antvis/mcp-server-chart "HTTP/1.1 200 OK"
+2025-07-18 23:59:38,508 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @antvis/mcp-server-chart -> https://server.smithery.ai/@antvis/mcp-server-chart
+2025-07-18 23:59:39,274 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@SiliconValleyInsight/amazon-product-search "HTTP/1.1 200 OK"
+2025-07-18 23:59:39,275 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @SiliconValleyInsight/amazon-product-search -> https://server.smithery.ai/@SiliconValleyInsight/amazon-product-search
+2025-07-18 23:59:40,005 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@Decodo/decodo-mcp-server "HTTP/1.1 200 OK"
+2025-07-18 23:59:40,006 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @Decodo/decodo-mcp-server -> https://server.smithery.ai/@Decodo/decodo-mcp-server
+2025-07-18 23:59:40,752 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@ScrapeGraphAI/scrapegraph-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:40,760 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @ScrapeGraphAI/scrapegraph-mcp -> https://server.smithery.ai/@ScrapeGraphAI/scrapegraph-mcp
+2025-07-18 23:59:41,510 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@hugeicons/mcp-server "HTTP/1.1 200 OK"
+2025-07-18 23:59:41,513 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @hugeicons/mcp-server -> https://server.smithery.ai/@hugeicons/mcp-server
+2025-07-18 23:59:42,223 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@intruder-io/intruder-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:42,225 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @intruder-io/intruder-mcp -> https://server.smithery.ai/@intruder-io/intruder-mcp
+2025-07-18 23:59:42,975 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@makeplane/plane-mcp-server "HTTP/1.1 200 OK"
+2025-07-18 23:59:43,010 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @makeplane/plane-mcp-server -> https://server.smithery.ai/@makeplane/plane-mcp-server
+2025-07-18 23:59:43,975 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@xinzhongyouhai/mcp-sequentialthinking-tools "HTTP/1.1 200 OK"
+2025-07-18 23:59:43,977 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @xinzhongyouhai/mcp-sequentialthinking-tools -> https://server.smithery.ai/@xinzhongyouhai/mcp-sequentialthinking-tools
+2025-07-18 23:59:45,053 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@EduBase/MCP "HTTP/1.1 200 OK"
+2025-07-18 23:59:45,073 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @EduBase/MCP -> https://server.smithery.ai/@EduBase/MCP
+2025-07-18 23:59:45,825 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@Fibery-inc/fibery-mcp-server "HTTP/1.1 200 OK"
+2025-07-18 23:59:45,829 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @Fibery-inc/fibery-mcp-server -> https://server.smithery.ai/@Fibery-inc/fibery-mcp-server
+2025-07-18 23:59:46,900 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@GongRzhe/Office-Word-MCP-Server "HTTP/1.1 200 OK"
+2025-07-18 23:59:46,911 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @GongRzhe/Office-Word-MCP-Server -> https://server.smithery.ai/@GongRzhe/Office-Word-MCP-Server
+2025-07-18 23:59:47,641 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@JackKuo666/pubmed-mcp-server "HTTP/1.1 200 OK"
+2025-07-18 23:59:47,642 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @JackKuo666/pubmed-mcp-server -> https://server.smithery.ai/@JackKuo666/pubmed-mcp-server
+2025-07-18 23:59:48,410 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@yongkangc/scry-mcp-raw-js "HTTP/1.1 200 OK"
+2025-07-18 23:59:48,450 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @yongkangc/scry-mcp-raw-js -> https://server.smithery.ai/@yongkangc/scry-mcp-raw-js
+2025-07-18 23:59:49,261 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@miottid/todoist-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:49,521 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @miottid/todoist-mcp -> https://server.smithery.ai/@miottid/todoist-mcp
+2025-07-18 23:59:50,261 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@cloudflare/playwright-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:50,272 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @cloudflare/playwright-mcp -> https://server.smithery.ai/@cloudflare/playwright-mcp
+2025-07-18 23:59:51,013 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@GongRzhe/terminal-controller-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:51,014 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @GongRzhe/terminal-controller-mcp -> https://server.smithery.ai/@GongRzhe/terminal-controller-mcp
+2025-07-18 23:59:51,797 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@smithery-ai/github "HTTP/1.1 200 OK"
+2025-07-18 23:59:51,806 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @smithery-ai/github -> https://server.smithery.ai/@smithery-ai/github
+2025-07-18 23:59:52,536 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@haris-musa/excel-mcp-server "HTTP/1.1 200 OK"
+2025-07-18 23:59:52,541 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @haris-musa/excel-mcp-server -> https://server.smithery.ai/@haris-musa/excel-mcp-server
+2025-07-18 23:59:53,247 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@mikechao/metmuseum-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:53,252 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @mikechao/metmuseum-mcp -> https://server.smithery.ai/@mikechao/metmuseum-mcp
+2025-07-18 23:59:54,027 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@kiennd/reference-servers "HTTP/1.1 200 OK"
+2025-07-18 23:59:54,038 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @kiennd/reference-servers -> https://server.smithery.ai/@kiennd/reference-servers
+2025-07-18 23:59:55,675 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@hbg/mcp-paperswithcode "HTTP/1.1 200 OK"
+2025-07-18 23:59:55,676 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @hbg/mcp-paperswithcode -> https://server.smithery.ai/@hbg/mcp-paperswithcode
+2025-07-18 23:59:56,541 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@kazuph/mcp-taskmanager "HTTP/1.1 200 OK"
+2025-07-18 23:59:56,547 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @kazuph/mcp-taskmanager -> https://server.smithery.ai/@kazuph/mcp-taskmanager
+2025-07-18 23:59:57,264 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@yokingma/time-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:57,271 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @yokingma/time-mcp -> https://server.smithery.ai/@yokingma/time-mcp
+2025-07-18 23:59:58,166 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@linxule/lotus-wisdom-mcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:58,171 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @linxule/lotus-wisdom-mcp -> https://server.smithery.ai/@linxule/lotus-wisdom-mcp
+2025-07-18 23:59:58,982 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@nickclyde/duckduckgo-mcp-server "HTTP/1.1 200 OK"
+2025-07-18 23:59:58,983 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @nickclyde/duckduckgo-mcp-server -> https://server.smithery.ai/@nickclyde/duckduckgo-mcp-server
+2025-07-18 23:59:59,734 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@sondotpin/desktopcommandermcp "HTTP/1.1 200 OK"
+2025-07-18 23:59:59,750 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @sondotpin/desktopcommandermcp -> https://server.smithery.ai/@sondotpin/desktopcommandermcp
 
 
 
 
-
-
-
-═══════════════════════════════════════
-   🖥️ GopiAI-UI Application
-═══════════════════════════════════════
-
-🔄 Activating UI environment...
-✅ Environment activated
-📂 Directory: GopiAI-UI
-🐍 Environment: C:\Users\crazy\GOPI_AI_MODULES\gopiai_env
-
-🚀 Starting GopiAI-UI Application...
-[ИНФО] .env файл не найден, продолжаем без него
-2025-07-17 08:37:56,635 - GopiAI - INFO - [GOPIAI] GopiAI Unified Logger initialized
-[DEBUG-LOGS-PATH] CrewAIClient пробуем путь 1: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-UI\logs
-2025-07-17 08:38:02,103 - gopiai.ui.components.crewai_client - WARNING - ⚠️ Не удалось загрузить spaCy или языковые модели: [E050] Can't find model 'ru_core_news_sm'. It doesn't seem to be a Python package or a valid path to a data directory.
-2025-07-17 08:38:02,119 - gopiai.ui_core.memory.manager - INFO - Initialized simplified emotion classifier
-2025-07-17 08:38:02,122 - gopiai.ui_core.memory.manager - INFO - Loaded 274 chat messages from disk
-2025-07-17 08:38:02,184 - faiss.loader - DEBUG - Environment variable FAISS_OPT_LEVEL is not set, so let's pick the instruction set according to the current CPU
-2025-07-17 08:38:02,188 - faiss.loader - INFO - Loading faiss with AVX2 support.
-2025-07-17 08:38:02,231 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
-2025-07-17 08:38:02,241 - faiss - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
-08:38:12 - LiteLLM:DEBUG: http_handler.py:533 - Using AiohttpTransport...
-2025-07-17 08:38:12,790 - LiteLLM - DEBUG - Using AiohttpTransport...
-08:38:12 - LiteLLM:DEBUG: http_handler.py:557 - Creating AiohttpTransport...
-2025-07-17 08:38:12,793 - LiteLLM - DEBUG - Creating AiohttpTransport...
-2025-07-17 08:38:13,682 - httpcore.connection - DEBUG - connect_tcp.started host='raw.githubusercontent.com' port=443 local_address=None timeout=5 socket_options=None
-2025-07-17 08:38:13,744 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000026FDE9F4B90>
-2025-07-17 08:38:13,745 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x0000026FDE9DD050> server_hostname='raw.githubusercontent.com' timeout=5
-2025-07-17 08:38:13,785 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000026FDE9693D0>
-2025-07-17 08:38:13,787 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'GET']>
-2025-07-17 08:38:13,787 - httpcore.http11 - DEBUG - send_request_headers.complete
-2025-07-17 08:38:13,790 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'GET']>
-2025-07-17 08:38:13,790 - httpcore.http11 - DEBUG - send_request_body.complete
-2025-07-17 08:38:13,790 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'GET']>
-2025-07-17 08:38:13,824 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Connection', b'keep-alive'), (b'Content-Length', b'27026'), (b'Cache-Control', b'max-age=300'), (b'Content-Security-Policy', b"default-src 'none'; style-src 'unsafe-inline'; sandbox"), (b'Content-Type', b'text/plain; charset=utf-8'), (b'ETag', b'W/"ce47e47c24d27492d4082f649d72c551062f5fee731f59ded1d844f7801c9db8"'), (b'Strict-Transport-Security', b'max-age=31536000'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'deny'), (b'X-XSS-Protection', b'1; mode=block'), (b'X-GitHub-Request-Id', b'3AE7:1F3AC0:14643:73910:68783646'), (b'Content-Encoding', b'gzip'), (b'Accept-Ranges', b'bytes'), (b'Date', b'Thu, 17 Jul 2025 03:08:09 GMT'), (b'Via', b'1.1 varnish'), (b'X-Served-By', b'cache-del21748-DEL'), (b'X-Cache', b'HIT'), (b'X-Cache-Hits', b'5'), (b'X-Timer', b'S1752721690.919752,VS0,VE0'), (b'Vary', b'Authorization,Accept-Encoding'), (b'Access-Control-Allow-Origin', b'*'), (b'Cross-Origin-Resource-Policy', b'cross-origin'), (b'X-Fastly-Request-ID', b'9ceef3e2737e8ccfcb3fb5e2af7f475e33a21f13'), (b'Expires', b'Thu, 17 Jul 2025 03:13:09 GMT'), (b'Source-Age', b'242')])
-2025-07-17 08:38:13,828 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
-2025-07-17 08:38:13,831 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'GET']>
-2025-07-17 08:38:13,836 - httpcore.http11 - DEBUG - receive_response_body.complete
-2025-07-17 08:38:13,836 - httpcore.http11 - DEBUG - response_closed.started
-2025-07-17 08:38:13,837 - httpcore.http11 - DEBUG - response_closed.complete
-2025-07-17 08:38:13,838 - httpcore.connection - DEBUG - close.started
-2025-07-17 08:38:13,838 - httpcore.connection - DEBUG - close.complete
-08:38:14 - LiteLLM:DEBUG: http_handler.py:533 - Using AiohttpTransport...
-2025-07-17 08:38:14,380 - LiteLLM - DEBUG - Using AiohttpTransport...
-08:38:14 - LiteLLM:DEBUG: http_handler.py:557 - Creating AiohttpTransport...
-2025-07-17 08:38:14,382 - LiteLLM - DEBUG - Creating AiohttpTransport...
-08:38:14 - LiteLLM:DEBUG: litellm_logging.py:169 - [Non-Blocking] Unable to import GenericAPILogger - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
-2025-07-17 08:38:14,819 - LiteLLM - DEBUG - [Non-Blocking] Unable to import GenericAPILogger - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
-08:38:15 - LiteLLM:DEBUG: transformation.py:17 - [Non-Blocking] Unable to import _ENTERPRISE_ResponsesSessionHandler - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
-2025-07-17 08:38:15,198 - LiteLLM - DEBUG - [Non-Blocking] Unable to import _ENTERPRISE_ResponsesSessionHandler - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
-08:38:15 - LiteLLM:DEBUG: http_handler.py:533 - Using AiohttpTransport...
-2025-07-17 08:38:15,209 - LiteLLM - DEBUG - Using AiohttpTransport...
-08:38:15 - LiteLLM:DEBUG: http_handler.py:557 - Creating AiohttpTransport...
-2025-07-17 08:38:15,211 - LiteLLM - DEBUG - Creating AiohttpTransport...
-08:38:15 - LiteLLM:DEBUG: http_handler.py:533 - Using AiohttpTransport...
-2025-07-17 08:38:15,221 - LiteLLM - DEBUG - Using AiohttpTransport...
-08:38:15 - LiteLLM:DEBUG: http_handler.py:557 - Creating AiohttpTransport...
-2025-07-17 08:38:15,222 - LiteLLM - DEBUG - Creating AiohttpTransport...
-2025-07-17 08:38:15,601 - gopiai.ui_core.memory.manager - ERROR - Error initializing embeddings: Unrecognized model in C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\vectors. Should have a `model_type` key in its config.json, or contain one of the following strings in its name: albert, align, altclip, arcee, aria, aria_text, audio-spectrogram-transformer, autoformer, aya_vision, bamba, bark, bart, beit, bert, bert-generation, big_bird, bigbird_pegasus, biogpt, bit, bitnet, blenderbot, blenderbot-small, blip, blip-2, blip_2_qformer, bloom, bridgetower, bros, camembert, canine, chameleon, chinese_clip, chinese_clip_vision_model, clap, clip, clip_text_model, clip_vision_model, clipseg, clvp, code_llama, codegen, cohere, cohere2, colpali, colqwen2, conditional_detr, convbert, convnext, convnextv2, cpmant, csm, ctrl, cvt, d_fine, dab-detr, dac, data2vec-audio, data2vec-text, data2vec-vision, dbrx, deberta, deberta-v2, decision_transformer, deepseek_v3, deformable_detr, deit, depth_anything, depth_pro, deta, detr, dia, diffllama, dinat, dinov2, dinov2_with_registers, distilbert, donut-swin, dots1, dpr, dpt, efficientformer, efficientnet, electra, emu3, encodec, encoder-decoder, ernie, ernie_m, esm, falcon, falcon_h1, falcon_mamba, fastspeech2_conformer, flaubert, flava, fnet, focalnet, fsmt, funnel, fuyu, gemma, gemma2, gemma3, gemma3_text, gemma3n, gemma3n_audio, gemma3n_text, gemma3n_vision, git, glm, glm4, glm4v, glm4v_text, glpn, got_ocr2, gpt-sw3, gpt2, gpt_bigcode, gpt_neo, gpt_neox, gpt_neox_japanese, gptj, gptsan-japanese, granite, granite_speech, granitemoe, granitemoehybrid, granitemoeshared, granitevision, graphormer, grounding-dino, groupvit, helium, hgnet_v2, hiera, hubert, ibert, idefics, idefics2, idefics3, idefics3_vision, ijepa, imagegpt, informer, instructblip, instructblipvideo, internvl, internvl_vision, jamba, janus, jetmoe, jukebox, kosmos-2, kyutai_speech_to_text, layoutlm, layoutlmv2, layoutlmv3, led, levit, lightglue, lilt, llama, llama4, llama4_text, llava, llava_next, llava_next_video, llava_onevision, longformer, longt5, luke, lxmert, m2m_100, mamba, mamba2, marian, markuplm, mask2former, maskformer, maskformer-swin, mbart, mctct, mega, megatron-bert, mgp-str, mimi, minimax, mistral, mistral3, mixtral, mlcd, mllama, mobilebert, mobilenet_v1, mobilenet_v2, mobilevit, mobilevitv2, modernbert, moonshine, moshi, mpnet, mpt, mra, mt5, musicgen, musicgen_melody, mvp, nat, nemotron, nezha, nllb-moe, nougat, nystromformer, olmo, olmo2, olmoe, omdet-turbo, oneformer, open-llama, openai-gpt, opt, owlv2, owlvit, paligemma, patchtsmixer, patchtst, pegasus, pegasus_x, perceiver, persimmon, phi, phi3, phi4_multimodal, phimoe, pix2struct, pixtral, plbart, poolformer, pop2piano, prompt_depth_anything, prophetnet, pvt, pvt_v2, qdqbert, qwen2, qwen2_5_omni, qwen2_5_vl, qwen2_5_vl_text, qwen2_audio, qwen2_audio_encoder, qwen2_moe, qwen2_vl, qwen2_vl_text, qwen3, qwen3_moe, rag, realm, recurrent_gemma, reformer, regnet, rembert, resnet, retribert, roberta, roberta-prelayernorm, roc_bert, roformer, rt_detr, rt_detr_resnet, rt_detr_v2, rwkv, sam, sam_hq, sam_hq_vision_model, sam_vision_model, seamless_m4t, seamless_m4t_v2, segformer, seggpt, sew, sew-d, shieldgemma2, siglip, siglip2, siglip_vision_model, smollm3, smolvlm, smolvlm_vision, speech-encoder-decoder, speech_to_text, speech_to_text_2, speecht5, splinter, squeezebert, stablelm, starcoder2, superglue, superpoint, swiftformer, swin, swin2sr, swinv2, switch_transformers, t5, t5gemma, table-transformer, tapas, textnet, time_series_transformer, timesfm, timesformer, timm_backbone, timm_wrapper, trajectory_transformer, transfo-xl, trocr, tvlt, tvp, udop, umt5, unispeech, unispeech-sat, univnet, upernet, van, video_llava, videomae, vilt, vipllava, vision-encoder-decoder, vision-text-dual-encoder, visual_bert, vit, vit_hybrid, vit_mae, vit_msn, vitdet, vitmatte, vitpose, vitpose_backbone, vits, vivit, vjepa2, wav2vec2, wav2vec2-bert, wav2vec2-conformer, wavlm, whisper, xclip, xglm, xlm, xlm-prophetnet, xlm-roberta, xlm-roberta-xl, xlnet, xmod, yolos, yoso, zamba, zamba2, zoedepth
-[DEBUG-LOGS-PATH] ChatAsyncHandler пробуем путь 1: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-UI\logs
-2025-07-17 08:38:15,621 - gopiai.ui.components.tools_panel_utils.ToolsManager - INFO - Загружена информация об инструментах из C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\config\tools_info.json
-2025-07-17 08:38:16,279 - opentelemetry.trace - WARNING - Overriding of current TracerProvider is not allowed
-[ERROR] Ошибка импорта модулей MCP: No module named 'langchain'
-Модульная версия GopiAI v0.3.2 с централизованной системой тем
-Добавленные пути для модулей:
-- C:\Users\crazy\GOPI_AI_MODULES\GopiAI-Core (существует: True)
-- C:\Users\crazy\GOPI_AI_MODULES\GopiAI-Widgets (существует: True)
-- C:\Users\crazy\GOPI_AI_MODULES\GopiAI-App (существует: True)
-- C:\Users\crazy\GOPI_AI_MODULES\GopiAI-Extensions (существует: True)
-- C:\Users\crazy\GOPI_AI_MODULES\rag_memory_system (существует: True)
-- C:\Users\crazy\GOPI_AI_MODULES (существует: True)
-[OK] Все основные модули UI загружены успешно
-2025-07-17 08:38:17,164 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Initializing memory manager with shared config. Path: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory
-2025-07-17 08:38:17,169 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Loaded 274 messages from shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-[MEMORY] Инициализирован MemoryManager
-2025-07-17 08:38:17,176 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-[MEMORY] Тестовая запись успешно добавлена
-[LAUNCH] Запуск модульного GopiAI...
-[LAUNCH] Инициализация модульного интерфейса GopiAI с централизованной системой тем...
-[WARNING] Система иконок недоступна
-2025-07-17 08:38:17,220 - gopiai.ui.utils.theme_manager - INFO - Загружена тема: Emerald Garden (dark)
-✅ Менеджер тем инициализирован
-2025-07-17 08:38:17,223 - gopiai.ui.utils.theme_manager - INFO - Применение темы к QApplication/QCoreApplication
-✅ Применена тема из файла настроек
-[SETUP] Настройка UI из модулей...
-INFO: [OK] Загружено 1597 Lucide иконок
-2025-07-17 08:38:17,602 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-17 08:38:17,607 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-[OK] Titlebar: Загружена система иконок UniversalIconManager
-INFO: [OK] Загружено 1597 Lucide иконок
-2025-07-17 08:38:17,998 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-17 08:38:18,002 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-[OK] Titlebar: Загружена система иконок UniversalIconManager
-INFO: [OK] Загружено 1597 Lucide иконок
-2025-07-17 08:38:18,377 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-17 08:38:18,379 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-INFO: [OK] Загружено 1597 Lucide иконок
-2025-07-17 08:38:18,757 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-17 08:38:18,759 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-[OK] Загружена система иконок UniversalIconManager
-[FILE SYSTEM] CustomFileSystemModel инициализирована с icon_manager: <class 'gopiai.ui.components.icon_file_system_model.UniversalIconManager'>
-INFO: [OK] Загружено 1597 Lucide иконок
-2025-07-17 08:38:19,172 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-17 08:38:19,174 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-[OK] Terminal: Загружена система иконок UniversalIconManager
-2025-07-17 08:38:19,182 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация ChatWidget начата
-[Создание] SmitheryMcpPanel: Создание объекта панели...
-[Инициализация] SmitheryMcpPanel: Вызываем метод initialize()...
-[MCP] Начало инициализации MCP панели...
-[MCP] Объект интеграции MCP успешно создан
-[MCP] Загружено 7 инструментов MCP
-[MCP] Инициализация MCP панели завершена
-INFO: [OK] Загружено 1597 Lucide иконок
-2025-07-17 08:38:19,569 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-INFO: Инициализирован UniversalIconManager с Lucide иконками
-2025-07-17 08:38:19,571 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-[Создание] SmitheryMcpPanel: Создание объекта панели...
-[Инициализация] SmitheryMcpPanel: Вызываем метод initialize()...
-[MCP] Начало инициализации MCP панели...
-[MCP] Объект интеграции MCP успешно создан
-[MCP] Загружено 7 инструментов MCP
-[MCP] Инициализация MCP панели завершена
-2025-07-17 08:38:19,637 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация менеджера памяти
-2025-07-17 08:38:19,639 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация CrewAI клиента
-2025-07-17 08:38:19,640 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация обработчиков сообщений
-2025-07-17 08:38:19,641 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant visual feedback elements created.
-2025-07-17 08:38:19 - UIAssistant_20250717_083819 - INFO - ==================================================
-2025-07-17 08:38:19,649 - UIAssistant_20250717_083819 - INFO - ==================================================
-2025-07-17 08:38:19 - UIAssistant_20250717_083819 - INFO - UI Assistant Session Started: 20250717_083819
-2025-07-17 08:38:19,650 - UIAssistant_20250717_083819 - INFO - UI Assistant Session Started: 20250717_083819
-2025-07-17 08:38:19 - UIAssistant_20250717_083819 - INFO - ==================================================
-2025-07-17 08:38:19,654 - UIAssistant_20250717_083819 - INFO - ==================================================
-2025-07-17 08:38:19 - UIAssistant_20250717_083819 - INFO - Removed old log file: ui_assistant_20250713_075629.log
-2025-07-17 08:38:19,665 - UIAssistant_20250717_083819 - INFO - Removed old log file: ui_assistant_20250713_075629.log
-2025-07-17 08:38:19 - UIAssistant_20250717_083819 - INFO - Initializing UIAssistantTool
-2025-07-17 08:38:19,669 - UIAssistant_20250717_083819 - INFO - Initializing UIAssistantTool
-2025-07-17 08:38:19,671 - gopiai.ui_core.llm - INFO - LLM client initialized
-2025-07-17 08:38:19 - UIAssistant_20250717_083819 - INFO - UIAssistantTool initialized successfully
-2025-07-17 08:38:19,673 - UIAssistant_20250717_083819 - INFO - UIAssistantTool initialized successfully
-2025-07-17 08:38:19,674 - gopiai.utils.performance - DEBUG - Cached result for get_ui_assistant (TTL: 300s)
-2025-07-17 08:38:19,675 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant initialized and signals connected.
-2025-07-17 08:38:19,676 - gopiai.ui.components.chat_widget - INFO - [CHAT] Подключение сигналов обработчиков
-2025-07-17 08:38:19,677 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация ChatWidget завершена
-[CHAT] ChatWidget создан успешно
-[CHAT] Передаем theme_manager в ChatWidget...
-2025-07-17 08:38:19,678 - gopiai.ui.components.chat_widget - INFO - Theme applied to ChatWidget (placeholder method).
-[CHAT] theme_manager передан успешно
-[Создание] SmitheryMcpPanel: Создание объекта панели...
-[Инициализация] SmitheryMcpPanel: Вызываем метод initialize()...
-[MCP] Начало инициализации MCP панели...
-[MCP] Объект интеграции MCP успешно создан
-[MCP] Загружено 7 инструментов MCP
-[MCP] Инициализация MCP панели завершена
-[MCP] SmitheryMcpPanel создан успешно
-[OK] Поведение сплиттеров настроено с ограничениями
-[OK] Дополнительные ограничения сплиттеров установлены
-[OK] Модульный UI настроен с ограничениями размеров панелей
-[OK] Сигнал openSettingsRequested подключен
-✅ Сигнал openBrowserRequested подключен к add_browser_tab
-[OK] Сигналы меню подключены успешно
-[OK] Применен макет в стиле VSCode с динамическими цветами
-[OK] Горячие клавиши для панелей настроены (включая сброс размеров)
-[OK] Сигнал file_double_clicked подключен
-[OK] Сигнал file_selected подключен
-[OK] Сигналы файлового проводника подключены
-[OK] Модульный UI настроен
-[WARNING] Основной виджет чата не найден или не содержит UI Assistant
-[OK] FramelessGopiAIStandaloneWindow готов к работе!
-[REFRESH] Иконки меню обновлены
-[SUCCESS] GopiAI v0.3.0 успешно запущен!
-[INFO] Модульная архитектура активна
-[INFO] Размер основного файла значительно уменьшен
-2025-07-17 08:38:20,971 - gopiai.ui.utils.theme_manager - INFO - Тема успешно применена при инициализации
-[DEBUG] Вызван метод send_message в ChatWidget
-2025-07-17 08:38:32,225 - gopiai.ui.components.chat_widget - INFO - [CHAT] Вызван метод send_message в ChatWidget
-[DEBUG] Текст сообщения: 🥰
-2025-07-17 08:38:32,226 - gopiai.ui.components.chat_widget - INFO - [CHAT] Текст сообщения: 🥰
-2025-07-17 08:38:32,236 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-2025-07-17 08:38:32,253 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-[DEBUG] Подготовлены данные для отправки: {'message': '🥰', 'metadata': {'session_id': 'session_1752721699'}}
-2025-07-17 08:38:32,254 - gopiai.ui.components.chat_widget - INFO - [CHAT] Подготовлены данные для отправки: {'message': '🥰', 'metadata': {'session_id': 'session_1752721699'}}
-[DEBUG] Вызываем async_handler.process_message...
-2025-07-17 08:38:32,256 - gopiai.ui.components.chat_widget - INFO - [CHAT] Вызываем async_handler.process_message...
-[DEBUG-ASYNC] Вызван метод process_message в ChatAsyncHandler
-2025-07-17 08:38:32,257 - gopiai.ui.components.chat_async_handler - INFO - [ASYNC] Вызван метод process_message в ChatAsyncHandler
-[DEBUG-ASYNC] Данные сообщения: {'message': '🥰', 'metadata': {'session_id': 'session_1752721699'}}
-2025-07-17 08:38:32,259 - gopiai.ui.components.chat_async_handler - INFO - [ASYNC] Данные сообщения: {'message': '🥰', 'metadata': {'session_id': 'session_1752721699'}}
-[DEBUG-ASYNC] Запускаем поток для обработки сообщения...
-2025-07-17 08:38:32,262 - gopiai.ui.components.chat_async_handler - INFO - [ASYNC] Запускаем поток для обработки сообщения...
-[DEBUG-ASYNC-BG] Начало фоновой обработки сообщения
-[DEBUG-ASYNC] Поток запущен успешно2025-07-17 08:38:32,265 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Начало фоновой обработки сообщения
-
-[DEBUG-ASYNC-BG] Отправка сообщения в CrewAI: 🥰
-2025-07-17 08:38:32,269 - gopiai.ui.components.chat_async_handler - INFO - [ASYNC] Поток запущен успешно
-[DEBUG] async_handler.process_message вызван успешно2025-07-17 08:38:32,269 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Отправка сообщения в CrewAI: 🥰
-
-[DEBUG-ASYNC-BG] Проверяем доступность CrewAI API...2025-07-17 08:38:32,272 - gopiai.ui.components.chat_widget - INFO - [CHAT] async_handler.process_message вызван успешно
-
-2025-07-17 08:38:32,276 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): 127.0.0.1:5051
-[DEBUG-ASYNC-BG] CrewAI API доступен: False
-2025-07-17 08:38:34,317 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] CrewAI API доступен: False
-[DEBUG-ASYNC-BG-ERROR] CrewAI API недоступен!
-2025-07-17 08:38:34,318 - gopiai.ui.components.chat_async_handler - ERROR - [ASYNC-ERROR] CrewAI API недоступен!
-2025-07-17 08:38:34,327 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-
-(gopiai_env) C:\Users\crazy\GOPI_AI_MODULES\GopiAI-UI>
+2025-07-18 23:59:04,914 - pymorphy3.opencorpora_dict.wrapper - INFO - Loading dictionaries from C:\Users\crazy\GOPI_AI_MODULES\gopiai_env\Lib\site-packages\pymorphy3_dicts_ru\data
+2025-07-18 23:59:05,034 - pymorphy3.opencorpora_dict.wrapper - INFO - format: 2.4, revision: 417150, updated: 2022-01-08T22:09:24.565962
+2025-07-18 23:59:07,039 - gopiai.ui.components.crewai_client - INFO - ✅ spaCy и языковые модели успешно загружены
+2025-07-18 23:59:07,061 - gopiai.ui_core.memory.manager - INFO - Initialized simplified emotion classifier
+2025-07-18 23:59:07,065 - gopiai.ui_core.memory.manager - INFO - Loaded 436 chat messages from disk
+2025-07-18 23:59:07,122 - faiss.loader - DEBUG - Environment variable FAISS_OPT_LEVEL is not set, so let's pick the instruction set according to the current CPU
+2025-07-18 23:59:07,126 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2025-07-18 23:59:07,162 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
+2025-07-18 23:59:07,174 - faiss - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
+2025-07-18 23:59:16,862 - LiteLLM - DEBUG - Using AiohttpTransport...
+2025-07-18 23:59:16,867 - LiteLLM - DEBUG - Creating AiohttpTransport...
+2025-07-18 23:59:17,652 - httpcore.connection - DEBUG - connect_tcp.started host='raw.githubusercontent.com' port=443 local_address=None timeout=5 socket_options=None
+2025-07-18 23:59:17,706 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000015ABBE71E50>
+2025-07-18 23:59:17,708 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x0000015ABBE9FDD0> server_hostname='raw.githubusercontent.com' timeout=5
+2025-07-18 23:59:17,761 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000015ABBEE9640>
+2025-07-18 23:59:17,764 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'GET']>
+2025-07-18 23:59:17,765 - httpcore.http11 - DEBUG - send_request_headers.complete
+2025-07-18 23:59:17,767 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'GET']>
+2025-07-18 23:59:17,768 - httpcore.http11 - DEBUG - send_request_body.complete
+2025-07-18 23:59:17,769 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'GET']>
+2025-07-18 23:59:17,798 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Connection', b'keep-alive'), (b'Content-Length', b'27158'), (b'Cache-Control', b'max-age=300'), (b'Content-Security-Policy', b"default-src 'none'; style-src 'unsafe-inline'; sandbox"), (b'Content-Type', b'text/plain; charset=utf-8'), (b'ETag', b'W/"d576f44d227ed714f57595bcba9dd2f3c597f30b71f01edf22ed5b91befc3f2d"'), (b'Strict-Transport-Security', b'max-age=31536000'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'deny'), (b'X-XSS-Protection', b'1; mode=block'), (b'X-GitHub-Request-Id', b'0C62:C0E01:21EDC7:57509C:687A66CF'), (b'Content-Encoding', b'gzip'), (b'Accept-Ranges', b'bytes'), (b'Date', b'Fri, 18 Jul 2025 18:29:17 GMT'), (b'Via', b'1.1 varnish'), (b'X-Served-By', b'cache-del21734-DEL'), (b'X-Cache', b'HIT'), (b'X-Cache-Hits', b'1'), (b'X-Timer', b'S1752863357.454586,VS0,VE1'), (b'Vary', b'Authorization,Accept-Encoding'), (b'Access-Control-Allow-Origin', b'*'), (b'Cross-Origin-Resource-Policy', b'cross-origin'), (b'X-Fastly-Request-ID', b'c3ac723aa0535b7420d4caa5cd64323dbcd95a3a'), (b'Expires', b'Fri, 18 Jul 2025 18:34:17 GMT'), (b'Source-Age', b'261')])
+2025-07-18 23:59:17,805 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
+2025-07-18 23:59:17,807 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'GET']>
+2025-07-18 23:59:17,815 - httpcore.http11 - DEBUG - receive_response_body.complete
+2025-07-18 23:59:17,817 - httpcore.http11 - DEBUG - response_closed.started
+2025-07-18 23:59:17,818 - httpcore.http11 - DEBUG - response_closed.complete
+2025-07-18 23:59:17,820 - httpcore.connection - DEBUG - close.started
+2025-07-18 23:59:17,821 - httpcore.connection - DEBUG - close.complete
+2025-07-18 23:59:18,390 - LiteLLM - DEBUG - Using AiohttpTransport...
+2025-07-18 23:59:18,393 - LiteLLM - DEBUG - Creating AiohttpTransport...
+2025-07-18 23:59:18,830 - LiteLLM - DEBUG - [Non-Blocking] Unable to import GenericAPILogger - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
+2025-07-18 23:59:19,292 - LiteLLM - DEBUG - [Non-Blocking] Unable to import _ENTERPRISE_ResponsesSessionHandler - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
+2025-07-18 23:59:19,308 - LiteLLM - DEBUG - Using AiohttpTransport...
+2025-07-18 23:59:19,312 - LiteLLM - DEBUG - Creating AiohttpTransport...
+2025-07-18 23:59:19,324 - LiteLLM - DEBUG - Using AiohttpTransport...
+2025-07-18 23:59:19,326 - LiteLLM - DEBUG - Creating AiohttpTransport...
+2025-07-18 23:59:19,740 - gopiai.ui_core.memory.manager - INFO - Успешно импортирован EMBEDDING_MODEL из rag_config: sentence-transformers/nli-mpnet-base-v2
+2025-07-18 23:59:19,745 - gopiai.ui_core.memory.manager - ERROR - Error initializing embeddings: Unrecognized model in C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\vectors. Should have a `model_type` key in its config.json, or contain one of the following strings in its name: albert, align, altclip, arcee, aria, aria_text, audio-spectrogram-transformer, autoformer, aya_vision, bamba, bark, bart, beit, bert, bert-generation, big_bird, bigbird_pegasus, biogpt, bit, bitnet, blenderbot, blenderbot-small, blip, blip-2, blip_2_qformer, bloom, bridgetower, bros, camembert, canine, chameleon, chinese_clip, chinese_clip_vision_model, clap, clip, clip_text_model, clip_vision_model, clipseg, clvp, code_llama, codegen, cohere, cohere2, colpali, colqwen2, conditional_detr, convbert, convnext, convnextv2, cpmant, csm, ctrl, cvt, d_fine, dab-detr, dac, data2vec-audio, data2vec-text, data2vec-vision, dbrx, deberta, deberta-v2, decision_transformer, deepseek_v3, deformable_detr, deit, depth_anything, depth_pro, deta, detr, dia, diffllama, dinat, dinov2, dinov2_with_registers, distilbert, donut-swin, dots1, dpr, dpt, efficientformer, efficientnet, electra, emu3, encodec, encoder-decoder, ernie, ernie_m, esm, falcon, falcon_h1, falcon_mamba, fastspeech2_conformer, flaubert, flava, fnet, focalnet, fsmt, funnel, fuyu, gemma, gemma2, gemma3, gemma3_text, gemma3n, gemma3n_audio, gemma3n_text, gemma3n_vision, git, glm, glm4, glm4v, glm4v_text, glpn, got_ocr2, gpt-sw3, gpt2, gpt_bigcode, gpt_neo, gpt_neox, gpt_neox_japanese, gptj, gptsan-japanese, granite, granite_speech, granitemoe, granitemoehybrid, granitemoeshared, granitevision, graphormer, grounding-dino, groupvit, helium, hgnet_v2, hiera, hubert, ibert, idefics, idefics2, idefics3, idefics3_vision, ijepa, imagegpt, informer, instructblip, instructblipvideo, internvl, internvl_vision, jamba, janus, jetmoe, jukebox, kosmos-2, kyutai_speech_to_text, layoutlm, layoutlmv2, layoutlmv3, led, levit, lightglue, lilt, llama, llama4, llama4_text, llava, llava_next, llava_next_video, llava_onevision, longformer, longt5, luke, lxmert, m2m_100, mamba, mamba2, marian, markuplm, mask2former, maskformer, maskformer-swin, mbart, mctct, mega, megatron-bert, mgp-str, mimi, minimax, mistral, mistral3, mixtral, mlcd, mllama, mobilebert, mobilenet_v1, mobilenet_v2, mobilevit, mobilevitv2, modernbert, moonshine, moshi, mpnet, mpt, mra, mt5, musicgen, musicgen_melody, mvp, nat, nemotron, nezha, nllb-moe, nougat, nystromformer, olmo, olmo2, olmoe, omdet-turbo, oneformer, open-llama, openai-gpt, opt, owlv2, owlvit, paligemma, patchtsmixer, patchtst, pegasus, pegasus_x, perceiver, persimmon, phi, phi3, phi4_multimodal, phimoe, pix2struct, pixtral, plbart, poolformer, pop2piano, prompt_depth_anything, prophetnet, pvt, pvt_v2, qdqbert, qwen2, qwen2_5_omni, qwen2_5_vl, qwen2_5_vl_text, qwen2_audio, qwen2_audio_encoder, qwen2_moe, qwen2_vl, qwen2_vl_text, qwen3, qwen3_moe, rag, realm, recurrent_gemma, reformer, regnet, rembert, resnet, retribert, roberta, roberta-prelayernorm, roc_bert, roformer, rt_detr, rt_detr_resnet, rt_detr_v2, rwkv, sam, sam_hq, sam_hq_vision_model, sam_vision_model, seamless_m4t, seamless_m4t_v2, segformer, seggpt, sew, sew-d, shieldgemma2, siglip, siglip2, siglip_vision_model, smollm3, smolvlm, smolvlm_vision, speech-encoder-decoder, speech_to_text, speech_to_text_2, speecht5, splinter, squeezebert, stablelm, starcoder2, superglue, superpoint, swiftformer, swin, swin2sr, swinv2, switch_transformers, t5, t5gemma, table-transformer, tapas, textnet, time_series_transformer, timesfm, timesformer, timm_backbone, timm_wrapper, trajectory_transformer, transfo-xl, trocr, tvlt, tvp, udop, umt5, unispeech, unispeech-sat, univnet, upernet, van, video_llava, videomae, vilt, vipllava, vision-encoder-decoder, vision-text-dual-encoder, visual_bert, vit, vit_hybrid, vit_mae, vit_msn, vitdet, vitmatte, vitpose, vitpose_backbone, vits, vivit, vjepa2, wav2vec2, wav2vec2-bert, wav2vec2-conformer, wavlm, whisper, xclip, xglm, xlm, xlm-prophetnet, xlm-roberta, xlm-roberta-xl, xlnet, xmod, yolos, yoso, zamba, zamba2, zoedepth
+2025-07-18 23:59:19,774 - gopiai.ui.components.tools_panel_utils.ToolsManager - INFO - Загружена информация об инструментах из C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\config\tools_info.json
+2025-07-18 23:59:20,640 - opentelemetry.trace - WARNING - Overriding of current TracerProvider is not allowed
+2025-07-18 23:59:22,457 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Initializing memory manager with shared config. Path: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory
+2025-07-18 23:59:22,510 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Loaded 436 messages from shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
+2025-07-18 23:59:22,579 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
+2025-07-18 23:59:22,631 - gopiai.ui.utils.theme_manager - INFO - Загружена тема: Emerald Garden (dark)
+2025-07-18 23:59:22,635 - gopiai.ui.utils.theme_manager - INFO - Применение темы к QApplication/QCoreApplication
+2025-07-18 23:59:23,083 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
+2025-07-18 23:59:23,086 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-18 23:59:23,425 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
+2025-07-18 23:59:23,425 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-18 23:59:23,810 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
+2025-07-18 23:59:23,812 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-18 23:59:24,175 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
+2025-07-18 23:59:24,175 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-18 23:59:24,564 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
+2025-07-18 23:59:24,564 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-18 23:59:24,575 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация ChatWidget начата
+2025-07-18 23:59:24,590 - tools.gopiai_integration.mcp_integration - INFO - SMITHERY_API_KEY загружен: 621c15a8...cb64
+2025-07-18 23:59:25,071 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
+2025-07-18 23:59:25,074 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-18 23:59:25,089 - tools.gopiai_integration.mcp_integration - INFO - SMITHERY_API_KEY загружен: 621c15a8...cb64
+2025-07-18 23:59:25,148 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация менеджера памяти
+2025-07-18 23:59:25,149 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация CrewAI клиента
+2025-07-18 23:59:25,151 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация обработчиков сообщений
+2025-07-18 23:59:25,152 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant visual feedback elements created.
+2025-07-18 23:59:25,164 - UIAssistant_20250718_235925 - INFO - ==================================================
+2025-07-18 23:59:25,167 - UIAssistant_20250718_235925 - INFO - UI Assistant Session Started: 20250718_235925
+2025-07-18 23:59:25,171 - UIAssistant_20250718_235925 - INFO - ==================================================
+2025-07-18 23:59:25,186 - UIAssistant_20250718_235925 - INFO - Removed old log file: ui_assistant_20250714_073232.log
+2025-07-18 23:59:25,188 - UIAssistant_20250718_235925 - INFO - Initializing UIAssistantTool
+2025-07-18 23:59:25,193 - gopiai.ui_core.llm - INFO - LLM client initialized
+2025-07-18 23:59:25,196 - UIAssistant_20250718_235925 - INFO - UIAssistantTool initialized successfully
+2025-07-18 23:59:25,198 - gopiai.utils.performance - DEBUG - Cached result for get_ui_assistant (TTL: 300s)
+2025-07-18 23:59:25,199 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant initialized and signals connected.
+2025-07-18 23:59:25,203 - gopiai.ui.components.chat_widget - INFO - [CHAT] Подключение сигналов обработчиков
+2025-07-18 23:59:25,205 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация ChatWidget завершена
+2025-07-18 23:59:25,210 - gopiai.ui.components.chat_widget - INFO - Theme applied to ChatWidget (placeholder method).
+2025-07-18 23:59:25,221 - tools.gopiai_integration.mcp_integration - INFO - SMITHERY_API_KEY загружен: 621c15a8...cb64
+2025-07-18 23:59:26,536 - gopiai.ui.utils.theme_manager - INFO - Тема успешно применена при инициализации
+2025-07-18 23:59:35,414 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
+2025-07-18 23:59:35,426 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
+2025-07-18 23:59:35,436 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
+2025-07-19 00:00:00,990 - tools.gopiai_integration.mcp_integration - INFO - Отключение от всех серверов MCP выполнено успешно

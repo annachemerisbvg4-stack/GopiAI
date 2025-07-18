@@ -226,60 +226,32 @@ class ChatWidget(QWidget):
 
     def send_message(self):
         print("[DEBUG] Вызван метод send_message в ChatWidget")
-        logger.info("[CHAT] Вызван метод send_message в ChatWidget")
         
         text = self.input.toPlainText().strip()
-        if not text: return
         
-        print(f"[DEBUG] Текст сообщения: {text}")
-        logger.info(f"[CHAT] Текст сообщения: {text}")
-        
+        # Проверяем, есть ли текст для отправки
+        if not text:
+            return
+            
         self.append_message("Вы", text)
         self.input.clear()
         self.send_btn.setEnabled(False)
         self._waiting_message_id = self.append_message("Ассистент", "⏳ Обрабатываю запрос...")
         
-        # Формируем метаданные с информацией о сессии и выбранном инструменте
-        metadata = {"session_id": self.session_id}
-        
-        # Добавляем информацию о выбранном инструменте, если он есть
-        if self.current_tool:
-            metadata["tool"] = self.current_tool
-            # После использования инструмента сбрасываем его
-            self.current_tool = None
-            
-        message_data = {"message": text, "metadata": metadata}
-        print(f"[DEBUG] Подготовлены данные для отправки: {message_data}")
-        logger.info(f"[CHAT] Подготовлены данные для отправки: {message_data}")
-        
-        print("[DEBUG] Вызываем async_handler.process_message...")
-        logger.info("[CHAT] Вызываем async_handler.process_message...")
-        
-        try:
-            self.async_handler.process_message(message_data)
-            print("[DEBUG] async_handler.process_message вызван успешно")
-            logger.info("[CHAT] async_handler.process_message вызван успешно")
-        except Exception as e:
-            print(f"[DEBUG-ERROR] Ошибка при вызове async_handler.process_message: {e}")
-            logger.error(f"[CHAT-ERROR] Ошибка при вызове async_handler.process_message: {e}", exc_info=True)
+        # Сохраняем сообщение пользователя в память
+        self.memory_manager.add_message(self.session_id, "user", text)
 
     @Slot(str)
     def _update_status_message(self, status_text: str):
-        self._update_assistant_response(self._waiting_message_id, status_text, is_status=True)
-
-    @Slot(object, bool)
-    def _handle_response(self, result: object, is_error: bool):
-        if is_error:
-            response_text = f"Произошла ошибка: {str(result)}"
-        elif isinstance(result, dict) and result.get("impl") == "browser-use":
-            response_text = self.browser_handler.handle_command(result.get("command", ""))
-        else:
-            response_text = str(result.get('response', result)) if isinstance(result, dict) else str(result)
-        
-        self._update_assistant_response(self._waiting_message_id, response_text)
-        self.memory_manager.add_message(self.session_id, "assistant", response_text)
-        self.send_btn.setEnabled(True)
-        self._waiting_message_id = None
+        # Добавляем анимацию точек для индикации ожидания
+        if not hasattr(self, '_animation_dots'):
+            self._animation_dots = 0
+            
+        self._animation_dots = (self._animation_dots + 1) % 4
+        dots = "." * self._animation_dots
+        animated_status = f"⏳ {status_text}{dots}"
+            
+        self._update_assistant_response(self._waiting_message_id, animated_status, is_status=True)
 
     def _render_markdown(self, text: str) -> str:
         """
@@ -287,7 +259,7 @@ class ChatWidget(QWidget):
         """
         if not text:
             return ""
-        
+            
         # Экранируем HTML символы
         text = html.escape(text)
         
@@ -298,29 +270,29 @@ class ChatWidget(QWidget):
             text = text.replace('**', '</strong>', 1)
             if '**' in text:
                 text = text.replace('**', '<strong>', 1)
-        
+            
         # Курсивный текст
         text = text.replace('*', '<em>', 1)
         while '*' in text:
             text = text.replace('*', '</em>', 1)
             if '*' in text:
                 text = text.replace('*', '<em>', 1)
-        
+            
         # Код
         text = text.replace('`', '<code>', 1)
         while '`' in text:
             text = text.replace('`', '</code>', 1)
             if '`' in text:
                 text = text.replace('`', '<code>', 1)
-        
+            
         # Разбиваем на параграфы
         paragraphs = []
         for line in text.split('\n'):
             if line.strip():
                 paragraphs.append(f'<p>{line}</p>')
-        
+            
         return '\n'.join(paragraphs)
-    
+
     def append_message(self, author: str, text: str) -> Optional[str]:
         # Для сообщений пользователя просто экранируем HTML
         if author.lower() == 'вы':
@@ -332,29 +304,45 @@ class ChatWidget(QWidget):
             except Exception as e:
                 print(f"[ERROR] Ошибка при рендеринге markdown: {e}")
                 formatted_text = html.escape(text)
-        
+            
         self.history.append(f"<b>{author}:</b> {formatted_text}")
         role = 'user' if author.lower() == 'вы' else 'assistant'
         return self.memory_manager.add_message(self.session_id, role, text)
 
     def _update_assistant_response(self, message_id: str, new_text: str, is_status: bool = False):
-        cursor = self.history.textCursor()
-        cursor.movePosition(QTextCursor.MoveOperation.End)
-        cursor.select(QTextCursor.SelectionType.LineUnderCursor)
-        cursor.removeSelectedText()
-        
-        # Для статусных сообщений не используем markdown
-        if is_status:
-            formatted_text = html.escape(new_text)
-        else:
-            try:
-                formatted_text = self._render_markdown(new_text)
-            except Exception as e:
-                print(f"[ERROR] Ошибка при рендеринге markdown: {e}")
-                formatted_text = html.escape(new_text)
+        if not message_id:
+            return
             
-        self.history.append(f"<b>Ассистент:</b> {formatted_text}")
-        self._scroll_history_to_end()
+        # Находим и обновляем сообщение по его ID
+        cursor = QTextCursor(self.history.document())
+        cursor.movePosition(QTextCursor.MoveOperation.Start)
+        
+        # Ищем блок с нужным ID
+        found = False
+        while not cursor.atEnd():
+            block = cursor.block()
+            if block.blockFormat().property(1) == message_id:
+                found = True
+                break
+            cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+        
+        if found:
+            # Выделяем весь блок
+            cursor.select(QTextCursor.SelectionType.BlockUnderCursor)
+            
+            # Создаем новый HTML для сообщения
+            if is_status:
+                # Для статусных сообщений используем специальный стиль
+                html_content = f"<div><strong>Ассистент:</strong> <span style='color: #666;'>{new_text}</span></div>"
+            else:
+                # Для обычных сообщений рендерим markdown
+                html_content = f"<div><strong>Ассистент:</strong> {self._render_markdown(new_text)}</div>"
+        
+            # Заменяем содержимое блока
+            cursor.insertHtml(html_content)
+            
+            # Прокручиваем историю вниз
+            self._scroll_history_to_end()
 
     def resizeEvent(self, event: QResizeEvent):
         """Перемещает кнопку вызова боковой панели при изменении размера окна."""
@@ -393,6 +381,45 @@ class ChatWidget(QWidget):
     def apply_theme(self):
         logger.info("Theme applied to ChatWidget (placeholder method).")
         pass
+        
+    def _handle_response(self, response, is_error=False):
+        """
+        Обрабатывает ответ от асинхронного обработчика.
+        
+        Args:
+            response: Ответ от CrewAI API или сообщение об ошибке
+            is_error: Флаг, указывающий, является ли ответ ошибкой
+        """
+        if self._waiting_message_id is None:
+            return
+            
+        if is_error:
+            error_text = f"⚠️ Ошибка: {response}"
+            self._update_assistant_response(self._waiting_message_id, error_text)
+            self.send_btn.setEnabled(True)
+            return
+            
+        # Обрабатываем успешный ответ
+        if isinstance(response, dict):
+            # Если ответ - словарь, извлекаем текст сообщения
+            message = response.get('message', '')
+            if not message:
+                message = str(response)
+        else:
+            # Если ответ - строка или другой тип
+            message = str(response)
+            
+        # Удаляем лишние пустые строки в ответе
+        message = "\n".join([line for line in message.splitlines() if line.strip()])
+        
+        # Обновляем сообщение ассистента
+        self._update_assistant_response(self._waiting_message_id, message)
+        
+        # Сохраняем ответ в память
+        self.memory_manager.add_message(self.session_id, "assistant", message)
+        
+        # Разблокируем кнопку отправки
+        self.send_btn.setEnabled(True)
         
     def on_tool_selected(self, tool_id: str, tool_data: dict):
         """
