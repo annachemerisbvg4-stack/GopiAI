@@ -27,17 +27,25 @@ from ..memory.manager import MemoryManager
 import sys
 import os
 
-# Добавляем путь к модулю emotional_classifier в GopiAI-CrewAI
-crewai_tools_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'GopiAI-CrewAI', 'tools')
-if os.path.exists(crewai_tools_path) and crewai_tools_path not in sys.path:
-    sys.path.append(crewai_tools_path)
-    logger.debug(f"[INIT] Добавлен путь к модулям CrewAI: {crewai_tools_path}")
+# --- ИСПРАВЛЕНО: Более надежный способ добавления путей ---
+try:
+    # Определяем корневую директорию проекта (GOPI_AI_MODULES)
+    project_root = Path(__file__).resolve().parents[4]
 
-# Добавляем путь к gopiai_integration
-gopiai_integration_path = os.path.join(crewai_tools_path, 'gopiai_integration')
-if os.path.exists(gopiai_integration_path) and gopiai_integration_path not in sys.path:
-    sys.path.append(gopiai_integration_path)
-    logger.debug(f"[INIT] Добавлен путь к модулям gopiai_integration: {gopiai_integration_path}")
+    # Добавляем путь к инструментам CrewAI
+    crewai_tools_path = project_root / 'GopiAI-CrewAI' / 'tools'
+    if crewai_tools_path.exists() and str(crewai_tools_path) not in sys.path:
+        sys.path.insert(0, str(crewai_tools_path))
+        logger.debug(f"[INIT] Добавлен путь к инструментам CrewAI: {crewai_tools_path}")
+
+    # Добавляем путь к gopiai_integration
+    gopiai_integration_path = crewai_tools_path / 'gopiai_integration'
+    if gopiai_integration_path.exists() and str(gopiai_integration_path) not in sys.path:
+        sys.path.insert(0, str(gopiai_integration_path))
+        logger.debug(f"[INIT] Добавлен путь к gopiai_integration: {gopiai_integration_path}")
+
+except IndexError:
+    logger.error("[INIT] Не удалось определить корневую директорию проекта. Проверьте структуру папок.")
 
 # Импортируем эмоциональный классификатор
 EMOTIONAL_CLASSIFIER_AVAILABLE = False
@@ -270,6 +278,9 @@ class CrewAIClient:
             logger.debug("[REQUEST] Преобразуем не-словарь в словарь")
             message = {"message": str(message)}
             
+        # --- ИСПРАВЛЕНО: Корректная инициализация MemoryManager и получение истории ---
+        memory_manager = MemoryManager()
+
         # Добавляем метаданные, если их нет
         if 'metadata' not in message:
             message['metadata'] = {}
@@ -280,7 +291,6 @@ class CrewAIClient:
             logger.debug(f"[REQUEST] Получаем историю сообщений для сессии: {session_id}")
             
             # Получаем историю сообщений (последние 20 сообщений)
-            memory_manager = MemoryManager()
             chat_history = memory_manager.get_chat_history(session_id)
             if chat_history:
                 # Берем только 20 сообщений
@@ -294,6 +304,8 @@ class CrewAIClient:
                 logger.debug(f"[REQUEST] История сообщений для сессии {session_id} не найдена")
         except Exception as e:
             logger.error(f"[REQUEST-ERROR] Ошибка при получении истории сообщений: {e}")
+            # Устанавливаем пустую историю в случае ошибки, чтобы не падать
+            message['metadata']['chat_history'] = []
             
         logger.debug(f"[REQUEST] Продолжаем с отправкой запроса к CrewAI API")
             
@@ -352,31 +364,6 @@ class CrewAIClient:
             message['metadata']['system_prompt'] = system_prompt
             logger.debug("[REQUEST] Добавлен стандартный системный промпт в metadata")
         
-        # Получаем историю сообщений для текущей сессии
-        try:
-            # Импортируем менеджер памяти напрямую из правильного модуля
-            from ..memory.manager import MemoryManager
-            memory_manager = MemoryManager()
-            
-            # Получаем ID сессии из метаданных сообщения
-            session_id = message.get('metadata', {}).get('session_id', 'default_session')
-            logger.debug(f"[REQUEST] Получение истории сообщений для сессии: {session_id}")
-            
-            # Получаем историю сообщений (последние 20 сообщений)
-            chat_history = memory_manager.get_chat_history(session_id)
-            if chat_history:
-                # Берем последние 20 сообщений
-                chat_history = chat_history[-20:]
-                logger.info(f"[REQUEST] Получено {len(chat_history)} сообщений из истории для сессии {session_id}")
-                
-                # Добавляем историю сообщений в метаданные запроса
-                message['metadata']['chat_history'] = chat_history
-                logger.debug(f"[REQUEST] История сообщений добавлена в запрос")
-            else:
-                logger.debug(f"[REQUEST] История сообщений для сессии {session_id} не найдена")
-        except Exception as e:
-            logger.error(f"[REQUEST-ERROR] Ошибка при получении истории сообщений: {e}")
-            # Продолжаем выполнение даже при ошибке получения истории
             
         logger.debug(f"[REQUEST] Подготовка к отправке запроса в CrewAI API")
         
