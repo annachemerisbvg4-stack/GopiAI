@@ -10,8 +10,13 @@ import os
 import random
 from typing import Dict, List, Optional, Any, Union
 
-# Импортируем модуль MCP интеграции
-from tools.gopiai_integration.mcp_integration_fixed import get_mcp_tools_manager, get_mcp_tools_info
+# Импортируем новую систему управления инструкциями
+try:
+    from tools.gopiai_integration.tools_instruction_manager import get_tools_instruction_manager
+    TOOLS_MANAGER_AVAILABLE = True
+except ImportError:
+    TOOLS_MANAGER_AVAILABLE = False
+    print("[WARNING] ToolsInstructionManager не доступен")
 
 # Пытаемся импортировать CrewAI модули, если они доступны
 try:
@@ -41,7 +46,15 @@ class SystemPrompts:
         # Кеш информации об инструментах
         self._tools_info_cache = None
         self._tools_cache_timestamp = 0
-        self._mcp_tools_cache = None
+        
+        # Инициализация менеджера инструкций
+        self._tools_manager = None
+        if TOOLS_MANAGER_AVAILABLE:
+            try:
+                self._tools_manager = get_tools_instruction_manager()
+                self.logger.info("✅ ToolsInstructionManager успешно инициализирован")
+            except Exception as e:
+                self.logger.error(f"❌ Ошибка инициализации ToolsInstructionManager: {e}")
     
     def get_base_assistant_prompt(self) -> str:
         """
@@ -304,18 +317,25 @@ class SystemPrompts:
     
     def get_mcp_tools_info(self) -> str:
         """
-        Формирует строку с информацией о доступных MCP инструментах.
-        Используем функцию из нового модуля mcp_integration.
+        Возвращает информацию о доступных инструментах.
+        Использует новую систему ToolsInstructionManager вместо устаревшей MCP интеграции.
         
         Returns:
-            Строка с описанием MCP инструментов или пустая строка, если инструменты недоступны
+            Строка с описанием доступных инструментов
         """
-        # Вызываем функцию из нового модуля
-        try:
-            from .mcp_integration_fixed import get_mcp_tools_info
-            return get_mcp_tools_info()
-        except Exception as e:
-            return f"Ошибка получения MCP инструментов: {str(e)}"
+        # Используем новую систему управления инструментами
+        if self._tools_manager:
+            try:
+                tools_summary = self._tools_manager.get_tools_summary()
+                tools_text = "\n## 🛠️ Доступные инструменты:\n"
+                for tool_name, description in tools_summary.items():
+                    tools_text += f"- **{tool_name}**: {description}\n"
+                return tools_text
+            except Exception as e:
+                self.logger.error(f"❌ Ошибка получения списка инструментов: {e}")
+                return "Ошибка загрузки инструментов"
+        else:
+            return "Инструменты временно недоступны"
     
     def save_tools_info(self, tools_info: List[Dict]):
         """
@@ -573,6 +593,63 @@ class SystemPrompts:
         except Exception as e:
             self.logger.error(f"Ошибка при создании команды CrewAI: {e}")
             return None
+    
+    def get_tools_summary_for_prompt(self) -> str:
+        """
+        Возвращает краткий список инструментов для включения в системный промпт.
+        Использует новый ToolsInstructionManager для динамической подгрузки.
+        
+        Returns:
+            str: Отформатированный текст с кратким описанием доступных инструментов
+        """
+        if not self._tools_manager:
+            return "\n## 🛠️ Инструменты временно недоступны\n"
+        
+        try:
+            return self._tools_manager.get_tools_for_prompt()
+        except Exception as e:
+            self.logger.error(f"❌ Ошибка получения списка инструментов: {e}")
+            return "\n## 🛠️ Ошибка загрузки инструментов\n"
+    
+    def get_tool_detailed_instructions(self, tool_name: str) -> Optional[str]:
+        """
+        Возвращает детальные инструкции по использованию конкретного инструмента.
+        Подгружается динамически только при выборе инструмента ИИ.
+        
+        Args:
+            tool_name (str): Название инструмента
+            
+        Returns:
+            Optional[str]: Детальные инструкции или None если инструмент не найден
+        """
+        if not self._tools_manager:
+            self.logger.warning("⚠️ ToolsInstructionManager недоступен")
+            return None
+        
+        try:
+            return self._tools_manager.get_tool_detailed_instructions(tool_name)
+        except Exception as e:
+            self.logger.error(f"❌ Ошибка получения инструкций для {tool_name}: {e}")
+            return None
+    
+    def get_complete_assistant_prompt(self, include_tools: bool = True) -> str:
+        """
+        Возвращает полный системный промпт для ассистента, включая базовую личность
+        и краткий список доступных инструментов.
+        
+        Args:
+            include_tools (bool): Включать ли информацию об инструментах
+            
+        Returns:
+            str: Полный системный промпт
+        """
+        base_prompt = self.get_base_assistant_prompt()
+        
+        if include_tools and self._tools_manager:
+            tools_info = self.get_tools_summary_for_prompt()
+            return f"{base_prompt}\n{tools_info}"
+        
+        return base_prompt
 
 # Создаем экземпляр класса для использования в других модулях
 system_prompts = SystemPrompts()

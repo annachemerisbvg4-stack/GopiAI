@@ -55,8 +55,7 @@ EmotionalState = None
 try:
     import spacy
     try:
-        from emotional_classifier import EmotionalClassifier
-        from emotional_classifier.emotional_state import EmotionalState
+        from emotional_classifier import EmotionalClassifier, EmotionalState
         EMOTIONAL_CLASSIFIER_AVAILABLE = True
         logger.debug("[INIT] Эмоциональный классификатор успешно импортирован")
     except ImportError as e:
@@ -67,6 +66,20 @@ try:
 except ImportError as e:
     logger.error(f"[INIT] Ошибка импорта модуля spacy: {e}")
     logger.error("[INIT] Модуль spacy недоступен, эмоциональный классификатор отключен")
+
+# === ИНТЕГРАЦИЯ СИСТЕМЫ ДИНАМИЧЕСКИХ ИНСТРУКЦИЙ ===
+# Импортируем систему динамических инструкций для реального UI-чата
+TOOLS_INSTRUCTION_MANAGER_AVAILABLE = False
+ToolsInstructionManager = None
+
+try:
+    from tools_instruction_manager import get_tools_instruction_manager
+    TOOLS_INSTRUCTION_MANAGER_AVAILABLE = True
+    logger.info("[INIT] ✅ Система динамических инструкций успешно импортирована в UI-чат")
+except ImportError as e:
+    logger.error(f"[INIT] ❌ Ошибка импорта системы динамических инструкций: {e}")
+    logger.error("[INIT] UI-чат будет работать без динамических инструкций")
+    TOOLS_INSTRUCTION_MANAGER_AVAILABLE = False
 
 # Создаем директорию для логов, если её нет
 # Используем текущую директорию или директорию приложения
@@ -148,6 +161,26 @@ class CrewAIClient:
             except Exception as e:
                 logger.warning(f"Failed to initialize emotional classifier: {e}")
                 self.emotional_classifier = None
+        
+        # === ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ ДИНАМИЧЕСКИХ ИНСТРУКЦИЙ ===
+        # Инициализируем менеджер динамических инструкций для реального UI-чата
+        self.tools_instruction_manager = None
+        if TOOLS_INSTRUCTION_MANAGER_AVAILABLE:
+            try:
+                self.tools_instruction_manager = get_tools_instruction_manager()
+                tools_count = len(self.tools_instruction_manager.get_tools_summary())
+                logger.info(f"[INIT] ✅ Система динамических инструкций инициализирована в UI-чате. Доступно инструментов: {tools_count}")
+                
+                # Логируем доступные инструменты для отладки
+                tools_summary = self.tools_instruction_manager.get_tools_summary()
+                for tool_name in tools_summary.keys():
+                    logger.debug(f"[TOOLS] Доступен инструмент: {tool_name}")
+                    
+            except Exception as e:
+                logger.error(f"[INIT] ❌ Ошибка инициализации системы динамических инструкций: {e}")
+                self.tools_instruction_manager = None
+        else:
+            logger.warning("[INIT] ⚠️ Система динамических инструкций недоступна в UI-чате")
 
     def brave_search_site(self, query):
         """
@@ -281,9 +314,18 @@ class CrewAIClient:
         # --- ИСПРАВЛЕНО: Корректная инициализация MemoryManager и получение истории ---
         memory_manager = MemoryManager()
 
+        # === ИНТЕГРАЦИЯ ДИНАМИЧЕСКИХ ИНСТРУКЦИЙ В РЕАЛЬНЫЙ UI-ЧАТ ===
+        # Проверяем, нужны ли детальные инструкции для инструментов
+        dynamic_instructions = self._get_dynamic_tool_instructions(message.get('message', ''))
+        
         # Добавляем метаданные, если их нет
         if 'metadata' not in message:
             message['metadata'] = {}
+            
+        # Добавляем динамические инструкции в метаданные запроса
+        if dynamic_instructions:
+            message['metadata']['dynamic_tool_instructions'] = dynamic_instructions
+            logger.info(f"[DYNAMIC-TOOLS] ✅ Добавлены динамические инструкции для {len(dynamic_instructions)} инструментов")
             
         try:
             # Получаем ID сессии из переданных метаданных
@@ -492,11 +534,77 @@ class CrewAIClient:
             print(f"❌ Ошибка запроса: {e}")
             return {"error_message": str(e), "processed_with_crewai": False}
 
+    def _get_dynamic_tool_instructions(self, message_text: str) -> dict:
+        """
+        Анализирует сообщение пользователя и определяет, какие инструменты могут понадобиться.
+        Возвращает словарь с детальными инструкциями для релевантных инструментов.
+        
+        Args:
+            message_text: Текст сообщения пользователя
+            
+        Returns:
+            dict: Словарь {tool_name: detailed_instructions} для релевантных инструментов
+        """
+        if not self.tools_instruction_manager or not message_text:
+            return {}
+            
+        try:
+            # Получаем список всех доступных инструментов
+            available_tools = self.tools_instruction_manager.get_tools_summary()
+            relevant_instructions = {}
+            
+            # Анализируем сообщение на предмет упоминания инструментов или задач
+            message_lower = message_text.lower()
+            
+            # Ключевые слова для определения релевантных инструментов
+            tool_keywords = {
+                'filesystem_tools': ['файл', 'папка', 'директория', 'создать', 'удалить', 'копировать', 'переместить', 'file', 'folder', 'directory', 'create', 'delete', 'copy', 'move'],
+                'browser_tools': ['браузер', 'сайт', 'страница', 'открыть', 'перейти', 'browser', 'website', 'page', 'open', 'navigate', 'url', 'http'],
+                'local_mcp_tools': ['api', 'запрос', 'данные', 'скачать', 'получить', 'request', 'data', 'download', 'fetch', 'веб-скрапинг', 'scraping'],
+                'web_search': ['найти', 'поиск', 'искать', 'google', 'search', 'find', 'look for', 'яндекс', 'bing'],
+                'page_analyzer': ['анализ', 'проанализировать', 'seo', 'производительность', 'analyze', 'analysis', 'performance', 'accessibility']
+            }
+            
+            # Проверяем каждый инструмент на релевантность
+            for tool_name in available_tools.keys():
+                if tool_name in tool_keywords:
+                    keywords = tool_keywords[tool_name]
+                    
+                    # Если в сообщении есть ключевые слова для этого инструмента
+                    if any(keyword in message_lower for keyword in keywords):
+                        detailed_instructions = self.tools_instruction_manager.get_tool_detailed_instructions(tool_name)
+                        if detailed_instructions:
+                            relevant_instructions[tool_name] = detailed_instructions
+                            logger.debug(f"[DYNAMIC-TOOLS] Подгружены инструкции для {tool_name} ({len(detailed_instructions)} символов)")
+            
+            # Если не найдено специфических ключевых слов, но сообщение длинное и сложное,
+            # подгружаем инструкции для основных инструментов
+            if not relevant_instructions and len(message_text) > 100:
+                # Подгружаем инструкции для наиболее часто используемых инструментов
+                priority_tools = ['filesystem_tools', 'browser_tools', 'local_mcp_tools']
+                for tool_name in priority_tools:
+                    if tool_name in available_tools:
+                        detailed_instructions = self.tools_instruction_manager.get_tool_detailed_instructions(tool_name)
+                        if detailed_instructions:
+                            relevant_instructions[tool_name] = detailed_instructions
+                            logger.debug(f"[DYNAMIC-TOOLS] Подгружены приоритетные инструкции для {tool_name}")
+            
+            if relevant_instructions:
+                logger.info(f"[DYNAMIC-TOOLS] 🎯 Подгружены динамические инструкции для {len(relevant_instructions)} инструментов: {list(relevant_instructions.keys())}")
+            else:
+                logger.debug("[DYNAMIC-TOOLS] Релевантные инструменты не найдены, инструкции не подгружены")
+                
+            return relevant_instructions
+            
+        except Exception as e:
+            logger.error(f"[DYNAMIC-TOOLS] ❌ Ошибка при получении динамических инструкций: {e}")
+            return {}
+
     def _handle_browser_command(self, message):
         """
         Обрабатывает команды браузера, начинающиеся с /browser или /браузер
         
-        Args:
+{{ ... }}
             message: Полный текст сообщения с командой
             
         Returns:

@@ -17,7 +17,7 @@ from PySide6.QtCore import QObject, QTimer, Signal, QPoint, QSize, QRect, QBuffe
 from PySide6.QtGui import QPixmap, QGuiApplication, QScreen, QPainter, QColor, QPen, QFont, QImage
 from PySide6.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QMessageBox
 
-from gopiai.ui_core.llm import get_llm_client  # Import from ui_core instead of core
+from ..llm import get_llm_client  # Import from local ui llm module
 
 class CommandType(Enum):
     CLICK = "click"

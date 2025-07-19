@@ -40,7 +40,17 @@ try:
     from tools.gopiai_integration.memory_tools import GopiAIMemoryTool
     from tools.gopiai_integration.communication_tools import GopiAICommunicationTool
     
+    # Импорт системы динамических инструкций
+    from tools.gopiai_integration.crewai_tools_integration import (
+        enhance_crew_with_instructions,
+        enhance_agent_with_instructions,
+        with_dynamic_instructions,
+        get_tools_integrator
+    )
+    from tools.gopiai_integration.tools_instruction_manager import get_tools_instruction_manager
+    
     print("🔍 === ПРОВЕРКА ОКРУЖЕНИЯ ===")
+    print("✅ Система динамических инструкций загружена")
 except ImportError as e:
     print(f"❌ Ошибка импорта инструментов: {e}")
     sys.exit(1)
@@ -171,12 +181,21 @@ from crewai import Agent
 from llm_rotation_config import LLM_MODELS_CONFIG, select_llm_model, rag_answer
 
 def create_demo_agents(llm):
-    """Создание демонстрационных агентов с GopiAI инструментами"""
-    print("👥 === СОЗДАНИЕ АГЕНТОВ ===")
+    """Создание демонстрационных агентов с GopiAI инструментами и динамическими инструкциями"""
+    print("👥 === СОЗДАНИЕ АГЕНТОВ С ДИНАМИЧЕСКИМИ ИНСТРУКЦИЯМИ ===")
+    
+    # Инициализируем систему динамических инструкций
+    tools_manager = get_tools_instruction_manager()
+    integrator = get_tools_integrator()
+    
+    print("📖 Доступные инструменты с динамическими инструкциями:")
+    tools_summary = tools_manager.get_tools_summary()
+    for tool_name, description in tools_summary.items():
+        print(f"  • {tool_name}: {description[:60]}...")
     
     # Используем систему шаблонов для создания агентов
     template_system = AgentTemplateSystem(verbose=True)
-    print(f"📋 Доступные шаблоны: {', '.join(template_system.list_available_templates())}")
+    print(f"\n📋 Доступные шаблоны: {', '.join(template_system.list_available_templates())}")
     
     # Создаем агентов из шаблонов
     coordinator = template_system.create_agent_from_template(
@@ -202,23 +221,23 @@ def create_demo_agents(llm):
         verbose=True
     )
     
-    # Создаем агента-программиста вручную для демонстрации
+    # Создаем агента-программиста вручную для демонстрации динамических инструкций
     # Создаем все инструменты
     all_tools = [
         GopiAICommunicationTool(),
         GopiAIMemoryTool(),
         GopiAIFileSystemTool(),
         GopiAIBrowserTool(),
-        GopiAIRouterTool(),
-        GopiAIHuggingFaceTool()
+        GopiAIRouterTool()
     ]
     
     # Агент-программист (полный набор инструментов)
     coder = Agent(
-        role='Code Developer',
-        goal='Разрабатывать и оптимизировать код на Python',
-        backstory="""Ты опытный Python-разработчик в GopiAI. Твоя задача - писать
-        чистый, эффективный и хорошо документированный код для различных компонентов системы.""",
+        role='Code Developer with Dynamic Instructions',
+        goal='Разрабатывать и оптимизировать код на Python с использованием динамических инструкций',
+        backstory="""Ты опытный Python-разработчик в GopiAI с доступом к системе динамических инструкций.
+        Когда ты выбираешь инструмент, система автоматически подгружает детальные инструкции по его использованию.
+        Твоя задача - писать чистый, эффективный и хорошо документированный код для различных компонентов системы.""",
         tools=all_tools,
         llm=llm,
         verbose=True,
@@ -226,7 +245,14 @@ def create_demo_agents(llm):
         max_iter=5
     )
     
-    print(f"✅ Создано {len([coordinator, researcher, writer, coder])} агентов")
+    # Улучшаем всех агентов динамическими инструкциями
+    print("\n🔧 Применение динамических инструкций к агентам...")
+    coordinator = enhance_agent_with_instructions(coordinator)
+    researcher = enhance_agent_with_instructions(researcher)
+    writer = enhance_agent_with_instructions(writer)
+    coder = enhance_agent_with_instructions(coder)
+    
+    print(f"✅ Создано {len([coordinator, researcher, writer, coder])} агентов с динамическими инструкциями")
     return coordinator, researcher, writer, coder
 
 def create_demo_tasks(coordinator, researcher, writer, coder):
@@ -399,12 +425,16 @@ def run_advanced_demo():
         )
         tasks = [init_task, research_task, writing_task, coding_task]
         tasks = [t for t in tasks if t is not None]
-        # Создаем crew
+        # Создаем crew с динамическими инструкциями
         advanced_crew = Crew(**{
             "agents": agents,
             "tasks": tasks,
             "verbose": True
         })
+        
+        # Применяем динамические инструкции к команде
+        print("🔧 Применение динамических инструкций к команде...")
+        advanced_crew = enhance_crew_with_instructions(advanced_crew)
         # Запускаем
         print("⚡ Запуск продвинутой демонстрации...")
         try:

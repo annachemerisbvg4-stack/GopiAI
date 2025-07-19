@@ -14,7 +14,8 @@ from llm_rotation_config import select_llm_model_safe, rate_limit_monitor
 
 # Импортируем наш модуль системных промптов
 from .system_prompts import get_system_prompts
-from tools.gopiai_integration.mcp_integration_fixed import get_mcp_tools_manager
+# Старый MCP импорт удален, используем новую систему инструкций
+# from tools.gopiai_integration.mcp_integration_fixed import get_mcp_tools_manager
 from .local_mcp_tools import get_local_mcp_tools
 
 # Инициализируем логгер перед использованием
@@ -46,25 +47,11 @@ class SmartDelegator:
             self.local_tools_available = False
             logger.warning(f"[WARNING] Не удалось инициализировать локальные MCP инструменты: {str(e)}")
         
-        # Инициализируем SmitheryMCPManager для доступа к внешним MCP инструментам
-        try:
-            self.mcp_manager = get_mcp_tools_manager()
-            self.mcp_available = True
-            # Пробуем получить инструменты для проверки работоспособности
-            try:
-                import asyncio
-                # Инициализируем менеджер
-                asyncio.run(self.mcp_manager.initialize())
-                mcp_tools = asyncio.run(self.mcp_manager.get_all_tools())
-                mcp_tools_count = len(mcp_tools) if mcp_tools else 0
-            except Exception as async_e:
-                logger.warning(f"[WARNING] Не удалось получить внешние MCP инструменты: {str(async_e)}")
-                mcp_tools_count = 0
-            logger.info(f"[OK] Внешние MCP интеграция инициализирована. Доступно инструментов: {mcp_tools_count}")
-        except Exception as e:
-            self.mcp_manager = None
-            self.mcp_available = False
-            logger.warning(f"[WARNING] Не удалось инициализировать внешние MCP интеграцию: {str(e)}")
+        # Устаревшая внешняя MCP интеграция удалена
+        # Используем только локальные инструменты и новую систему ToolsInstructionManager
+        self.mcp_manager = None
+        self.mcp_available = False
+        logger.info("[INFO] Внешняя MCP интеграция отключена, используем локальные инструменты")
         
         if self.rag_available:
             logger.info(f"[OK] RAG system passed to SmartDelegator. Records: {self.rag_system.embeddings.count()}")
