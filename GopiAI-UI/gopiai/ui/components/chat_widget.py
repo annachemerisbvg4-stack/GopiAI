@@ -241,6 +241,16 @@ class ChatWidget(QWidget):
         # Сохраняем сообщение пользователя в память
         self.memory_manager.add_message(self.session_id, "user", text)
 
+        # --- ИСПРАВЛЕНО: Запускаем асинхронную обработку ---
+        message_data = {
+            "message": text,
+            "metadata": {
+                "session_id": self.session_id,
+                "current_tool": self.current_tool
+            }
+        }
+        self.async_handler.process_message(message_data)
+
     @Slot(str)
     def _update_status_message(self, status_text: str):
         # Добавляем анимацию точек для индикации ожидания
