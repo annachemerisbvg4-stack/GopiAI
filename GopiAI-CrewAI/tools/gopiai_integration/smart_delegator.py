@@ -14,7 +14,7 @@ from llm_rotation_config import select_llm_model_safe, rate_limit_monitor
 
 # Импортируем наш модуль системных промптов
 from .system_prompts import get_system_prompts
-from .mcp_integration_fixed import SmitheryMCPManager, get_smithery_mcp_manager
+from tools.gopiai_integration.mcp_integration_fixed import get_mcp_tools_manager
 from .local_mcp_tools import get_local_mcp_tools
 
 # Инициализируем логгер перед использованием
@@ -48,7 +48,7 @@ class SmartDelegator:
         
         # Инициализируем SmitheryMCPManager для доступа к внешним MCP инструментам
         try:
-            self.mcp_manager = get_smithery_mcp_manager()
+            self.mcp_manager = get_mcp_tools_manager()
             self.mcp_available = True
             # Пробуем получить инструменты для проверки работоспособности
             try:

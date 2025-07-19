@@ -11,7 +11,7 @@ import random
 from typing import Dict, List, Optional, Any, Union
 
 # Импортируем модуль MCP интеграции
-from tools.gopiai_integration.mcp_integration import get_mcp_tools_manager, get_mcp_tools_info
+from tools.gopiai_integration.mcp_integration_fixed import get_mcp_tools_manager, get_mcp_tools_info
 
 # Пытаемся импортировать CrewAI модули, если они доступны
 try:

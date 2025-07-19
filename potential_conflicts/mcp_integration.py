@@ -1,8 +1,11 @@
 """
-Исправленная MCP Tools Integration для GopiAI
+MCP Tools Integration для GopiAI
 
 Этот модуль обеспечивает интеграцию с инструментами MCP (Model Context Protocol)
-через Smithery Registry API согласно официальной документации.
+через модуль mcp.client.streamable_http.
+
+Модуль предоставляет функциональность для подключения к MCP серверам
+и использования их инструментов в CrewAI без зависимостей от crewai-tools.
 """
 
 import os
@@ -10,162 +13,217 @@ import logging
 import asyncio
 import json
 import httpx
-from typing import Dict, List, Any, Optional, Set, Union
-from dotenv import load_dotenv
+from typing import Dict, List, Any, Optional, Set, Union, Callable, Awaitable
+
+# Используем streamable_http для подключения к MCP серверам
+from mcp.client.streamable_http import streamablehttp_client
+from mcp.types import JSONRPCRequest, JSONRPCResponse, JSONRPCNotification
 
 # Инициализируем логгер
 logger = logging.getLogger(__name__)
 
-class SmitheryMCPManager:
+class MCPToolsManager:
     """
-    Менеджер инструментов MCP для интеграции с CrewAI через Smithery Registry API.
+    Менеджер инструментов MCP для интеграции с CrewAI.
+    
+    Позволяет получать инструменты с нескольких MCP серверов
+    и использовать их в CrewAI через streamable_http_client.
     """
+    
+    # Список доступных MCP серверов с их URL
+    MCP_SERVERS = [
+        {"name": "mcp-think-tank", "url": "https://server.smithery.ai/@flight505/mcp-think-tank/mcp"},
+        {"name": "agentic-control", "url": "https://server.smithery.ai/@FutureAtoms/agentic-control-framework/mcp"},
+    ]
     
     def __init__(self):
         """Инициализация менеджера MCP инструментов."""
-        # Загружаем переменные окружения из .env файла
-        load_dotenv(r"C:\Users\crazy\GOPI_AI_MODULES\.env")
-        
         self.api_key = os.environ.get("SMITHERY_API_KEY")
         if not self.api_key:
             logger.warning("SMITHERY_API_KEY не найден в переменных окружения")
         else:
             logger.info(f"SMITHERY_API_KEY загружен: {self.api_key[:8]}...{self.api_key[-4:]}")
+        self.server_clients = {}  # Словарь клиентов streamable_http для серверов
+        self.server_tools = {}    # Словарь инструментов, доступных на каждом сервере
+        self.initialized_servers = set()  # Множество инициализированных серверов
+        self.all_tools = []  # Список всех инструментов со всех серверов
+        self.tools_by_server = {}  # Словарь инструментов по серверам
+        self.connected_servers = set()  # Множество подключенных серверов
+    
+    async def connect_to_server(self, server_url: str) -> bool:
+        """
+        Подключается к MCP серверу через Smithery API.
         
-        self.registry_url = "https://registry.smithery.ai"
-        self.headers = {
-            'Authorization': f'Bearer {self.api_key}',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+        Args:
+            server_url: URL MCP сервера.
+            
+        Returns:
+            True если подключение успешно, False в противном случае.
+        """
+        if server_url in self.server_clients:
+            return True
+            
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
         }
         
-        self.deployed_servers = {}  # Кэш развернутых серверов
-        self.server_tools = {}      # Кэш инструментов по серверам
-        self.server_clients = {}    # HTTP клиенты для серверов
-        self.initialized = False
+        try:
+            # Создаем HTTP клиент для работы с Smithery API
+            self.server_clients[server_url] = httpx.AsyncClient(
+                headers=headers,
+                timeout=30.0
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Ошибка при подключении к MCP серверу {server_url}: {e}")
+            return False
     
-    async def initialize(self):
-        """Инициализация - получение информации о конкретных серверах"""
-        if self.initialized:
-            return
-            
-        # --- ИСПРАВЛЕНО: Загружаем только нужные серверы ---
-        target_servers = [
-            "@flight505/mcp-think-tank",
-            "@smithery-ai/agentic-control-framework" # Предполагаемое имя
-        ]
+    async def initialize_server(self, server_url: str) -> bool:
+        """
+        Инициализирует подключение к серверу и получает список его инструментов.
         
-        try:
-            for server_name in target_servers:
-                server_info = await self.get_server_info_direct(server_name)
-                if server_info and server_info.get('deploymentUrl'):
-                    self.deployed_servers[server_name] = server_info
-                    logger.info(f"Найден и добавлен целевой сервер: {server_name} -> {server_info.get('deploymentUrl')}")
-                else:
-                    logger.warning(f"Не удалось найти или проверить целевой сервер: {server_name}")
+        Args:
+            server_url: URL MCP сервера.
             
-            logger.info(f"Инициализация завершена. Загружено {len(self.deployed_servers)} целевых серверов.")
-            self.initialized = True
+        Returns:
+            True если инициализация прошла успешно, False в противном случае.
+        """
+        if server_url in self.initialized_servers:
+            return True
             
-        except Exception as e:
-            logger.error(f"Ошибка инициализации: {e}")
-    
-    async def get_server_info_direct(self, qualified_name: str) -> Optional[Dict]:
-        """Получает детальную информацию о сервере напрямую (используется внутри initialize)"""
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(
-                    f"{self.registry_url}/servers/{qualified_name}",
-                    headers=self.headers
-                )
+            if not await self.connect_to_server(server_url):
+                return False
                 
-                if response.status_code == 200:
-                    return response.json()
-                else:
-                    logger.warning(f"Не удалось получить информацию о сервере {qualified_name}: {response.status_code}")
-                    return None
+            # Получаем список инструментов
+            tools = await self.get_server_tools_by_url(server_url)
+            if tools:
+                self.initialized_servers.add(server_url)
+                return True
+            return False
         except Exception as e:
-            logger.warning(f"Ошибка при получении информации о сервере {qualified_name}: {e}")
-            return None
-
-    async def get_server_info(self, qualified_name: str) -> Optional[Dict]:
-        """Получает детальную информацию о сервере по его qualified name"""
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(
-                    f"{self.registry_url}/servers/{qualified_name}",
-                    headers=self.headers
-                )
-                
-                if response.status_code == 200:
-                    return response.json()
-                else:
-                    logger.error(f"Ошибка получения информации о сервере {qualified_name}: {response.status_code}")
-                    return None
-        except Exception as e:
-            logger.error(f"Ошибка при получении информации о сервере {qualified_name}: {e}")
-            return None
+            logger.error(f"Ошибка при инициализации сервера {server_url}: {e}")
+            return False
     
-    async def get_server_tools(self, qualified_name: str) -> List[Dict]:
-        """Получает инструменты для конкретного сервера"""
-        if qualified_name in self.server_tools:
-            return self.server_tools[qualified_name]
+    async def connect_to_all_servers(self) -> Dict[str, List[Dict]]:
+        """
+        Подключается ко всем доступным MCP серверам и получает их инструменты.
         
-        # Сначала проверяем кэш развернутых серверов
-        server_info = self.deployed_servers.get(qualified_name)
-        if not server_info:
-            # Если нет в кэше, получаем информацию о сервере
-            server_info = await self.get_server_info(qualified_name)
-            if not server_info:
+        Returns:
+            Словарь с названиями серверов и списками их инструментов.
+        """
+        result = {}
+        
+        for server in self.MCP_SERVERS:
+            server_name = server["name"]
+            server_url = server["url"]
+            
+            try:
+                if await self.initialize_server(server_url):
+                    tools = await self.get_server_tools_by_url(server_url)
+                    if tools:
+                        result[server_name] = tools
+                        self.server_tools[server_url] = tools
+            except Exception as e:
+                logger.error(f"Ошибка при подключении к серверу {server_name}: {e}")
+        
+        return result
+        
+    async def get_server_tools_by_url(self, server_url: str) -> List[Dict]:
+        """
+        Получает список инструментов с указанного MCP сервера через Smithery API.
+        
+        Args:
+            server_url: URL сервера.
+            
+        Returns:
+            Список инструментов сервера или пустой список, если сервер недоступен.
+        """
+        if server_url not in self.server_clients:
+            if not await self.connect_to_server(server_url):
                 return []
-        
-        # Извлекаем инструменты из информации о сервере
-        tools = server_info.get('tools', [])
-        if tools:
-            # Преобразуем инструменты в удобный формат
-            formatted_tools = []
-            for tool in tools:
-                formatted_tools.append({
-                    "id": tool.get("name", ""),
-                    "name": tool.get("name", ""),
-                    "description": tool.get("description", ""),
-                    "server_name": qualified_name,
-                    "server_info": server_info,
-                    "schema": tool.get("inputSchema", {})
-                })
+                
+        try:
+            # Создаем JSON-RPC запрос для получения списка инструментов
+            request_data = {
+                "jsonrpc": "2.0",
+                "id": "list_tools_request",
+                "method": "tools/list",
+                "params": {}
+            }
             
-            # Кэшируем инструменты
-            self.server_tools[qualified_name] = formatted_tools
-            logger.info(f"Получено {len(formatted_tools)} инструментов для сервера {qualified_name}")
-            return formatted_tools
-        
-        return []
+            # Отправляем POST запрос к Smithery API
+            client = self.server_clients[server_url]
+            response = await client.post(server_url, json=request_data)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                
+                if "result" in response_data and "tools" in response_data["result"]:
+                    # Преобразуем информацию об инструментах в более удобный формат
+                    tools = []
+                    for tool in response_data["result"]["tools"]:
+                        tools.append({
+                            "id": tool.get("name", ""),
+                            "name": tool.get("name", ""),
+                            "description": tool.get("description", ""),
+                            "server_url": server_url,
+                            "schema": tool.get("inputSchema", {})
+                        })
+                    
+                    # Сохраняем список инструментов для сервера
+                    self.server_tools[server_url] = tools
+                    return tools
+                
+                return []
+            else:
+                logger.warning(f"Получен статус {response.status_code} от сервера {server_url}")
+                return []
+                
+        except Exception as e:
+            logger.error(f"Ошибка при получении инструментов с сервера {server_url}: {e}")
+            return []
     
     async def get_all_tools(self) -> List[Dict]:
-        """Получает все инструменты со всех развернутых серверов"""
-        if not self.initialized:
-            await self.initialize()
+        """
+        Получает все инструменты со всех доступных MCP серверов.
         
+        Returns:
+            Список всех инструментов со всех серверов.
+        """
         all_tools = []
         
-        for qualified_name in self.deployed_servers:
-            tools = await self.get_server_tools(qualified_name)
+        # Если еще нет подключенных серверов, подключаемся
+        if not self.server_tools:
+            await self.connect_to_all_servers()
+            
+        # Собираем инструменты со всех серверов
+        for server_url, tools in self.server_tools.items():
             all_tools.extend(tools)
-        
-        logger.info(f"Всего доступно {len(all_tools)} инструментов")
+            
         return all_tools
-    
+        
     def get_tool_by_name(self, tool_name: str) -> Optional[Dict]:
-        """Находит инструмент по его имени"""
+        """
+        Находит инструмент по его имени среди всех серверов.
+        
+        Args:
+            tool_name: Имя инструмента для поиска.
+            
+        Returns:
+            Инструмент с указанным именем или None, если не найден.
+        """
         try:
-            async def search_tool():
+            # Метод поиска через асинхронные операции
+            async def search_tool() -> Optional[Dict]:
                 tools = await self.get_all_tools()
                 for tool in tools:
                     if tool["name"].lower() == tool_name.lower():
                         return tool
                 return None
             
-            # Запускаем поиск
+            # Запускаем поиск в асинхронном режиме
             try:
                 loop = asyncio.get_event_loop()
             except RuntimeError:
@@ -176,62 +234,74 @@ class SmitheryMCPManager:
         except Exception as e:
             logger.error(f"Ошибка при поиске инструмента {tool_name}: {e}")
             return None
-    
+        
     async def execute_tool_async(self, tool: Dict, **kwargs) -> Dict:
-        """Выполняет инструмент через deployment URL сервера"""
-        server_info = tool.get("server_info")
-        if not server_info:
-            return {"error": "Отсутствует информация о сервере"}
+        """
+        Выполняет вызов инструмента MCP с заданными параметрами через Smithery API.
         
-        # Получаем URL для подключения
-        deployment_url = server_info.get("deploymentUrl")
-        if not deployment_url:
-            return {"error": "Сервер не развернут или отсутствует deployment URL"}
-        
+        Args:
+            tool: Информация об инструменте MCP для выполнения.
+            **kwargs: Параметры для вызова инструмента.
+            
+        Returns:
+            Результат выполнения инструмента.
+        """
+        server_url = tool.get("server_url")
         tool_name = tool.get("name")
-        if not tool_name:
-            return {"error": "Отсутствует имя инструмента"}
         
+        if not server_url or not tool_name:
+            logger.error("Неверная информация об инструменте")
+            return {"error": "Неверная информация об инструменте"}
+            
+        if server_url not in self.server_clients:
+            if not await self.connect_to_server(server_url):
+                return {"error": f"Не удалось подключиться к серверу {server_url}"}
+                
         try:
-            # Создаем HTTP клиент для подключения к deployment URL
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                # Формируем JSON-RPC запрос
-                request_data = {
-                    "jsonrpc": "2.0",
-                    "id": f"execute_{tool_name}",
-                    "method": "tools/call",
-                    "params": {
-                        "name": tool_name,
-                        "arguments": kwargs
-                    }
+            # Создаем JSON-RPC запрос для выполнения инструмента
+            request_data = {
+                "jsonrpc": "2.0",
+                "id": f"execute_{tool_name}",
+                "method": "tools/call",
+                "params": {
+                    "name": tool_name,
+                    "arguments": kwargs
                 }
+            }
+            
+            # Отправляем POST запрос к Smithery API
+            client = self.server_clients[server_url]
+            response = await client.post(server_url, json=request_data)
+            
+            if response.status_code == 200:
+                response_data = response.json()
                 
-                # Отправляем запрос к deployment URL
-                response = await client.post(
-                    deployment_url,
-                    json=request_data,
-                    headers=self.headers
-                )
-                
-                if response.status_code == 200:
-                    response_data = response.json()
-                    
-                    if "result" in response_data:
-                        return response_data["result"]
-                    elif "error" in response_data:
-                        return {"error": response_data["error"]}
-                    else:
-                        return {"error": "Неожиданный формат ответа"}
+                if "result" in response_data:
+                    return response_data["result"]
+                elif "error" in response_data:
+                    return {"error": response_data["error"]}
                 else:
-                    return {"error": f"HTTP {response.status_code}: {response.text}"}
-        
+                    return {"error": "Неожиданный формат ответа"}
+            else:
+                return {"error": f"HTTP {response.status_code}: {response.text}"}
+                
         except Exception as e:
-            logger.error(f"Ошибка при выполнении инструмента {tool_name}: {e}")
+            logger.error(f"Ошибка при выполнении инструмента {tool.get('name', '')}: {e}")
             return {"error": str(e)}
-    
+            
     def execute_tool(self, tool: Dict, **kwargs) -> Dict:
-        """Синхронная обертка для выполнения инструмента"""
+        """
+        Выполняет вызов инструмента MCP с заданными параметрами.
+        
+        Args:
+            tool: Информация об инструменте MCP для выполнения.
+            **kwargs: Параметры для вызова инструмента.
+            
+        Returns:
+            Результат выполнения инструмента.
+        """
         try:
+            # Запускаем выполнение в асинхронном режиме
             try:
                 loop = asyncio.get_event_loop()
             except RuntimeError:
@@ -240,51 +310,78 @@ class SmitheryMCPManager:
             
             return loop.run_until_complete(self.execute_tool_async(tool, **kwargs))
         except Exception as e:
-            logger.error(f"Ошибка при выполнении инструмента: {e}")
+            logger.error(f"Ошибка при выполнении инструмента {tool.get('name', '')}: {e}")
             return {"error": str(e)}
+    
+    def disconnect_from_all_servers(self) -> bool:
+        """
+        Отключается от всех серверов MCP.
+        
+        Returns:
+            True, если все отключения успешны, иначе False.
+        """
+        all_success = True
+        
+        # Создаем копию множества, чтобы избежать ошибки при изменении во время итерации
+        servers_to_disconnect = set(self.connected_servers)
+        
+        for server_name in servers_to_disconnect:
+            success = self.disconnect_from_server(server_name)
+            all_success = all_success and success
+        
+        if all_success:
+            logger.info("Отключение от всех серверов MCP выполнено успешно")
+        else:
+            logger.warning("Не удалось корректно отключиться от некоторых серверов MCP")
+        
+        return all_success
+    
+    def __del__(self):
+        """Деструктор для корректного закрытия всех соединений."""
+        try:
+            self.disconnect_from_all_servers()
+        except Exception as e:
+            logger.error(f"Ошибка при закрытии соединений в деструкторе: {e}")
 
 # Синглтон для повторного использования менеджера
-_smithery_manager_instance = None
+_mcp_tools_manager_instance = None
 
-def get_smithery_mcp_manager() -> Optional[SmitheryMCPManager]:
-    """Возвращает экземпляр менеджера Smithery MCP"""
-    global _smithery_manager_instance
+def get_mcp_tools_manager() -> Optional[MCPToolsManager]:
+    """
+    Возвращает экземпляр менеджера MCP инструментов.
+    
+    Returns:
+        Экземпляр менеджера MCP инструментов или None, если менеджер не может быть создан.
+    """
+    global _mcp_tools_manager_instance
     try:
-        if _smithery_manager_instance is None:
-            _smithery_manager_instance = SmitheryMCPManager()
-        return _smithery_manager_instance
+        if _mcp_tools_manager_instance is None:
+            _mcp_tools_manager_instance = MCPToolsManager()
+        return _mcp_tools_manager_instance
     except Exception as e:
-        logger.error(f"Ошибка при создании менеджера Smithery MCP: {e}")
+        logger.error(f"Ошибка при создании менеджера MCP инструментов: {e}")
         return None
 
 def get_mcp_tools_info() -> str:
-    """Получает информацию о доступных инструментах MCP"""
-    manager = get_smithery_mcp_manager()
+    """
+    Получает информацию о доступных инструментах MCP для использования в промптах.
+    
+    Returns:
+        Строка с информацией о доступных инструментах MCP.
+    """
+    manager = get_mcp_tools_manager()
     if not manager or not manager.api_key:
         return "MCP серверы недоступны (отсутствует API ключ)"
     
     try:
-        # Синхронная обертка для получения инструментов
-        async def get_tools_info():
-            tools = await manager.get_all_tools()
-            if not tools:
-                return "MCP серверы доступны, но инструменты не найдены"
-            
-            tools_info = []
-            for tool in tools:
-                tools_info.append(f"- {tool['name']} (сервер: {tool['server_name']}): {tool['description']}")
-            
-            return f"""Доступны следующие MCP инструменты:
-{chr(10).join(tools_info)}
+        all_tools = manager.get_all_tools()
+        if not all_tools:
+            return "MCP серверы доступны, но инструменты не найдены"
+        
+        tools_info = "\n".join([f"- {tool.name}: {tool.description}" for tool in all_tools])
+        return f"""Доступны следующие MCP инструменты:
+{tools_info}
 """
-        
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        
-        return loop.run_until_complete(get_tools_info())
     except Exception as e:
         logger.error(f"Ошибка при получении информации об инструментах MCP: {e}")
         return f"Ошибка при получении информации об инструментах MCP: {e}"
