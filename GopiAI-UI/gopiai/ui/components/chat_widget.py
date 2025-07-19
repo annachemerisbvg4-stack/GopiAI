@@ -314,7 +314,7 @@ class ChatWidget(QWidget):
             except Exception as e:
                 print(f"[ERROR] Ошибка при рендеринге markdown: {e}")
                 formatted_text = html.escape(text)
-        
+
         self.history.append(f"<b>{author}:</b> {formatted_text}")
 
         if is_waiting_message:
@@ -332,7 +332,7 @@ class ChatWidget(QWidget):
         # Используем сохраненный курсор для выделения и замены
         cursor = self._waiting_cursor
         cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
-        
+
         # Создаем новый HTML для сообщения
         if is_status:
             # Для статусных сообщений используем специальный стиль
@@ -340,14 +340,14 @@ class ChatWidget(QWidget):
         else:
             # Для обычных сообщений рендерим markdown
             html_content = f"<b>Ассистент:</b> {self._render_markdown(new_text)}"
-    
+
         # Заменяем содержимое блока
         cursor.insertHtml(html_content)
 
         if not is_status:
             # Сбрасываем курсор после финального ответа
             self._waiting_cursor = None
-        
+
         # Прокручиваем историю вниз
         self._scroll_history_to_end()
 
