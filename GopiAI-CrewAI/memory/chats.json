@@ -3253,5 +3253,26 @@
     "role": "system",
     "content": "Тестовая запись от 2025-07-19 05:56:10.433858",
     "timestamp": "2025-07-19T05:56:10.433858"
+  },
+  {
+    "id": "e726b84c-e4cb-4f8b-995a-3bb262c78913",
+    "session_id": "session_1752884772",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T06:06:04.929729"
+  },
+  {
+    "id": "188d7a1f-201b-4536-8868-dd1df4ec634e",
+    "session_id": "session_1752884772",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-19T06:06:04.940706"
+  },
+  {
+    "id": "beb53b44-f214-46d0-8668-22ba5e0c949d",
+    "session_id": "session_1752884772",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T06:06:04.949819"
   }
 ]
