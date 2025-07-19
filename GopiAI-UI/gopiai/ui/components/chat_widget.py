@@ -8,7 +8,7 @@ from typing import Optional
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, 
                                QFileDialog, QSizePolicy, QMessageBox)
 from PySide6.QtCore import Qt, Slot, QPoint
-from PySide6.QtGui import QResizeEvent, QTextCursor, QDropEvent, QDragEnterEvent
+from PySide6.QtGui import QResizeEvent, QTextCursor, QDropEvent, QDragEnterEvent, QTextCursor
 
 logger = logging.getLogger(__name__)
 
@@ -236,10 +236,20 @@ class ChatWidget(QWidget):
         self.append_message("Вы", text)
         self.input.clear()
         self.send_btn.setEnabled(False)
-        self._waiting_message_id = self.append_message("Ассистент", "⏳ Обрабатываю запрос...")
+        self.append_message("Ассистент", "⏳ Обрабатываю запрос...", is_waiting_message=True)
         
         # Сохраняем сообщение пользователя в память
         self.memory_manager.add_message(self.session_id, "user", text)
+
+        # --- ИСПРАВЛЕНО: Запускаем асинхронную обработку ---
+        message_data = {
+            "message": text,
+            "metadata": {
+                "session_id": self.session_id,
+                "current_tool": self.current_tool
+            }
+        }
+        self.async_handler.process_message(message_data)
 
     @Slot(str)
     def _update_status_message(self, status_text: str):
@@ -251,7 +261,7 @@ class ChatWidget(QWidget):
         dots = "." * self._animation_dots
         animated_status = f"⏳ {status_text}{dots}"
             
-        self._update_assistant_response(self._waiting_message_id, animated_status, is_status=True)
+        self._update_assistant_response(animated_status, is_status=True)
 
     def _render_markdown(self, text: str) -> str:
         """
@@ -293,7 +303,7 @@ class ChatWidget(QWidget):
             
         return '\n'.join(paragraphs)
 
-    def append_message(self, author: str, text: str) -> Optional[str]:
+    def append_message(self, author: str, text: str, is_waiting_message: bool = False) -> Optional[str]:
         # Для сообщений пользователя просто экранируем HTML
         if author.lower() == 'вы':
             formatted_text = html.escape(text)
@@ -304,45 +314,42 @@ class ChatWidget(QWidget):
             except Exception as e:
                 print(f"[ERROR] Ошибка при рендеринге markdown: {e}")
                 formatted_text = html.escape(text)
-            
+
         self.history.append(f"<b>{author}:</b> {formatted_text}")
+
+        if is_waiting_message:
+            # Сохраняем курсор для быстрого обновления
+            self._waiting_cursor = self.history.textCursor()
+            self._waiting_cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock, QTextCursor.MoveMode.MoveAnchor)
+
         role = 'user' if author.lower() == 'вы' else 'assistant'
         return self.memory_manager.add_message(self.session_id, role, text)
 
-    def _update_assistant_response(self, message_id: str, new_text: str, is_status: bool = False):
-        if not message_id:
+    def _update_assistant_response(self, new_text: str, is_status: bool = False):
+        if not hasattr(self, '_waiting_cursor') or not self._waiting_cursor:
             return
-            
-        # Находим и обновляем сообщение по его ID
-        cursor = QTextCursor(self.history.document())
-        cursor.movePosition(QTextCursor.MoveOperation.Start)
+
+        # Используем сохраненный курсор для выделения и замены
+        cursor = self._waiting_cursor
+        cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
         
-        # Ищем блок с нужным ID
-        found = False
-        while not cursor.atEnd():
-            block = cursor.block()
-            if block.blockFormat().property(1) == message_id:
-                found = True
-                break
-            cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+        # Создаем новый HTML для сообщения
+        if is_status:
+            # Для статусных сообщений используем специальный стиль
+            html_content = f"<b>Ассистент:</b> <span style='color: #666;'>{new_text}</span>"
+        else:
+            # Для обычных сообщений рендерим markdown
+            html_content = f"<b>Ассистент:</b> {self._render_markdown(new_text)}"
+
+        # Заменяем содержимое блока
+        cursor.insertHtml(html_content)
+
+        if not is_status:
+            # Сбрасываем курсор после финального ответа
+            self._waiting_cursor = None
         
-        if found:
-            # Выделяем весь блок
-            cursor.select(QTextCursor.SelectionType.BlockUnderCursor)
-            
-            # Создаем новый HTML для сообщения
-            if is_status:
-                # Для статусных сообщений используем специальный стиль
-                html_content = f"<div><strong>Ассистент:</strong> <span style='color: #666;'>{new_text}</span></div>"
-            else:
-                # Для обычных сообщений рендерим markdown
-                html_content = f"<div><strong>Ассистент:</strong> {self._render_markdown(new_text)}</div>"
-        
-            # Заменяем содержимое блока
-            cursor.insertHtml(html_content)
-            
-            # Прокручиваем историю вниз
-            self._scroll_history_to_end()
+        # Прокручиваем историю вниз
+        self._scroll_history_to_end()
 
     def resizeEvent(self, event: QResizeEvent):
         """Перемещает кнопку вызова боковой панели при изменении размера окна."""
@@ -390,12 +397,12 @@ class ChatWidget(QWidget):
             response: Ответ от CrewAI API или сообщение об ошибке
             is_error: Флаг, указывающий, является ли ответ ошибкой
         """
-        if self._waiting_message_id is None:
+        if not hasattr(self, '_waiting_cursor') or not self._waiting_cursor:
             return
             
         if is_error:
             error_text = f"⚠️ Ошибка: {response}"
-            self._update_assistant_response(self._waiting_message_id, error_text)
+            self._update_assistant_response(error_text)
             self.send_btn.setEnabled(True)
             return
             
@@ -413,7 +420,7 @@ class ChatWidget(QWidget):
         message = "\n".join([line for line in message.splitlines() if line.strip()])
         
         # Обновляем сообщение ассистента
-        self._update_assistant_response(self._waiting_message_id, message)
+        self._update_assistant_response(message)
         
         # Сохраняем ответ в память
         self.memory_manager.add_message(self.session_id, "assistant", message)
