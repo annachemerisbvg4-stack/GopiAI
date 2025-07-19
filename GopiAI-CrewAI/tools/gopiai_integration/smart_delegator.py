@@ -134,6 +134,10 @@ class SmartDelegator:
     def _format_prompt(self, user_message: str, rag_context: Optional[str], chat_history: List[Dict]) -> List[Dict]:
         """Формирует итоговый список сообщений для LLM."""
         
+        # --- ИСПРАВЛЕНО: Добавляем проверку на None для chat_history ---
+        if chat_history is None:
+            chat_history = []
+
         # Получаем системные промпты из модуля system_prompts
         prompts_manager = get_system_prompts()
         
