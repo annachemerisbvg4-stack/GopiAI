@@ -31,13 +31,13 @@ import os
 try:
     # Определяем корневую директорию проекта (GOPI_AI_MODULES)
     project_root = Path(__file__).resolve().parents[4]
-
+    
     # Добавляем путь к инструментам CrewAI
     crewai_tools_path = project_root / 'GopiAI-CrewAI' / 'tools'
     if crewai_tools_path.exists() and str(crewai_tools_path) not in sys.path:
         sys.path.insert(0, str(crewai_tools_path))
         logger.debug(f"[INIT] Добавлен путь к инструментам CrewAI: {crewai_tools_path}")
-
+        
     # Добавляем путь к gopiai_integration
     gopiai_integration_path = crewai_tools_path / 'gopiai_integration'
     if gopiai_integration_path.exists() and str(gopiai_integration_path) not in sys.path:

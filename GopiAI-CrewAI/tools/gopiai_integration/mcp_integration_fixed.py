@@ -45,37 +45,28 @@ class SmitheryMCPManager:
         self.initialized = False
     
     async def initialize(self):
-        """Инициализация - получение списка развернутых серверов"""
+        """Инициализация - получение информации о конкретных серверах"""
         if self.initialized:
             return
             
+        # --- ИСПРАВЛЕНО: Загружаем только нужные серверы ---
+        target_servers = [
+            "@flight505/mcp-think-tank",
+            "@smithery-ai/agentic-control-framework" # Предполагаемое имя
+        ]
+        
         try:
-            # Получаем список развернутых серверов
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(
-                    f"{self.registry_url}/servers?q=is:deployed&pageSize=50",
-                    headers=self.headers
-                )
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    servers = data.get('servers', [])
-                    
-                    # Фильтруем серверы, которые имеют deployment URL (реально доступные)
-                    for server in servers:
-                        qualified_name = server.get('qualifiedName')
-                        if qualified_name:
-                            # Получаем детальную информацию о сервере для проверки deployment URL
-                            server_info = await self.get_server_info_direct(qualified_name)
-                            if server_info and server_info.get('deploymentUrl'):
-                                self.deployed_servers[qualified_name] = server_info
-                                logger.info(f"Найден доступный сервер: {qualified_name} -> {server_info.get('deploymentUrl')}")
-                    
-                    logger.info(f"Инициализация завершена. Найдено {len(self.deployed_servers)} развернутых серверов")
-                    self.initialized = True
+            for server_name in target_servers:
+                server_info = await self.get_server_info_direct(server_name)
+                if server_info and server_info.get('deploymentUrl'):
+                    self.deployed_servers[server_name] = server_info
+                    logger.info(f"Найден и добавлен целевой сервер: {server_name} -> {server_info.get('deploymentUrl')}")
                 else:
-                    logger.error(f"Ошибка получения списка серверов: {response.status_code}")
-                    logger.error(f"Ответ: {response.text}")
+                    logger.warning(f"Не удалось найти или проверить целевой сервер: {server_name}")
+            
+            logger.info(f"Инициализация завершена. Загружено {len(self.deployed_servers)} целевых серверов.")
+            self.initialized = True
+            
         except Exception as e:
             logger.error(f"Ошибка инициализации: {e}")
     
