@@ -81,7 +81,7 @@ echo Waiting for CrewAI server to start (30 seconds)...
 echo    Initializing server...
 
 REM Step 2: Activate TXTAI environment for vector memory
-timeout /t 30 >nul
+timeout /t 210 >nul
 
 REM Step 2: Activate TXTAI environment for vector memory
 echo.

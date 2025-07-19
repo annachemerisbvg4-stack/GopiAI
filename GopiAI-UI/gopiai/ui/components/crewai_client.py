@@ -17,13 +17,48 @@ import os
 import sys
 from pathlib import Path
 
-# Emotional classifier is not available in this version
+# Настройка логирования для CrewAI клиента
+logger = logging.getLogger(__name__)
+
+# Импортируем менеджер памяти для работы с историей чата
+from ..memory.manager import MemoryManager
+
+# Добавляем путь к модулю emotional_classifier
+import sys
+import os
+
+# Добавляем путь к модулю emotional_classifier в GopiAI-CrewAI
+crewai_tools_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'GopiAI-CrewAI', 'tools')
+if os.path.exists(crewai_tools_path) and crewai_tools_path not in sys.path:
+    sys.path.append(crewai_tools_path)
+    logger.debug(f"[INIT] Добавлен путь к модулям CrewAI: {crewai_tools_path}")
+
+# Добавляем путь к gopiai_integration
+gopiai_integration_path = os.path.join(crewai_tools_path, 'gopiai_integration')
+if os.path.exists(gopiai_integration_path) and gopiai_integration_path not in sys.path:
+    sys.path.append(gopiai_integration_path)
+    logger.debug(f"[INIT] Добавлен путь к модулям gopiai_integration: {gopiai_integration_path}")
+
+# Импортируем эмоциональный классификатор
 EMOTIONAL_CLASSIFIER_AVAILABLE = False
 EmotionalClassifier = None
 EmotionalState = None
 
-# Настройка логирования для CrewAI клиента
-logger = logging.getLogger(__name__)
+try:
+    import spacy
+    try:
+        from emotional_classifier import EmotionalClassifier
+        from emotional_classifier.emotional_state import EmotionalState
+        EMOTIONAL_CLASSIFIER_AVAILABLE = True
+        logger.debug("[INIT] Эмоциональный классификатор успешно импортирован")
+    except ImportError as e:
+        logger.error(f"[INIT] Ошибка импорта модуля emotional_classifier: {e}")
+        logger.error(f"[INIT] Пути в sys.path: {sys.path}")
+        logger.error(f"[INIT] Проверьте наличие файла: {os.path.join(gopiai_integration_path, 'emotional_classifier.py')}")
+        EMOTIONAL_CLASSIFIER_AVAILABLE = False
+except ImportError as e:
+    logger.error(f"[INIT] Ошибка импорта модуля spacy: {e}")
+    logger.error("[INIT] Модуль spacy недоступен, эмоциональный классификатор отключен")
 
 # Создаем директорию для логов, если её нет
 # Используем текущую директорию или директорию приложения
@@ -192,20 +227,20 @@ class CrewAIClient:
             
     def process_request(self, message, force_crewai=False, timeout=None):
         """
-        Обрабатывает запрос через CrewAI API с учетом эмоционального состояния
+        Обработка всех типов CrewAI API и выбором оптимального обработчика
         
         Args:
-            message: Сообщение пользователя (может быть строкой или JSON с контекстом)
-            force_crewai: Принудительно отправить запрос в CrewAI (игнорируя команды браузера)
-            timeout: Таймаут запроса в секундах
+            message: Входное сообщение (может быть строкой или JSON с данными)
+            force_crewai: Принудительно отправить всё в CrewAI (игнорируя простые ответы)
+            timeout: Таймаут ожидания в секундах
             
         Returns:
-            dict: Ответ от API с полями 'response', 'command' (опционально) и 'emotion_analysis' (при наличии)
+            dict: Ответ от API с полями 'response', 'command' (опционально) и 'emotion_analysis' (не всегда)
         """
-        # Добавляем расширенное логирование
-        logger.debug(f"[REQUEST] Начало обработки запроса. force_crewai={force_crewai}, timeout={timeout}")
+        # Добавляем подробное логирование
+        logger.debug(f"[REQUEST] Начало обработки сообщ. force_crewai={force_crewai}, timeout={timeout}")
         
-        # Преобразуем сообщение в строку для логирования
+        # Обрезаем сообщение в логах для читабельности
         if isinstance(message, dict):
             msg_text = message.get('message', '')
             msg_log = f"{msg_text[:50]}..." if len(msg_text) > 50 else msg_text
@@ -218,22 +253,49 @@ class CrewAIClient:
             logger.error("[REQUEST-ERROR] Сервер CrewAI недоступен")
             return {"response": "Ошибка: Сервер CrewAI недоступен", "error": "CrewAI server not available"}
             
-        # Обработка JSON-строки, если она пришла
+        # Обработка JSON-строки, если она есть
         if isinstance(message, str):
             try:
-                logger.debug("[REQUEST] Попытка парсинга JSON из строки")
+                logger.debug("[REQUEST] Пробуем парсить JSON из строки")
                 message_data = json.loads(message)
                 if 'message' in message_data:
                     message = message_data
                     logger.debug("[REQUEST] Успешный парсинг JSON")
             except json.JSONDecodeError:
-                logger.debug("[REQUEST] Не удалось парсить JSON, используем как обычную строку")
+                logger.debug("[REQUEST] Не удалось парсить JSON, оборачиваем в простейший словарь")
                 message = {"message": message}
         
         # Если message не словарь, делаем его словарем
         if not isinstance(message, dict):
-            logger.debug("[REQUEST] Преобразование не-словаря в словарь")
+            logger.debug("[REQUEST] Преобразуем не-словарь в словарь")
             message = {"message": str(message)}
+            
+        # Добавляем метаданные, если их нет
+        if 'metadata' not in message:
+            message['metadata'] = {}
+            
+        try:
+            # Получаем ID сессии из переданных метаданных
+            session_id = message.get('metadata', {}).get('session_id', 'default_session')
+            logger.debug(f"[REQUEST] Получаем историю сообщений для сессии: {session_id}")
+            
+            # Получаем историю сообщений (последние 20 сообщений)
+            memory_manager = MemoryManager()
+            chat_history = memory_manager.get_chat_history(session_id)
+            if chat_history:
+                # Берем только 20 сообщений
+                chat_history = chat_history[-20:]
+                logger.info(f"[REQUEST] Получено {len(chat_history)} сообщений из истории для сессии {session_id}")
+                
+                # Добавляем историю сообщений в переданные данные
+                message['metadata']['chat_history'] = chat_history
+                logger.debug(f"[REQUEST] История сообщений добавлена в запрос")
+            else:
+                logger.debug(f"[REQUEST] История сообщений для сессии {session_id} не найдена")
+        except Exception as e:
+            logger.error(f"[REQUEST-ERROR] Ошибка при получении истории сообщений: {e}")
+            
+        logger.debug(f"[REQUEST] Продолжаем с отправкой запроса к CrewAI API")
             
         # Извлекаем текст сообщения для анализа эмоций
         message_text = message.get('message', '')

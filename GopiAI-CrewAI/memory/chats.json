@@ -3162,5 +3162,96 @@
     "role": "user",
     "content": "привет",
     "timestamp": "2025-07-19T01:09:42.816527"
+  },
+  {
+    "id": "210d6188-dd18-4cfe-9339-c51cd63a99d3",
+    "session_id": "test_session_-8325670721394944778",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-19 02:59:27.616757",
+    "timestamp": "2025-07-19T02:59:27.616757"
+  },
+  {
+    "id": "83b59b18-6a16-41af-9c11-eb8fdec6ae43",
+    "session_id": "session_1752874172",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T02:59:42.165202"
+  },
+  {
+    "id": "ba160a29-72f8-4c12-ba56-0d5fba3a9b21",
+    "session_id": "session_1752874172",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-19T02:59:42.177271"
+  },
+  {
+    "id": "e4818603-7fc7-4c96-bd70-4fa541c0ee60",
+    "session_id": "session_1752874172",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T02:59:42.187277"
+  },
+  {
+    "id": "472719b6-8f86-441a-97d3-8970bb270732",
+    "session_id": "test_session_4582849161519492093",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-19 03:48:55.063369",
+    "timestamp": "2025-07-19T03:48:55.063369"
+  },
+  {
+    "id": "5bd2a5f6-16f5-43b6-82b8-3c81883f9b5e",
+    "session_id": "session_1752877138",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T03:49:05.925328"
+  },
+  {
+    "id": "0772a88d-fd46-496e-ae6f-2d4a3c7eaade",
+    "session_id": "session_1752877138",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-19T03:49:05.942004"
+  },
+  {
+    "id": "3a26b7c6-d86c-4cc7-b8d4-06ddaa31bda9",
+    "session_id": "session_1752877138",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T03:49:05.951082"
+  },
+  {
+    "id": "bd80b010-17bc-4837-8aad-d89bc86d5b40",
+    "session_id": "test_session_1917033693307814438",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-19 04:24:38.873320",
+    "timestamp": "2025-07-19T04:24:38.873320"
+  },
+  {
+    "id": "557c8465-876f-4709-b1ce-dbe22bdaaed2",
+    "session_id": "session_1752879281",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T04:29:58.627589"
+  },
+  {
+    "id": "b93841b6-816d-4d0c-a6cd-2d72830720f0",
+    "session_id": "session_1752879281",
+    "role": "assistant",
+    "content": "⏳ Обрабатываю запрос...",
+    "timestamp": "2025-07-19T04:29:58.641410"
+  },
+  {
+    "id": "e9d704c1-c72a-4070-95cc-592cd209e6d6",
+    "session_id": "session_1752879281",
+    "role": "user",
+    "content": "привет",
+    "timestamp": "2025-07-19T04:29:58.649897"
+  },
+  {
+    "id": "7e53b815-4b8d-4fbf-b499-f916ebe1db0c",
+    "session_id": "test_session_-7236031735902713397",
+    "role": "system",
+    "content": "Тестовая запись от 2025-07-19 05:56:10.433858",
+    "timestamp": "2025-07-19T05:56:10.433858"
   }
 ]

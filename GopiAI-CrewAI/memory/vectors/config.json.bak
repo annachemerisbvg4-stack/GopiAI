@@ -13,6 +13,5 @@
     "system": "Windows (AMD64)",
     "txtai": "8.6.0"
   },
-  "update": "2025-07-18T18:17:33Z",
-  "model_type": "sentence-transformers/nli-mpnet-base-v2"
+  "update": "2025-07-18T18:17:33Z"
 }
