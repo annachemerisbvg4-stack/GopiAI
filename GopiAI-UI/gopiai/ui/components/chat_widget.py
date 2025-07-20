@@ -531,6 +531,8 @@ class ChatWidget(QWidget):
         message = re.sub(r"Тестовая запись от.*", '', message)  # Тестовые метки
         message = message.strip("'\"{}[]() \n")
         
+        message = message.replace('\\n', '\n')
+        
         return message
 
     def _scroll_history_to_end(self):
