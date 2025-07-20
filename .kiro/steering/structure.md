@@ -55,7 +55,6 @@ GopiAI-Module/
 - **/.env**: Environment variables and API keys
 - **/.kiro/**: Kiro AI assistant steering rules
 - **/.serena/**: Serena AI assistant configuration
-- **/smithery_env.bat**: Smithery MCP API configuration
 
 ## Naming Conventions
 - **Modules**: PascalCase with GopiAI- prefix

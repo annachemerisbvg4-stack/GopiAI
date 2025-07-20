@@ -17,6 +17,8 @@ import warnings
 from pathlib import Path
 from datetime import datetime
 
+import chardet
+
 # Исправляем конфликт OpenMP библиотек
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 
@@ -133,18 +135,18 @@ try:
         memory_manager = get_memory_manager()
         print("[MEMORY] Инициализирован MemoryManager")
         
-        # Простой тест работы памяти
-        try:
-            test_session = "test_session_" + str(hash('test'))
-            test_msg = "Тестовая запись от " + str(datetime.now())
-            memory_manager.add_message(
-                session_id=test_session,
-                role="system",
-                content=test_msg
-            )
-            print("[MEMORY] Тестовая запись успешно добавлена")
-        except Exception as test_err:
-            print(f"[WARNING] Предупреждение при тестировании памяти: {test_err}")
+        # Простой тест работы памяти (удалён для чистоты истории)
+        # try:
+        #     test_session = "test_session_" + str(hash('test'))
+        #     test_msg = "Тестовая запись от " + str(datetime.now())
+        #     memory_manager.add_message(
+        #         session_id=test_session,
+        #         role="system",
+        #         content=test_msg
+        #     )
+        #     print("[MEMORY] Тестовая запись успешно добавлена")
+        # except Exception as test_err:
+        #     print(f"[WARNING] Предупреждение при тестировании памяти: {test_err}")
             
     except Exception as e:
         print(f"[ERROR] Ошибка при инициализации памяти: {e}")
@@ -264,9 +266,6 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self._connect_menu_signals()
         self._apply_vscode_like_layout()
         self._setup_panel_shortcuts()
-        
-        # Initialize AI Assistant
-        self._init_ai_assistant()
 
 
         print("[OK] FramelessGopiAIStandaloneWindow готов к работе!")
@@ -339,20 +338,8 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             self.chat_widget.set_theme_manager(self.theme_manager)
             print("[CHAT] theme_manager передан успешно")
 
-        # Вкладка MCP панели (новый компонент)
-        try:
-            from gopiai.ui.components.smithery_mcp_panel import SmitheryMcpPanel
-            self.smithery_mcp_panel = SmitheryMcpPanel()
-            print("[MCP] SmitheryMcpPanel создан успешно")
-        except Exception as e:
-            print(f"[ERROR] Ошибка создания SmitheryMcpPanel: {e}")
-            self.smithery_mcp_panel = QWidget()
-            error_layout = QVBoxLayout(self.smithery_mcp_panel)
-            error_layout.addWidget(QLabel(f"Ошибка загрузки MCP панели:\n{str(e)}"))
-
         # Добавляем вкладки
         self.right_tabs.addTab(self.chat_widget, "Чат")
-        self.right_tabs.addTab(self.smithery_mcp_panel, "MCP Tools")
         
         main_splitter.addWidget(self.right_tabs)
 
@@ -564,34 +551,20 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         """Инициализация системы тем и иконок"""
         # Импорт системы иконок
         try:
-            import qtawesome as qta
-
+            from gopiai.ui.components.icon_file_system_model import UniversalIconManager
             class SimpleIconManager:
                 def __init__(self):
-                    self.qta = qta
+                    self.icon_manager = UniversalIconManager.instance()
 
                 def get_icon(self, name):
-                    # Try several icon prefixes, fallback to a default icon if not found
-                    prefixes = ["fa5.", "fa.", "mdi.", "ei."]
-                    for prefix in prefixes:
-                        try:
-                            icon = self.qta.icon(prefix + name)
-                            if not icon.isNull():
-                                return icon
-                        except Exception:
-                            continue
-                    # Fallback to a default icon if all attempts fail
-                    try:
-                        return self.qta.icon("fa5.question")
-                    except Exception:
-                        return None
+                    return self.icon_manager.get_icon(name)
 
             self.icon_manager = SimpleIconManager()
             self.icon_manager.get_icon("example")
             print("[OK] Система иконок SimpleIconManager инициализирована")
         except ImportError:
             self.icon_manager = None
-            print("[WARNING] Система иконок недоступна")
+            print("[WARNING] UniversalIconManager not available")
         except Exception as e:
             print(f"[WARNING] Ошибка инициализации иконок: {e}")
             self.icon_manager = None
@@ -659,21 +632,6 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         # Если все попытки применения темы не удались, оставляем стандартные системные стили
         print("[WARNING] Используется системная тема по умолчанию")
 
-
-
-    def _init_ai_assistant(self):
-        """Initialize the AI Assistant functionality in the main chat widget."""
-        try:
-            # AI Assistant functionality is now integrated into the main chat widget
-            if hasattr(self, 'chat_widget') and hasattr(self.chat_widget, 'ui_assistant'):
-                # Set the main window reference for the UI Assistant
-                self.chat_widget.ui_assistant.set_main_window(self)
-                print("[OK] AI Assistant инициализирован в основном чате")
-            else:
-                print("[WARNING] Основной виджет чата не найден или не содержит UI Assistant")
-                
-        except Exception as e:
-            print(f"[ERROR] Ошибка инициализации AI Assistant: {e}")
     
     def _connect_menu_signals(self):
         """Подключение сигналов меню"""

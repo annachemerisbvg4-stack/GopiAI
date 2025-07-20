@@ -56,7 +56,6 @@ pytest-qt  # For GUI components
 
 ## Configuration
 - **Environment Variables**: `.env` files for API keys and settings
-- **Smithery MCP**: `smithery_env.bat` for Model Context Protocol integration
 - **Logging**: Extensive debug logging to `.log` files
 - **Ports**: CrewAI API server runs on port 5051
 

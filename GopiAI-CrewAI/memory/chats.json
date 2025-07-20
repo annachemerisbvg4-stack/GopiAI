@@ -1792,13 +1792,6 @@
     "timestamp": "2025-07-17T05:49:29.668023"
   },
   {
-    "id": "01611c85-fb78-4a35-9aeb-a37ce1640d00",
-    "session_id": "session_1752711181",
-    "role": "user",
-    "content": "и файлы тоже видеть не можешь? например, вот C:\\Users\\crazy\\GOPI_AI_MODULES\\02_DOCUMENTATION\\Smithery_API_Docs.pdf - можешь посмотреть?",
-    "timestamp": "2025-07-17T05:51:05.283308"
-  },
-  {
     "id": "e08760f4-cf81-47c3-a7b0-9ada831104be",
     "session_id": "session_1752711181",
     "role": "assistant",

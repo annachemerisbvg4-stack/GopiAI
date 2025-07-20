@@ -1,15 +1,15 @@
 {
-  "main_color": "#333333",
-  "header_color": "#434653",
-  "control_color": "#c4c6d5",
-  "accent_color": "#d6c1cd",
-  "titlebar_background": "#434653",
-  "button_color": "#c7c6cc",
-  "button_hover_color": "#46464b",
-  "button_active_color": "#2d303c",
-  "text_color": "#e5e2e1",
-  "border_color": "#929094",
-  "titlebar_text": "#e0e1f2",
-  "name": "Lavender Mist",
-  "variant": "dark"
+  "main_color": "#ffffff",
+  "header_color": "#b9f47d",
+  "control_color": "#3b6a00",
+  "accent_color": "#006c53",
+  "titlebar_background": "#b9f47d",
+  "button_color": "#4f6538",
+  "button_hover_color": "#9ed764",
+  "button_active_color": "#3b6a00",
+  "text_color": "#1c1b1b",
+  "border_color": "#767870",
+  "titlebar_text": "#0e2000",
+  "name": "Emerald Garden",
+  "variant": "light"
 }

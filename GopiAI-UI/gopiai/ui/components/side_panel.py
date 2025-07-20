@@ -9,14 +9,6 @@ from PySide6.QtCore import QRect, QPoint, Qt, Signal
 # Импортируем менеджер инструментов
 from gopiai.ui.components.tools_panel_utils import get_tools_manager
 
-# Импортируем панель инструментов Smithery MCP
-try:
-    from gopiai.ui.components.smithery_mcp_panel import SmitheryMcpPanel
-    SMITHERY_AVAILABLE = True
-except ImportError:
-    logging.warning("Панель инструментов Smithery MCP не доступна.")
-    SMITHERY_AVAILABLE = False
-
 logger = logging.getLogger(__name__)
 
 class SlidingPanel(QWidget):
@@ -82,7 +74,7 @@ class SlidingPanel(QWidget):
         # Создаем область прокрутки для стандартных инструментов
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setFrameShape(QFrame.NoFrame)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setStyleSheet("background-color: transparent;")
         
         # Контейнер для карточек инструментов
@@ -97,26 +89,6 @@ class SlidingPanel(QWidget):
         self.standard_tools_layout.addWidget(self.scroll_area)
         
         self.tabs.addTab(self.standard_tools_tab, "Стандартные")
-        
-        # Вкладка инструментов Smithery MCP
-        if SMITHERY_AVAILABLE:
-            try:
-                self.smithery_tab = QWidget()
-                self.smithery_tab.setStyleSheet("background-color: transparent;")
-                self.smithery_layout = QVBoxLayout(self.smithery_tab)
-                self.smithery_layout.setContentsMargins(0, 0, 0, 0)
-                self.smithery_layout.setSpacing(5)
-                
-                # Создаем панель инструментов Smithery MCP
-                self.smithery_panel = SmitheryMcpPanel()
-                self.smithery_layout.addWidget(self.smithery_panel)
-                
-                # Подключаем сигнал выбора инструмента
-                self.smithery_panel.tool_selected.connect(self._on_smithery_tool_selected)
-                
-                self.tabs.addTab(self.smithery_tab, "MCP Tools")
-            except Exception as e:
-                logging.error(f"Ошибка при инициализации панели Smithery MCP: {e}")
         
         self.main_layout.addWidget(self.tabs, 1)
         
@@ -185,26 +157,9 @@ class SlidingPanel(QWidget):
         self.hide()
         
         # Отправляем сигнал родительскому виджету
-        if hasattr(self.parent(), "on_tool_selected"):
-            self.parent().on_tool_selected(tool_id, tool_data)
-            
-    def _on_smithery_tool_selected(self, tool_data: dict):
-        """
-        Обрабатывает выбор инструмента Smithery MCP пользователем.
-        Скрывает панель и отправляет сигнал родительскому виджету.
-        
-        Args:
-            tool_data: Данные выбранного инструмента
-        """
-        # Скрываем панель после выбора
-        self.hide()
-        
-        # Формируем ID для инструмента MCP (префикс mcp_ + server + tool)
-        tool_id = tool_data.get('id', '')
-        
-        # Отправляем сигнал родительскому виджету
-        if hasattr(self.parent(), "on_tool_selected"):
-            self.parent().on_tool_selected(tool_id, tool_data)
+        parent_widget = self.parent()
+        if hasattr(parent_widget, "on_tool_selected"):
+            parent_widget.on_tool_selected(tool_id, tool_data)
 
 class SidePanelContainer(QWidget):
     """
@@ -247,19 +202,22 @@ class SidePanelContainer(QWidget):
         """Показывает или скрывает панель в правильном месте."""
         if not self.panel.isVisible():
             # Позиционируем панель относительно родителя контейнера
-            parent_rect = self.parent().geometry()
-            panel_width = 350
-            panel_height = parent_rect.height() - 20
-            x = parent_rect.width() - panel_width - 10
-            y = 10
-            self.panel.setGeometry(x, y, panel_width, panel_height)
+            parent_widget = self.parent()
+            if parent_widget:
+                parent_rect = parent_widget.geometry()
+                panel_width = 350
+                panel_height = parent_rect.height() - 20
+                x = parent_rect.width() - panel_width - 10
+                y = 10
+                self.panel.setGeometry(x, y, panel_width, panel_height)
         
         self.panel.toggle_visibility()
         
     def update_trigger_position(self):
         """Обновляет позицию кнопки-триггера. Вызывается из ChatWidget.resizeEvent."""
-        if self.parent():
-            parent_size = self.parent().size()
+        parent_widget = self.parent()
+        if parent_widget:
+            parent_size = parent_widget.size()
             button_size = self.trigger_button.size()
             x = parent_size.width() - button_size.width() - 15
             y = parent_size.height() - button_size.height() - 15

@@ -17,11 +17,7 @@ def check_env_vars():
     
     # Проверяем основные переменные
     env_vars = [
-        "GOOGLE_API_KEY",
         "GEMINI_API_KEY", 
-        "ANTHROPIC_API_KEY",
-        "OPENAI_API_KEY",
-        "SMITHERY_API_KEY"
     ]
     
     found_keys = []

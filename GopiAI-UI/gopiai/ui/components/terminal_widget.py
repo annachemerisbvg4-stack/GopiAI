@@ -2,14 +2,242 @@
 Terminal Widget Component для GopiAI Standalone Interface
 ======================================================
 
-Виджет терминала с вкладками.
+Интерактивный виджет терминала с вкладками и поддержкой выполнения команд.
 """
 
 import subprocess
 import threading
+import os
+import sys
 from typing import Optional
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QTextEdit
-from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QTextEdit, QLineEdit
+from PySide6.QtCore import QTimer, Signal, Qt
+from PySide6.QtGui import QTextCursor, QFont
+
+
+class InteractiveTerminal(QTextEdit):
+    """Интерактивный терминал с поддержкой ввода команд"""
+    
+    command_executed = Signal(str)  # Сигнал для выполненной команды
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("interactiveTerminal")
+        
+        # Настройка шрифта и стиля
+        font = QFont("Consolas", 10)
+        font.setFixedPitch(True)
+        self.setFont(font)
+        
+        # Настройка стиля
+        self.setStyleSheet("""
+            QTextEdit {
+                background-color: #1e1e1e;
+                color: #ffffff;
+                border: 1px solid #3c3c3c;
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 10pt;
+            }
+        """)
+        
+        # Инициализация переменных
+        self.current_directory = os.getcwd()
+        self.command_history = []
+        self.history_index = -1
+        self.prompt = f"PS {self.current_directory}> "
+        
+        # Показываем приветствие
+        self._show_welcome()
+        self._show_prompt()
+        
+    def _show_welcome(self):
+        """Показывает приветственное сообщение"""
+        welcome_text = f"""
+GopiAI Interactive Terminal
+Copyright (C) 2025 GopiAI. Все права защищены.
+
+Текущая директория: {self.current_directory}
+Введите 'help' для получения справки.
+
+"""
+        self.append(welcome_text)
+        
+    def _show_prompt(self):
+        """Показывает приглашение командной строки"""
+        self.insertPlainText(self.prompt)
+        self.moveCursor(QTextCursor.End)
+        
+    def keyPressEvent(self, event):
+        """Обработка нажатий клавиш"""
+        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            self._execute_current_command()
+        elif event.key() == Qt.Key_Up:
+            self._navigate_history(-1)
+        elif event.key() == Qt.Key_Down:
+            self._navigate_history(1)
+        elif event.key() == Qt.Key_Backspace:
+            # Предотвращаем удаление приглашения
+            cursor = self.textCursor()
+            if cursor.position() > self._get_prompt_end_position():
+                super().keyPressEvent(event)
+        else:
+            # Проверяем, что курсор находится в области ввода
+            cursor = self.textCursor()
+            if cursor.position() >= self._get_prompt_end_position():
+                super().keyPressEvent(event)
+            else:
+                # Перемещаем курсор в конец
+                self.moveCursor(QTextCursor.End)
+                super().keyPressEvent(event)
+                
+    def _get_prompt_end_position(self):
+        """Получает позицию конца приглашения"""
+        text = self.toPlainText()
+        last_prompt_pos = text.rfind(self.prompt)
+        if last_prompt_pos != -1:
+            return last_prompt_pos + len(self.prompt)
+        return len(text)
+        
+    def _get_current_command(self):
+        """Получает текущую команду"""
+        text = self.toPlainText()
+        prompt_end = self._get_prompt_end_position()
+        return text[prompt_end:].strip()
+        
+    def _execute_current_command(self):
+        """Выполняет текущую команду"""
+        command = self._get_current_command()
+        if command:
+            self.command_history.append(command)
+            self.history_index = len(self.command_history)
+            
+        self.append("")  # Новая строка
+        
+        if command:
+            self._execute_command(command)
+        else:
+            self._show_prompt()
+            
+    def _navigate_history(self, direction):
+        """Навигация по истории команд"""
+        if not self.command_history:
+            return
+            
+        new_index = self.history_index + direction
+        if 0 <= new_index < len(self.command_history):
+            self.history_index = new_index
+            command = self.command_history[self.history_index]
+            
+            # Заменяем текущую команду
+            cursor = self.textCursor()
+            cursor.setPosition(self._get_prompt_end_position())
+            cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+            cursor.removeSelectedText()
+            cursor.insertText(command)
+            
+    def _execute_command(self, command):
+        """Выполняет команду"""
+        # Обработка встроенных команд
+        if command.lower() in ['clear', 'cls']:
+            self.clear()
+            self._show_welcome()
+            self._show_prompt()
+            return
+        elif command.lower() == 'help':
+            self._show_help()
+            self._show_prompt()
+            return
+        elif command.lower().startswith('cd '):
+            self._change_directory(command[3:].strip())
+            self._show_prompt()
+            return
+            
+        # Выполняем команду в отдельном потоке
+        def run_command():
+            try:
+                # Определяем операционную систему
+                if sys.platform == "win32":
+                    # Windows: используем PowerShell
+                    result = subprocess.run(
+                        ["powershell", "-Command", command],
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                        cwd=self.current_directory
+                    )
+                else:
+                    # Unix/Linux: используем bash
+                    result = subprocess.run(
+                        command,
+                        shell=True,
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                        cwd=self.current_directory
+                    )
+                
+                output = result.stdout if result.stdout else ""
+                error = result.stderr if result.stderr else ""
+                
+                # Обновляем терминал в главном потоке
+                def update_terminal():
+                    if output:
+                        self.append(output.rstrip())
+                    if error:
+                        self.append(f"[ERROR] {error.rstrip()}")
+                    self._show_prompt()
+                    
+                QTimer.singleShot(0, update_terminal)
+                
+            except subprocess.TimeoutExpired:
+                def show_timeout():
+                    self.append("[ERROR] Команда превысила время ожидания (30 сек)")
+                    self._show_prompt()
+                QTimer.singleShot(0, show_timeout)
+                
+            except Exception as e:
+                def show_error():
+                    self.append(f"[ERROR] {str(e)}")
+                    self._show_prompt()
+                QTimer.singleShot(0, show_error)
+        
+        # Запускаем команду в отдельном потоке
+        thread = threading.Thread(target=run_command, daemon=True)
+        thread.start()
+        
+        # Отправляем сигнал о выполнении команды
+        self.command_executed.emit(command)
+        
+    def _change_directory(self, path):
+        """Смена директории"""
+        try:
+            if path == '..':
+                new_path = os.path.dirname(self.current_directory)
+            elif os.path.isabs(path):
+                new_path = path
+            else:
+                new_path = os.path.join(self.current_directory, path)
+                
+            if os.path.exists(new_path) and os.path.isdir(new_path):
+                self.current_directory = os.path.abspath(new_path)
+                self.prompt = f"PS {self.current_directory}> "
+            else:
+                self.append(f"[ERROR] Папка не найдена: {path}")
+        except Exception as e:
+            self.append(f"[ERROR] Ошибка смены директории: {str(e)}")
+            
+    def _show_help(self):
+        """Показывает справку"""
+        help_text = """
+Доступные команды:
+  help          - Показать эту справку
+  clear, cls    - Очистить экран
+  cd <path>     - Сменить директорию
+  ↑/↓           - Навигация по истории команд
+  
+Любые другие команды будут выполнены через системную оболочку.
+"""
+        self.append(help_text)
 
 
 class TerminalWidget(QWidget):
@@ -78,31 +306,28 @@ class TerminalWidget(QWidget):
         layout.addWidget(self.terminal_tabs)
 
     def _add_terminal_tab(self):
-        """Добавление новой вкладки терминала"""
-        terminal = QTextEdit()
-        terminal.setStyleSheet("""
-            QTextEdit {
-                font-family: 'Consolas', 'Monaco', monospace;
-                font-size: 12px;
-                border: none;
-            }
-        """)
+        """Добавление новой вкладки интерактивного терминала"""
+        # Создаем новый интерактивный терминал
+        terminal = InteractiveTerminal()
         
-        terminal.setPlainText("""
-Microsoft Windows PowerShell
-Copyright (C) Microsoft Corporation. Все права защищены.
-
-PS C:\\Users\\crazy\\GOPI_AI_MODULES> # Готов к работе!
-PS C:\\Users\\crazy\\GOPI_AI_MODULES> 
-        """)
+        # Подключаем сигнал выполнения команд
+        terminal.command_executed.connect(self._on_command_executed)
         
+        # Добавляем вкладку
         tab_index = self.terminal_tabs.addTab(terminal, f"Терминал {self.terminal_tabs.count() + 1}")
         self.terminal_tabs.setCurrentIndex(tab_index)
+        
+        print(f"[TERMINAL] Добавлена новая вкладка интерактивного терминала")
 
     def _close_terminal_tab(self, index):
         """Закрытие вкладки терминала"""
         if self.terminal_tabs.count() > 1:
             self.terminal_tabs.removeTab(index)
+
+    def _on_command_executed(self, command):
+        """Обработчик выполненных команд"""
+        print(f"[TERMINAL] Выполнена команда: {command}")
+        # Здесь можно добавить логирование или другую обработку
 
     def get_current_terminal(self):
         """Получение текущего терминала"""
@@ -117,60 +342,11 @@ PS C:\\Users\\crazy\\GOPI_AI_MODULES>
         self.terminal_tabs.setTabText(current_index, name)
 
     def execute_command(self, command: str):
-        """Выполнение команды в текущем терминале"""
+        """Выполнение команды в текущем интерактивном терминале"""
         terminal = self.get_current_terminal()
-        if terminal and isinstance(terminal, QTextEdit):
-            current_text = terminal.toPlainText()
-            
-            # Добавляем команду в терминал
-            terminal.setPlainText(f"{current_text}\nPS C:\\Users\\crazy\\GOPI_AI_MODULES> {command}")
-            
-            # Выполняем команду в отдельном потоке
-            def run_command():
-                try:
-                    # Выполняем команду через PowerShell
-                    result = subprocess.run(
-                        ["powershell", "-Command", command],
-                        capture_output=True,
-                        text=True,
-                        timeout=30,
-                        cwd="C:\\Users\\crazy\\GOPI_AI_MODULES"
-                    )
-                    
-                    output = result.stdout if result.stdout else ""
-                    error = result.stderr if result.stderr else ""
-                    
-                    # Обновляем терминал в главном потоке
-                    def update_terminal():
-                        current_text = terminal.toPlainText()
-                        if output:
-                            terminal.setPlainText(f"{current_text}\n{output}")
-                        if error:
-                            terminal.setPlainText(f"{terminal.toPlainText()}\n{error}")
-                        
-                        # Добавляем новую строку приглашения
-                        terminal.setPlainText(f"{terminal.toPlainText()}\nPS C:\\Users\\crazy\\GOPI_AI_MODULES> ")
-                        
-                        # Прокручиваем вниз
-                        cursor = terminal.textCursor()
-                        cursor.movePosition(cursor.MoveOperation.End)
-                        terminal.setTextCursor(cursor)
-                    
-                    # Используем QTimer для обновления UI в главном потоке
-                    QTimer.singleShot(0, update_terminal)
-                    
-                except subprocess.TimeoutExpired:
-                    def show_timeout():
-                        current_text = terminal.toPlainText()
-                        terminal.setPlainText(f"{current_text}\nОшибка: Команда превысила время ожидания (30 сек)\nPS C:\\Users\\crazy\\GOPI_AI_MODULES> ")
-                    QTimer.singleShot(0, show_timeout)
-                    
-                except Exception as e:
-                    def show_error():
-                        current_text = terminal.toPlainText()
-                        terminal.setPlainText(f"{current_text}\nОшибка: {str(e)}\nPS C:\\Users\\crazy\\GOPI_AI_MODULES> ")
-                    QTimer.singleShot(0, show_error)
-            
-            # Запускаем команду в отдельном потоке
-            thread = threading.Thread(target=run_command, daemon=True)
-            thread.start()
+        if terminal and isinstance(terminal, InteractiveTerminal):
+            # Используем метод выполнения команды интерактивного терминала
+            terminal._execute_command(command)
+            print(f"[TERMINAL] Команда передана в интерактивный терминал: {command}")
+        else:
+            print(f"[TERMINAL] Ошибка: Не удалось получить интерактивный терминал")
