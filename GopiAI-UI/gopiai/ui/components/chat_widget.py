@@ -12,6 +12,10 @@ from PySide6.QtCore import Qt, Slot, QPoint, QTimer
 from PySide6.QtGui import QResizeEvent, QTextCursor, QDropEvent, QDragEnterEvent, QTextCursor, QTextCharFormat, QColor, QTextOption
 import uuid
 from datetime import datetime
+from PySide6.QtGui import QDragEnterEvent, QDropEvent, QImageWriter
+from PySide6.QtCore import QUrl, QMimeData
+import tempfile
+from PySide6.QtWidgets import QApplication
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +105,7 @@ class ChatWidget(QWidget):
         self.history.setObjectName("ChatHistory")
         self.history.setAcceptRichText(True)
         self.history.document().setDefaultStyleSheet(self._get_markdown_styles())
-        self.history.setWordWrapMode(QTextOption.WordWrap)
+        self.history.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
         
         chat_area_layout.addWidget(self.history)
         self.main_layout.addWidget(self.chat_area_widget, 1)
@@ -324,11 +328,27 @@ class ChatWidget(QWidget):
         # Экранируем HTML символы, сохраняя уже существующие HTML теги
         text = self._safe_html_escape(text)
         
-        # Обработка блоков кода
-        text = re.sub(r'```([^`]*?)```', lambda m: f'<pre><code>{m.group(1)}</code></pre>', text)
+        # Обработка блоков кода с разбивкой длинных строк
+        def insert_zws(match):
+            code = match.group(1)
+            # Вставляем zero-width space каждые 80 chars в длинных строках
+            lines = []
+            for line in code.splitlines():
+                if len(line) > 80:
+                    line = ''.join(c + '&#8203;' if i > 0 and i % 80 == 0 else c for i, c in enumerate(line))
+                lines.append(line)
+            return f'<pre><code>{"\n".join(lines)}</code></pre>'
         
-        # Обработка инлайн-кода
-        text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
+        text = re.sub(r'```([^`]*?)```', insert_zws, text)
+        
+        # Обработка инлайн-кода (тоже с zws для очень длинных)
+        def inline_zws(match):
+            code = match.group(1)
+            if len(code) > 80:
+                code = ''.join(c + '&#8203;' if i > 0 and i % 80 == 0 else c for i, c in enumerate(code))
+            return f'<code>{code}</code>'
+        
+        text = re.sub(r'`([^`]+)`', inline_zws, text)
         
         # Заголовки
         for i in range(6, 0, -1):
@@ -476,6 +496,8 @@ class ChatWidget(QWidget):
         cursor.movePosition(QTextCursor.MoveOperation.End)
         cursor.insertHtml(message_html)
         self.history.setTextCursor(cursor)
+        self.history.document().setTextWidth(self.history.viewport().width())
+        self.history.document().adjustSize()
         self.history.ensureCursorVisible()
         self._scroll_history_to_end()
 
@@ -493,6 +515,8 @@ class ChatWidget(QWidget):
             </div>
             """
             cursor.insertHtml(updated_html)
+            self.history.document().setTextWidth(self.history.viewport().width())
+            self.history.document().adjustSize()
             self.history.ensureCursorVisible()
             self._scroll_history_to_end()
 
@@ -551,10 +575,53 @@ class ChatWidget(QWidget):
         scrollbar = self.history.verticalScrollBar()
         QTimer.singleShot(0, lambda: scrollbar.setValue(scrollbar.maximum()))
 
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls() or event.mimeData().hasImage():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event: QDropEvent):
+        mime = event.mimeData()
+        if mime.hasUrls():
+            for url in mime.urls():
+                if url.isLocalFile():
+                    path = url.toLocalFile()
+                    name = os.path.basename(path)
+                    ext = os.path.splitext(name)[1].lower()
+                    att_type = 'image' if ext in ['.png', '.jpg', '.jpeg'] else 'file'
+                    self.attached_files.append({'path': path, 'type': att_type})
+                    self._append_message_with_style('system', f'{att_type.capitalize()} dropped: {name}')
+        elif mime.hasImage():
+            image = mime.imageData()
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                writer = QImageWriter(tmp.name, b'png')
+                if writer.write(image):
+                    self.attached_files.append({'path': tmp.name, 'type': 'image'})
+                    self._append_message_with_style('system', 'Image pasted from clipboard')
+        event.acceptProposedAction()
+
     def _input_key_press_event(self, event):
-        """Обрабатывает нажатия клавиш в поле ввода"""
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and not (event.modifiers() & Qt.KeyboardModifier.ShiftModifier):
             self.send_message()
+            event.accept()
+        elif event.key() == Qt.Key.Key_V and (event.modifiers() & Qt.KeyboardModifier.ControlModifier):
+            clipboard = QApplication.clipboard()
+            mime = clipboard.mimeData()
+            if mime.hasImage():
+                image = clipboard.image()
+                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                    writer = QImageWriter(tmp.name, b'png')
+                    if writer.write(image):
+                        self.attached_files.append({'path': tmp.name, 'type': 'image'})
+                        self._append_message_with_style('system', 'Image pasted from clipboard')
+            elif mime.hasUrls():
+                for url in mime.urls():
+                    if url.isLocalFile():
+                        path = url.toLocalFile()
+                        name = os.path.basename(path)
+                        ext = os.path.splitext(name)[1].lower()
+                        att_type = 'image' if ext in ['.png', '.jpg', '.jpeg'] else 'file'
+                        self.attached_files.append({'path': path, 'type': att_type})
+                        self._append_message_with_style('system', f'{att_type.capitalize()} pasted: {name}')
             event.accept()
         else:
             QTextEdit.keyPressEvent(self.input, event)
@@ -607,6 +674,9 @@ class ChatWidget(QWidget):
     def resizeEvent(self, event: QResizeEvent):
         """Обрабатывает изменение размера виджета"""
         super().resizeEvent(event)
+        if hasattr(self, 'history'):
+            self.history.document().setTextWidth(self.history.viewport().width())
+            self.history.document().adjustSize()
         if hasattr(self, 'side_panel_container'):
             self.side_panel_container.update_trigger_position()
 

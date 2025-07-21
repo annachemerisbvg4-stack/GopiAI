@@ -1,15 +1,15 @@
 {
-  "main_color": "#ffffff",
-  "header_color": "#b9f47d",
-  "control_color": "#3b6a00",
-  "accent_color": "#006c53",
-  "titlebar_background": "#b9f47d",
-  "button_color": "#4f6538",
-  "button_hover_color": "#9ed764",
-  "button_active_color": "#3b6a00",
-  "text_color": "#1c1b1b",
-  "border_color": "#767870",
-  "titlebar_text": "#0e2000",
-  "name": "Emerald Garden",
-  "variant": "light"
+  "main_color": "#333333",
+  "header_color": "#930004",
+  "control_color": "#ffb4a9",
+  "accent_color": "#ffb867",
+  "titlebar_background": "#930004",
+  "button_color": "#ffb4a9",
+  "button_hover_color": "#6c3831",
+  "button_active_color": "#690002",
+  "text_color": "#e8e1e0",
+  "border_color": "#9c8d8b",
+  "titlebar_text": "#ffdad5",
+  "name": "Scarlet Fire",
+  "variant": "dark"
 }
