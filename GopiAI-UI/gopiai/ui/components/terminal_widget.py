@@ -9,7 +9,7 @@ import subprocess
 import threading
 import os
 import sys
-from typing import Optional
+from typing import Optional, cast
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QTextEdit, QLineEdit
 from PySide6.QtCore import QTimer, Signal, Qt
 from PySide6.QtGui import QTextCursor, QFont
@@ -65,18 +65,19 @@ Copyright (C) 2025 GopiAI. Все права защищены.
     def _show_prompt(self):
         """Показывает приглашение командной строки"""
         self.insertPlainText(self.prompt)
-        self.moveCursor(QTextCursor.End)
+        self.moveCursor(QTextCursor.MoveOperation.End)
         
     def keyPressEvent(self, event):
         """Обработка нажатий клавиш"""
-        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self._execute_current_command()
-            return  # Add this to prevent default behavior
-        elif event.key() == Qt.Key_Up:
+            event.accept()
+            return
+        elif event.key() == Qt.Key.Key_Up:
             self._navigate_history(-1)
-        elif event.key() == Qt.Key_Down:
+        elif event.key() == Qt.Key.Key_Down:
             self._navigate_history(1)
-        elif event.key() == Qt.Key_Backspace:
+        elif event.key() == Qt.Key.Key_Backspace:
             # Предотвращаем удаление приглашения
             cursor = self.textCursor()
             if cursor.position() > self._get_prompt_end_position():
@@ -88,7 +89,7 @@ Copyright (C) 2025 GopiAI. Все права защищены.
                 super().keyPressEvent(event)
             else:
                 # Перемещаем курсор в конец
-                self.moveCursor(QTextCursor.End)
+                self.moveCursor(QTextCursor.MoveOperation.End)
                 super().keyPressEvent(event)
                 
     def _get_prompt_end_position(self):
@@ -111,10 +112,10 @@ Copyright (C) 2025 GopiAI. Все права защищены.
         if command:
             self.command_history.append(command)
             self.history_index = len(self.command_history)
-            
+        
         cursor = self.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        cursor.insertText('\n')  # Insert newline
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertText('\n')
         self.setTextCursor(cursor)
         
         if command:
@@ -135,7 +136,7 @@ Copyright (C) 2025 GopiAI. Все права защищены.
             # Заменяем текущую команду
             cursor = self.textCursor()
             cursor.setPosition(self._get_prompt_end_position())
-            cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.KeepAnchor)
             cursor.removeSelectedText()
             cursor.insertText(command)
             
@@ -364,6 +365,6 @@ class TerminalWidget(QWidget):
             print(f"[TERMINAL] Ошибка: Не удалось получить интерактивный терминал")
 
     def log_ai_command(self, command: str, output: str):
-        terminal = self.get_current_terminal()
+        terminal = cast(InteractiveTerminal, self.get_current_terminal())
         if terminal:
             terminal.log_ai_command(command, output)

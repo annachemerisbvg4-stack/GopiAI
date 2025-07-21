@@ -322,34 +322,25 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self.terminal_widget.setSizePolicy(terminal_size_policy)
         center_vertical_splitter.addWidget(self.terminal_widget)
 
-        # Правая панель - табы с чатом и MCP панелью
-        self.right_tabs = QTabWidget()
-        self.right_tabs.setTabPosition(QTabWidget.TabPosition.South)  # Вкладки внизу
-        self.right_tabs.setMinimumWidth(0)
-        self.right_tabs.setMaximumWidth(800)  # Увеличено для лучшего отображения инструментов
-        right_tabs_size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
-        self.right_tabs.setSizePolicy(right_tabs_size_policy)
-
-        # Вкладка чата с ИИ (модульный)
+        # Правая панель - чат
         self.chat_widget = ChatWidget()
         print("[CHAT] ChatWidget создан успешно")
         if hasattr(self, 'theme_manager'):
             print("[CHAT] Передаем theme_manager в ChatWidget...")
             self.chat_widget.set_theme_manager(self.theme_manager)
             print("[CHAT] theme_manager передан успешно")
-
-        # Добавляем вкладки
-        self.right_tabs.addTab(self.chat_widget, "Чат")
-        
-        main_splitter.addWidget(self.right_tabs)
+        self.chat_widget.setMinimumWidth(0)
+        self.chat_widget.setMaximumWidth(800)
+        chat_size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        self.chat_widget.setSizePolicy(chat_size_policy)
+        main_splitter.addWidget(self.chat_widget)
 
         # Настройка пропорций сплиттеров
-        main_splitter.setSizes([200, 800, 350])  # Проводник | центр | чат/MCP
-        center_vertical_splitter.setSizes([700, 200])  # TabDocumentWidget | терминал
+        main_splitter.setSizes([200, 800, 350])  # Проводник | центр | чат
         main_splitter.setCollapsible(0, True)   # Проводник можно схлопнуть
         main_splitter.setCollapsible(1, False)  # Центр нельзя схлопнуть
         main_splitter.setCollapsible(2, True)   # Чат можно схлопнуть
-        center_vertical_splitter.setChildrenCollapsible(True)
+        center_vertical_splitter.setSizes([700, 200])  # TabDocumentWidget | терминал
         main_splitter.setStretchFactor(0, 0)
         main_splitter.setStretchFactor(1, 10)
         main_splitter.setStretchFactor(2, 0)

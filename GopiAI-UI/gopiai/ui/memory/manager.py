@@ -121,6 +121,14 @@ class MemoryManager:
     # Дополнительные методы для работы с общей памятью
     def list_sessions(self) -> List[Dict]:
         return list(self.sessions.values())
+
+    def get_session_title(self, session_id: str) -> str:
+        return self.sessions.get(session_id, {}).get('title', 'New Chat')
+
+    def update_session_title(self, session_id: str, title: str):
+        if session_id in self.sessions:
+            self.sessions[session_id]['title'] = title
+            self._save_data()
         
 # --- Singleton Instance ---
 _memory_manager_instance = None

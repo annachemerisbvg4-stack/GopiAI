@@ -5,9 +5,9 @@ import time
 import os
 import html
 import re
-from typing import Optional
+from typing import Optional, cast
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, 
-                               QFileDialog, QSizePolicy, QMessageBox)
+                               QFileDialog, QSizePolicy, QMessageBox, QListWidget, QListWidgetItem, QTabWidget)
 from PySide6.QtCore import Qt, Slot, QPoint, QTimer
 from PySide6.QtGui import QResizeEvent, QTextCursor, QDropEvent, QDragEnterEvent, QTextCursor, QTextCharFormat, QColor, QTextOption
 import uuid
@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 from .crewai_client import CrewAIClient
 from ..memory import get_memory_manager
 from .chat_async_handler import ChatAsyncHandler
-from .side_panel import SidePanelContainer
 from .icon_file_system_model import UniversalIconManager
+from .terminal_widget import TerminalWidget
 
 class ChatWidget(QWidget):
     
@@ -33,40 +33,32 @@ class ChatWidget(QWidget):
         self.setObjectName("ChatWidget")
         self.setAcceptDrops(True)
         
-        # Инициализируем базовые переменные
-        self.session_id = None  # Будет установлен после загрузки
+        self.session_id = None
         self._waiting_message_id = None
         self.theme_manager = None
-        self.current_tool = None  # Текущий выбранный инструмент
-        self._animation_timer = None  # Таймер для анимации
-        self._pending_updates = []  # Очередь обновлений
-        self._is_updating = False  # Флаг обновления
+        self.current_tool = None
+        self._animation_timer = None
+        self._pending_updates = []
+        self._is_updating = False
         self.attached_files = []
         
         logger.info("[CHAT] Инициализация ChatWidget начата")
         
-        # Сначала настраиваем UI, чтобы все элементы были готовы
-        self._setup_ui()
-        
-        # Инициализируем таймер для анимации
-        self._setup_animation_timer()
-        
-        # Затем инициализируем менеджер памяти
         logger.info("[CHAT] Инициализация менеджера памяти")
         self.memory_manager = get_memory_manager()
         
-        # Загружаем или создаем сессию и историю
+        self._setup_ui()
+        
+        self._setup_animation_timer()
+        
         self._initialize_session_and_history()
         
-        # Инициализируем клиент CrewAI
         logger.info("[CHAT] Инициализация CrewAI клиента")
         self.crew_ai_client = CrewAIClient()
         
-        # Создаем обработчики в правильном порядке
         logger.info("[CHAT] Инициализация обработчиков сообщений")
         self.async_handler = ChatAsyncHandler(self.crew_ai_client, self)
         
-        # Подключаем сигналы в конце, когда все компоненты уже созданы
         logger.info("[CHAT] Подключение сигналов обработчиков")
         self.async_handler.response_ready.connect(self._handle_response)
         self.async_handler.status_update.connect(self._update_status_message)
@@ -88,29 +80,45 @@ class ChatWidget(QWidget):
             self._update_status_display(f"{self._current_status_text}{dots}")
 
     def _setup_ui(self):
-        """Создает и настраивает все элементы интерфейса"""
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(8, 8, 8, 8)
         self.main_layout.setSpacing(6)
 
-        # 1. Создаем контейнер для области чата
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setTabPosition(QTabWidget.TabPosition.North)
+        self.tab_widget.setDocumentMode(True)  # Cleaner tab style, no extra labels
+
+        # Chat tab
         self.chat_area_widget = QWidget()
         self.chat_area_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         chat_area_layout = QVBoxLayout(self.chat_area_widget)
         chat_area_layout.setContentsMargins(0, 0, 0, 0)
 
-        # 2. Создаем историю чата
         self.history = QTextEdit(self)
         self.history.setReadOnly(True)
         self.history.setObjectName("ChatHistory")
         self.history.setAcceptRichText(True)
         self.history.document().setDefaultStyleSheet(self._get_markdown_styles())
-        self.history.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+        self.history.setWordWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
         
         chat_area_layout.addWidget(self.history)
-        self.main_layout.addWidget(self.chat_area_widget, 1)
+        self.tab_widget.addTab(self.chat_area_widget, "Чат")
 
-        # 3. Нижняя панель
+        # History tab
+        history_tab = QWidget()
+        history_layout = QVBoxLayout(history_tab)
+        self.sessions_list = QListWidget()
+        sessions = sorted(self.memory_manager.list_sessions(), key=lambda s: s.get('created_at', '0'), reverse=True)
+        for sess in sessions:
+            item = QListWidgetItem(sess.get('title', sess['id']))
+            item.setData(Qt.ItemDataRole.UserRole, sess['id'])
+            self.sessions_list.addItem(item)
+        self.sessions_list.itemClicked.connect(self._load_session_history)
+        history_layout.addWidget(self.sessions_list)
+        self.tab_widget.addTab(history_tab, "История")
+
+        self.main_layout.addWidget(self.tab_widget, 1)
+
         self._setup_bottom_panel()
 
     def _setup_bottom_panel(self):
@@ -120,10 +128,6 @@ class ChatWidget(QWidget):
         bottom_layout.setContentsMargins(0, 5, 0, 0)
         bottom_layout.setSpacing(6)
         
-        self.side_panel_container = SidePanelContainer(self)
-        bottom_layout.addWidget(self.side_panel_container.trigger_button)
-
-        # Поле ввода
         self.input = QTextEdit(self)
         self.input.setPlaceholderText("Введите сообщение...")
         self.input.setObjectName("ChatInput")
@@ -131,10 +135,16 @@ class ChatWidget(QWidget):
         self.input.keyPressEvent = self._input_key_press_event
         bottom_layout.addWidget(self.input, 1)
 
-        # Кнопки действий
         self._setup_action_buttons(bottom_layout)
         
         self.main_layout.addWidget(bottom_container)
+
+    def resizeEvent(self, event: QResizeEvent):
+        """Обрабатывает изменение размера виджета"""
+        super().resizeEvent(event)
+        if hasattr(self, 'history'):
+            self.history.document().setTextWidth(self.history.viewport().width())
+            self.history.document().adjustSize()
 
     def _setup_action_buttons(self, parent_layout):
         """Настраивает кнопки действий"""
@@ -544,7 +554,8 @@ class ChatWidget(QWidget):
             if isinstance(response, dict) and 'terminal_output' in response:
                 term_out = response['terminal_output']
                 if hasattr(self.window(), 'terminal_widget'):
-                    self.window().terminal_widget.log_ai_command(term_out['command'], term_out['output'])
+                    terminal_widget = cast(TerminalWidget, self.window().terminal_widget)  # type: ignore[attr-defined]
+                    terminal_widget.log_ai_command(term_out['command'], term_out['output'])
                 message = response.get('response', 'Command executed in terminal. See terminal tab for output.')
             else:
                 message = self._clean_response_message(str(response))
@@ -667,40 +678,9 @@ class ChatWidget(QWidget):
             pass
         logger.info("Theme applied to ChatWidget")
         
-    def on_tool_selected(self, tool_id: str, tool_data: dict):
-        """Обрабатывает выбор инструмента"""
-        self.current_tool = tool_data
-        tool_name = tool_data.get("name", tool_id)
-        self.input.setPlaceholderText(f"Используется инструмент: {tool_name}. Введите запрос...")
-        self._append_message_with_style(
-            "system",
-            f"Выбран инструмент: {tool_name}. Следующий запрос будет обработан с использованием этого инструмента."
-        )
-
-    def resizeEvent(self, event: QResizeEvent):
-        """Обрабатывает изменение размера виджета"""
-        super().resizeEvent(event)
-        if hasattr(self, 'history'):
-            self.history.document().setTextWidth(self.history.viewport().width())
-            self.history.document().adjustSize()
-        if hasattr(self, 'side_panel_container'):
-            self.side_panel_container.update_trigger_position()
-
     def _initialize_session_and_history(self):
-        """Инициализирует сессию: загружает последнюю или создает новую, затем загружает историю"""
-        sessions = self.memory_manager.list_sessions()
-        if sessions:
-            # Сортируем сессии по дате создания (самая новая последняя)
-            sessions.sort(key=lambda s: s.get('created_at', '0'), reverse=True)
-            latest_session = sessions[0]
-            self.session_id = latest_session['id']
-            logger.info(f"[CHAT] Загружена последняя сессия: {self.session_id}")
-        else:
-            # Создаем новую сессию
-            self.session_id = f"session_{int(time.time())}"
-            logger.info(f"[CHAT] Создана новая сессия: {self.session_id}")
-        
-        # Теперь загружаем историю для этой сессии
+        self.session_id = f"session_{int(time.time())}"
+        logger.info(f"[CHAT] Создана новая сессия: {self.session_id}")
         self._load_history()
 
     def _load_history(self):
@@ -732,3 +712,10 @@ class ChatWidget(QWidget):
         
         # Прокручиваем к концу после загрузки
         self._scroll_history_to_end()
+
+    def _load_session_history(self, item):
+        session_id = item.data(Qt.ItemDataRole.UserRole)
+        self.session_id = session_id
+        self.history.clear()
+        self._load_history()
+        self.tab_widget.setCurrentIndex(0)  # Switch to Chat tab
