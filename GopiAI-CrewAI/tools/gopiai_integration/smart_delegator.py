@@ -7,6 +7,7 @@ import traceback
 import sys
 import os
 from typing import Dict, List, Any, Optional
+import re # Added for command extraction
 
 # Импортируем модуль ротации моделей
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -251,6 +252,17 @@ class SmartDelegator:
                 'server_name': 'local',
                 'params': {'action': 'health_check'}
             }
+        
+        if 'run command' in message.lower() or 'execute in terminal' in message.lower():
+            # Extract command after keyword
+            cmd_match = re.search(r'(?:run command|execute in terminal):?\s*(.+)', message, re.IGNORECASE)
+            if cmd_match:
+                command = cmd_match.group(1).strip()
+                return {
+                    'tool_name': 'execute_shell',
+                    'server_name': 'local',
+                    'params': {'command': command}
+                }
         
         return None
         

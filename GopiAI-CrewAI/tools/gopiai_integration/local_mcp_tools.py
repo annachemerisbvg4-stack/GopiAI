@@ -200,6 +200,15 @@ class LocalMCPTools:
                     },
                     "required": ["url", "action"]
                 }
+            },
+            "execute_shell": {
+                "name": "execute_shell",
+                "description": "Execute shell command and return output",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"command": {"type": "string", "description": "Shell command to execute"}},
+                    "required": ["command"]
+                }
             }
         }
     
@@ -226,6 +235,8 @@ class LocalMCPTools:
                 return self._api_client(parameters)
             elif tool_name == "url_analyzer":
                 return self._url_analyzer(parameters)
+            elif tool_name == "execute_shell":
+                return self._execute_shell(parameters)
             else:
                 return {"error": f"Неизвестный инструмент: {tool_name}"}
                 
@@ -818,6 +829,26 @@ class LocalMCPTools:
             return {"error": f"Ошибка HTTP запроса: {str(e)}"}
         except Exception as e:
             return {"error": f"Ошибка анализа URL: {str(e)}"}
+
+    def _execute_shell(self, params: Dict) -> Dict:
+        command = params.get("command")
+        visible = params.get("visible", False)
+        if not command:
+            return {"error": "Command not provided"}
+        try:
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            output = result.stdout.strip() + '\n' + result.stderr.strip()
+            ret = {
+                "success": True,
+                "stdout": result.stdout.strip(),
+                "stderr": result.stderr.strip(),
+                "returncode": result.returncode
+            }
+            if visible:
+                return {'ui_action': 'terminal_execute', 'command': command, 'output': output, 'returncode': result.returncode}
+            return ret
+        except Exception as e:
+            return {"error": str(e)}
 
 
 # Глобальный экземпляр

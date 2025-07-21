@@ -71,6 +71,7 @@ Copyright (C) 2025 GopiAI. Все права защищены.
         """Обработка нажатий клавиш"""
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             self._execute_current_command()
+            return  # Add this to prevent default behavior
         elif event.key() == Qt.Key_Up:
             self._navigate_history(-1)
         elif event.key() == Qt.Key_Down:
@@ -111,7 +112,10 @@ Copyright (C) 2025 GopiAI. Все права защищены.
             self.command_history.append(command)
             self.history_index = len(self.command_history)
             
-        self.append("")  # Новая строка
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        cursor.insertText('\n')  # Insert newline
+        self.setTextCursor(cursor)
         
         if command:
             self._execute_command(command)
@@ -135,7 +139,7 @@ Copyright (C) 2025 GopiAI. Все права защищены.
             cursor.removeSelectedText()
             cursor.insertText(command)
             
-    def _execute_command(self, command):
+    def _execute_command(self, command, timeout=None):
         """Выполняет команду"""
         # Обработка встроенных команд
         if command.lower() in ['clear', 'cls']:
@@ -162,8 +166,8 @@ Copyright (C) 2025 GopiAI. Все права защищены.
                         ["powershell", "-Command", command],
                         capture_output=True,
                         text=True,
-                        timeout=30,
-                        cwd=self.current_directory
+                        cwd=self.current_directory,
+                        timeout=timeout
                     )
                 else:
                     # Unix/Linux: используем bash
@@ -172,8 +176,8 @@ Copyright (C) 2025 GopiAI. Все права защищены.
                         shell=True,
                         capture_output=True,
                         text=True,
-                        timeout=30,
-                        cwd=self.current_directory
+                        cwd=self.current_directory,
+                        timeout=timeout
                     )
                 
                 output = result.stdout if result.stdout else ""
@@ -185,6 +189,8 @@ Copyright (C) 2025 GopiAI. Все права защищены.
                         self.append(output.rstrip())
                     if error:
                         self.append(f"[ERROR] {error.rstrip()}")
+                        if 'input' in error.lower():
+                            self.append("[WARNING] Command requires interactive input, which is not supported.")
                     self._show_prompt()
                     
                 QTimer.singleShot(0, update_terminal)
@@ -238,6 +244,12 @@ Copyright (C) 2025 GopiAI. Все права защищены.
 Любые другие команды будут выполнены через системную оболочку.
 """
         self.append(help_text)
+
+    def log_ai_command(self, command: str, output: str):
+        self.append(f'[AI] Executed: {command}')
+        self.append(output)
+        self.append('')  # New line
+        self._show_prompt()
 
 
 class TerminalWidget(QWidget):
@@ -350,3 +362,8 @@ class TerminalWidget(QWidget):
             print(f"[TERMINAL] Команда передана в интерактивный терминал: {command}")
         else:
             print(f"[TERMINAL] Ошибка: Не удалось получить интерактивный терминал")
+
+    def log_ai_command(self, command: str, output: str):
+        terminal = self.get_current_terminal()
+        if terminal:
+            terminal.log_ai_command(command, output)

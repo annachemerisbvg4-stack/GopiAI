@@ -541,7 +541,13 @@ class ChatWidget(QWidget):
         if is_error:
             self._append_message_with_style("error", f"Ошибка: {response}")
         else:
-            message = self._clean_response_message(str(response))
+            if isinstance(response, dict) and 'terminal_output' in response:
+                term_out = response['terminal_output']
+                if hasattr(self.window(), 'terminal_widget'):
+                    self.window().terminal_widget.log_ai_command(term_out['command'], term_out['output'])
+                message = response.get('response', 'Command executed in terminal. See terminal tab for output.')
+            else:
+                message = self._clean_response_message(str(response))
             message = "\n".join(line for line in message.splitlines() if line.strip())
             self._append_message_with_style("assistant", message)
             if self.session_id:
