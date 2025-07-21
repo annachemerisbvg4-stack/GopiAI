@@ -34,7 +34,7 @@ class SmartDelegator:
     def __init__(self, rag_system: Optional[RAGSystem] = None, **kwargs):
         self.logger = logging.getLogger(__name__)
         self.rag_system = rag_system
-        self.rag_available = self.rag_system is not None and self.rag_system.embeddings is not None
+        self.rag_available = rag_system is not None and hasattr(rag_system, 'embeddings') and rag_system.embeddings is not None
         
         # Инициализируем локальные MCP инструменты
         try:
@@ -54,7 +54,7 @@ class SmartDelegator:
         logger.info("[INFO] Внешняя MCP интеграция отключена, используем локальные инструменты")
         
         if self.rag_available:
-            logger.info(f"[OK] RAG system passed to SmartDelegator. Records: {self.rag_system.embeddings.count()}")
+            logger.info(f"[OK] RAG system passed to SmartDelegator. Records: {rag_system.embeddings.count()}")
         else:
             logger.warning("[WARNING] RAG system not passed or not initialized.")
 
@@ -73,12 +73,12 @@ class SmartDelegator:
         # 3. Проверяем наличие запроса на вызов MCP инструмента
         tool_request = self._check_for_tool_request(message, metadata)
         
-        if tool_request and (self.mcp_available or self.local_tools_available):
-            logger.info(f"Обнаружен запрос на использование MCP инструмента: {tool_request['tool_name']} (сервер: {tool_request['server_name']})")
+        if tool_request and self.local_tools_available:
+            logger.info(f"Обнаружен запрос на использование инструмента: {tool_request['tool_name']} (сервер: {tool_request['server_name']})")
             
             # Вызываем MCP инструмент
             try:
-                tool_response = self._call_mcp_tool(
+                tool_response = self._call_tool(
                     tool_request['tool_name'], 
                     tool_request['server_name'],
                     tool_request['params']
@@ -90,7 +90,8 @@ class SmartDelegator:
                     rag_context, 
                     metadata.get("chat_history", []),
                     tool_request,
-                    tool_response
+                    tool_response,
+                    metadata
                 )
                 
                 # Вызываем LLM для формирования итогового ответа
@@ -102,7 +103,7 @@ class SmartDelegator:
                 response_text = f"Извините, произошла ошибка при использовании инструмента {tool_request['tool_name']}: {str(e)}"
         else:
             # 3. Обычное формирование промпта без инструментов
-            messages = self._format_prompt(message, rag_context, metadata.get("chat_history", []))
+            messages = self._format_prompt(message, rag_context, metadata.get("chat_history", []), metadata)
             
             # 4. Вызов LLM
             response_text = self._call_llm(messages)
@@ -118,7 +119,7 @@ class SmartDelegator:
             "analysis": analysis
         }
 
-    def _format_prompt(self, user_message: str, rag_context: Optional[str], chat_history: List[Dict]) -> List[Dict]:
+    def _format_prompt(self, user_message: str, rag_context: Optional[str], chat_history: List[Dict], metadata: Dict) -> List[Dict]:
         """Формирует итоговый список сообщений для LLM."""
         
         # --- ИСПРАВЛЕНО: Добавляем проверку на None для chat_history ---
@@ -184,6 +185,23 @@ class SmartDelegator:
         if not messages or messages[-1].get("content") != user_message:
             messages.append({"role": "user", "content": user_message})
             
+        # Add attachments handling
+        processed_attachments = metadata.get('processed_attachments', [])
+        for att in processed_attachments:
+            if att['type'] == 'image':
+                messages.append({
+                    "role": "user",
+                    "content": [{
+                        "type": "image_url",
+                        "image_url": {"url": att['content']}
+                    }]
+                })
+            elif att['type'] == 'text':
+                if messages:
+                    messages[-1]['content'] += f"\n\nAttached file {att['name']}:\n{att['content']}"
+                else:
+                    messages.append({"role": "user", "content": f"Attached file {att['name']}:\n{att['content']}"})        
+        
         logger.debug(f"Итоговый промпт для LLM: {json.dumps(messages, indent=2, ensure_ascii=False)}")
         return messages
 
@@ -236,7 +254,7 @@ class SmartDelegator:
         
         return None
         
-    def _call_mcp_tool(self, tool_name: str, server_name: str, params: Dict) -> Dict:
+    def _call_tool(self, tool_name: str, server_name: str, params: Dict) -> Dict:
         """
         Вызывает MCP инструмент через MCPToolsManager или локальные инструменты.
         """
@@ -269,12 +287,12 @@ class SmartDelegator:
     
     def _format_prompt_with_tool_result(self, user_message: str, rag_context: Optional[str], 
                                       chat_history: List[Dict], tool_request: Dict, 
-                                      tool_response: Dict) -> List[Dict]:
+                                      tool_response: Dict, metadata: Dict) -> List[Dict]:
         """
         Формирует промпт с результатами выполнения инструмента.
         """
         # Получаем базовый промпт
-        messages = self._format_prompt(user_message, rag_context, chat_history)
+        messages = self._format_prompt(user_message, rag_context, chat_history, metadata)
         
         # Добавляем результаты инструмента к запросу пользователя
         tool_result_message = {
@@ -296,11 +314,20 @@ class SmartDelegator:
             logger.info(f"[LLM] Длина системного промпта: {system_prompt_len} символов")
             
             # Оценка количества токенов (примерно)
-            total_text = '\n'.join([msg.get('content', '') for msg in messages])
+            total_text = '\n'.join([
+                '\n'.join(str(item.get('text', '') if isinstance(item, dict) else str(item)) for item in msg.get('content', [])) 
+                if isinstance(msg.get('content'), list) else str(msg.get('content', '')) 
+                for msg in messages
+            ])
             estimated_tokens = len(total_text) // 4  # Примерная оценка: 4 символа на токен
             
             # Выбор модели с использованием ротации
-            model_id = select_llm_model_safe("dialog", tokens=estimated_tokens)
+            has_image = any(
+                isinstance(msg.get('content'), list) and any(item.get('type') == 'image_url' for item in msg['content'])
+                for msg in messages if msg.get('role') == 'user'
+            )
+            task_type = 'vision' if has_image else 'dialog'
+            model_id = select_llm_model_safe(task_type, tokens=estimated_tokens)
             if not model_id:
                 # Если не удалось выбрать модель, пробуем другие типы задач
                 model_id = select_llm_model_safe("code", tokens=estimated_tokens)

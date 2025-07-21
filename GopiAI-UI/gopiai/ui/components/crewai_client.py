@@ -16,6 +16,7 @@ import logging.handlers
 import os
 import sys
 from pathlib import Path
+import base64
 
 # Настройка логирования для CrewAI клиента
 logger = logging.getLogger(__name__)
@@ -351,6 +352,24 @@ class CrewAIClient:
             
         logger.debug(f"[REQUEST] Продолжаем с отправкой запроса к CrewAI API")
             
+        # Process attachments if present
+        attachments = message.get('metadata', {}).get('attachments', [])
+        processed_attachments = []
+        for att in attachments:
+            path = att['path']
+            att_type = att['type']
+            name = os.path.basename(path)
+            if att_type == 'image':
+                with open(path, 'rb') as f:
+                    content = base64.b64encode(f.read()).decode('utf-8')
+                processed_attachments.append({'type': 'image', 'content': f'data:image/{os.path.splitext(name)[1][1:]};base64,{content}', 'name': name})
+            elif att_type == 'file':
+                with open(path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                processed_attachments.append({'type': 'text', 'content': content, 'name': name})
+        if processed_attachments:
+            message['metadata']['processed_attachments'] = processed_attachments
+
         # Извлекаем текст сообщения для анализа эмоций
         message_text = message.get('message', '')
         logger.debug(f"[REQUEST] Извлеченный текст сообщения: {message_text[:50]}..." if len(message_text) > 50 else message_text)

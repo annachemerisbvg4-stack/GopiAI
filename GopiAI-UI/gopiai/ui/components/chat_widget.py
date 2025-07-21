@@ -9,7 +9,7 @@ from typing import Optional
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, 
                                QFileDialog, QSizePolicy, QMessageBox)
 from PySide6.QtCore import Qt, Slot, QPoint, QTimer
-from PySide6.QtGui import QResizeEvent, QTextCursor, QDropEvent, QDragEnterEvent, QTextCursor, QTextCharFormat, QColor
+from PySide6.QtGui import QResizeEvent, QTextCursor, QDropEvent, QDragEnterEvent, QTextCursor, QTextCharFormat, QColor, QTextOption
 import uuid
 from datetime import datetime
 
@@ -37,6 +37,7 @@ class ChatWidget(QWidget):
         self._animation_timer = None  # Таймер для анимации
         self._pending_updates = []  # Очередь обновлений
         self._is_updating = False  # Флаг обновления
+        self.attached_files = []
         
         logger.info("[CHAT] Инициализация ChatWidget начата")
         
@@ -100,6 +101,7 @@ class ChatWidget(QWidget):
         self.history.setObjectName("ChatHistory")
         self.history.setAcceptRichText(True)
         self.history.document().setDefaultStyleSheet(self._get_markdown_styles())
+        self.history.setWordWrapMode(QTextOption.WordWrap)
         
         chat_area_layout.addWidget(self.history)
         self.main_layout.addWidget(self.chat_area_widget, 1)
@@ -174,6 +176,9 @@ class ChatWidget(QWidget):
             padding: 8px;
             color: var(--text-color);
             background: transparent;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-all;
         }
         
         .message {
@@ -186,6 +191,9 @@ class ChatWidget(QWidget):
             transition: all 0.2s ease;
             display: inline-block;
             position: relative;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-all;
         }
         
         .message:hover {
@@ -303,7 +311,7 @@ class ChatWidget(QWidget):
         /* Markdown стили */
         h1, h2, h3 { margin: 8px 0; }
         code { background: rgba(0,0,0,0.05); padding: 2px 4px; border-radius: 4px; }
-        pre { background: rgba(0,0,0,0.05); padding: 8px; border-radius: 8px; overflow-x: auto; }
+        pre { background: rgba(0,0,0,0.05); padding: 8px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; max-height: 300px; }
         a { color: inherit; text-decoration: underline; }
         blockquote { border-left: 2px solid rgba(0,0,0,0.2); padding-left: 8px; opacity: 0.9; }
         """
@@ -402,10 +410,12 @@ class ChatWidget(QWidget):
             "message": text,
             "metadata": {
                 "session_id": self.session_id,
-                "current_tool": self.current_tool
+                "current_tool": self.current_tool,
+                "attachments": self.attached_files
             }
         }
         self.async_handler.process_message(message_data)
+        self.attached_files = []
 
     def _show_loading_indicator(self):
         """Показывает индикатор загрузки с анимацией"""
@@ -466,6 +476,7 @@ class ChatWidget(QWidget):
         cursor.movePosition(QTextCursor.MoveOperation.End)
         cursor.insertHtml(message_html)
         self.history.setTextCursor(cursor)
+        self.history.ensureCursorVisible()
         self._scroll_history_to_end()
 
     def _update_status_display(self, text: str):
@@ -482,6 +493,7 @@ class ChatWidget(QWidget):
             </div>
             """
             cursor.insertHtml(updated_html)
+            self.history.ensureCursorVisible()
             self._scroll_history_to_end()
 
     @Slot(str)
@@ -536,9 +548,8 @@ class ChatWidget(QWidget):
         return message
 
     def _scroll_history_to_end(self):
-        """Прокручивает историю чата вниз"""
         scrollbar = self.history.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        QTimer.singleShot(0, lambda: scrollbar.setValue(scrollbar.maximum()))
 
     def _input_key_press_event(self, event):
         """Обрабатывает нажатия клавиш в поле ввода"""
@@ -554,6 +565,7 @@ class ChatWidget(QWidget):
         if file_path:
             logger.info(f"📎 Файл прикреплен: {os.path.basename(file_path)}")
             self._append_message_with_style("system", f"Файл прикреплен: {os.path.basename(file_path)}")
+            self.attached_files.append({"path": file_path, "type": "file"})
 
     def attach_image(self):
         """Обработчик прикрепления изображения"""
@@ -564,6 +576,7 @@ class ChatWidget(QWidget):
         if image_path:
             logger.info(f"🖼️ Изображение прикреплено: {os.path.basename(image_path)}")
             self._append_message_with_style("system", f"Изображение прикреплено: {os.path.basename(image_path)}")
+            self.attached_files.append({"path": image_path, "type": "image"})
 
     def show_context_stats(self):
         """Показывает статистику контекста"""
