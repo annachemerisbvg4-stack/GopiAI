@@ -81,7 +81,7 @@ class MemoryManager:
 
         # Управляем сессиями
         if session_id not in self.sessions:
-            self.sessions[session_id] = {
+            self.sessions[session_id] = {  # type: ignore[type-arg]
                 'id': session_id, 
                 'title': content[:30], # Название чата - первые 30 символов
                 'created_at': datetime.now().isoformat()
@@ -129,7 +129,22 @@ class MemoryManager:
         if session_id in self.sessions:
             self.sessions[session_id]['title'] = title
             self._save_data()
-        
+
+    def delete_session(self, session_id: str):
+        if not session_id:
+            return
+        if session_id in self.sessions:
+            del self.sessions[session_id]
+        self.chats = [msg for msg in self.chats if msg.get('session_id') != session_id]
+        self._save_data()
+
+    def _save_data(self):
+        try:
+            with open(CHATS_FILE_PATH, 'w', encoding='utf-8') as f:
+                json.dump(self.chats, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.error(f'Error saving data: {e}')
+
 # --- Singleton Instance ---
 _memory_manager_instance = None
 

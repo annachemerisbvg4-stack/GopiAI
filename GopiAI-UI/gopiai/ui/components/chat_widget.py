@@ -16,6 +16,8 @@ from PySide6.QtGui import QDragEnterEvent, QDropEvent, QImageWriter
 from PySide6.QtCore import QUrl, QMimeData
 import tempfile
 from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QMenu
+from PySide6.QtWidgets import QMessageBox
 
 logger = logging.getLogger(__name__)
 
@@ -114,12 +116,47 @@ class ChatWidget(QWidget):
             item.setData(Qt.ItemDataRole.UserRole, sess['id'])
             self.sessions_list.addItem(item)
         self.sessions_list.itemClicked.connect(self._load_session_history)
+        self.sessions_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.sessions_list.customContextMenuRequested.connect(self._show_history_context_menu)  # type: ignore[attr-defined]
         history_layout.addWidget(self.sessions_list)
         self.tab_widget.addTab(history_tab, "История")
 
         self.main_layout.addWidget(self.tab_widget, 1)
 
         self._setup_bottom_panel()
+
+    def _show_history_context_menu(self, pos):
+        item = self.sessions_list.itemAt(pos)
+        if not item:
+            return
+        menu = QMenu()
+        delete_action = menu.addAction('Удалить')
+        delete_action.triggered.connect(lambda: self._delete_session(item))
+        menu.exec(self.sessions_list.viewport().mapToGlobal(pos))
+
+    def _delete_session(self, item):
+        session_id = item.data(Qt.ItemDataRole.UserRole)
+        if not session_id:
+            logger.debug("[DELETE] No session_id, skipping")
+            return
+        logger.debug(f"[DELETE] Requesting delete for {session_id}")
+        try:
+            msg_box = QMessageBox()
+            msg_box.setWindowModality(Qt.WindowModality.NonModal)
+            msg_box.setText(f'Удалить сессию {session_id}?')
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+            result = msg_box.exec()
+            if result == QMessageBox.StandardButton.Yes:
+                logger.debug(f"[DELETE] Confirmed delete for {session_id}")
+                self.memory_manager.delete_session(session_id)
+                self.sessions_list.takeItem(self.sessions_list.row(item))
+                if self.session_id == session_id:
+                    self.session_id = None
+                    self.history.clear()
+                logger.debug(f"[DELETE] Session {session_id} deleted")
+        except Exception as e:
+            logger.error(f"[DELETE] Error in confirmation dialog: {e}")
 
     def _setup_bottom_panel(self):
         """Настраивает нижнюю панель с полем ввода и кнопками"""
