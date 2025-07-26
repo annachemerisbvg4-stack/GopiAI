@@ -17,6 +17,7 @@ import os
 import sys
 from pathlib import Path
 import base64
+from typing import Dict, Any, List, Optional, Union
 
 # Настройка логирования для CrewAI клиента
 logger = logging.getLogger(__name__)
@@ -27,26 +28,13 @@ from ..memory.manager import MemoryManager
 # Добавляем путь к модулю emotional_classifier
 import sys
 import os
+print('Current working directory:', os.getcwd())
+print('sys.path:', sys.path)
 
-# --- ИСПРАВЛЕНО: Более надежный способ добавления путей ---
-try:
-    # Определяем корневую директорию проекта (GOPI_AI_MODULES)
-    project_root = Path(__file__).resolve().parents[4]
-    
-    # Добавляем путь к инструментам CrewAI
-    crewai_tools_path = project_root / 'GopiAI-CrewAI' / 'tools'
-    if crewai_tools_path.exists() and str(crewai_tools_path) not in sys.path:
-        sys.path.insert(0, str(crewai_tools_path))
-        logger.debug(f"[INIT] Добавлен путь к инструментам CrewAI: {crewai_tools_path}")
-        
-    # Добавляем путь к gopiai_integration
-    gopiai_integration_path = crewai_tools_path / 'gopiai_integration'
-    if gopiai_integration_path.exists() and str(gopiai_integration_path) not in sys.path:
-        sys.path.insert(0, str(gopiai_integration_path))
-        logger.debug(f"[INIT] Добавлен путь к gopiai_integration: {gopiai_integration_path}")
-
-except IndexError:
-    logger.error("[INIT] Не удалось определить корневую директорию проекта. Проверьте структуру папок.")
+# Добавляем пути для импортов
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+gopiai_integration_path = os.path.join(project_root, 'GopiAI-CrewAI', 'tools', 'gopiai_integration')
+sys.path.append(gopiai_integration_path)
 
 # Импортируем эмоциональный классификатор
 EMOTIONAL_CLASSIFIER_AVAILABLE = False
@@ -102,12 +90,7 @@ except Exception as e:
 
 # Настраиваем файловый обработчик для логов CrewAI клиента
 crewai_log_file = os.path.join(logs_dir, 'crewai_client.log')
-file_handler = logging.handlers.RotatingFileHandler(
-    crewai_log_file, 
-    maxBytes=5 * 1024 * 1024,  # 5 МБ
-    backupCount=3,  # Хранить 3 файла ротации
-    encoding='utf-8'
-)
+file_handler = logging.FileHandler(crewai_log_file, mode='w', encoding='utf-8')  # mode='w' to overwrite
 
 # Форматтер для логов
 formatter = logging.Formatter(
@@ -148,40 +131,18 @@ class CrewAIClient:
     def __init__(self, base_url="http://127.0.0.1:5051"):  # Стандартный порт CrewAI API сервера
         self.base_url = base_url
         self.timeout = 30  # Таймаут для API запросов (в секундах)
-        self._server_available = None  # Кеш статуса сервера
-        self._last_check = 0  # Время последней проверки
+        self._server_available = None
+        self._last_check = 0
         
         # Инициализация эмоционального классификатора
         self.emotional_classifier = None
         if EMOTIONAL_CLASSIFIER_AVAILABLE:
             try:
-                from emotional_classifier import EmotionalClassifier
-                # Инициализируем с None, так как мы будем использовать моковый роутер
-                self.emotional_classifier = EmotionalClassifier(ai_router=None)
-                logger.info("Emotional classifier initialized")
+                self.emotional_classifier = EmotionalClassifier()
+                logger.info("[INIT] ✅ Эмоциональный классификатор инициализирован")
             except Exception as e:
-                logger.warning(f"Failed to initialize emotional classifier: {e}")
+                logger.error(f"[INIT] ❌ Ошибка инициализации эмоционального классификатора: {e}")
                 self.emotional_classifier = None
-        
-        # === ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ ДИНАМИЧЕСКИХ ИНСТРУКЦИЙ ===
-        # Инициализируем менеджер динамических инструкций для реального UI-чата
-        self.tools_instruction_manager = None
-        if TOOLS_INSTRUCTION_MANAGER_AVAILABLE:
-            try:
-                self.tools_instruction_manager = get_tools_instruction_manager()
-                tools_count = len(self.tools_instruction_manager.get_tools_summary())
-                logger.info(f"[INIT] ✅ Система динамических инструкций инициализирована в UI-чате. Доступно инструментов: {tools_count}")
-                
-                # Логируем доступные инструменты для отладки
-                tools_summary = self.tools_instruction_manager.get_tools_summary()
-                for tool_name in tools_summary.keys():
-                    logger.debug(f"[TOOLS] Доступен инструмент: {tool_name}")
-                    
-            except Exception as e:
-                logger.error(f"[INIT] ❌ Ошибка инициализации системы динамических инструкций: {e}")
-                self.tools_instruction_manager = None
-        else:
-            logger.warning("[INIT] ⚠️ Система динамических инструкций недоступна в UI-чате")
 
     def brave_search_site(self, query):
         """
@@ -267,7 +228,7 @@ class CrewAIClient:
             print(f"⚠️ Ошибка при анализе эмоций: {e}")
             return None
             
-    def process_request(self, message, force_crewai=False, timeout=None):
+    def process_request(self, message: Union[str, Dict[str, Any]], force_crewai: bool = False, timeout: Optional[int] = None) -> Dict[str, Any]:
         """
         Обработка всех типов CrewAI API и выбором оптимального обработчика
         
@@ -314,6 +275,18 @@ class CrewAIClient:
             
         # --- ИСПРАВЛЕНО: Корректная инициализация MemoryManager и получение истории ---
         memory_manager = MemoryManager()
+
+        # Новая обработка через MCP для инструментов
+        if 'metadata' in message and 'tool' in message['metadata']:
+            tool_type = message['metadata']['tool']
+            args = message['metadata'].get('args', {})
+            try:
+                mcp_response = self.mcp_client.query({"type": tool_type, "args": args})
+                logger.info(f"[MCP] Успешный запрос: {tool_type}")
+                return {"response": mcp_response.get('result', ''), "from_mcp": True, "error": None}
+            except Exception as e:
+                logger.error(f"[MCP-ERROR] Ошибка: {str(e)}")
+                return {"response": "", "error": str(e), "from_mcp": False}
 
         # === ИНТЕГРАЦИЯ ДИНАМИЧЕСКИХ ИНСТРУКЦИЙ В РЕАЛЬНЫЙ UI-ЧАТ ===
         # Проверяем, нужны ли детальные инструкции для инструментов
@@ -424,7 +397,6 @@ class CrewAIClient:
             # Добавляем стандартный системный промпт в metadata
             message['metadata']['system_prompt'] = system_prompt
             logger.debug("[REQUEST] Добавлен стандартный системный промпт в metadata")
-        
             
         logger.debug(f"[REQUEST] Подготовка к отправке запроса в CrewAI API")
         
@@ -447,7 +419,8 @@ class CrewAIClient:
             response.raise_for_status()
             
             # Обработка ответа
-            result = response.json()
+            result: Dict[str, Any] = response.json()
+            logger.debug(f'Полный ответ Gemini: {result}')
             logger.debug(f"[REQUEST] Успешно парсим JSON ответ: {result}")
             
             # Если ответ содержит только текст, оборачиваем его в словарь
@@ -473,6 +446,15 @@ class CrewAIClient:
                 if recommendations:
                     logger.debug(f"[REQUEST] Добавлены рекомендации по ответу: {recommendations}")
                     result['metadata']['recommended_responses'] = recommendations
+            
+            # Добавляем обработку терминального вывода
+            if isinstance(result, dict) and 'terminal_output' in result:
+                term_out = result['terminal_output']
+                formatted_output = f"Команда '{term_out['command']}' выполнена в терминале.\nВывод: {term_out['output']}\nОшибки: {term_out['error'] if term_out['error'] else 'Нет'}"
+                result['response'] = formatted_output
+                result['metadata'] = result.get('metadata', {})
+                result['metadata']['terminal_output'] = term_out
+                logger.info(f"[TERMINAL] Обработан терминальный вывод для команды: {term_out['command']}")
             
             # Убедимся, что ответ содержит хотя бы пустую строку, а не None
             if 'response' not in result or result['response'] is None:
@@ -564,60 +546,13 @@ class CrewAIClient:
         Returns:
             dict: Словарь {tool_name: detailed_instructions} для релевантных инструментов
         """
-        if not self.tools_instruction_manager or not message_text:
+        # tools_instruction_manager временно отключен после удаления MCP
+        if not message_text:
             return {}
-            
-        try:
-            # Получаем список всех доступных инструментов
-            available_tools = self.tools_instruction_manager.get_tools_summary()
-            relevant_instructions = {}
-            
-            # Анализируем сообщение на предмет упоминания инструментов или задач
-            message_lower = message_text.lower()
-            
-            # Ключевые слова для определения релевантных инструментов
-            tool_keywords = {
-                'filesystem_tools': ['файл', 'папка', 'директория', 'создать', 'удалить', 'копировать', 'переместить', 'file', 'folder', 'directory', 'create', 'delete', 'copy', 'move'],
-                'browser_tools': ['браузер', 'сайт', 'страница', 'открыть', 'перейти', 'browser', 'website', 'page', 'open', 'navigate', 'url', 'http'],
-                'local_mcp_tools': ['api', 'запрос', 'данные', 'скачать', 'получить', 'request', 'data', 'download', 'fetch', 'веб-скрапинг', 'scraping'],
-                'web_search': ['найти', 'поиск', 'искать', 'google', 'search', 'find', 'look for', 'яндекс', 'bing'],
-                'page_analyzer': ['анализ', 'проанализировать', 'seo', 'производительность', 'analyze', 'analysis', 'performance', 'accessibility']
-            }
-            
-            # Проверяем каждый инструмент на релевантность
-            for tool_name in available_tools.keys():
-                if tool_name in tool_keywords:
-                    keywords = tool_keywords[tool_name]
-                    
-                    # Если в сообщении есть ключевые слова для этого инструмента
-                    if any(keyword in message_lower for keyword in keywords):
-                        detailed_instructions = self.tools_instruction_manager.get_tool_detailed_instructions(tool_name)
-                        if detailed_instructions:
-                            relevant_instructions[tool_name] = detailed_instructions
-                            logger.debug(f"[DYNAMIC-TOOLS] Подгружены инструкции для {tool_name} ({len(detailed_instructions)} символов)")
-            
-            # Если не найдено специфических ключевых слов, но сообщение длинное и сложное,
-            # подгружаем инструкции для основных инструментов
-            if not relevant_instructions and len(message_text) > 100:
-                # Подгружаем инструкции для наиболее часто используемых инструментов
-                priority_tools = ['filesystem_tools', 'browser_tools', 'local_mcp_tools']
-                for tool_name in priority_tools:
-                    if tool_name in available_tools:
-                        detailed_instructions = self.tools_instruction_manager.get_tool_detailed_instructions(tool_name)
-                        if detailed_instructions:
-                            relevant_instructions[tool_name] = detailed_instructions
-                            logger.debug(f"[DYNAMIC-TOOLS] Подгружены приоритетные инструкции для {tool_name}")
-            
-            if relevant_instructions:
-                logger.info(f"[DYNAMIC-TOOLS] 🎯 Подгружены динамические инструкции для {len(relevant_instructions)} инструментов: {list(relevant_instructions.keys())}")
-            else:
-                logger.debug("[DYNAMIC-TOOLS] Релевантные инструменты не найдены, инструкции не подгружены")
-                
-            return relevant_instructions
-            
-        except Exception as e:
-            logger.error(f"[DYNAMIC-TOOLS] ❌ Ошибка при получении динамических инструкций: {e}")
-            return {}
+        
+        # Возвращаем пустой словарь, так как tools_instruction_manager недоступен
+        logger.debug("[DYNAMIC-TOOLS] tools_instruction_manager недоступен, возвращаем пустые инструкции")
+        return {}
 
     def _handle_browser_command(self, message):
         """

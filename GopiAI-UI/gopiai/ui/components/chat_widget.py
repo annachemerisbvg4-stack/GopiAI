@@ -24,7 +24,8 @@ logger = logging.getLogger(__name__)
 # --- Импорты наших новых модулей-обработчиков ---
 from .crewai_client import CrewAIClient
 from ..memory import get_memory_manager
-from .chat_async_handler import ChatAsyncHandler
+from .improved_async_chat_handler import ImprovedAsyncChatHandler
+from .optimized_chat_widget import OptimizedChatWidget
 from .icon_file_system_model import UniversalIconManager
 from .terminal_widget import TerminalWidget
 
@@ -58,12 +59,13 @@ class ChatWidget(QWidget):
         logger.info("[CHAT] Инициализация CrewAI клиента")
         self.crew_ai_client = CrewAIClient()
         
-        logger.info("[CHAT] Инициализация обработчиков сообщений")
-        self.async_handler = ChatAsyncHandler(self.crew_ai_client, self)
+        logger.info("[CHAT] Инициализация улучшенного обработчика сообщений")
+        self.async_handler = ImprovedAsyncChatHandler(self.crew_ai_client, self)
         
-        logger.info("[CHAT] Подключение сигналов обработчиков")
+        logger.info("[CHAT] Подключение сигналов улучшенного обработчика")
         self.async_handler.response_ready.connect(self._handle_response)
         self.async_handler.status_update.connect(self._update_status_message)
+        self.async_handler.partial_response.connect(self._handle_partial_response)
         
         logger.info("[CHAT] Инициализация ChatWidget завершена")
 
@@ -96,12 +98,11 @@ class ChatWidget(QWidget):
         chat_area_layout = QVBoxLayout(self.chat_area_widget)
         chat_area_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.history = QTextEdit(self)
-        self.history.setReadOnly(True)
+        # Используем наш оптимизированный чат-виджет
+        self.history = OptimizedChatWidget(self)
         self.history.setObjectName("ChatHistory")
-        self.history.setAcceptRichText(True)
-        self.history.document().setDefaultStyleSheet(self._get_markdown_styles())
-        self.history.setWordWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
+        # Применяем стили через OptimizedChatWidget
+        self.history.apply_markdown_styles(self._get_markdown_styles())
         
         chat_area_layout.addWidget(self.history)
         self.tab_widget.addTab(self.chat_area_widget, "Чат")
@@ -582,26 +583,65 @@ class ChatWidget(QWidget):
         doc = self.history.document()
         cursor = doc.find('id="status_msg"')
         if cursor:
-         cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
-         cursor.removeSelectedText()
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+            cursor.removeSelectedText()
         
         if is_error:
             self._append_message_with_style("error", f"Ошибка: {response}")
         else:
             if isinstance(response, dict) and 'terminal_output' in response:
-                term_out = response['terminal_output']
-                if hasattr(self.window(), 'terminal_widget'):
-                    terminal_widget = cast(TerminalWidget, self.window().terminal_widget)  # type: ignore[attr-defined]
-                    terminal_widget.log_ai_command(term_out['command'], term_out['output'])
-                message = response.get('response', 'Command executed in terminal. See terminal tab for output.')
+                self._handle_terminal_output(response['terminal_output'])
+                full_message = response.get('response', 'Command executed in terminal. See terminal tab for output.')
             else:
-                message = self._clean_response_message(str(response))
-            message = "\n".join(line for line in message.splitlines() if line.strip())
-            self._append_message_with_style("assistant", message)
+                full_message = self._clean_response_message(str(response))
+            full_message = "\n".join(line for line in full_message.splitlines() if line.strip())
+            self._append_message_with_style("assistant", full_message)
             if self.session_id:
-                self.memory_manager.add_message(self.session_id, "assistant", message)
+                self.memory_manager.add_message(self.session_id, "assistant", full_message)
         
         self.send_btn.setEnabled(True)
+
+    @Slot(str)
+    def _handle_partial_response(self, partial_text: str):
+        """Обрабатывает частичные ответы для streaming отображения"""
+        # Используем метод append_streaming_text из OptimizedChatWidget
+        if hasattr(self.history, 'append_streaming_text'):
+            self.history.append_streaming_text(partial_text)
+        else:
+            # Fallback для совместимости
+            self._append_message_with_style("assistant", partial_text)
+        
+        self._scroll_history_to_end()
+
+    def _append_message_with_style(self, role: str, message: str):
+        """Метод совместимости для добавления сообщений через OptimizedChatWidget"""
+        if hasattr(self.history, 'append_message'):
+            # Используем новый метод OptimizedChatWidget
+            self.history.append_message(role, message)
+        else:
+            # Fallback на стандартные методы QTextEdit
+            timestamp = datetime.now().strftime("%H:%M")
+            role_class = f"{role}-message"
+            avatar_class = f"{role}-avatar"
+            
+            html_message = f"""
+            <div class="message {role_class}">
+                <div class="avatar {avatar_class}"></div>
+                {self._render_markdown(message)}
+                <div class="timestamp">{timestamp}</div>
+            </div>
+            """
+            
+            cursor = self.history.textCursor()
+            cursor.movePosition(QTextCursor.MoveOperation.End)
+            cursor.insertHtml(html_message)
+            
+        self._scroll_history_to_end()
+
+    def _handle_terminal_output(self, term_out: dict):
+        """Отображает вывод терминала в чате"""
+        formatted = f"Команда: {term_out.get('command', '')}\nВывод: {term_out.get('output', '')}\nОшибки: {term_out.get('error', 'Нет')}"
+        self._append_message_with_style("system", formatted)
 
     def _clean_response_message(self, message: str) -> str:
         """Расширенная очистка от лишних символов и меток"""

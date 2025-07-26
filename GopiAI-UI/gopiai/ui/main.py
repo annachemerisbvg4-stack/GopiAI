@@ -16,6 +16,7 @@ import os
 import warnings
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
 
 import chardet
 
@@ -91,6 +92,13 @@ from PySide6.QtGui import QAction, QPalette
 # Импорт компонентов тем
 from gopiai.ui.utils.theme_manager import ThemeManager
 from gopiai.ui.dialogs.settings_dialog import GopiAISettingsDialog
+
+# Добавляем путь к GopiAI-CrewAI/tools
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+crewai_tools_path = os.path.join(project_root, 'GopiAI-CrewAI', 'tools')
+sys.path.append(crewai_tools_path)
+
+from gopiai_integration.terminal_tool import set_terminal_widget
 
 # Настройка путей для импорта модулей GopiAI
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -267,6 +275,9 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self._apply_vscode_like_layout()
         self._setup_panel_shortcuts()
 
+        self.terminal_widget = TerminalWidget()
+        set_terminal_widget(self.terminal_widget)
+        TerminalWidget.instance = self.terminal_widget  # Singleton-like access
 
         print("[OK] FramelessGopiAIStandaloneWindow готов к работе!")
 

@@ -28,5 +28,9 @@
         "./GopiAI-Core",
         "./rag_memory_system"
     ],
-    "cursorpyright.analysis.typeCheckingMode": "basic"
+    "cursorpyright.analysis.typeCheckingMode": "basic",
+    "xline.disableBrowserTool": false,
+    "xline.mcp.mode": "full",
+    "xline.mcpMarketplace.enabled": true,
+    "xline.preferredLanguage": "Russian - Русский"
 }
