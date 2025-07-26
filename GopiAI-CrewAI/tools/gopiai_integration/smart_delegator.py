@@ -35,6 +35,8 @@ from .system_prompts import get_system_prompts
 from .local_mcp_tools import get_local_mcp_tools
 from .command_executor import CommandExecutor
 from .response_formatter import ResponseFormatter
+from .openrouter_client import get_openrouter_client
+from .model_config_manager import get_model_config_manager, ModelProvider
 
 # Инициализируем логгер перед использованием
 logger = logging.getLogger(__name__)
@@ -78,6 +80,27 @@ class SmartDelegator:
         except Exception as e:
             self.response_formatter = None
             logger.warning(f"[WARNING] Не удалось инициализировать ResponseFormatter: {str(e)}")
+        
+        # Инициализируем менеджер конфигураций моделей
+        try:
+            self.model_config_manager = get_model_config_manager()
+            logger.info("[OK] ModelConfigurationManager инициализирован")
+        except Exception as e:
+            self.model_config_manager = None
+            logger.warning(f"[WARNING] Не удалось инициализировать ModelConfigurationManager: {str(e)}")
+        
+        # Инициализируем OpenRouter клиент
+        try:
+            self.openrouter_client = get_openrouter_client()
+            if self.openrouter_client.test_connection():
+                logger.info("[OK] OpenRouter клиент инициализирован и подключен")
+                # Загружаем модели OpenRouter в фоновом режиме
+                self._load_openrouter_models_async()
+            else:
+                logger.info("[INFO] OpenRouter клиент инициализирован, но нет подключения (возможно, нет API ключа)")
+        except Exception as e:
+            self.openrouter_client = None
+            logger.warning(f"[WARNING] Не удалось инициализировать OpenRouter клиент: {str(e)}")
         
         if self.rag_available:
             logger.info(f"[OK] RAG system passed to SmartDelegator. Records: {rag_system.embeddings.count()}")
@@ -536,5 +559,206 @@ class SmartDelegator:
                         logger.error(f"[LLM] Ошибка при использовании запасной модели: {fallback_error}")
             
             return f"Произошла ошибка при обработке запроса: {str(e)}"
+    
+    def _load_openrouter_models_async(self):
+        """Загружает модели OpenRouter в фоновом режиме"""
+        try:
+            if self.openrouter_client and self.model_config_manager:
+                logger.info("🔄 Загружаем модели OpenRouter...")
+                
+                # Получаем список моделей
+                models = self.openrouter_client.get_models_sync()
+                
+                if models:
+                    # Добавляем модели в менеджер конфигураций
+                    self.model_config_manager.add_openrouter_models(models)
+                    
+                    free_count = len([m for m in models if m.is_free])
+                    paid_count = len([m for m in models if not m.is_free])
+                    
+                    logger.info(f"✅ Загружено {len(models)} моделей OpenRouter")
+                    logger.info(f"🆓 Бесплатных: {free_count}, 💰 Платных: {paid_count}")
+                else:
+                    logger.warning("⚠️ Не удалось загрузить модели OpenRouter")
+                    
+        except Exception as e:
+            logger.error(f"❌ Ошибка загрузки моделей OpenRouter: {e}")
+    
+    def switch_to_provider(self, provider: str) -> bool:
+        """
+        Переключается на указанного провайдера
+        
+        Args:
+            provider: Название провайдера (gemini, openrouter)
+            
+        Returns:
+            True, если переключение успешно
+        """
+        try:
+            if not self.model_config_manager:
+                logger.warning("⚠️ ModelConfigurationManager не инициализирован")
+                return False
+            
+            # Преобразуем строку в ModelProvider
+            provider_map = {
+                'gemini': ModelProvider.GEMINI,
+                'google': ModelProvider.GOOGLE,
+                'openrouter': ModelProvider.OPENROUTER
+            }
+            
+            model_provider = provider_map.get(provider.lower())
+            if not model_provider:
+                logger.warning(f"⚠️ Неизвестный провайдер: {provider}")
+                return False
+            
+            success = self.model_config_manager.switch_to_provider(model_provider)
+            
+            if success:
+                current_config = self.model_config_manager.get_current_configuration()
+                logger.info(f"🎯 Переключение на {provider}: {current_config.display_name if current_config else 'неизвестная модель'}")
+            else:
+                logger.warning(f"⚠️ Не удалось переключиться на {provider}")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка переключения провайдера: {e}")
+            return False
+    
+    def set_model(self, provider: str, model_id: str) -> bool:
+        """
+        Устанавливает конкретную модель
+        
+        Args:
+            provider: Название провайдера
+            model_id: ID модели
+            
+        Returns:
+            True, если модель установлена
+        """
+        try:
+            if not self.model_config_manager:
+                logger.warning("⚠️ ModelConfigurationManager не инициализирован")
+                return False
+            
+            # Преобразуем строку в ModelProvider
+            provider_map = {
+                'gemini': ModelProvider.GEMINI,
+                'google': ModelProvider.GOOGLE,
+                'openrouter': ModelProvider.OPENROUTER
+            }
+            
+            model_provider = provider_map.get(provider.lower())
+            if not model_provider:
+                logger.warning(f"⚠️ Неизвестный провайдер: {provider}")
+                return False
+            
+            success = self.model_config_manager.set_current_configuration(model_provider, model_id)
+            
+            if success:
+                logger.info(f"🎯 Установлена модель: {provider}/{model_id}")
+            else:
+                logger.warning(f"⚠️ Не удалось установить модель: {provider}/{model_id}")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка установки модели: {e}")
+            return False
+    
+    def get_current_model_info(self) -> Dict[str, Any]:
+        """Возвращает информацию о текущей модели"""
+        try:
+            if not self.model_config_manager:
+                return {"error": "ModelConfigurationManager не инициализирован"}
+            
+            current_config = self.model_config_manager.get_current_configuration()
+            
+            if current_config:
+                return {
+                    "provider": current_config.provider.value,
+                    "model_id": current_config.model_id,
+                    "display_name": current_config.display_name,
+                    "is_available": current_config.is_available(),
+                    "api_key_env": current_config.api_key_env,
+                    "parameters": current_config.parameters
+                }
+            else:
+                return {"error": "Нет активной конфигурации"}
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения информации о модели: {e}")
+            return {"error": str(e)}
+    
+    def get_available_models(self, provider: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Возвращает список доступных моделей
+        
+        Args:
+            provider: Фильтр по провайдеру (опционально)
+            
+        Returns:
+            Список доступных моделей
+        """
+        try:
+            if not self.model_config_manager:
+                return []
+            
+            if provider:
+                provider_map = {
+                    'gemini': ModelProvider.GEMINI,
+                    'google': ModelProvider.GOOGLE,
+                    'openrouter': ModelProvider.OPENROUTER
+                }
+                
+                model_provider = provider_map.get(provider.lower())
+                if model_provider:
+                    configs = self.model_config_manager.get_configurations_by_provider(model_provider)
+                else:
+                    configs = []
+            else:
+                configs = self.model_config_manager.get_all_configurations()
+            
+            # Преобразуем в словари
+            models = []
+            for config in configs:
+                if config.is_available():  # Только доступные
+                    models.append({
+                        "provider": config.provider.value,
+                        "model_id": config.model_id,
+                        "display_name": config.display_name,
+                        "is_default": config.is_default,
+                        "parameters": config.parameters
+                    })
+            
+            return models
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения списка моделей: {e}")
+            return []
+    
+    def refresh_openrouter_models(self) -> bool:
+        """Обновляет список моделей OpenRouter"""
+        try:
+            if not self.openrouter_client:
+                logger.warning("⚠️ OpenRouter клиент не инициализирован")
+                return False
+            
+            logger.info("🔄 Обновляем список моделей OpenRouter...")
+            
+            # Принудительно обновляем кэш
+            models = self.openrouter_client.get_models_sync(force_refresh=True)
+            
+            if models and self.model_config_manager:
+                self.model_config_manager.add_openrouter_models(models)
+                logger.info(f"✅ Обновлено {len(models)} моделей OpenRouter")
+                return True
+            else:
+                logger.warning("⚠️ Не удалось обновить модели OpenRouter")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка обновления моделей OpenRouter: {e}")
+            return False
 
 # --- END OF FILE smart_delegator.py ---

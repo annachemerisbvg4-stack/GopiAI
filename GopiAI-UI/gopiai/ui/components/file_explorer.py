@@ -19,11 +19,20 @@ File Explorer Component для GopiAI Standalone Interface
 
 import os
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTreeView, QHBoxLayout, 
-QPushButton, QLineEdit, QHeaderView, QSizePolicy, QFileSystemModel)
+QPushButton, QLineEdit, QHeaderView, QSizePolicy, QFileSystemModel, QTabWidget)
 from PySide6.QtCore import QDir, Signal, Qt, QModelIndex
 from PySide6.QtGui import QIcon
 from .file_type_detector import FileTypeDetector
 from .custom_file_system_model import CustomFileSystemModel
+
+# Импорт новых виджетов OpenRouter
+try:
+    from .openrouter_model_widget import OpenRouterModelWidget
+    from .model_selector_widget import ModelSelectorWidget
+except ImportError as e:
+    print(f"⚠️ Не удалось импортировать OpenRouter виджеты: {e}")
+    OpenRouterModelWidget = None
+    ModelSelectorWidget = None
 
 
 class FileExplorerWidget(QWidget):
@@ -66,8 +75,50 @@ class FileExplorerWidget(QWidget):
             print("[ERROR] Не удалось загрузить UniversalIconManager")
 
     def _setup_ui(self):
-        """Настройка интерфейса проводника"""
+        """Настройка интерфейса проводника с вкладками"""
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(5)
+        
+        # Создаем табы
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setTabPosition(QTabWidget.North)
+        self.tab_widget.setMovable(False)
+        
+        # Вкладка 1: Файловый проводник (оригинальная функциональность)
+        self.file_explorer_tab = QWidget()
+        self._setup_file_explorer_tab()
+        self.tab_widget.addTab(self.file_explorer_tab, "📁 Файлы")
+        
+        # Вкладка 2: Конфигурация моделей
+        if ModelSelectorWidget:
+            self.model_selector_widget = ModelSelectorWidget()
+            self.tab_widget.addTab(self.model_selector_widget, "⚙️ Модели")
+            
+            # Подключаем сигналы
+            self.model_selector_widget.provider_changed.connect(self._on_provider_changed)
+            self.model_selector_widget.model_changed.connect(self._on_model_changed)
+        else:
+            print("⚠️ ModelSelectorWidget недоступен")
+        
+        # Вкладка 3: OpenRouter модели
+        if OpenRouterModelWidget:
+            self.openrouter_widget = OpenRouterModelWidget()
+            self.tab_widget.addTab(self.openrouter_widget, "🌐 OpenRouter")
+            
+            # Подключаем сигналы
+            self.openrouter_widget.model_selected.connect(self._on_openrouter_model_selected)
+            self.openrouter_widget.provider_switch_requested.connect(self._on_provider_switch_requested)
+        else:
+            print("⚠️ OpenRouterModelWidget недоступен")
+        
+        layout.addWidget(self.tab_widget)
+        
+        print("✅ FileExplorerWidget настроен с вкладками")
+    
+    def _setup_file_explorer_tab(self):
+        """Настройка вкладки файлового проводника"""
+        layout = QVBoxLayout(self.file_explorer_tab)
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(5)
         

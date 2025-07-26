@@ -44,7 +44,7 @@ EmotionalState = None
 try:
     import spacy
     try:
-        from emotional_classifier import EmotionalClassifier, EmotionalState
+        from tools.gopiai_integration.emotional_classifier import EmotionalClassifier, EmotionalState
         EMOTIONAL_CLASSIFIER_AVAILABLE = True
         logger.debug("[INIT] Эмоциональный классификатор успешно импортирован")
     except ImportError as e:

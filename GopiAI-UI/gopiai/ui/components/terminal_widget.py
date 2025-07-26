@@ -13,7 +13,24 @@ from typing import Optional, cast
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QTextEdit, QLineEdit
 from PySide6.QtCore import QTimer, Signal, Qt, QProcess
 from PySide6.QtGui import QTextCursor, QFont, QKeyEvent
-from ansi2html import Ansi2HTMLConverter
+# Импорт ansi2html с fallback
+try:
+    from ansi2html import Ansi2HTMLConverter
+    ANSI2HTML_AVAILABLE = True
+except ImportError:
+    print("⚠️ ansi2html недоступен, используем fallback")
+    ANSI2HTML_AVAILABLE = False
+    
+    class Ansi2HTMLConverter:
+        """Fallback класс для ansi2html"""
+        def __init__(self):
+            pass
+        
+        def convert(self, text, full=True):
+            # Простая очистка ANSI кодов
+            import re
+            ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+            return ansi_escape.sub('', text)
 
 
 class InteractiveTerminal(QTextEdit):
