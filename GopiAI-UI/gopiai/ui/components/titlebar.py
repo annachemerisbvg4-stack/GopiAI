@@ -12,11 +12,11 @@ import os
 
 # Импорт SVG с fallback
 try:
-    from PySide6.QtSvg import QSvgWidget
+    from PySide6.QtSvgWidgets import QSvgWidget
 
     SVG_AVAILABLE = True
 except ImportError:
-    print("WARNING: QtSvg недоступен, используем fallback для логотипа")
+    print("WARNING: QtSvgWidgets недоступен, используем fallback для логотипа")
     SVG_AVAILABLE = False
     QSvgWidget = None
 
@@ -134,10 +134,17 @@ class StandaloneTitlebar(QWidget):
         """Создает виджет с логотипом GopiAI"""
         try:
             # Путь к логотипу
-            logo_path = os.path.join(
+            root_dir = os.path.dirname(
                 os.path.dirname(
-                    os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-                ),
+                    os.path.dirname(
+                        os.path.dirname(
+                            os.path.dirname(__file__)
+                        )
+                    )
+                )
+            )
+            logo_path = os.path.join(
+                root_dir,
                 "GopiAI-Assets",
                 "gopiai",
                 "assets",

@@ -103,10 +103,16 @@ except ImportError as e:
     print(f"⚠️ Не удалось импортировать GopiAISettingsDialog: {e}")
     GopiAISettingsDialog = None
 
-# Добавляем путь к GopiAI-CrewAI/tools
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-crewai_tools_path = os.path.join(project_root, 'GopiAI-CrewAI', 'tools')
-sys.path.append(crewai_tools_path)
+# Добавляем правильные пути к tools для импорта gopiai_integration
+# Правильное формирование project_root
+project_root = r"c:\Users\crazy\GOPI_AI_MODULES"  # Прямое указание пути
+# Путь к tools (а не к GopiAI-CrewAI!) для импорта gopiai_integration
+tools_path = os.path.join(project_root, 'GopiAI-CrewAI', 'tools')
+if os.path.exists(tools_path) and tools_path not in sys.path:
+    sys.path.insert(0, tools_path)
+    print(f"✅ Добавлен путь к tools: {tools_path}")
+else:
+    print(f"⚠️ Путь к tools не найден: {tools_path}")
 
 from gopiai_integration.terminal_tool import set_terminal_widget
 

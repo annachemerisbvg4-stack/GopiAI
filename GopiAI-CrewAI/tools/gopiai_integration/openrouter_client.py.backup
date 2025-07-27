@@ -185,11 +185,9 @@ class OpenRouterClient:
             for model_data in models_data:
                 try:
                     model = OpenRouterModel.from_api_response(model_data)
-                    # Показываем все модели (убрали фильтрацию is_active)
-
-                    # if model.is_active:  # OpenRouter помечает все модели как неактивные
-
-                    models.append(model)
+                    # Фильтруем только активные модели
+                    if model.is_active:
+                        models.append(model)
                 except Exception as e:
                     logger.warning(f"⚠️ Ошибка парсинга модели {model_data.get('id', 'unknown')}: {e}")
             
@@ -200,7 +198,7 @@ class OpenRouterClient:
             self._models_cache = models
             self._cache_timestamp = datetime.now()
             
-            logger.info(f"✅ Получено {len(models)} моделей OpenRouter (все показаны)")
+            logger.info(f"✅ Получено {len(models)} активных моделей OpenRouter")
             logger.info(f"🆓 Бесплатных моделей: {sum(1 for m in models if m.is_free)}")
             logger.info(f"💰 Платных моделей: {sum(1 for m in models if not m.is_free)}")
             
@@ -249,11 +247,9 @@ class OpenRouterClient:
             for model_data in models_data:
                 try:
                     model = OpenRouterModel.from_api_response(model_data)
-                    # Показываем все модели (убрали фильтрацию is_active)
-
-                    # if model.is_active:  # OpenRouter помечает все модели как неактивные
-
-                    models.append(model)
+                    # Фильтруем только активные модели
+                    if model.is_active:
+                        models.append(model)
                 except Exception as e:
                     logger.warning(f"⚠️ Ошибка парсинга модели {model_data.get('id', 'unknown')}: {e}")
             
@@ -264,7 +260,7 @@ class OpenRouterClient:
             self._models_cache = models
             self._cache_timestamp = datetime.now()
             
-            logger.info(f"✅ Получено {len(models)} моделей OpenRouter (все показаны) (async)")
+            logger.info(f"✅ Получено {len(models)} активных моделей OpenRouter (async)")
             
             return models
             

@@ -7,6 +7,7 @@ Model Selector Widget для GopiAI UI
 import logging
 import sys
 import os
+import re
 from typing import Dict, List, Optional, Any
 
 from PySide6.QtWidgets import (
@@ -24,6 +25,9 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QSplitter,
     QTabWidget,
+    QScrollArea,
+    QPlainTextEdit,
+    QMessageBox,
 )
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont, QPixmap, QIcon
@@ -42,8 +46,13 @@ try:
     )
     if backend_path not in sys.path:
         sys.path.append(backend_path)
+    
+    # Импортируем ModelProvider
+    from tools.gopiai_integration.model_config_manager import ModelProvider
+    MODEL_PROVIDER_AVAILABLE = True
 except Exception as e:
-    print(f"⚠️ Не удалось добавить backend путь: {e}")
+    print(f"⚠️ Не удалось добавить backend путь или импортировать ModelProvider: {e}")
+    MODEL_PROVIDER_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +70,18 @@ class ModelSelectorWidget(QWidget):
         self.current_provider = "gemini"
         self.current_model = None
         self.available_models = {}
+        
+        # Путь к .env файлу
+        self.env_file_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))),
+            ".env"
+        )
+        
+        # Путь к файлу с системными промптами
+        self.system_prompts_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))),
+            "GopiAI-CrewAI", "tools", "gopiai_integration", "system_prompts.py"
+        )
 
         # Initialize icon system
         self.icon_system = AutoIconSystem() if AutoIconSystem else None
@@ -69,6 +90,8 @@ class ModelSelectorWidget(QWidget):
         self._initialize_backend()
         self._setup_connections()
         self._load_current_configuration()
+        self._load_env_keys()
+        self._load_personality()
 
         # Таймер для обновления статуса
         self.status_timer = QTimer()
@@ -90,6 +113,26 @@ class ModelSelectorWidget(QWidget):
         header_font.setPointSize(12)
         header_label.setFont(header_font)
         layout.addWidget(header_label)
+        
+        # Создаем вкладки
+        self.tab_widget = QTabWidget()
+        layout.addWidget(self.tab_widget)
+        
+        # Вкладка моделей
+        self.models_tab = QWidget()
+        self.tab_widget.addTab(self.models_tab, "Модели")
+        self._setup_models_tab()
+        
+        # Вкладка персонализации
+        self.personality_tab = QWidget()
+        self.tab_widget.addTab(self.personality_tab, "Персонализация")
+        self._setup_personality_tab()
+
+    def _setup_models_tab(self):
+        """Настраивает вкладку моделей"""
+        layout = QVBoxLayout(self.models_tab)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
 
         # Выбор провайдера
         provider_group = QGroupBox("Провайдер")
@@ -167,9 +210,8 @@ class ModelSelectorWidget(QWidget):
         self.gemini_key_input.setEchoMode(QLineEdit.Password)
         gemini_key_layout.addWidget(self.gemini_key_input)
 
-        self.gemini_key_btn = QPushButton()
-        self.gemini_key_btn.setToolTip("Сохранить Google API ключ")
-        self.gemini_key_btn.setFixedSize(30, 30)
+        self.gemini_key_btn = QPushButton("Сохранить")
+        self.gemini_key_btn.setToolTip("Сохранить Google API ключ в .env файл")
         self.gemini_key_btn.setObjectName("save_gemini_key_btn")
         if self.icon_system:
             self.icon_system.apply_icons_to_widget(self.gemini_key_btn)
@@ -186,9 +228,8 @@ class ModelSelectorWidget(QWidget):
         self.openrouter_key_input.setEchoMode(QLineEdit.Password)
         openrouter_key_layout.addWidget(self.openrouter_key_input)
 
-        self.openrouter_key_btn = QPushButton()
-        self.openrouter_key_btn.setToolTip("Сохранить OpenRouter API ключ")
-        self.openrouter_key_btn.setFixedSize(30, 30)
+        self.openrouter_key_btn = QPushButton("Сохранить")
+        self.openrouter_key_btn.setToolTip("Сохранить OpenRouter API ключ в .env файл")
         self.openrouter_key_btn.setObjectName("save_openrouter_key_btn")
         if self.icon_system:
             self.icon_system.apply_icons_to_widget(self.openrouter_key_btn)
@@ -233,6 +274,70 @@ class ModelSelectorWidget(QWidget):
         # Растягивающийся элемент
         layout.addStretch()
 
+    def _setup_personality_tab(self):
+        """Настраивает вкладку персонализации"""
+        layout = QVBoxLayout(self.personality_tab)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
+
+        # Заголовок
+        personality_header = QLabel("Персонализация Гипатии")
+        personality_font = QFont()
+        personality_font.setBold(True)
+        personality_font.setPointSize(11)
+        personality_header.setFont(personality_font)
+        layout.addWidget(personality_header)
+
+        # Описание
+        description = QLabel("Здесь вы можете редактировать личность и характер ассистента Гипатии.")
+        description.setWordWrap(True)
+        description.setStyleSheet("color: #666; margin-bottom: 10px;")
+        layout.addWidget(description)
+
+        # Текстовое поле для редактирования промпта
+        self.personality_editor = QPlainTextEdit()
+        self.personality_editor.setPlaceholderText("Загрузка текста персонализации...")
+        
+        # Устанавливаем шрифт для лучшей читаемости
+        font = QFont("Consolas", 10)
+        if not font.exactMatch():
+            font = QFont("Courier New", 10)
+        self.personality_editor.setFont(font)
+        
+        layout.addWidget(self.personality_editor)
+
+        # Кнопки управления
+        buttons_layout = QHBoxLayout()
+        
+        self.load_personality_btn = QPushButton("Загрузить")
+        self.load_personality_btn.setToolTip("Загрузить текст персонализации из файла")
+        self.load_personality_btn.setObjectName("load_personality_btn")
+        if self.icon_system:
+            self.icon_system.apply_icons_to_widget(self.load_personality_btn)
+        buttons_layout.addWidget(self.load_personality_btn)
+
+        self.save_personality_btn = QPushButton("Сохранить")
+        self.save_personality_btn.setToolTip("Сохранить изменения в файл")
+        self.save_personality_btn.setObjectName("save_personality_btn")
+        if self.icon_system:
+            self.icon_system.apply_icons_to_widget(self.save_personality_btn)
+        buttons_layout.addWidget(self.save_personality_btn)
+
+        self.reset_personality_btn = QPushButton("Сброс")
+        self.reset_personality_btn.setToolTip("Сбросить к исходному тексту")
+        self.reset_personality_btn.setObjectName("reset_personality_btn")
+        if self.icon_system:
+            self.icon_system.apply_icons_to_widget(self.reset_personality_btn)
+        buttons_layout.addWidget(self.reset_personality_btn)
+
+        buttons_layout.addStretch()
+        layout.addLayout(buttons_layout)
+
+        # Статус сохранения
+        self.personality_status = QLabel("")
+        self.personality_status.setObjectName("personality_status_label")
+        layout.addWidget(self.personality_status)
+
     def _initialize_backend(self):
         """Инициализирует backend клиенты"""
         try:
@@ -260,10 +365,10 @@ class ModelSelectorWidget(QWidget):
 
         # API ключи
         self.gemini_key_btn.clicked.connect(
-            lambda: self._save_api_key("GOOGLE_API_KEY", self.gemini_key_input.text())
+            lambda: self._save_api_key_to_env("GEMINI_API_KEY", self.gemini_key_input.text())
         )
         self.openrouter_key_btn.clicked.connect(
-            lambda: self._save_api_key(
+            lambda: self._save_api_key_to_env(
                 "OPENROUTER_API_KEY", self.openrouter_key_input.text()
             )
         )
@@ -271,6 +376,14 @@ class ModelSelectorWidget(QWidget):
         # Действия
         self.test_connection_btn.clicked.connect(self._test_connection)
         self.reset_config_btn.clicked.connect(self._reset_configuration)
+        
+        # Персонализация
+        self.load_personality_btn.clicked.connect(self._load_personality)
+        self.save_personality_btn.clicked.connect(self._save_personality)
+        self.reset_personality_btn.clicked.connect(self._reset_personality)
+        self.load_personality_btn.clicked.connect(self._load_personality)
+        self.save_personality_btn.clicked.connect(self._save_personality)
+        self.reset_personality_btn.clicked.connect(self._reset_personality)
 
     def _load_current_configuration(self):
         """Загружает текущую конфигурацию"""
@@ -304,11 +417,11 @@ class ModelSelectorWidget(QWidget):
         try:
             logger.info(f"Переключение на провайдера: {provider}")
 
-            if self.model_config_manager:
+            if self.model_config_manager and MODEL_PROVIDER_AVAILABLE:
                 success = self.model_config_manager.switch_to_provider(
-                    self.model_config_manager.ModelProvider.GEMINI
+                    ModelProvider.GEMINI
                     if provider == "gemini"
-                    else self.model_config_manager.ModelProvider.OPENROUTER
+                    else ModelProvider.OPENROUTER
                 )
 
                 if success:
@@ -348,9 +461,9 @@ class ModelSelectorWidget(QWidget):
         try:
             # Получаем модели для текущего провайдера
             if self.current_provider == "gemini":
-                provider_enum = self.model_config_manager.ModelProvider.GEMINI
+                provider_enum = ModelProvider.GEMINI
             else:
-                provider_enum = self.model_config_manager.ModelProvider.OPENROUTER
+                provider_enum = ModelProvider.OPENROUTER
 
             models = self.model_config_manager.get_configurations_by_provider(
                 provider_enum
@@ -387,11 +500,11 @@ class ModelSelectorWidget(QWidget):
         model_id = self.model_combo.currentData()
         if model_id and model_id != self.current_model:
             try:
-                if self.model_config_manager:
+                if self.model_config_manager and MODEL_PROVIDER_AVAILABLE:
                     provider_enum = (
-                        self.model_config_manager.ModelProvider.GEMINI
+                        ModelProvider.GEMINI
                         if self.current_provider == "gemini"
-                        else self.model_config_manager.ModelProvider.OPENROUTER
+                        else ModelProvider.OPENROUTER
                     )
 
                     success = self.model_config_manager.set_current_configuration(
@@ -460,30 +573,7 @@ class ModelSelectorWidget(QWidget):
             except Exception as e:
                 logger.error(f"Ошибка обновления моделей OpenRouter: {e}")
 
-    def _save_api_key(self, env_var: str, api_key: str):
-        """Сохраняет API ключ"""
-        if not api_key.strip():
-            logger.warning("Пустой API ключ")
-            return
 
-        try:
-            # Сохраняем в переменные окружения (временно)
-            os.environ[env_var] = api_key.strip()
-
-            # Эмитируем сигнал для сохранения в конфигурации
-            self.api_key_updated.emit(env_var, api_key.strip())
-
-            logger.info(f"API ключ {env_var} сохранен")
-            self._update_api_status()
-
-            # Очищаем поле ввода
-            if env_var == "GOOGLE_API_KEY":
-                self.gemini_key_input.clear()
-            else:
-                self.openrouter_key_input.clear()
-
-        except Exception as e:
-            logger.error(f"Ошибка сохранения API ключа: {e}")
 
     def _update_api_status(self):
         """Обновляет статус API ключей"""
@@ -563,10 +653,10 @@ class ModelSelectorWidget(QWidget):
         try:
             logger.info("Сброс конфигурации...")
 
-            if self.model_config_manager:
+            if self.model_config_manager and MODEL_PROVIDER_AVAILABLE:
                 # Переключаемся на Gemini по умолчанию
                 success = self.model_config_manager.switch_to_provider(
-                    self.model_config_manager.ModelProvider.GEMINI
+                    ModelProvider.GEMINI
                 )
 
                 if success:
@@ -598,6 +688,372 @@ class ModelSelectorWidget(QWidget):
         index = self.model_combo.findData(model_id)
         if index >= 0:
             self.model_combo.setCurrentIndex(index)
+
+    def _load_env_keys(self):
+        """Загружает API ключи из .env файла"""
+        try:
+            if os.path.exists(self.env_file_path):
+                with open(self.env_file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    
+                # Ищем ключи в файле
+                gemini_match = re.search(r'^GEMINI_API_KEY=(.+)$', content, re.MULTILINE)
+                if gemini_match:
+                    key = gemini_match.group(1).strip()
+                    os.environ["GEMINI_API_KEY"] = key
+                    self.gemini_key_input.setPlaceholderText("Ключ загружен из .env")
+                
+                openrouter_match = re.search(r'^OPENROUTER_API_KEY=(.+)$', content, re.MULTILINE)
+                if openrouter_match:
+                    key = openrouter_match.group(1).strip()
+                    os.environ["OPENROUTER_API_KEY"] = key
+                    self.openrouter_key_input.setPlaceholderText("Ключ загружен из .env")
+                    
+                logger.info("API ключи загружены из .env файла")
+                self._update_api_status()
+                
+        except Exception as e:
+            logger.error(f"Ошибка загрузки .env файла: {e}")
+
+    def _save_api_key_to_env(self, env_var: str, api_key: str):
+        """Сохраняет API ключ в .env файл"""
+        if not api_key.strip():
+            logger.warning("Пустой API ключ")
+            return
+
+        try:
+            # Читаем существующий .env файл
+            env_content = ""
+            if os.path.exists(self.env_file_path):
+                with open(self.env_file_path, 'r', encoding='utf-8') as f:
+                    env_content = f.read()
+
+            # Обновляем или добавляем ключ
+            pattern = rf'^{env_var}=.*$'
+            new_line = f"{env_var}={api_key.strip()}"
+            
+            if re.search(pattern, env_content, re.MULTILINE):
+                # Заменяем существующий ключ
+                env_content = re.sub(pattern, new_line, env_content, flags=re.MULTILINE)
+            else:
+                # Добавляем новый ключ
+                if env_content and not env_content.endswith('\n'):
+                    env_content += '\n'
+                env_content += new_line + '\n'
+
+            # Сохраняем файл
+            with open(self.env_file_path, 'w', encoding='utf-8') as f:
+                f.write(env_content)
+
+            # Обновляем переменные окружения
+            os.environ[env_var] = api_key.strip()
+
+            logger.info(f"API ключ {env_var} сохранен в .env файл")
+            self._update_api_status()
+
+            # Очищаем поле ввода и обновляем placeholder
+            if env_var == "GEMINI_API_KEY":
+                self.gemini_key_input.clear()
+                self.gemini_key_input.setPlaceholderText("Ключ сохранен в .env")
+            else:
+                self.openrouter_key_input.clear()
+                self.openrouter_key_input.setPlaceholderText("Ключ сохранен в .env")
+
+            # Показываем статус успеха
+            self.api_status.setText("Ключ успешно сохранен!")
+            QTimer.singleShot(3000, self._update_api_status)  # Через 3 сек обновим статус
+
+        except Exception as e:
+            logger.error(f"Ошибка сохранения API ключа: {e}")
+            QMessageBox.warning(self, "Ошибка", f"Не удалось сохранить ключ: {e}")
+
+    def _load_personality(self):
+        """Загружает текст персонализации из файла system_prompts.py"""
+        try:
+            if os.path.exists(self.system_prompts_path):
+                with open(self.system_prompts_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # Ищем нужную часть промпта (строки 72-149)
+                lines = content.splitlines()
+                if len(lines) >= 149:
+                    # Находим начало и конец нужного блока
+                    start_found = False
+                    personality_lines = []
+                    
+                    for i, line in enumerate(lines):
+                        if "Я — Гипатия, воплощённый интеллект" in line:
+                            start_found = True
+                        
+                        if start_found:
+                            personality_lines.append(line)
+                            
+                        if start_found and "древнегреческий." in line:
+                            break
+                    
+                    if personality_lines:
+                        personality_text = '\n'.join(personality_lines)
+                        self.personality_editor.setPlainText(personality_text)
+                        self.personality_status.setText("Текст персонализации загружен")
+                        logger.info("Текст персонализации загружен из файла")
+                    else:
+                        self.personality_status.setText("Не удалось найти блок персонализации")
+                else:
+                    self.personality_status.setText("Файл слишком короткий")
+            else:
+                self.personality_status.setText("Файл system_prompts.py не найден")
+                
+        except Exception as e:
+            logger.error(f"Ошибка загрузки персонализации: {e}")
+            self.personality_status.setText(f"Ошибка: {e}")
+
+    def _save_personality(self):
+        """Сохраняет измененный текст персонализации обратно в файл"""
+        try:
+            new_personality = self.personality_editor.toPlainText()
+            
+            if not new_personality.strip():
+                QMessageBox.warning(self, "Предупреждение", "Текст персонализации не может быть пустым")
+                return
+            
+            if os.path.exists(self.system_prompts_path):
+                with open(self.system_prompts_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                lines = content.splitlines()
+                new_lines = []
+                in_personality_block = False
+                
+                for i, line in enumerate(lines):
+                    if "Я — Гипатия, воплощённый интеллект" in line:
+                        in_personality_block = True
+                        # Добавляем новый текст персонализации
+                        new_lines.extend(new_personality.splitlines())
+                        continue
+                    
+                    if in_personality_block and "древнегреческий." in line:
+                        in_personality_block = False
+                        continue
+                    
+                    if not in_personality_block:
+                        new_lines.append(line)
+                
+                # Сохраняем файл
+                with open(self.system_prompts_path, 'w', encoding='utf-8') as f:
+                    f.write('\n'.join(new_lines))
+                
+                self.personality_status.setText("Персонализация сохранена успешно!")
+                logger.info("Текст персонализации сохранен в файл")
+                
+                # Через 3 секунды очищаем статус
+                QTimer.singleShot(3000, lambda: self.personality_status.setText(""))
+                
+            else:
+                QMessageBox.warning(self, "Ошибка", "Файл system_prompts.py не найден")
+                
+        except Exception as e:
+            logger.error(f"Ошибка сохранения персонализации: {e}")
+            QMessageBox.critical(self, "Ошибка", f"Не удалось сохранить: {e}")
+
+    def _reset_personality(self):
+        """Сбрасывает текст персонализации к исходному"""
+        reply = QMessageBox.question(
+            self, 
+            "Подтверждение", 
+            "Вы уверены, что хотите сбросить персонализацию к исходному тексту?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            self._load_personality()
+            self.personality_status.setText("Персонализация сброшена к исходному тексту")
+
+    def _load_env_keys(self):
+        """Загружает API ключи из .env файла"""
+        try:
+            if os.path.exists(self.env_file_path):
+                with open(self.env_file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    
+                # Ищем ключи в файле
+                gemini_match = re.search(r'^GEMINI_API_KEY=(.+)$', content, re.MULTILINE)
+                openrouter_match = re.search(r'^OPENROUTER_API_KEY=(.+)$', content, re.MULTILINE)
+                
+                if gemini_match:
+                    key = gemini_match.group(1).strip()
+                    os.environ["GEMINI_API_KEY"] = key
+                    self.gemini_key_input.setPlaceholderText("API ключ загружен из .env")
+                    
+                if openrouter_match:
+                    key = openrouter_match.group(1).strip()
+                    os.environ["OPENROUTER_API_KEY"] = key
+                    self.openrouter_key_input.setPlaceholderText("API ключ загружен из .env")
+                    
+                self._update_api_status()
+                logger.info("API ключи загружены из .env файла")
+            else:
+                logger.warning(f".env файл не найден: {self.env_file_path}")
+                
+        except Exception as e:
+            logger.error(f"Ошибка загрузки .env файла: {e}")
+
+    def _save_to_env_file(self, key_name: str, key_value: str):
+        """Сохраняет API ключ в .env файл"""
+        try:
+            # Читаем существующий файл или создаем новый
+            content = ""
+            if os.path.exists(self.env_file_path):
+                with open(self.env_file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+            
+            # Обновляем или добавляем ключ
+            pattern = rf'^{key_name}=.*$'
+            new_line = f"{key_name}={key_value}"
+            
+            if re.search(pattern, content, re.MULTILINE):
+                # Заменяем существующий ключ
+                content = re.sub(pattern, new_line, content, flags=re.MULTILINE)
+            else:
+                # Добавляем новый ключ
+                if content and not content.endswith('\n'):
+                    content += '\n'
+                content += new_line + '\n'
+            
+            # Сохраняем файл
+            with open(self.env_file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+                
+            logger.info(f"API ключ {key_name} сохранен в .env файл")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Ошибка сохранения в .env файл: {e}")
+            return False
+
+    def _load_personality(self):
+        """Загружает текст персонализации из файла system_prompts.py"""
+        try:
+            if os.path.exists(self.system_prompts_path):
+                with open(self.system_prompts_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # Ищем текст персонализации между строками 72-149
+                lines = content.splitlines()
+                if len(lines) >= 149:
+                    # Находим начало блока с "Я — Гипатия"
+                    start_line = None
+                    end_line = None
+                    
+                    for i, line in enumerate(lines):
+                        if "Я — Гипатия, воплощённый интеллект" in line:
+                            start_line = i
+                        elif start_line is not None and "древнегреческий." in line:
+                            end_line = i
+                            break
+                    
+                    if start_line is not None and end_line is not None:
+                        personality_lines = lines[start_line:end_line + 1]
+                        personality_text = '\n'.join(personality_lines)
+                        
+                        # Убираем лишние отступы и кавычки
+                        personality_text = re.sub(r'^        ', '', personality_text, flags=re.MULTILINE)
+                        personality_text = personality_text.strip('"""')
+                        
+                        self.personality_editor.setPlainText(personality_text)
+                        self.personality_status.setText("Текст персонализации загружен")
+                        logger.info("Текст персонализации загружен из файла")
+                    else:
+                        self.personality_status.setText("Не удалось найти блок персонализации")
+                        logger.warning("Не удалось найти блок персонализации в файле")
+                else:
+                    self.personality_status.setText("Файл слишком короткий")
+                    logger.warning("Файл system_prompts.py слишком короткий")
+            else:
+                self.personality_status.setText(f"Файл не найден: {self.system_prompts_path}")
+                logger.warning(f"Файл system_prompts.py не найден: {self.system_prompts_path}")
+                
+        except Exception as e:
+            logger.error(f"Ошибка загрузки персонализации: {e}")
+            self.personality_status.setText(f"Ошибка загрузки: {e}")
+
+    def _save_personality(self):
+        """Сохраняет измененный текст персонализации обратно в файл"""
+        try:
+            if not os.path.exists(self.system_prompts_path):
+                self.personality_status.setText("Файл system_prompts.py не найден")
+                return
+            
+            # Читаем текущий файл
+            with open(self.system_prompts_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            lines = content.splitlines()
+            new_personality = self.personality_editor.toPlainText()
+            
+            # Находим границы блока персонализации
+            start_line = None
+            end_line = None
+            
+            for i, line in enumerate(lines):
+                if "Я — Гипатия, воплощённый интеллект" in line:
+                    start_line = i
+                elif start_line is not None and "древнегреческий." in line:
+                    end_line = i
+                    break
+            
+            if start_line is not None and end_line is not None:
+                # Форматируем новый текст с правильными отступами
+                formatted_lines = []
+                for line in new_personality.splitlines():
+                    if line.strip():
+                        formatted_lines.append(f"        {line}")
+                    else:
+                        formatted_lines.append("")
+                
+                # Заменяем старый блок новым
+                new_lines = lines[:start_line] + formatted_lines + lines[end_line + 1:]
+                new_content = '\n'.join(new_lines)
+                
+                # Сохраняем файл
+                with open(self.system_prompts_path, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+                
+                self.personality_status.setText("Персонализация сохранена успешно")
+                logger.info("Текст персонализации сохранен в файл")
+                
+                # Показываем сообщение об успехе
+                QMessageBox.information(
+                    self,
+                    "Сохранение",
+                    "Персонализация Гипатии успешно сохранена!\n\nИзменения вступят в силу при следующем запуске."
+                )
+            else:
+                self.personality_status.setText("Не удалось найти блок для замены")
+                logger.warning("Не удалось найти блок персонализации для замены")
+                
+        except Exception as e:
+            logger.error(f"Ошибка сохранения персонализации: {e}")
+            self.personality_status.setText(f"Ошибка сохранения: {e}")
+            QMessageBox.critical(
+                self,
+                "Ошибка",
+                f"Не удалось сохранить персонализацию:\n{e}"
+            )
+
+    def _reset_personality(self):
+        """Сбрасывает текст персонализации к исходному"""
+        reply = QMessageBox.question(
+            self,
+            "Сброс персонализации",
+            "Вы уверены, что хотите сбросить персонализацию к исходному тексту?\n\nВсе изменения будут потеряны.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            self._load_personality()
+            self.personality_status.setText("Персонализация сброшена к исходному тексту")
 
 
 def test_model_selector_widget():

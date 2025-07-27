@@ -818,50 +818,72 @@ def apply_theme(app):
             color: {text_color.name()};
             background-color: {main_color.name()};
             border: 1px solid {border_color.name()};
+            border-radius: 4px;
         }}
         QMenuBar::item:selected, QMenu::item:selected {{
             color: #cccccc;
             background-color: {accent_color.name()};
+            border: 1px solid {border_color.name()};
+            border-radius: 4px;
         }}
         QCheckBox, QRadioButton {{
             color: {text_color.name()};
+            border: 1px solid {border_color.name()};
+            border-radius: 4px;
         }}
         QTabBar::tab {{
             color: {button_text_color.name()};
             background-color: {button_color.name()};
+            border: 1px solid {border_color.name()};
+            border-radius: 2px;
         }}
         QTabBar::tab:selected {{
             color: {button_active_text_color.name()};
             background-color: {theme.get("button_active_color", "#0078D7")};
+            border: 1px solid {border_color.name()};
+            border-radius: 2px;
         }}
         QToolTip {{
             color: {text_color.name()};
             background-color: {main_color.name()};
             border: 1px solid {border_color.name()};
+            border-radius: 4px;
         }}
         QTreeView, QListView, QTableView {{
             color: {text_color.name()};
             background-color: {main_color.name()};
+            border: 1px solid {border_color.name()};
+            border-radius: 4px;
         }}
         QTreeView::item:selected, QListView::item:selected, QTableView::item:selected {{
             color: #cccccc;
             background-color: {accent_color.name()};
+            border: 1px solid {border_color.name()};
+            border-radius: 4px;
         }}
         QHeaderView::section {{
             color: {text_color.name()};
             background-color: {header_color.name()};
+            border: 1px solid {border_color.name()};
+            border-radius: 4px;
         }}
         QToolButton {{
             color: {button_text_color.name()};
             background-color: {button_color.name()};
+            border: 1px solid {border_color.name()};
+            border-radius: 4px;
         }}
         QToolButton:hover {{
             color: {button_hover_text_color.name()};
             background-color: {theme.get("button_hover_color", "#F0F0F0")};
+            border: 1px solid {border_color.name()};
+            border-radius: 4px;
         }}
         QToolButton:pressed {{
             color: {button_active_text_color.name()};
             background-color: {theme.get("button_active_color", "#0078D7")};
+            border: 1px solid {border_color.name()};
+            border-radius: 4px;
         }}
         """)
         app.setPalette(palette)

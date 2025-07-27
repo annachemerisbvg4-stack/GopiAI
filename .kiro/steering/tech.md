@@ -24,7 +24,7 @@ The project uses three isolated environments:
 ### Development Startup
 ```bash
 # Auto-launch all services
-./start_auto_development.bat
+./start_all_services.bat 
 
 # Individual services
 ./start_gopiai_ui.bat          # UI application
