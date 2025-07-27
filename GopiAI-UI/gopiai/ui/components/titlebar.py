@@ -8,6 +8,17 @@ Titlebar Component для GopiAI Standalone Interface
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Signal, Qt, QPoint, QRect
 from PySide6.QtGui import QMouseEvent, QIcon
+import os
+
+# Импорт SVG с fallback
+try:
+    from PySide6.QtSvg import QSvgWidget
+
+    SVG_AVAILABLE = True
+except ImportError:
+    print("WARNING: QtSvg недоступен, используем fallback для логотипа")
+    SVG_AVAILABLE = False
+    QSvgWidget = None
 
 # Импорт меню для комбинированного titlebar
 try:
@@ -18,7 +29,7 @@ except ImportError:
 
 class StandaloneTitlebar(QWidget):
     """Автономный titlebar с кнопками управления окном"""
-    
+
     minimizeClicked = Signal()
     maximizeClicked = Signal()
     restoreClicked = Signal()
@@ -32,13 +43,13 @@ class StandaloneTitlebar(QWidget):
         self._drag_pos = QPoint()
         self.icon_manager = None
         self._setup_icon_system()
-        self._setup_icon_system()
         self._setup_ui()
 
     def _setup_icon_system(self):
         """Настройка системы иконок"""
         try:
             from .icon_file_system_model import UniversalIconManager
+
             self.icon_manager = UniversalIconManager()
             print("[OK] Titlebar: Загружена система иконок UniversalIconManager")
         except ImportError:
@@ -50,33 +61,50 @@ class StandaloneTitlebar(QWidget):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 0, 10, 0)
         layout.setSpacing(10)
-        
+
+        # Логотип GopiAI
+        self.logo_widget = self._create_logo_widget()
+        if self.logo_widget:
+            layout.addWidget(self.logo_widget)
+
         # Заголовок окна
         self.window_title = QLabel("GopiAI v0.2.0", self)
         self.window_title.setObjectName("windowTitle")
-        self.window_title.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        self.window_title.setAlignment(
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft
+        )
         layout.addWidget(self.window_title, 1)
-        
+
         # Кнопки управления окном
-        self.minimize_button = self._create_titlebar_button("minimize", "—", self.minimizeClicked.emit)
+        self.minimize_button = self._create_titlebar_button(
+            "minimize", "—", self.minimizeClicked.emit
+        )
         layout.addWidget(self.minimize_button)
-        
-        self.restore_button = self._create_titlebar_button("square", "❐", self.restoreClicked.emit)
+
+        self.restore_button = self._create_titlebar_button(
+            "square", "❐", self.restoreClicked.emit
+        )
         self.restore_button.setVisible(False)
         layout.addWidget(self.restore_button)
-        
-        self.maximize_button = self._create_titlebar_button("maximize", "□", self.maximizeClicked.emit)
+
+        self.maximize_button = self._create_titlebar_button(
+            "maximize", "□", self.maximizeClicked.emit
+        )
         layout.addWidget(self.maximize_button)
-        
-        self.close_button = self._create_titlebar_button("x", "×", self.closeClicked.emit)
+
+        self.close_button = self._create_titlebar_button(
+            "x", "×", self.closeClicked.emit
+        )
         layout.addWidget(self.close_button)
 
-    def _create_titlebar_button(self, icon_name: str, fallback_text: str, callback) -> QPushButton:
+    def _create_titlebar_button(
+        self, icon_name: str, fallback_text: str, callback
+    ) -> QPushButton:
         """Создает кнопку titlebar с иконкой"""
         btn = QPushButton()
         btn.setFixedSize(40, 40)
         btn.clicked.connect(callback)
-        
+
         # Устанавливаем объект-нейм для стилизации
         if icon_name == "minimize":
             btn.setObjectName("minimizeButton")
@@ -86,7 +114,7 @@ class StandaloneTitlebar(QWidget):
             btn.setObjectName("restoreButton")
         elif icon_name == "x":
             btn.setObjectName("closeButton")
-        
+
         if self.icon_manager:
             try:
                 icon = self.icon_manager.get_icon(icon_name)
@@ -99,8 +127,51 @@ class StandaloneTitlebar(QWidget):
                 btn.setText(fallback_text)
         else:
             btn.setText(fallback_text)
-            
+
         return btn
+
+    def _create_logo_widget(self):
+        """Создает виджет с логотипом GopiAI"""
+        try:
+            # Путь к логотипу
+            logo_path = os.path.join(
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                ),
+                "GopiAI-Assets",
+                "gopiai",
+                "assets",
+                "GopiAI_LOGO.svg",
+            )
+
+            if SVG_AVAILABLE and QSvgWidget and os.path.exists(logo_path):
+                # Создаем SVG виджет
+                logo_widget = QSvgWidget(logo_path)
+                logo_widget.setFixedSize(32, 32)  # Размер логотипа 32x32
+                logo_widget.setObjectName("logoWidget")
+                print(f"✅ Логотип GopiAI загружен: {logo_path}")
+                return logo_widget
+            else:
+                # Fallback: создаем текстовый логотип
+                # Return empty label instead of emoji
+                logo_label = QLabel("")
+                logo_label.setFixedSize(32, 32)
+                logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                logo_label.setObjectName("logoWidget")
+                if not SVG_AVAILABLE:
+                    print("⚠️ SVG недоступен")
+                elif not os.path.exists(logo_path):
+                    print(f"⚠️ Логотип не найден: {logo_path}")
+                return logo_label
+
+        except Exception as e:
+            print(f"❌ Ошибка загрузки логотипа: {e}")
+            # Fallback на случай ошибки
+            logo_label = QLabel("")
+            logo_label.setFixedSize(32, 32)
+            logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            logo_label.setObjectName("logoWidget")
+            return logo_label
 
     def set_title(self, text: str):
         """Установка заголовка окна"""
@@ -110,7 +181,10 @@ class StandaloneTitlebar(QWidget):
         """Обработка нажатия мыши для перетаскивания"""
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_active = True
-            self._drag_pos = event.globalPosition().toPoint() - self.window().frameGeometry().topLeft()
+            self._drag_pos = (
+                event.globalPosition().toPoint()
+                - self.window().frameGeometry().topLeft()
+            )
             event.accept()
 
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -137,11 +211,11 @@ class StandaloneTitlebarWithMenu(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        
+
         # Titlebar
         self.titlebar = StandaloneTitlebar(self)
         layout.addWidget(self.titlebar)
-        
+
         # Меню
         if StandaloneMenuBar:
             self.menu_bar = StandaloneMenuBar(self)
@@ -160,7 +234,7 @@ class StandaloneTitlebarWithMenu(QWidget):
 
     def _toggle_maximize(self):
         """Переключение между развернутым и обычным состоянием"""
-        if hasattr(self, 'window_ref'):
+        if hasattr(self, "window_ref"):
             if self.window_ref.isMaximized():
                 self.window_ref.showNormal()
                 self.titlebar.maximize_button.setVisible(True)
@@ -172,14 +246,14 @@ class StandaloneTitlebarWithMenu(QWidget):
 
     def menuBar(self):
         """Возвращает объект меню"""
-        if hasattr(self, 'menu_bar'):
+        if hasattr(self, "menu_bar"):
             return self.menu_bar
         return None
 
 
 class CustomGrip(QWidget):
     """Элемент для изменения размера окна"""
-    
+
     def __init__(self, parent, direction):
         super().__init__(parent)
         self.direction = direction
@@ -187,13 +261,13 @@ class CustomGrip(QWidget):
 
     def _setup_cursor(self):
         """Настройка курсора для грипа"""
-        if self.direction in ['top', 'bottom']:
+        if self.direction in ["top", "bottom"]:
             self.setCursor(Qt.CursorShape.SizeVerCursor)
-        elif self.direction in ['left', 'right']:
+        elif self.direction in ["left", "right"]:
             self.setCursor(Qt.CursorShape.SizeHorCursor)
-        elif self.direction in ['top-left', 'bottom-right']:
+        elif self.direction in ["top-left", "bottom-right"]:
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
-        elif self.direction in ['top-right', 'bottom-left']:
+        elif self.direction in ["top-right", "bottom-left"]:
             self.setCursor(Qt.CursorShape.SizeBDiagCursor)
 
     def mousePressEvent(self, event):
@@ -204,7 +278,7 @@ class CustomGrip(QWidget):
 
     def mouseMoveEvent(self, event):
         """Изменение размера окна"""
-        if hasattr(self, 'start_pos'):
+        if hasattr(self, "start_pos"):
             delta = event.globalPosition().toPoint() - self.start_pos
             self._resize_window(delta)
 
@@ -212,20 +286,20 @@ class CustomGrip(QWidget):
         """Изменение размера окна в зависимости от направления"""
         geo = self.start_geometry
         new_geo = QRect(geo)
-        
-        if 'top' in self.direction:
+
+        if "top" in self.direction:
             new_geo.setTop(geo.top() + delta.y())
-        if 'bottom' in self.direction:
+        if "bottom" in self.direction:
             new_geo.setBottom(geo.bottom() + delta.y())
-        if 'left' in self.direction:
+        if "left" in self.direction:
             new_geo.setLeft(geo.left() + delta.x())
-        if 'right' in self.direction:
+        if "right" in self.direction:
             new_geo.setRight(geo.right() + delta.x())
-        
+
         # Минимальные размеры
         if new_geo.width() < 600:
             new_geo.setWidth(600)
         if new_geo.height() < 400:
             new_geo.setHeight(400)
-        
+
         self.window().setGeometry(new_geo)

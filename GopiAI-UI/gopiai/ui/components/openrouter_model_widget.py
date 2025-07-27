@@ -18,13 +18,20 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer, QThread
 from PySide6.QtGui import QFont, QPixmap, QIcon
 
+# Импорт системы иконок
+try:
+    from ..components.icon_file_system_model import UniversalIconManager
+    icon_manager = UniversalIconManager.instance()
+except ImportError:
+    icon_manager = None
+
 # Добавляем путь к backend для импорта клиентов
 try:
     backend_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "GopiAI-CrewAI")
     if backend_path not in sys.path:
         sys.path.append(backend_path)
 except Exception as e:
-    print(f"⚠️ Не удалось добавить backend путь: {e}")
+    print(f"Не удалось добавить backend путь: {e}")
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +53,12 @@ class ModelLoadWorker(QThread):
     def run(self):
         """Выполняет загрузку моделей в отдельном потоке"""
         try:
-            logger.info("🔄 Загружаем модели OpenRouter в фоновом потоке...")
+            logger.info("Загружаем модели OpenRouter в фоновом потоке...")
             models = self.openrouter_client.get_models_sync(force_refresh=self.force_refresh)
             self.models_loaded.emit(models)
-            logger.info(f"✅ Загружено {len(models)} моделей OpenRouter")
+            logger.info(f"Загружено {len(models)} моделей OpenRouter")
         except Exception as e:
-            logger.error(f"❌ Ошибка загрузки моделей: {e}")
+            logger.error(f"Ошибка загрузки моделей: {e}")
             self.error_occurred.emit(str(e))
 
 class ModelListItem(QWidget):
@@ -85,11 +92,23 @@ class ModelListItem(QWidget):
         # Статус (бесплатная/платная)
         price_info = self.model_data.get('price_info', '')
         if 'Бесплатная' in price_info:
-            status_label = QLabel("🆓 FREE")
+            status_label = QLabel("FREE")
             status_label.setStyleSheet("color: green; font-weight: bold;")
+            if icon_manager:
+                free_icon = icon_manager.get_icon("gift")
+                if not free_icon.isNull():
+                    status_label.setText("")
+                    status_label.setPixmap(free_icon.pixmap(16, 16))
+                    status_label.setToolTip("FREE")
         else:
-            status_label = QLabel("💰 PAID")
+            status_label = QLabel("PAID")
             status_label.setStyleSheet("color: orange; font-weight: bold;")
+            if icon_manager:
+                paid_icon = icon_manager.get_icon("credit-card")
+                if not paid_icon.isNull():
+                    status_label.setText("")
+                    status_label.setPixmap(paid_icon.pixmap(16, 16))
+                    status_label.setToolTip("PAID")
         
         header_layout.addWidget(status_label)
         header_layout.addStretch()
@@ -107,8 +126,12 @@ class ModelListItem(QWidget):
         # Контекст
         context_length = self.model_data.get('context_length', 0)
         if context_length > 0:
-            context_label = QLabel(f"📄 {context_length:,} токенов")
+            context_label = QLabel(f"{context_length:,} токенов")
             context_label.setStyleSheet("font-size: 9px; color: #666;")
+            if icon_manager:
+                context_icon = icon_manager.get_icon("file-text")
+                if not context_icon.isNull():
+                    context_label.setPixmap(context_icon.pixmap(12, 12))
             info_layout.addWidget(context_label)
         
         # Цена
@@ -199,7 +222,7 @@ class OpenRouterModelWidget(QWidget):
         self.refresh_timer.timeout.connect(self._auto_refresh_models)
         self.refresh_timer.start(300000)  # Обновляем каждые 5 минут
         
-        logger.info("🎛️ OpenRouterModelWidget инициализирован")
+        logger.info("OpenRouterModelWidget инициализирован")
     
     def _setup_ui(self):
         """Настраивает пользовательский интерфейс"""
@@ -218,14 +241,26 @@ class OpenRouterModelWidget(QWidget):
         header_layout.addWidget(title_label)
         
         # Кнопка обновления
-        self.refresh_btn = QPushButton("🔄")
+        self.refresh_btn = QPushButton()
         self.refresh_btn.setToolTip("Обновить список моделей")
         self.refresh_btn.setFixedSize(30, 30)
+        if icon_manager:
+            refresh_icon = icon_manager.get_icon("refresh-cw")
+            if not refresh_icon.isNull():
+                self.refresh_btn.setIcon(refresh_icon)
+            else:
+                self.refresh_btn.setText("↻")
+        else:
+            self.refresh_btn.setText("↻")
         header_layout.addWidget(self.refresh_btn)
         
         # Кнопка переключения на основную конфигурацию
-        self.switch_btn = QPushButton("🔄 Gemini")
+        self.switch_btn = QPushButton("Gemini")
         self.switch_btn.setToolTip("Переключиться на основную конфигурацию (Gemini)")
+        if icon_manager:
+            switch_icon = icon_manager.get_icon("arrow-left-right")
+            if not switch_icon.isNull():
+                self.switch_btn.setIcon(switch_icon)
         header_layout.addWidget(self.switch_btn)
         
         header_layout.addStretch()
@@ -236,7 +271,11 @@ class OpenRouterModelWidget(QWidget):
         
         # Поле поиска
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("🔍 Поиск по названию модели...")
+        self.search_input.setPlaceholderText("Поиск по названию модели...")
+        if icon_manager:
+            search_icon = icon_manager.get_icon("search")
+            if not search_icon.isNull():
+                self.search_input.addAction(search_icon, QLineEdit.ActionPosition.LeadingPosition)
         search_layout.addWidget(self.search_input)
         
         # Фильтры
@@ -244,7 +283,7 @@ class OpenRouterModelWidget(QWidget):
         
         # Фильтр по типу
         self.type_filter = QComboBox()
-        self.type_filter.addItems(["Все модели", "🆓 Только бесплатные", "💰 Только платные"])
+        self.type_filter.addItems(["Все модели", "Только бесплатные", "Только платные"])
         filters_layout.addWidget(self.type_filter)
         
         # Фильтр по провайдеру
@@ -268,8 +307,8 @@ class OpenRouterModelWidget(QWidget):
         # Список моделей
         self.models_scroll = QScrollArea()
         self.models_scroll.setWidgetResizable(True)
-        self.models_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.models_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarNever)
+        self.models_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.models_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         
         self.models_container = QWidget()
         self.models_layout = QVBoxLayout(self.models_container)
@@ -290,8 +329,12 @@ class OpenRouterModelWidget(QWidget):
         info_layout.addWidget(self.selected_info)
         
         # Кнопка выбора модели
-        self.select_btn = QPushButton("✅ Использовать эту модель")
+        self.select_btn = QPushButton("Использовать эту модель")
         self.select_btn.setEnabled(False)
+        if icon_manager:
+            select_icon = icon_manager.get_icon("check")
+            if not select_icon.isNull():
+                self.select_btn.setIcon(select_icon)
         info_layout.addWidget(self.select_btn)
         
         layout.addWidget(info_group)
@@ -305,14 +348,14 @@ class OpenRouterModelWidget(QWidget):
             self.openrouter_client = get_openrouter_client()
             self.model_config_manager = get_model_config_manager()
             
-            logger.info("✅ Backend клиенты инициализированы")
+            logger.info("Backend клиенты инициализированы")
             
             # Запускаем загрузку моделей
             self._load_models()
             
         except Exception as e:
-            logger.error(f"❌ Ошибка инициализации backend клиентов: {e}")
-            self.stats_label.setText(f"❌ Ошибка подключения: {e}")
+            logger.error(f"Ошибка инициализации backend клиентов: {e}")
+            self.stats_label.setText(f"Ошибка подключения: {e}")
     
     def _setup_connections(self):
         """Настраивает соединения сигналов"""
@@ -326,12 +369,12 @@ class OpenRouterModelWidget(QWidget):
     def _load_models(self):
         """Загружает модели OpenRouter"""
         if not self.openrouter_client:
-            logger.warning("⚠️ OpenRouter клиент не инициализирован")
+            logger.warning("OpenRouter клиент не инициализирован")
             return
         
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0)  # Неопределенный прогресс
-        self.stats_label.setText("🔄 Загружаем модели OpenRouter...")
+        self.stats_label.setText("Загружаем модели OpenRouter...")
         
         # Создаем воркер для загрузки
         self.load_worker = ModelLoadWorker(self.openrouter_client)
@@ -346,7 +389,7 @@ class OpenRouterModelWidget(QWidget):
         
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0)
-        self.stats_label.setText("🔄 Обновляем список моделей...")
+        self.stats_label.setText("Обновляем список моделей...")
         
         # Создаем воркер с принудительным обновлением
         self.load_worker = ModelLoadWorker(self.openrouter_client)
@@ -358,7 +401,7 @@ class OpenRouterModelWidget(QWidget):
     def _auto_refresh_models(self):
         """Автоматически обновляет модели"""
         if self.openrouter_client and not hasattr(self, 'load_worker') or not self.load_worker.isRunning():
-            logger.info("🔄 Автообновление моделей OpenRouter...")
+            logger.info("Автообновление моделей OpenRouter...")
             self._load_models()
     
     def _on_models_loaded(self, models):
@@ -370,7 +413,7 @@ class OpenRouterModelWidget(QWidget):
         free_count = len([m for m in models if getattr(m, 'is_free', False)])
         paid_count = len(models) - free_count
         
-        self.stats_label.setText(f"📊 Всего: {len(models)} | 🆓 Бесплатных: {free_count} | 💰 Платных: {paid_count}")
+        self.stats_label.setText(f"Всего: {len(models)} | Бесплатных: {free_count} | Платных: {paid_count}")
         
         # Обновляем фильтр провайдеров
         self._update_provider_filter()
@@ -378,13 +421,13 @@ class OpenRouterModelWidget(QWidget):
         # Применяем фильтры
         self._filter_models()
         
-        logger.info(f"✅ Загружено {len(models)} моделей OpenRouter")
+        logger.info(f"Загружено {len(models)} моделей OpenRouter")
     
     def _on_load_error(self, error_message):
         """Обработчик ошибки загрузки"""
         self.progress_bar.setVisible(False)
-        self.stats_label.setText(f"❌ Ошибка загрузки: {error_message}")
-        logger.error(f"❌ Ошибка загрузки моделей: {error_message}")
+        self.stats_label.setText(f"Ошибка загрузки: {error_message}")
+        logger.error(f"Ошибка загрузки моделей: {error_message}")
     
     def _update_provider_filter(self):
         """Обновляет список провайдеров в фильтре"""
@@ -399,7 +442,7 @@ class OpenRouterModelWidget(QWidget):
         self.provider_filter.addItem("Все провайдеры")
         
         for provider in sorted(providers):
-            self.provider_filter.addItem(f"🏢 {provider}")
+            self.provider_filter.addItem(provider)
         
         # Восстанавливаем выбор, если возможно
         index = self.provider_filter.findText(current_text)
@@ -422,15 +465,14 @@ class OpenRouterModelWidget(QWidget):
                     continue
             
             # Фильтр по типу
-            if type_filter == "🆓 Только бесплатные" and not getattr(model, 'is_free', False):
+            if type_filter == "Только бесплатные" and not getattr(model, 'is_free', False):
                 continue
-            elif type_filter == "💰 Только платные" and getattr(model, 'is_free', False):
+            elif type_filter == "Только платные" and getattr(model, 'is_free', False):
                 continue
             
             # Фильтр по провайдеру
             if provider_filter != "Все провайдеры":
-                provider_name = provider_filter.replace("🏢 ", "")
-                if getattr(model, 'provider', '') != provider_name:
+                if getattr(model, 'provider', '') != provider_filter:
                     continue
             
             filtered.append(model)
@@ -470,9 +512,9 @@ class OpenRouterModelWidget(QWidget):
         # Обновляем счетчик отфильтрованных
         if len(self.filtered_models) != len(self.models):
             self.stats_label.setText(
-                f"📊 Показано: {len(self.filtered_models)} из {len(self.models)} | "
-                f"🆓 Бесплатных: {len([m for m in self.models if getattr(m, 'is_free', False)])} | "
-                f"💰 Платных: {len([m for m in self.models if not getattr(m, 'is_free', False)])}"
+                f"Показано: {len(self.filtered_models)} из {len(self.models)} | "
+                f"Бесплатных: {len([m for m in self.models if getattr(m, 'is_free', False)])} | "
+                f"Платных: {len([m for m in self.models if not getattr(m, 'is_free', False)])}"
             )
     
     def _on_model_item_selected(self, model_data):
@@ -510,7 +552,7 @@ class OpenRouterModelWidget(QWidget):
     def _select_current_model(self):
         """Выбирает текущую модель"""
         if self.selected_model:
-            logger.info(f"🎯 Выбрана модель OpenRouter: {self.selected_model['id']}")
+            logger.info(f"Выбрана модель OpenRouter: {self.selected_model['id']}")
             self.model_selected.emit(self.selected_model)
     
     def get_current_model(self):

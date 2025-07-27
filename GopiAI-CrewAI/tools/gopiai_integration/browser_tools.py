@@ -125,10 +125,17 @@ class GopiAIBrowserTool(BaseTool):
             
             page = self._playwright_page
             
-            if action == "navigate":
+            if action == "open" or action == "navigate":
+                # Если target не указан, открываем Google
+                if not target or target == "":
+                    target = "https://www.google.com"
+                # Если target не содержит протокол, добавляем https://
+                elif not target.startswith(('http://', 'https://')):
+                    target = f"https://{target}"
+                
                 page.goto(target, wait_until="networkidle")
                 self._last_url = target
-                return f"✅ Навигация на {target} завершена (Playwright)"
+                return f"✅ Браузер открыт на {target} (Playwright)"
             
             elif action == "click":
                 page.click(target)
@@ -197,10 +204,17 @@ class GopiAIBrowserTool(BaseTool):
             driver = self._selenium_driver
             wait = WebDriverWait(driver, 10)
             
-            if action == "navigate":
+            if action == "open" or action == "navigate":
+                # Если target не указан, открываем Google
+                if not target or target == "":
+                    target = "https://www.google.com"
+                # Если target не содержит протокол, добавляем https://
+                elif not target.startswith(('http://', 'https://')):
+                    target = f"https://{target}"
+                
                 driver.get(target)
                 self._last_url = target
-                return f"✅ Навигация на {target} завершена (Selenium)"
+                return f"✅ Браузер открыт на {target} (Selenium)"
             
             elif action == "click":
                 element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, target)))
@@ -270,14 +284,21 @@ class GopiAIBrowserTool(BaseTool):
     def _run_requests(self, action: str, target: str, data: str, wait_seconds: int) -> str:
         """Выполнение действий через requests (ограниченная функциональность)"""
         try:
-            if action == "navigate":
+            if action == "open" or action == "navigate":
+                # Если target не указан, открываем Google
+                if not target or target == "":
+                    target = "https://www.google.com"
+                # Если target не содержит протокол, добавляем https://
+                elif not target.startswith(('http://', 'https://')):
+                    target = f"https://{target}"
+                
                 headers = {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                 }
                 resp = requests.get(target, headers=headers, timeout=10)
                 self._last_html = resp.text
                 self._last_url = target
-                return f"✅ Навигация на {target} (код {resp.status_code}) (requests)"
+                return f"✅ Браузер открыт на {target} (код {resp.status_code}) (requests)"
             
             elif action == "extract":
                 if not self._last_html:

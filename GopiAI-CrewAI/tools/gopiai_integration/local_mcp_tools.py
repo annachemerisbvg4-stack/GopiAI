@@ -218,6 +218,35 @@ class LocalMCPTools:
                     "properties": {"session_id": {"type": "string"}, "drive_folder_id": {"type": "string"}},
                     "required": ["session_id"]
                 }
+            },
+            "browser_tools": {
+                "name": "browser_tools",
+                "description": "Управление браузером: открытие страниц, навигация, взаимодействие с элементами",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": ["open", "navigate", "click", "type", "extract", "screenshot", "scroll", "wait", "execute_js"],
+                            "description": "Действие браузера"
+                        },
+                        "target": {
+                            "type": "string",
+                            "description": "URL, CSS селектор или другой идентификатор"
+                        },
+                        "data": {
+                            "type": "string",
+                            "description": "Данные для ввода или JavaScript код",
+                            "default": ""
+                        },
+                        "wait_seconds": {
+                            "type": "number",
+                            "description": "Время ожидания в секундах",
+                            "default": 3
+                        }
+                    },
+                    "required": ["action"]
+                }
             }
         }
     
@@ -248,6 +277,8 @@ class LocalMCPTools:
                 return self._execute_shell(parameters)
             elif tool_name == "export_to_drive":
                 return self._export_to_drive(parameters)
+            elif tool_name == "browser_tools":
+                return self._browser_tools(parameters)
             else:
                 return {"error": f"Неизвестный инструмент: {tool_name}"}
                 
@@ -891,6 +922,44 @@ class LocalMCPTools:
         file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
         os.remove(file_name)
         return {'success': True, 'file_id': file.get('id')}
+
+    def _browser_tools(self, parameters: Dict) -> Dict:
+        """Выполнение браузерных операций"""
+        try:
+            # Импортируем browser_tools
+            from .browser_tools import GopiAIBrowserTool
+            
+            # Создаем экземпляр браузерного инструмента
+            browser_tool = GopiAIBrowserTool()
+            
+            # Извлекаем параметры
+            action = parameters.get('action', 'open')
+            target = parameters.get('target', '')
+            data = parameters.get('data', '')
+            wait_seconds = parameters.get('wait_seconds', 3)
+            
+            # Выполняем действие
+            result = browser_tool._run(
+                action=action,
+                target=target,
+                data=data,
+                wait_seconds=wait_seconds
+            )
+            
+            return {
+                'success': True,
+                'result': result,
+                'action': action,
+                'target': target
+            }
+            
+        except Exception as e:
+            logger.error(f"Ошибка в browser_tools: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'action': parameters.get('action', 'unknown')
+            }
 
 
 # Глобальный экземпляр

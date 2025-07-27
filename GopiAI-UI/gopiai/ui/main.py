@@ -90,8 +90,18 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QPalette
 
 # Импорт компонентов тем
-from gopiai.ui.utils.theme_manager import ThemeManager
-from gopiai.ui.dialogs.settings_dialog import GopiAISettingsDialog
+try:
+    from gopiai.ui.utils.theme_manager import ThemeManager
+    print("✅ ThemeManager импортирован успешно")
+except ImportError as e:
+    print(f"⚠️ Не удалось импортировать ThemeManager: {e}")
+    ThemeManager = None
+
+try:
+    from gopiai.ui.dialogs.settings_dialog import GopiAISettingsDialog
+except ImportError as e:
+    print(f"⚠️ Не удалось импортировать GopiAISettingsDialog: {e}")
+    GopiAISettingsDialog = None
 
 # Добавляем путь к GopiAI-CrewAI/tools
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -211,18 +221,7 @@ except ImportError as e:
     TabDocumentWidget = lambda parent=None: SimpleWidget("TabDocument")
     TerminalWidget = lambda parent=None: SimpleWidget("Terminal")
 
-    class GlobalFallbackThemeManager:
-        def __init__(self):
-            self.current_theme = "default"
-        
-        def apply_theme(self, app_or_theme):
-            print(f"Fallback: apply_theme({app_or_theme})")
-            return False
-        
-
-
-    if 'ThemeManager' not in globals() or ThemeManager is None:
-        ThemeManager = GlobalFallbackThemeManager
+    # ThemeManager будет определен ниже как FallbackThemeManager если недоступен
 
 # Глобальные переменные для систем
 AutoIconSystem = None
@@ -236,13 +235,34 @@ EXTENSIONS_AVAILABLE = True
 
 
 class FallbackThemeManager:
-    """Fallback менеджер тем для случаев, когда основной ThemeManager недоступен"""
+    """
+    Единый fallback менеджер тем для случаев, когда основной ThemeManager недоступен
+    Используется во всех местах, где требуется fallback функциональность
+    """
     def __init__(self):
         self.current_theme = "default"
+        print("🔧 Инициализирован FallbackThemeManager")
     
     def apply_theme(self, app_or_theme):
-        print(f"Fallback: apply_theme({app_or_theme})")
+        """Применяет fallback тему"""
+        print(f"🎨 Fallback: apply_theme({app_or_theme})")
         return False
+    
+    def get_current_theme(self):
+        """Возвращает текущую тему"""
+        return self.current_theme
+    
+    def set_theme(self, theme_name):
+        """Устанавливает тему (fallback)"""
+        self.current_theme = theme_name
+        print(f"🎨 Fallback: установлена тема {theme_name}")
+        return False
+
+
+# Устанавливаем FallbackThemeManager если основной ThemeManager недоступен
+if ThemeManager is None:
+    print("🔧 Основной ThemeManager недоступен, используем FallbackThemeManager")
+    ThemeManager = FallbackThemeManager
 
 
 class FramelessGopiAIStandaloneWindow(QMainWindow):
@@ -573,14 +593,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
         # Инициализация системы тем
         
-        # Определяем LocalFallbackThemeManager один раз здесь, до блока try-except
-        class LocalFallbackThemeManager:
-            def __init__(self):
-                self.current_theme = "default"
-            
-            def apply_theme(self, app_or_theme):
-                print(f"Fallback: apply_theme({app_or_theme})")
-                return False
+        # Используем единый FallbackThemeManager
 
         try:
             if ThemeManager is not None:
@@ -594,11 +607,11 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                         print("✅ Применена тема из файла настроек")
                 else:
                     print("⚠️ Не удалось создать менеджер тем. Используем fallback.")
-                    self.theme_manager = LocalFallbackThemeManager() # Создаем экземпляр
+                    self.theme_manager = FallbackThemeManager() # Создаем экземпляр
             else:
                 print("⚠️ ThemeManager недоступен, используем fallback")
-                # Используем предварительно определенный LocalFallbackThemeManager
-                self.theme_manager = LocalFallbackThemeManager() # Создаем экземпляр
+                # Используем единый FallbackThemeManager
+                self.theme_manager = FallbackThemeManager()
         except Exception as e:
             print(f"[WARNING] Ошибка инициализации менеджера тем: {e}")
             # Используем предварительно определенный LocalFallbackThemeManager в случае ошибки

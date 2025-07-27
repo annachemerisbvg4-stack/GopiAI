@@ -44,7 +44,7 @@ EmotionalState = None
 try:
     import spacy
     try:
-        from tools.gopiai_integration.emotional_classifier import EmotionalClassifier, EmotionalState
+        from gopiai_integration.emotional_classifier import EmotionalClassifier, EmotionalState
         EMOTIONAL_CLASSIFIER_AVAILABLE = True
         logger.debug("[INIT] Эмоциональный классификатор успешно импортирован")
     except ImportError as e:
@@ -62,7 +62,7 @@ TOOLS_INSTRUCTION_MANAGER_AVAILABLE = False
 ToolsInstructionManager = None
 
 try:
-    from tools_instruction_manager import get_tools_instruction_manager
+    from gopiai_integration.tools_instruction_manager import get_tools_instruction_manager
     TOOLS_INSTRUCTION_MANAGER_AVAILABLE = True
     logger.info("[INIT] ✅ Система динамических инструкций успешно импортирована в UI-чат")
 except ImportError as e:

@@ -19,13 +19,22 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QMenu
 from PySide6.QtWidgets import QMessageBox
 
+# Импорт виджетов моделей
+try:
+    from .openrouter_model_widget import OpenRouterModelWidget
+    from .model_selector_widget import ModelSelectorWidget
+except ImportError as e:
+    print(f"Не удалось импортировать виджеты моделей: {e}")
+    OpenRouterModelWidget = None
+    ModelSelectorWidget = None
+
 logger = logging.getLogger(__name__)
 
 # --- Импорты наших новых модулей-обработчиков ---
 from .crewai_client import CrewAIClient
 from ..memory import get_memory_manager
-from .improved_async_chat_handler import ImprovedAsyncChatHandler
-from .optimized_chat_widget import OptimizedChatWidget
+from .chat_async_handler import ChatAsyncHandler
+# from .optimized_chat_widget import OptimizedChatWidget  # Модуль не найден, закомментировано
 from .icon_file_system_model import UniversalIconManager
 from .terminal_widget import TerminalWidget
 
@@ -59,15 +68,31 @@ class ChatWidget(QWidget):
         logger.info("[CHAT] Инициализация CrewAI клиента")
         self.crew_ai_client = CrewAIClient()
         
-        logger.info("[CHAT] Инициализация улучшенного обработчика сообщений")
-        self.async_handler = ImprovedAsyncChatHandler(self.crew_ai_client, self)
+        logger.info("[CHAT] Инициализация объединенного обработчика сообщений")
+        self.async_handler = ChatAsyncHandler(self.crew_ai_client, self)
         
-        logger.info("[CHAT] Подключение сигналов улучшенного обработчика")
+        logger.info("[CHAT] Подключение сигналов объединенного обработчика")
         self.async_handler.response_ready.connect(self._handle_response)
         self.async_handler.status_update.connect(self._update_status_message)
         self.async_handler.partial_response.connect(self._handle_partial_response)
+        self.async_handler.message_error.connect(self._handle_error)
         
         logger.info("[CHAT] Инициализация ChatWidget завершена")
+
+    def _handle_error(self, error_message):
+        """Обрабатывает ошибки от асинхронного обработчика"""
+        if self._animation_timer is not None:
+            self._animation_timer.stop()
+        
+        # Удаляем статусное сообщение
+        doc = self.history.document()
+        cursor = doc.find('id="status_msg"')
+        if cursor:
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+            cursor.removeSelectedText()
+        
+        # Отображаем ошибку
+        self._append_message_with_style("error", f"Ошибка: {error_message}")
 
     def _setup_animation_timer(self):
         """Настраивает таймер для анимации точек загрузки"""
@@ -98,11 +123,12 @@ class ChatWidget(QWidget):
         chat_area_layout = QVBoxLayout(self.chat_area_widget)
         chat_area_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Используем наш оптимизированный чат-виджет
-        self.history = OptimizedChatWidget(self)
+        # Используем обычный QTextEdit вместо OptimizedChatWidget (временно)
+        self.history = QTextEdit(self)
         self.history.setObjectName("ChatHistory")
-        # Применяем стили через OptimizedChatWidget
-        self.history.apply_markdown_styles(self._get_markdown_styles())
+        self.history.setReadOnly(True)
+        # Применяем базовые стили
+        self.history.setStyleSheet(self._get_basic_chat_styles())
         
         chat_area_layout.addWidget(self.history)
         self.tab_widget.addTab(self.chat_area_widget, "Чат")
@@ -121,6 +147,28 @@ class ChatWidget(QWidget):
         self.sessions_list.customContextMenuRequested.connect(self._show_history_context_menu)  # type: ignore[attr-defined]
         history_layout.addWidget(self.sessions_list)
         self.tab_widget.addTab(history_tab, "История")
+
+        # Вкладка моделей
+        if ModelSelectorWidget:
+            self.model_selector_widget = ModelSelectorWidget()
+            self.tab_widget.addTab(self.model_selector_widget, "Модели")
+            
+            # Подключаем сигналы
+            self.model_selector_widget.provider_changed.connect(self._on_provider_changed)
+            self.model_selector_widget.model_changed.connect(self._on_model_changed)
+        else:
+            print("ModelSelectorWidget недоступен")
+
+        # Вкладка OpenRouter
+        if OpenRouterModelWidget:
+            self.openrouter_widget = OpenRouterModelWidget()
+            self.tab_widget.addTab(self.openrouter_widget, "OpenRouter")
+            
+            # Подключаем сигналы
+            self.openrouter_widget.model_selected.connect(self._on_openrouter_model_selected)
+            self.openrouter_widget.provider_switch_requested.connect(self._on_provider_switch_requested)
+        else:
+            print("OpenRouterModelWidget недоступен")
 
         self.main_layout.addWidget(self.tab_widget, 1)
 
@@ -209,6 +257,18 @@ class ChatWidget(QWidget):
         self.send_btn.setFixedSize(40, 80)
         self.send_btn.clicked.connect(self.send_message)
         parent_layout.addWidget(self.send_btn)
+
+    def _get_basic_chat_styles(self) -> str:
+        """Возвращает базовые стили для обычного QTextEdit"""
+        return """
+        QTextEdit {
+            border-radius: 8px;
+            padding: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        """
 
     def _get_markdown_styles(self) -> str:
         """Возвращает адаптивные CSS стили для элегантного чата"""
@@ -482,7 +542,12 @@ class ChatWidget(QWidget):
                 "attachments": self.attached_files
             }
         }
-        self.async_handler.process_message(message_data)
+        # Извлекаем текст сообщения и метаданные для ImprovedAsyncChatHandler
+        message_text = message_data.get("message", "")
+        metadata = message_data.get("metadata", {})
+        
+        # Вызываем правильный метод
+        self.async_handler.send_message(message_text, metadata)
         self.attached_files = []
 
     def _show_loading_indicator(self):
@@ -574,7 +639,7 @@ class ChatWidget(QWidget):
         self._current_status_text = status_text
         self._update_status_display(f"{status_text}...")
 
-    def _handle_response(self, response, is_error=False):
+    def _handle_response(self, response):
         """Обрабатывает ответ от асинхронного обработчика"""
         if self._animation_timer is not None:
             self._animation_timer.stop()
@@ -586,56 +651,55 @@ class ChatWidget(QWidget):
             cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
             cursor.removeSelectedText()
         
-        if is_error:
-            self._append_message_with_style("error", f"Ошибка: {response}")
-        else:
-            if isinstance(response, dict) and 'terminal_output' in response:
+        # Обрабатываем успешный ответ
+        if isinstance(response, dict):
+            if 'terminal_output' in response:
                 self._handle_terminal_output(response['terminal_output'])
                 full_message = response.get('response', 'Command executed in terminal. See terminal tab for output.')
             else:
-                full_message = self._clean_response_message(str(response))
-            full_message = "\n".join(line for line in full_message.splitlines() if line.strip())
-            self._append_message_with_style("assistant", full_message)
-            if self.session_id:
-                self.memory_manager.add_message(self.session_id, "assistant", full_message)
+                # Извлекаем текст ответа из словаря
+                full_message = response.get('response', str(response))
+        else:
+            full_message = self._clean_response_message(str(response))
+        
+        # Очищаем сообщение от пустых строк
+        full_message = "\n".join(line for line in full_message.splitlines() if line.strip())
+        self._append_message_with_style("assistant", full_message)
+        if self.session_id:
+            self.memory_manager.add_message(self.session_id, "assistant", full_message)
         
         self.send_btn.setEnabled(True)
 
     @Slot(str)
     def _handle_partial_response(self, partial_text: str):
         """Обрабатывает частичные ответы для streaming отображения"""
-        # Используем метод append_streaming_text из OptimizedChatWidget
-        if hasattr(self.history, 'append_streaming_text'):
-            self.history.append_streaming_text(partial_text)
-        else:
-            # Fallback для совместимости
-            self._append_message_with_style("assistant", partial_text)
+        # Fallback для обычного QTextEdit
+        cursor = self.history.textCursor()
+        cursor.movePosition(cursor.End)
+        cursor.insertText(partial_text)
+        self.history.setTextCursor(cursor)
         
         self._scroll_history_to_end()
 
     def _append_message_with_style(self, role: str, message: str):
-        """Метод совместимости для добавления сообщений через OptimizedChatWidget"""
-        if hasattr(self.history, 'append_message'):
-            # Используем новый метод OptimizedChatWidget
-            self.history.append_message(role, message)
-        else:
-            # Fallback на стандартные методы QTextEdit
-            timestamp = datetime.now().strftime("%H:%M")
-            role_class = f"{role}-message"
-            avatar_class = f"{role}-avatar"
-            
-            html_message = f"""
-            <div class="message {role_class}">
-                <div class="avatar {avatar_class}"></div>
-                {self._render_markdown(message)}
-                <div class="timestamp">{timestamp}</div>
-            </div>
-            """
-            
-            cursor = self.history.textCursor()
-            cursor.movePosition(QTextCursor.MoveOperation.End)
-            cursor.insertHtml(html_message)
-            
+        """Метод для добавления сообщений с базовым стилем"""
+        # Используем обычный QTextEdit
+        timestamp = datetime.now().strftime("%H:%M")
+        role_class = f"{role}-message"
+        avatar_class = f"{role}-avatar"
+        
+        html_message = f"""
+        <div class="message {role_class}">
+            <div class="avatar {avatar_class}"></div>
+            {self._render_markdown(message)}
+            <div class="timestamp">{timestamp}</div>
+        </div>
+        """
+        
+        cursor = self.history.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertHtml(html_message)
+        
         self._scroll_history_to_end()
 
     def _handle_terminal_output(self, term_out: dict):
@@ -724,7 +788,7 @@ class ChatWidget(QWidget):
         """Обработчик прикрепления файла"""
         file_path, _ = QFileDialog.getOpenFileName(self, "Выберите файл")
         if file_path:
-            logger.info(f"📎 Файл прикреплен: {os.path.basename(file_path)}")
+            logger.info(f"Файл прикреплен: {os.path.basename(file_path)}")
             self._append_message_with_style("system", f"Файл прикреплен: {os.path.basename(file_path)}")
             self.attached_files.append({"path": file_path, "type": "file"})
 
@@ -735,7 +799,7 @@ class ChatWidget(QWidget):
             filter="Images (*.png *.jpg *.jpeg)"
         )
         if image_path:
-            logger.info(f"🖼️ Изображение прикреплено: {os.path.basename(image_path)}")
+            logger.info(f"Изображение прикреплено: {os.path.basename(image_path)}")
             self._append_message_with_style("system", f"Изображение прикреплено: {os.path.basename(image_path)}")
             self.attached_files.append({"path": image_path, "type": "image"})
 
@@ -796,3 +860,67 @@ class ChatWidget(QWidget):
         self.history.clear()
         self._load_history()
         self.tab_widget.setCurrentIndex(0)  # Switch to Chat tab
+
+    # === Обработчики сигналов для виджетов моделей ===
+    
+    def _on_provider_changed(self, provider: str):
+        """Обработчик изменения провайдера"""
+        print(f"Провайдер изменен на: {provider}")
+        # Здесь можно добавить логику для уведомления других компонентов
+    
+    def _on_model_changed(self, provider: str, model_id: str):
+        """Обработчик изменения модели"""
+        print(f"Модель изменена: {provider}/{model_id}")
+        # Здесь можно добавить логику для уведомления других компонентов
+    
+    def _on_openrouter_model_selected(self, model_data: dict):
+        """Обработчик выбора модели OpenRouter"""
+        model_id = model_data.get('id', 'unknown')
+        print(f"Выбрана модель OpenRouter: {model_id}")
+        # Здесь можно добавить логику для переключения на OpenRouter
+    
+    def _on_provider_switch_requested(self, provider: str):
+        """Обработчик запроса переключения провайдера"""
+        print(f"Запрос переключения на провайдера: {provider}")
+        
+        # Переключаемся на соответствующую вкладку
+        if provider == "gemini" and hasattr(self, 'model_selector_widget'):
+            # Находим индекс вкладки с ModelSelectorWidget
+            for i in range(self.tab_widget.count()):
+                if self.tab_widget.widget(i) == self.model_selector_widget:
+                    self.tab_widget.setCurrentIndex(i)
+                    break
+        elif provider == "openrouter" and hasattr(self, 'openrouter_widget'):
+            # Находим индекс вкладки с OpenRouterModelWidget
+            for i in range(self.tab_widget.count()):
+                if self.tab_widget.widget(i) == self.openrouter_widget:
+                    self.tab_widget.setCurrentIndex(i)
+                    break
+    
+    def get_openrouter_widget(self):
+        """Возвращает виджет OpenRouter для внешнего доступа"""
+        return getattr(self, 'openrouter_widget', None)
+    
+    def get_model_selector_widget(self):
+        """Возвращает виджет выбора моделей для внешнего доступа"""
+        return getattr(self, 'model_selector_widget', None)
+    
+    def switch_to_openrouter_tab(self):
+        """Переключается на вкладку OpenRouter"""
+        if hasattr(self, 'openrouter_widget'):
+            for i in range(self.tab_widget.count()):
+                if self.tab_widget.widget(i) == self.openrouter_widget:
+                    self.tab_widget.setCurrentIndex(i)
+                    print("Переключились на вкладку OpenRouter")
+                    return True
+        return False
+    
+    def switch_to_model_selector_tab(self):
+        """Переключается на вкладку выбора моделей"""
+        if hasattr(self, 'model_selector_widget'):
+            for i in range(self.tab_widget.count()):
+                if self.tab_widget.widget(i) == self.model_selector_widget:
+                    self.tab_widget.setCurrentIndex(i)
+                    print("Переключились на вкладку выбора моделей")
+                    return True
+        return False
