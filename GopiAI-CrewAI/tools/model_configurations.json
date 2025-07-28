@@ -3866,8 +3866,8 @@
     }
   },
   "current": {
-    "provider": "gemini",
-    "model_id": null
+    "provider": "openrouter",
+    "model_id": "agentica-org/deepcoder-14b-preview:free"
   },
   "version": "1.0",
   "last_updated": "1753566756.6909013"

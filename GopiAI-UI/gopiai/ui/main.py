@@ -14,6 +14,7 @@ GopiAI Standalone Interface - Модульная версия с централ�
 import sys
 import os
 import warnings
+import logging
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
@@ -1080,8 +1081,19 @@ def main():
     """Основная функция запуска приложения"""
     print("[LAUNCH] Запуск модульного GopiAI...")
 
+    # Настройка логирования - каждый запуск перезаписывает файл лога
+    try:
+        from gopiai.logging_config import setup_logging
+        setup_logging(
+            log_file_path='ui_debug.log',
+            level=logging.INFO,
+            console_output=False,  # Отключаем вывод в консоль для чистоты
+            single_file_mode=True  # Включаем режим одного файла
+        )
+        print("[OK] Логирование настроено - файл ui_debug.log будет перезаписываться при каждом запуске")
+    except ImportError as e:
+        print(f"[WARNING] Не удалось настроить логирование: {e}")
     
-
     # Создание приложения
     app = QApplication(sys.argv)
     app.setApplicationName("GopiAI")

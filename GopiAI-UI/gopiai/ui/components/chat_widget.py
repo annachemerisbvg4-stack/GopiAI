@@ -21,10 +21,13 @@ from PySide6.QtWidgets import QMessageBox
 
 # Импорт виджетов моделей
 try:
+    from .unified_model_widget import UnifiedModelWidget
+    # Оставляем старые импорты для совместимости
     from .openrouter_model_widget import OpenRouterModelWidget
     from .model_selector_widget import ModelSelectorWidget
 except ImportError as e:
     print(f"Не удалось импортировать виджеты моделей: {e}")
+    UnifiedModelWidget = None
     OpenRouterModelWidget = None
     ModelSelectorWidget = None
 
@@ -53,6 +56,11 @@ class ChatWidget(QWidget):
         self._pending_updates = []
         self._is_updating = False
         self.attached_files = []
+        
+        # Информация о выбранной модели
+        self.current_provider = "gemini"  # По умолчанию Gemini
+        self.current_model_id = None
+        self.current_model_data = None
         
         logger.info("[CHAT] Инициализация ChatWidget начата")
         
@@ -148,27 +156,40 @@ class ChatWidget(QWidget):
         history_layout.addWidget(self.sessions_list)
         self.tab_widget.addTab(history_tab, "История")
 
-        # Вкладка моделей
-        if ModelSelectorWidget:
-            self.model_selector_widget = ModelSelectorWidget()
-            self.tab_widget.addTab(self.model_selector_widget, "Модели")
+        # Вкладка моделей с переключателем Gemini/OpenRouter
+        try:
+            from .unified_models_tab import UnifiedModelsTab
+            self.models_tab = UnifiedModelsTab()
+            self.tab_widget.addTab(self.models_tab, "Модели")
             
             # Подключаем сигналы
-            self.model_selector_widget.provider_changed.connect(self._on_provider_changed)
-            self.model_selector_widget.model_changed.connect(self._on_model_changed)
-        else:
-            print("ModelSelectorWidget недоступен")
+            self.models_tab.provider_changed.connect(self._on_provider_changed)
+            self.models_tab.model_changed.connect(self._on_model_changed)
+            
+            logger.info("✅ Вкладка моделей с переключателем инициализирована")
+        except ImportError:
+            logger.warning("⚠️ UnifiedModelsTab недоступен, используем fallback")
+            
+            # Fallback: старая вкладка OpenRouter
+            if OpenRouterModelWidget:
+                self.openrouter_widget = OpenRouterModelWidget()
+                self.tab_widget.addTab(self.openrouter_widget, "OpenRouter")
+                
+                # Подключаем сигналы
+                self.openrouter_widget.model_selected.connect(self._on_openrouter_model_selected)
+                self.openrouter_widget.provider_switch_requested.connect(self._on_provider_switch_requested)
+                
+                logger.info("✅ Fallback: вкладка OpenRouter восстановлена")
 
-        # Вкладка OpenRouter
-        if OpenRouterModelWidget:
-            self.openrouter_widget = OpenRouterModelWidget()
-            self.tab_widget.addTab(self.openrouter_widget, "OpenRouter")
+        # Вкладка персонализации
+        try:
+            from .personality_tab import PersonalityTab
+            self.personality_tab = PersonalityTab()
+            self.tab_widget.addTab(self.personality_tab, "Персонализация")
             
-            # Подключаем сигналы
-            self.openrouter_widget.model_selected.connect(self._on_openrouter_model_selected)
-            self.openrouter_widget.provider_switch_requested.connect(self._on_provider_switch_requested)
-        else:
-            print("OpenRouterModelWidget недоступен")
+            logger.info("✅ Вкладка персонализации инициализирована")
+        except ImportError:
+            logger.warning("⚠️ PersonalityTab недоступен")
 
         self.main_layout.addWidget(self.tab_widget, 1)
 
@@ -539,9 +560,18 @@ class ChatWidget(QWidget):
             "metadata": {
                 "session_id": self.session_id,
                 "current_tool": self.current_tool,
-                "attachments": self.attached_files
+                "attachments": self.attached_files,
+                # Добавляем информацию о выбранной модели
+                "model_provider": self.current_provider,
+                "model_id": self.current_model_id,
+                "model_data": self.current_model_data
             }
         }
+        
+        # Логируем информацию о выбранной модели
+        logger.info(f"[CHAT] Отправка сообщения с провайдером: {self.current_provider}")
+        if self.current_model_id:
+            logger.info(f"[CHAT] Выбранная модель: {self.current_model_id}")
         # Извлекаем текст сообщения и метаданные для ImprovedAsyncChatHandler
         message_text = message_data.get("message", "")
         metadata = message_data.get("metadata", {})
@@ -865,19 +895,33 @@ class ChatWidget(QWidget):
     
     def _on_provider_changed(self, provider: str):
         """Обработчик изменения провайдера"""
+        self.current_provider = provider
+        logger.info(f"[MODEL] Провайдер изменен на: {provider}")
+        
+        # Сбрасываем информацию о модели при смене провайдера
+        if provider == "gemini":
+            self.current_model_id = None
+            self.current_model_data = None
+        
         print(f"Провайдер изменен на: {provider}")
-        # Здесь можно добавить логику для уведомления других компонентов
     
     def _on_model_changed(self, provider: str, model_id: str):
         """Обработчик изменения модели"""
+        self.current_provider = provider
+        self.current_model_id = model_id
+        logger.info(f"[MODEL] Модель изменена: {provider}/{model_id}")
         print(f"Модель изменена: {provider}/{model_id}")
-        # Здесь можно добавить логику для уведомления других компонентов
     
     def _on_openrouter_model_selected(self, model_data: dict):
         """Обработчик выбора модели OpenRouter"""
         model_id = model_data.get('id', 'unknown')
+        self.current_provider = "openrouter"
+        self.current_model_id = model_id
+        self.current_model_data = model_data
+        
+        logger.info(f"[MODEL] Выбрана модель OpenRouter: {model_id}")
+        logger.debug(f"[MODEL] Данные модели: {model_data}")
         print(f"Выбрана модель OpenRouter: {model_id}")
-        # Здесь можно добавить логику для переключения на OpenRouter
     
     def _on_provider_switch_requested(self, provider: str):
         """Обработчик запроса переключения провайдера"""

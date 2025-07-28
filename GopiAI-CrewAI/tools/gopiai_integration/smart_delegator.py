@@ -113,6 +113,36 @@ class SmartDelegator:
         """
         start_time = time.time()
         
+        # 0. Обрабатываем информацию о выбранной модели из UI
+        preferred_provider = metadata.get('preferred_provider')
+        preferred_model = metadata.get('preferred_model')
+        model_info = metadata.get('model_info')
+        
+        if preferred_provider and preferred_model:
+            logger.info(f"[MODEL-SELECTION] UI запросил использование {preferred_provider} модели: {preferred_model}")
+            
+            # Устанавливаем выбранную модель
+            if preferred_provider == 'openrouter' and self.model_config_manager:
+                try:
+                    success = self.set_model('openrouter', preferred_model)
+                    if success:
+                        logger.info(f"[MODEL-SELECTION] ✅ Успешно переключились на OpenRouter модель: {preferred_model}")
+                    else:
+                        logger.warning(f"[MODEL-SELECTION] ⚠️ Не удалось переключиться на OpenRouter модель: {preferred_model}")
+                except Exception as e:
+                    logger.error(f"[MODEL-SELECTION] ❌ Ошибка переключения на OpenRouter: {e}")
+            elif preferred_provider == 'gemini':
+                try:
+                    success = self.set_provider('gemini')
+                    if success:
+                        logger.info(f"[MODEL-SELECTION] ✅ Успешно переключились на Gemini")
+                    else:
+                        logger.warning(f"[MODEL-SELECTION] ⚠️ Не удалось переключиться на Gemini")
+                except Exception as e:
+                    logger.error(f"[MODEL-SELECTION] ❌ Ошибка переключения на Gemini: {e}")
+        else:
+            logger.info("[MODEL-SELECTION] UI не указал предпочтительную модель, используем настройки по умолчанию")
+        
         # 1. Анализ (пока заглушка, можно вернуть старую логику позже)
         analysis = {"type": "general", "complexity": 1, "requires_crewai": False}
         
@@ -182,10 +212,24 @@ class SmartDelegator:
         
         # 6. Форматирование ответа для чистого отображения (НОВАЯ ФУНКЦИОНАЛЬНОСТЬ)
         analysis['analysis_time'] = elapsed
+        
+        # Добавляем информацию о используемой модели
+        model_info = {}
+        if self.model_config_manager:
+            current_config = self.model_config_manager.get_current_configuration()
+            if current_config:
+                model_info = {
+                    "provider": current_config.provider.value,
+                    "model_id": current_config.model_id,
+                    "display_name": current_config.display_name
+                }
+                logger.info(f"[RESPONSE-MODEL] Ответ сгенерирован моделью: {current_config.display_name} ({current_config.provider.value}/{current_config.model_id})")
+        
         raw_response = {
             "response": response_text,
             "processed_with_crewai": False,
-            "analysis": analysis
+            "analysis": analysis,
+            "model_info": model_info
         }
         
         # Применяем форматирование для удаления JSON и очистки контента
@@ -432,6 +476,10 @@ class SmartDelegator:
         """
         Вызывает языковую модель, используя litellm и систему ротации моделей.
         """
+        logger.info("[CRITICAL-DEBUG] НАЧАЛО _call_llm")
+        logger.info(f"[CRITICAL-DEBUG] messages_count: {len(messages)}")
+        logger.info(f"[CRITICAL-DEBUG] model_config_manager: {self.model_config_manager is not None}")
+        
         try:
             # Выводим длину системного промпта для диагностики
             system_prompt_len = len(messages[0]['content']) if messages and messages[0]['role'] == 'system' else 0
@@ -445,28 +493,39 @@ class SmartDelegator:
             ])
             estimated_tokens = len(total_text) // 4  # Примерная оценка: 4 символа на токен
             
-            # Выбор модели с использованием ротации
-            has_image = any(
-                isinstance(msg.get('content'), list) and any(item.get('type') == 'image_url' for item in msg['content'])
-                for msg in messages if msg.get('role') == 'user'
-            )
-            task_type = 'vision' if has_image else 'dialog'
-            logger.info(f"[LLM-DEBUG] Определен тип задачи: {task_type}, токенов: {estimated_tokens}")
+            # Проверяем, есть ли текущая конфигурация модели (выбранная пользователем)
+            current_config = None
+            if self.model_config_manager:
+                current_config = self.model_config_manager.get_current_configuration()
             
-            model_id = select_llm_model_safe(task_type, tokens=estimated_tokens)
-            logger.info(f"[LLM-DEBUG] Результат select_llm_model_safe: {model_id}")
-            
-            if not model_id:
-                # Если не удалось выбрать модель, пробуем другие типы задач
-                logger.info(f"[LLM-DEBUG] Пробуем тип 'code'")
-                model_id = select_llm_model_safe("code", tokens=estimated_tokens)
-                logger.info(f"[LLM-DEBUG] Результат для 'code': {model_id}")
-            if not model_id:
-                # Если всё ещё нет модели, используем резервную
-                model_id = "gemini/gemini-1.5-flash"
-                logger.warning(f"[LLM] Не удалось выбрать модель через ротацию, используем резервную: {model_id}")
+            if current_config and current_config.is_available():
+                # Используем выбранную пользователем модель
+                model_id = current_config.model_id
+                logger.info(f"[LLM] Используем выбранную пользователем модель: {model_id} ({current_config.display_name})")
+                logger.info(f"[LLM] Провайдер: {current_config.provider.value}")
             else:
-                logger.info(f"[LLM] Выбрана модель через ротацию: {model_id}")
+                # Выбор модели с использованием ротации (только если нет выбранной модели)
+                has_image = any(
+                    isinstance(msg.get('content'), list) and any(item.get('type') == 'image_url' for item in msg['content'])
+                    for msg in messages if msg.get('role') == 'user'
+                )
+                task_type = 'vision' if has_image else 'dialog'
+                logger.info(f"[LLM-DEBUG] Определен тип задачи: {task_type}, токенов: {estimated_tokens}")
+                
+                model_id = select_llm_model_safe(task_type, tokens=estimated_tokens)
+                logger.info(f"[LLM-DEBUG] Результат select_llm_model_safe: {model_id}")
+                
+                if not model_id:
+                    # Если не удалось выбрать модель, пробуем другие типы задач
+                    logger.info(f"[LLM-DEBUG] Пробуем тип 'code'")
+                    model_id = select_llm_model_safe("code", tokens=estimated_tokens)
+                    logger.info(f"[LLM-DEBUG] Результат для 'code': {model_id}")
+                if not model_id:
+                    # Если всё ещё нет модели, используем резервную
+                    model_id = "gemini/gemini-1.5-flash"
+                    logger.warning(f"[LLM] Не удалось выбрать модель через ротацию, используем резервную: {model_id}")
+                else:
+                    logger.info(f"[LLM] Выбрана модель через ротацию: {model_id}")
                 
             # 🔥 ДОПОЛНИТЕЛЬНАЯ ДИАГНОСТИКА
             logger.info(f"[LLM-DEBUG] Финальная модель: {model_id}")
@@ -476,9 +535,69 @@ class SmartDelegator:
             if model_id in rate_limit_monitor.models:
                 rate_limit_monitor.register_use(model_id, estimated_tokens)
             
+            # 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ РАЗНЫХ ПРОВАЙДЕРОВ
+            
+            # OpenRouter модели - проверяем и по current_config, и по имени модели
+            is_openrouter = (current_config and current_config.provider.value == 'openrouter') or \
+                           ('/' in model_id and not model_id.startswith('gemini/')) or \
+                           model_id.startswith('openrouter/')
+            
+            if is_openrouter:
+                try:
+                    logger.info(f"🌐 Используем OpenRouter модель: {model_id}")
+                    
+                    # Получаем API ключ для OpenRouter
+                    api_key = os.getenv('OPENROUTER_API_KEY')
+                    
+                    logger.debug(f"[DEBUG] OPENROUTER_API_KEY найден: {'Да' if api_key else 'Нет'}")
+                    if api_key:
+                        logger.debug(f"[DEBUG] API ключ начинается с: {api_key[:10]}...")
+                    
+                    if not api_key:
+                        raise ValueError("Не найден API ключ для OpenRouter (OPENROUTER_API_KEY)")
+                    
+                    # Используем litellm с OpenRouter
+                    # Формируем правильное имя модели
+                    if model_id.startswith('openrouter/'):
+                        final_model = model_id
+                    else:
+                        final_model = f"openrouter/{model_id}"
+                    
+                    logger.info(f"[LLM-DEBUG] Отправляем запрос в OpenRouter: final_model={final_model}, messages_count={len(messages)}")
+                    
+                    response = litellm.completion(
+                        model=final_model,
+                        messages=messages,
+                        temperature=0.2,
+                        max_tokens=2000,
+                        api_key=api_key,
+                        api_base="https://openrouter.ai/api/v1"
+                    )
+                    
+                    logger.info(f"[LLM-DEBUG] Получен ответ от OpenRouter: {type(response)}")
+                    logger.info(f"[LLM-DEBUG] response.choices: {response.choices if hasattr(response, 'choices') else 'NO CHOICES'}")
+                    
+                    if response and response.choices and len(response.choices) > 0:
+                        response_text = response.choices[0].message.content
+                        logger.info(f"[LLM-DEBUG] Извлеченный текст: '{response_text[:100]}...' (длина: {len(response_text) if response_text else 0})")
+                        
+                        if response_text and response_text.strip():
+                            logger.info(f"✅ OpenRouter вернул непустой ответ: {len(response_text)} символов")
+                            return response_text
+                        else:
+                            logger.error(f"[LLM-DEBUG] OpenRouter вернул пустой текст: '{response_text}'")
+                            return "Пустой ответ от OpenRouter модели"
+                    else:
+                        logger.error(f"[LLM-DEBUG] Нет choices в ответе OpenRouter: response={response}")
+                        return "Пустой ответ от OpenRouter модели"
+                        
+                except Exception as e:
+                    logger.error(f"❌ Ошибка OpenRouter: {str(e)}")
+                    # Продолжаем со стандартным litellm
+            
             # 🔥 КАСТОМНЫЙ ОБХОД ОГРАНИЧЕНИЙ GEMINI API!
             # Используем наш GeminiDirectClient вместо стандартного Google API
-            if 'gemini' in model_id.lower():
+            elif 'gemini' in model_id.lower():
                 try:
                     # Импортируем наш кастомный клиент
                     from .gemini_direct_client import GeminiDirectClient
@@ -496,15 +615,31 @@ class SmartDelegator:
                     logger.info(f"🔥 Используем GeminiDirectClient для обхода ограничений безопасности: {model_id}")
                     
                     # Преобразуем сообщения в формат, понятный нашему клиенту
+                    logger.info(f"[LLM-DEBUG] Отправляем запрос в GeminiDirectClient: model={model_id}, messages_count={len(messages)}")
+                    
                     response = client.generate_text(messages)
                     
-                    logger.info(f"✅ Обход ограничений успешен! Получен ответ длиной {len(response)} символов")
-                    return response
+                    logger.info(f"[LLM-DEBUG] Получен ответ от GeminiDirectClient: '{response[:100] if response else 'None'}...' (длина: {len(response) if response else 0})")
+                    
+                    if response and response.strip():
+                        logger.info(f"✅ Gemini вернул непустой ответ: {len(response)} символов")
+                        return response
+                    else:
+                        logger.error(f"[LLM-DEBUG] Gemini вернул пустой ответ: '{response}'")
+                        return "Пустой ответ от Gemini"
                     
                 except Exception as e:
                     logger.error(f"❌ Ошибка кастомного GeminiDirectClient: {str(e)}")
                     # Продолжаем со стандартным litellm
             else:
+                logger.info(f"[CRITICAL-DEBUG] ОБЩАЯ ВЕТКА litellm: model_id={model_id}")
+                
+                # Получаем API ключ для Gemini если это Gemini модель
+                api_key = None
+                if 'gemini' in model_id.lower():
+                    api_key = os.getenv('GOOGLE_API_KEY') or os.getenv('GEMINI_API_KEY')
+                    logger.info(f"[CRITICAL-DEBUG] Gemini API key: {'НАЙДЕН' if api_key else 'ОТСУТСТВУЕТ'}")
+                
                 # Добавляем safety settings для ослабления фильтров
                 safety_settings = [
                     {
@@ -513,13 +648,20 @@ class SmartDelegator:
                     }
                 ]
                 
-                response = litellm.completion(
-                    model=model_id,
-                    messages=messages,
-                    temperature=0.2,
-                    max_tokens=2000,
-                    safety_settings=safety_settings  # Добавляем здесь
-                )
+                logger.info(f"[CRITICAL-DEBUG] Вызываем litellm.completion с model={model_id}, api_key={'ЕСТЬ' if api_key else 'НЕТ'}")
+                
+                completion_args = {
+                    "model": model_id,
+                    "messages": messages,
+                    "temperature": 0.2,
+                    "max_tokens": 2000,
+                    "safety_settings": safety_settings
+                }
+                
+                if api_key:
+                    completion_args["api_key"] = api_key
+                
+                response = litellm.completion(**completion_args)
                 
                 logger.info(f"[LLM] Получен ответ от LLM: {str(response)[:200]}...")
                 
@@ -534,7 +676,7 @@ class SmartDelegator:
             
         except Exception as e:
             error_msg = f"Ошибка при вызове LLM: {str(e)}"
-            logger.error(f"[LLM] {error_msg}")
+            logger.error(f"[CRITICAL-DEBUG] ОШИБКА в _call_llm: {error_msg}")
             logger.error(f"[LLM] Traceback: {traceback.format_exc()}")
             
             # Если ошибка связана с моделью, помечаем её как недоступную
@@ -558,6 +700,7 @@ class SmartDelegator:
                     except Exception as fallback_error:
                         logger.error(f"[LLM] Ошибка при использовании запасной модели: {fallback_error}")
             
+            logger.error(f"[CRITICAL-DEBUG] ВОЗВРАЩАЕМ ОШИБКУ: {error_msg}")
             return f"Произошла ошибка при обработке запроса: {str(e)}"
     
     def _load_openrouter_models_async(self):

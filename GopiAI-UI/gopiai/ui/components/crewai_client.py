@@ -36,21 +36,23 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 gopiai_integration_path = os.path.join(project_root, 'GopiAI-CrewAI', 'tools', 'gopiai_integration')
 sys.path.append(gopiai_integration_path)
 
-# Импортируем эмоциональный классификатор
+# Импортируем эмоциональный классификатор и AI Router
 EMOTIONAL_CLASSIFIER_AVAILABLE = False
 EmotionalClassifier = None
 EmotionalState = None
+AIRouterLLM = None
 
 try:
     import spacy
     try:
         from gopiai_integration.emotional_classifier import EmotionalClassifier, EmotionalState
+        from gopiai_integration.ai_router_llm import AIRouterLLM
         EMOTIONAL_CLASSIFIER_AVAILABLE = True
-        logger.debug("[INIT] Эмоциональный классификатор успешно импортирован")
+        logger.debug("[INIT] Эмоциональный классификатор и AI Router успешно импортированы")
     except ImportError as e:
-        logger.error(f"[INIT] Ошибка импорта модуля emotional_classifier: {e}")
+        logger.error(f"[INIT] Ошибка импорта модулей emotional_classifier/ai_router_llm: {e}")
         logger.error(f"[INIT] Пути в sys.path: {sys.path}")
-        logger.error(f"[INIT] Проверьте наличие файла: {os.path.join(gopiai_integration_path, 'emotional_classifier.py')}")
+        logger.error(f"[INIT] Проверьте наличие файлов в: {gopiai_integration_path}")
         EMOTIONAL_CLASSIFIER_AVAILABLE = False
 except ImportError as e:
     logger.error(f"[INIT] Ошибка импорта модуля spacy: {e}")
@@ -138,8 +140,10 @@ class CrewAIClient:
         self.emotional_classifier = None
         if EMOTIONAL_CLASSIFIER_AVAILABLE:
             try:
-                self.emotional_classifier = EmotionalClassifier()
-                logger.info("[INIT] ✅ Эмоциональный классификатор инициализирован")
+                # Создаем AI Router для эмоционального классификатора
+                ai_router = AIRouterLLM()
+                self.emotional_classifier = EmotionalClassifier(ai_router)
+                logger.info("[INIT] ✅ Эмоциональный классификатор инициализирован с AI Router")
             except Exception as e:
                 logger.error(f"[INIT] ❌ Ошибка инициализации эмоционального классификатора: {e}")
                 self.emotional_classifier = None
@@ -364,6 +368,30 @@ class CrewAIClient:
         message['async_processing'] = True
         logger.debug("[REQUEST] Установлен флаг async_processing=True")
         
+        # Обрабатываем информацию о выбранной модели
+        model_provider = message.get('metadata', {}).get('model_provider', 'gemini')
+        model_id = message.get('metadata', {}).get('model_id')
+        model_data = message.get('metadata', {}).get('model_data')
+        
+        logger.info(f"[MODEL] Запрос с провайдером: {model_provider}")
+        if model_id:
+            logger.info(f"[MODEL] Выбранная модель: {model_id}")
+            
+        # Добавляем информацию о модели в метаданные для сервера
+        if model_provider == 'openrouter' and model_id:
+            message['metadata']['preferred_provider'] = 'openrouter'
+            message['metadata']['preferred_model'] = model_id
+            if model_data:
+                message['metadata']['model_info'] = {
+                    'name': model_data.get('name', model_id),
+                    'context_length': model_data.get('context_length', 4096),
+                    'pricing': model_data.get('pricing', {})
+                }
+            logger.info(f"[MODEL] Настроен запрос для OpenRouter модели: {model_id}")
+        else:
+            message['metadata']['preferred_provider'] = 'gemini'
+            logger.info(f"[MODEL] Используется провайдер по умолчанию: Gemini")
+        
         # Добавляем системный промпт, если его нет
         system_prompt = (
             "Ты - полезный ассистент. "
@@ -501,7 +529,16 @@ class CrewAIClient:
                 
                 # Подробное логирование состояния задачи
                 if result.get("done"):
-                    logger.info(f"[TASK-COMPLETE] Задача {task_id} завершена. Результат: {result.get('result', {}).get('response', '')[:100]}...")
+                    # Извлекаем информацию о модели из ответа
+                    task_result = result.get('result', {})
+                    model_info = task_result.get('model_info', {})
+                    
+                    if model_info:
+                        model_display = f"{model_info.get('display_name', 'Unknown')} ({model_info.get('provider', 'unknown')}/{model_info.get('model_id', 'unknown')})"
+                        logger.info(f"[TASK-COMPLETE] ✅ Задача {task_id} завершена. Ответ от модели: {model_display}")
+                        logger.info(f"[RESPONSE-FROM-MODEL] 🤖 Модель: {model_display} | Ответ: {task_result.get('response', '')[:100]}...")
+                    else:
+                        logger.info(f"[TASK-COMPLETE] Задача {task_id} завершена. Результат: {task_result.get('response', '')[:100]}...")
                 else:
                     logger.info(f"[TASK-PROGRESS] Задача {task_id} в процессе. Статус: {result.get('status', 'неизвестно')}")
                 

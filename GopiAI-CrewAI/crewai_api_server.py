@@ -1,10 +1,99 @@
 # --- START OF FILE crewai_api_server.py (ФИНАЛЬНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ) ---
 
 import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
 import os
+
+# Настройка читаемого логирования для CrewAI сервера
+log_file = 'crewai_api_server_debug.log'
+
+class UltraCleanFormatter(logging.Formatter):
+    """Форматтер который убирает ВСЕ нечитаемые символы"""
+    
+    def __init__(self):
+        super().__init__(
+            fmt='%(asctime)s [%(levelname)s] %(message)s',
+            datefmt='%H:%M:%S'
+        )
+    
+    def format(self, record):
+        # Получаем базовое сообщение
+        message = super().format(record)
+        
+        # Оставляем только ASCII символы + кириллица + основные знаки препинания
+        import re
+        
+        # Создаем новую строку только из читаемых символов
+        clean_chars = []
+        for char in message:
+            # Проверяем каждый символ
+            code = ord(char)
+            
+            # Разрешенные диапазоны:
+            # 32-126: основные ASCII символы (пробел, буквы, цифры, знаки)
+            # 1040-1103: кириллица (А-я)
+            # 1025, 1105: Ё, ё
+            if (32 <= code <= 126 or          # ASCII
+                1040 <= code <= 1103 or       # Кириллица А-я
+                code == 1025 or code == 1105  # Ё, ё
+                ):
+                clean_chars.append(char)
+            else:
+                # Заменяем нечитаемые символы на пробел
+                if char not in ['\n', '\r', '\t']:  # Сохраняем переносы строк и табы
+                    clean_chars.append(' ')
+                else:
+                    clean_chars.append(char)
+        
+        message = ''.join(clean_chars)
+        
+        # Убираем множественные пробелы
+        message = re.sub(r' +', ' ', message)
+        
+        # Сокращаем длинные JSON строки
+        if 'Raw data:' in message and len(message) > 200:
+            message = message.split('Raw data:')[0] + 'Raw data: [JSON сокращен]'
+        if 'Parsed JSON:' in message and len(message) > 200:
+            message = message.split('Parsed JSON:')[0] + 'Parsed JSON: [JSON сокращен]'
+        
+        return message.strip()
+
+# Настройка обработчиков логирования
+handlers = []
+
+# Консольный обработчик
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(UltraCleanFormatter())
+handlers.append(console_handler)
+
+# Файловый обработчик
+try:
+    if os.path.exists(log_file):
+        try:
+            os.remove(log_file)
+        except (OSError, PermissionError):
+            print(f"[WARNING] Не удалось удалить старый лог файл {log_file}, возможно он открыт в редакторе")
+    
+    file_handler = logging.FileHandler(log_file, mode='w', encoding='utf-8')
+    file_handler.setFormatter(UltraCleanFormatter())
+    handlers.append(file_handler)
+    print(f"[OK] Логирование настроено с записью в файл: {log_file}")
+    
+except (OSError, PermissionError) as e:
+    print(f"[WARNING] Не удалось создать файл лога {log_file}: {e}")
+    print("[INFO] Логирование будет только в консоль")
+
+# Базовая настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=handlers
+)
+
+# Убираем лишние технические сообщения от библиотек
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
+logging.getLogger('urllib3').setLevel(logging.ERROR)
+logging.getLogger('httpx').setLevel(logging.ERROR)
+logging.getLogger('LiteLLM').setLevel(logging.ERROR)
+logger = logging.getLogger(__name__)
 import sys
 import json
 import time
@@ -23,6 +112,8 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 from dotenv import load_dotenv
 # Загружаем .env из корневой директории проекта
 load_dotenv(dotenv_path="../.env")
+# Также загружаем локальный .env файл (если есть)
+load_dotenv(dotenv_path=".env")
 
 from flask import Flask, request, jsonify
 
@@ -182,12 +273,29 @@ def process_request():
     if not SERVER_IS_READY:
         return jsonify({"error": "Server started in limited mode due to initialization error."}), 503
 
-    data = request.json
-    if not data or 'message' not in data:
-        return jsonify({"error": "Missing 'message' field"}), 400
+    # Добавляем отладочную информацию
+    logger.info(f"[API-REQUEST] Получен POST запрос на /api/process")
+    logger.info(f"[API-REQUEST] Content-Type: {request.content_type}")
+    logger.info(f"[API-REQUEST] Raw data: {request.get_data()}")
+    
+    try:
+        # Пробуем получить JSON данные
+        data = request.get_json(force=True)
+        logger.info(f"[API-REQUEST] Parsed JSON: {data}")
+        
+        if not data or 'message' not in data:
+            logger.error(f"[API-REQUEST] Ошибка: нет поля 'message' в данных: {data}")
+            return jsonify({"error": "Missing 'message' field"}), 400
 
-    message = data.get('message')
-    metadata = data.get('metadata', {})
+        message = data.get('message')
+        metadata = data.get('metadata', {})
+        
+        logger.info(f"[API-REQUEST] Message: {message}")
+        logger.info(f"[API-REQUEST] Metadata: {metadata}")
+        
+    except Exception as e:
+        logger.error(f"[API-REQUEST] Ошибка парсинга JSON: {str(e)}")
+        return jsonify({"error": f"Invalid JSON: {str(e)}"}), 400
 
     task_id = str(uuid.uuid4())
     task = Task(task_id, message, metadata)

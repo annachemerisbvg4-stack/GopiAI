@@ -40,18 +40,41 @@ except ImportError:
 
 # Добавляем путь к backend для импорта клиентов
 try:
-    backend_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-        "GopiAI-CrewAI",
-    )
-    if backend_path not in sys.path:
-        sys.path.append(backend_path)
+    # Пробуем разные варианты путей
+    possible_paths = [
+        # Вариант 1: относительно текущего файла
+        os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+            "GopiAI-CrewAI",
+            "tools"
+        ),
+        # Вариант 2: абсолютный путь
+        r"c:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\tools",
+        # Вариант 3: через переменную окружения
+        os.path.join(os.environ.get('GOPI_AI_MODULES', ''), "GopiAI-CrewAI", "tools")
+    ]
+    
+    tools_path = None
+    for path in possible_paths:
+        if path and os.path.exists(path):
+            tools_path = path
+            break
+    
+    if tools_path and tools_path not in sys.path:
+        sys.path.append(tools_path)
+        print(f"✅ Добавлен путь к tools: {tools_path}")
     
     # Импортируем ModelProvider
-    from tools.gopiai_integration.model_config_manager import ModelProvider
+    from gopiai_integration.model_config_manager import ModelProvider
     MODEL_PROVIDER_AVAILABLE = True
+    print(f"✅ ModelProvider импортирован успешно: {list(ModelProvider)}")
 except Exception as e:
     print(f"⚠️ Не удалось добавить backend путь или импортировать ModelProvider: {e}")
+    # Создаем fallback enum
+    from enum import Enum
+    class ModelProvider(Enum):
+        GEMINI = "gemini"
+        OPENROUTER = "openrouter"
     MODEL_PROVIDER_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
