@@ -125,6 +125,15 @@ sys.path.append(str(current_dir))
 from rag_system import get_rag_system
 from tools.gopiai_integration.smart_delegator import SmartDelegator
 
+# Импортируем функции для работы с провайдерами и моделями
+try:
+    from llm_rotation_config import get_available_models, update_state, PROVIDER_KEY_ENV
+    from state_manager import load_state, save_state
+except ImportError:
+    # Если импорт не удался, попробуем относительный импорт
+    from .llm_rotation_config import get_available_models, update_state, PROVIDER_KEY_ENV
+    from .state_manager import load_state, save_state
+
 # --- Настройки сервера ---
 HOST = "0.0.0.0"  # Слушаем на всех интерфейсах
 PORT = 5051  # Стандартный порт для CrewAI API сервера
@@ -330,6 +339,61 @@ def debug_status():
         "active_tasks": len(TASKS),
         "task_ids": list(TASKS.keys())
     })
+
+# --- Новые эндпоинты для синхронизации состояния провайдеров и моделей ---
+
+@app.route('/internal/models', methods=['GET'])
+def get_models_by_provider():
+    """Возвращает список доступных моделей для указанного провайдера"""
+    provider = request.args.get('provider')
+    if not provider:
+        return jsonify({"error": "Missing 'provider' parameter"}), 400
+    
+    # Получаем все доступные модели для указанного типа задач (используем 'dialog' как стандартный тип)
+    all_models = get_available_models("dialog")
+    
+    # Фильтруем модели по провайдеру
+    provider_models = [m for m in all_models if m["provider"] == provider]
+    
+    return jsonify(provider_models)
+
+@app.route('/internal/state', methods=['POST'])
+def update_provider_model_state():
+    """Обновляет текущее состояние провайдера и модели в файле ~/.gopiai_state.json"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Missing JSON data"}), 400
+            
+        provider = data.get("provider")
+        model_id = data.get("model_id")
+        
+        if not provider or not model_id:
+            return jsonify({"error": "Both 'provider' and 'model_id' are required"}), 400
+        
+        # Обновляем состояние
+        update_state(provider, model_id)
+        
+        return jsonify({
+            "status": "success",
+            "message": f"State updated: provider={provider}, model_id={model_id}",
+            "provider": provider,
+            "model_id": model_id
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating state: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Failed to update state: {str(e)}"}), 500
+
+@app.route('/internal/state', methods=['GET'])
+def get_current_state():
+    """Возвращает текущее состояние провайдера и модели"""
+    try:
+        state = load_state()
+        return jsonify(state)
+    except Exception as e:
+        logger.error(f"Error loading state: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Failed to load state: {str(e)}"}), 500
 
 # Обработка сигналов для корректного завершения
 def signal_handler(signum, frame):

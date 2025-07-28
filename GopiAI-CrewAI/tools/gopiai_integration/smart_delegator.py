@@ -539,8 +539,7 @@ class SmartDelegator:
             
             # OpenRouter модели - проверяем и по current_config, и по имени модели
             is_openrouter = (current_config and current_config.provider.value == 'openrouter') or \
-                           ('/' in model_id and not model_id.startswith('gemini/')) or \
-                           model_id.startswith('openrouter/')
+                model_id.startswith('openrouter/')
             
             if is_openrouter:
                 try:

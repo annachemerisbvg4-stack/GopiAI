@@ -14,7 +14,6 @@ Key features
    `register_use`, `mark_unavailable`, `get_model_usage_stats`.
 6. State synchronization with ~/.gopiai_state.json
 7. Soft blacklist implementation for rate limiting violations
-8. API key validation
 
 This module aims to be drop-in compatible with existing import points
 (`from gopiai_integration.llm_rotation_config import ...`).  If your code
