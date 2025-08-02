@@ -16,8 +16,8 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import uuid
 
-# Импортируем общую конфигурацию памяти напрямую
-from ...ui_core.memory.memory_config import MEMORY_BASE_DIR, CHATS_FILE_PATH, VECTOR_INDEX_PATH
+# Импортируем локальную конфигурацию памяти
+from .memory_config import MEMORY_BASE_DIR, CHATS_FILE_PATH, VECTOR_INDEX_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ class MemoryManager:
 
         # Управляем сессиями
         if session_id not in self.sessions:
-            self.sessions[session_id] = {
+            self.sessions[session_id] = {  # type: ignore[type-arg]
                 'id': session_id, 
                 'title': content[:30], # Название чата - первые 30 символов
                 'created_at': datetime.now().isoformat()
@@ -121,7 +121,30 @@ class MemoryManager:
     # Дополнительные методы для работы с общей памятью
     def list_sessions(self) -> List[Dict]:
         return list(self.sessions.values())
-        
+
+    def get_session_title(self, session_id: str) -> str:
+        return self.sessions.get(session_id, {}).get('title', 'New Chat')
+
+    def update_session_title(self, session_id: str, title: str):
+        if session_id in self.sessions:
+            self.sessions[session_id]['title'] = title
+            self._save_data()
+
+    def delete_session(self, session_id: str):
+        if not session_id:
+            return
+        if session_id in self.sessions:
+            del self.sessions[session_id]
+        self.chats = [msg for msg in self.chats if msg.get('session_id') != session_id]
+        self._save_data()
+
+    def _save_data(self):
+        try:
+            with open(CHATS_FILE_PATH, 'w', encoding='utf-8') as f:
+                json.dump(self.chats, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.error(f'Error saving data: {e}')
+
 # --- Singleton Instance ---
 _memory_manager_instance = None
 

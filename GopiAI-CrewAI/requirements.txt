@@ -1,6 +1,7 @@
 aiohappyeyeballs
 aiohttp
 aiosignal
+requests
 alembic
 annotated-types
 anyio

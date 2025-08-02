@@ -1,191 +1,402 @@
-2025-07-18 23:58:59,453 - faiss.loader - INFO - Loading faiss with AVX2 support.
-2025-07-18 23:58:59,480 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
-2025-07-18 23:58:59,489 - faiss - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
-2025-07-18 23:59:12,019 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
-2025-07-18 23:59:14,033 - opentelemetry.trace - WARNING - Overriding of current TracerProvider is not allowed
+20:17:18 [INFO] Loading faiss with AVX2 support.
+20:17:18 [INFO] Successfully loaded faiss with AVX2 support.
+20:17:18 [INFO] Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
+20:17:43 [WARNING] Overriding of current TracerProvider is not allowed
+20:17:45 [INFO] ToolsInstructionManager ���������������
+20:17:45 [INFO] ToolsInstructionManager ������� ���������������
+20:17:45 [INFO] [HTMLSanitizer] ��������������� ����������� HTML
+20:17:45 [INFO] [HTMLSanitizer] ��������������� ����������� HTML
+20:17:45 [INFO] [ResponseFormatter] ��������������� ������������� ������� � HTML �������������
+20:17:45 [INFO] --- ������������� ������ ---
+20:17:45 [INFO] �������� ������� � ������������� ���������� RAGSystem.
+20:17:45 [INFO] --- ������������� ���������� RAGSystem (Singleton) ---
+20:17:45 [INFO] Checking memory structure in directory: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory
+20:17:45 [INFO] [OK] Memory folder and file structure is in order.
+20:17:45 [INFO] Initializing embeddings. Model: sentence-transformers/nli-mpnet-base-v2
+20:17:51 [INFO] Found existing index. Attempting to load from C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\vectors...
+20:17:54 [INFO] Index loaded successfully. Records in memory: 286
+20:17:54 [INFO] [OK] ��������� MCP ����������� ����������������. ��������: 11
+20:17:54 [INFO] [INFO] ������� MCP ���������� ���������, ���������� ��������� �����������
+20:17:54 [INFO] [OK] CommandExecutor ��������������� ��� ��������� ������ Gemini
+20:17:54 [INFO] [HTMLSanitizer] ��������������� ����������� HTML
+20:17:54 [INFO] [ResponseFormatter] ��������������� ������������� ������� � HTML �������������
+20:17:54 [INFO] [OK] ResponseFormatter ��������������� ��� ���������� JSON � HTML
+20:17:54 [INFO] ��������� 324 ������������
+20:17:54 [INFO] ModelConfigurationManager ��������������� (������: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\tools\model_configurations.json)
+20:17:54 [INFO] [OK] ModelConfigurationManager ���������������
+20:17:54 [INFO] OpenRouterClient ���������������
+20:17:54 [INFO] ��������� ���������� � OpenRouter API...
+20:17:54 [INFO] ���������� � OpenRouter API �������
+20:17:54 [INFO] [OK] OpenRouter ������ ��������������� � ���������
+20:17:54 [INFO] ��������� ������ OpenRouter...
+20:17:54 [INFO] �������� ������ ������� OpenRouter...
+20:17:54 [INFO] �������� 320 ������� OpenRouter (��� ��������)
+20:17:54 [INFO] ���������� �������: 56
+20:17:54 [INFO] ������� �������: 264
+20:17:54 [INFO] ��������� 320 ������� OpenRouter
+20:17:54 [INFO] ����������: 56, �������: 264
+20:17:54 [INFO] [OK] RAG system passed to SmartDelegator. Records: 286
+20:17:54 [INFO] Smart Delegator � RAG System ������� ����������������.
+20:17:54 [INFO] [STARTUP] Server starting on http://0.0.0.0:5051
+[WARNING] �� ������� ������� ������ ��� ���� crewai_api_server_debug.log, �������� �� ������ � ���������
+[WARNING] �� ������� ������� ���� ���� crewai_api_server_debug.log: [Errno 13] Permission denied: 'C:\\Users\\crazy\\GOPI_AI_MODULES\\GopiAI-CrewAI\\crewai_api_server_debug.log'
+[INFO] ����������� ����� ������ � �������
 DEBUG: LLM_MODELS_CONFIG loaded: [{'name': 'Gemini 1.5 Flash', 'id': 'gemini/gemini-1.5-flash', 'provider': 'google', 'rpm': 15, 'tpm': 250000, 'type': ['simple', 'dialog', 'code', 'summarize'], 'multimodal': False, 'embedding': False, 'priority': 3, 'rpd': 50, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini 2.0 Flash-Lite', 'id': 'gemini/gemini-2.0-flash-lite', 'provider': 'google', 'rpm': 30, 'tpm': 1000000, 'type': ['simple', 'dialog', 'code', 'summarize'], 'multimodal': False, 'embedding': False, 'priority': 4, 'rpd': 200, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemma 3', 'id': 'gemini/gemma-3', 'provider': 'google', 'rpm': 30, 'tpm': 14400, 'type': ['simple', 'lookup', 'short_answer'], 'multimodal': False, 'embedding': False, 'priority': 1, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemma 3n', 'id': 'gemini/gemma-3n', 'provider': 'google', 'rpm': 30, 'tpm': 14400, 'type': ['simple', 'lookup', 'short_answer'], 'multimodal': False, 'embedding': False, 'priority': 2, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini 2.5 Flash-Lite Preview', 'id': 'gemini/gemini-2.5-flash-lite-preview', 'provider': 'google', 'rpm': 15, 'tpm': 60000, 'type': ['dialog', 'code', 'summarize'], 'multimodal': False, 'embedding': False, 'priority': 5, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini 2.5 Flash', 'id': 'gemini/gemini-2.5-flash', 'provider': 'google', 'rpm': 10, 'tpm': 60000, 'type': ['dialog', 'code', 'multimodal', 'vision', 'long_answer'], 'multimodal': True, 'embedding': False, 'priority': 6, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}, {'name': 'Gemini Embedding Experimental', 'id': 'gemini/gemini-embedding-experimental', 'provider': 'google', 'rpm': 5, 'tpm': 10000, 'type': ['embedding'], 'multimodal': False, 'embedding': True, 'priority': 10, 'rpd': 0, 'deprecated': False, 'base_score': 0.5}]
-[OK] RateLimitMonitor инициализирован с blacklist механизмом
-[OK] Валидация конфигурации LLM прошла успешно
+[OK] RateLimitMonitor ��������������� � blacklist ����������
+[OK] ��������� ������������ LLM ������ �������
 GopiAI Integration Tools loaded successfully!
-[OK] CrewAI доступен. Интеграция с агентами активна.
-[ДИАГНОСТИКА] Начало инициализации систем
-2025-07-18 23:59:15,774 - __main__ - INFO - --- ИНИЦИАЛИЗАЦИЯ СИСТЕМ ---
-[ДИАГНОСТИКА] Вызов get_rag_system()
-2025-07-18 23:59:15,774 - rag_system - INFO - Создание первого и единственного экземпляра RAGSystem.
-2025-07-18 23:59:15,774 - rag_system - INFO - --- Инициализация экземпляра RAGSystem (Singleton) ---
-2025-07-18 23:59:15,774 - rag_system - INFO - Checking memory structure in directory: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory
-2025-07-18 23:59:15,775 - rag_system - INFO - [OK] Memory folder and file structure is in order.
-2025-07-18 23:59:15,775 - rag_system - INFO - Initializing embeddings. Model: sentence-transformers/nli-mpnet-base-v2
-2025-07-18 23:59:20,771 - rag_system - INFO - Found existing index. Attempting to load from C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\vectors...
-2025-07-18 23:59:23,976 - rag_system - INFO - Index loaded successfully. Records in memory: 286
-[ДИАГНОСТИКА] RAGSystem получен: True
-[ДИАГНОСТИКА] Создание SmartDelegator
-2025-07-18 23:59:23,976 - tools.gopiai_integration.smart_delegator - INFO - [OK] Локальные MCP инструменты инициализированы. Доступно: 5
-2025-07-18 23:59:23,980 - tools.gopiai_integration.mcp_integration_fixed - INFO - SMITHERY_API_KEY загружен: 621c15a8...cb64
-2025-07-18 23:59:25,051 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers?q=is:deployed&pageSize=50 "HTTP/1.1 200 OK"
-2025-07-18 23:59:26,104 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@wonderwhy-er/desktop-commander "HTTP/1.1 200 OK"
-2025-07-18 23:59:26,106 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @wonderwhy-er/desktop-commander -> https://server.smithery.ai/@wonderwhy-er/desktop-commander
-2025-07-18 23:59:26,984 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@ref-tools/ref-tools-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:26,990 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @ref-tools/ref-tools-mcp -> https://server.smithery.ai/@ref-tools/ref-tools-mcp
-2025-07-18 23:59:27,697 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@smithery/toolbox "HTTP/1.1 200 OK"
-2025-07-18 23:59:27,703 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @smithery/toolbox -> https://server.smithery.ai/@smithery/toolbox
-2025-07-18 23:59:28,475 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@luminati-io/brightdata-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:28,478 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @luminati-io/brightdata-mcp -> https://server.smithery.ai/@luminati-io/brightdata-mcp
-2025-07-18 23:59:29,221 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@mem0ai/mem0-memory-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:29,222 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @mem0ai/mem0-memory-mcp -> https://server.smithery.ai/@mem0ai/mem0-memory-mcp
-2025-07-18 23:59:30,010 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@bytedance/mcp-server-browser "HTTP/1.1 200 OK"
-2025-07-18 23:59:30,012 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @bytedance/mcp-server-browser -> https://server.smithery.ai/@bytedance/mcp-server-browser
-2025-07-18 23:59:30,779 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@flight505/mcp-think-tank "HTTP/1.1 200 OK"
-2025-07-18 23:59:30,797 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @flight505/mcp-think-tank -> https://server.smithery.ai/@flight505/mcp-think-tank
-2025-07-18 23:59:31,565 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/exa "HTTP/1.1 200 OK"
-2025-07-18 23:59:32,276 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: exa -> https://server.smithery.ai/exa
-2025-07-18 23:59:33,004 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@ropon/minimax-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:33,244 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @ropon/minimax-mcp -> https://server.smithery.ai/@ropon/minimax-mcp
-2025-07-18 23:59:33,993 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@upstash/context7-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:33,995 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @upstash/context7-mcp -> https://server.smithery.ai/@upstash/context7-mcp
-2025-07-18 23:59:34,768 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@browserbasehq/mcp-browserbase "HTTP/1.1 200 OK"
-2025-07-18 23:59:34,793 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @browserbasehq/mcp-browserbase -> https://server.smithery.ai/@browserbasehq/mcp-browserbase
-2025-07-18 23:59:35,497 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@supabase-community/supabase-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:36,142 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @supabase-community/supabase-mcp -> https://server.smithery.ai/@supabase-community/supabase-mcp
-2025-07-18 23:59:36,934 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@redis/mcp-redis "HTTP/1.1 200 OK"
-2025-07-18 23:59:36,952 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @redis/mcp-redis -> https://server.smithery.ai/@redis/mcp-redis
-2025-07-18 23:59:37,744 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@browserbasehq/mcp-stagehand "HTTP/1.1 200 OK"
-2025-07-18 23:59:37,745 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @browserbasehq/mcp-stagehand -> https://server.smithery.ai/@browserbasehq/mcp-stagehand
-2025-07-18 23:59:38,499 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@antvis/mcp-server-chart "HTTP/1.1 200 OK"
-2025-07-18 23:59:38,508 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @antvis/mcp-server-chart -> https://server.smithery.ai/@antvis/mcp-server-chart
-2025-07-18 23:59:39,274 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@SiliconValleyInsight/amazon-product-search "HTTP/1.1 200 OK"
-2025-07-18 23:59:39,275 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @SiliconValleyInsight/amazon-product-search -> https://server.smithery.ai/@SiliconValleyInsight/amazon-product-search
-2025-07-18 23:59:40,005 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@Decodo/decodo-mcp-server "HTTP/1.1 200 OK"
-2025-07-18 23:59:40,006 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @Decodo/decodo-mcp-server -> https://server.smithery.ai/@Decodo/decodo-mcp-server
-2025-07-18 23:59:40,752 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@ScrapeGraphAI/scrapegraph-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:40,760 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @ScrapeGraphAI/scrapegraph-mcp -> https://server.smithery.ai/@ScrapeGraphAI/scrapegraph-mcp
-2025-07-18 23:59:41,510 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@hugeicons/mcp-server "HTTP/1.1 200 OK"
-2025-07-18 23:59:41,513 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @hugeicons/mcp-server -> https://server.smithery.ai/@hugeicons/mcp-server
-2025-07-18 23:59:42,223 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@intruder-io/intruder-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:42,225 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @intruder-io/intruder-mcp -> https://server.smithery.ai/@intruder-io/intruder-mcp
-2025-07-18 23:59:42,975 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@makeplane/plane-mcp-server "HTTP/1.1 200 OK"
-2025-07-18 23:59:43,010 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @makeplane/plane-mcp-server -> https://server.smithery.ai/@makeplane/plane-mcp-server
-2025-07-18 23:59:43,975 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@xinzhongyouhai/mcp-sequentialthinking-tools "HTTP/1.1 200 OK"
-2025-07-18 23:59:43,977 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @xinzhongyouhai/mcp-sequentialthinking-tools -> https://server.smithery.ai/@xinzhongyouhai/mcp-sequentialthinking-tools
-2025-07-18 23:59:45,053 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@EduBase/MCP "HTTP/1.1 200 OK"
-2025-07-18 23:59:45,073 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @EduBase/MCP -> https://server.smithery.ai/@EduBase/MCP
-2025-07-18 23:59:45,825 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@Fibery-inc/fibery-mcp-server "HTTP/1.1 200 OK"
-2025-07-18 23:59:45,829 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @Fibery-inc/fibery-mcp-server -> https://server.smithery.ai/@Fibery-inc/fibery-mcp-server
-2025-07-18 23:59:46,900 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@GongRzhe/Office-Word-MCP-Server "HTTP/1.1 200 OK"
-2025-07-18 23:59:46,911 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @GongRzhe/Office-Word-MCP-Server -> https://server.smithery.ai/@GongRzhe/Office-Word-MCP-Server
-2025-07-18 23:59:47,641 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@JackKuo666/pubmed-mcp-server "HTTP/1.1 200 OK"
-2025-07-18 23:59:47,642 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @JackKuo666/pubmed-mcp-server -> https://server.smithery.ai/@JackKuo666/pubmed-mcp-server
-2025-07-18 23:59:48,410 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@yongkangc/scry-mcp-raw-js "HTTP/1.1 200 OK"
-2025-07-18 23:59:48,450 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @yongkangc/scry-mcp-raw-js -> https://server.smithery.ai/@yongkangc/scry-mcp-raw-js
-2025-07-18 23:59:49,261 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@miottid/todoist-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:49,521 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @miottid/todoist-mcp -> https://server.smithery.ai/@miottid/todoist-mcp
-2025-07-18 23:59:50,261 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@cloudflare/playwright-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:50,272 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @cloudflare/playwright-mcp -> https://server.smithery.ai/@cloudflare/playwright-mcp
-2025-07-18 23:59:51,013 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@GongRzhe/terminal-controller-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:51,014 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @GongRzhe/terminal-controller-mcp -> https://server.smithery.ai/@GongRzhe/terminal-controller-mcp
-2025-07-18 23:59:51,797 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@smithery-ai/github "HTTP/1.1 200 OK"
-2025-07-18 23:59:51,806 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @smithery-ai/github -> https://server.smithery.ai/@smithery-ai/github
-2025-07-18 23:59:52,536 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@haris-musa/excel-mcp-server "HTTP/1.1 200 OK"
-2025-07-18 23:59:52,541 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @haris-musa/excel-mcp-server -> https://server.smithery.ai/@haris-musa/excel-mcp-server
-2025-07-18 23:59:53,247 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@mikechao/metmuseum-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:53,252 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @mikechao/metmuseum-mcp -> https://server.smithery.ai/@mikechao/metmuseum-mcp
-2025-07-18 23:59:54,027 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@kiennd/reference-servers "HTTP/1.1 200 OK"
-2025-07-18 23:59:54,038 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @kiennd/reference-servers -> https://server.smithery.ai/@kiennd/reference-servers
-2025-07-18 23:59:55,675 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@hbg/mcp-paperswithcode "HTTP/1.1 200 OK"
-2025-07-18 23:59:55,676 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @hbg/mcp-paperswithcode -> https://server.smithery.ai/@hbg/mcp-paperswithcode
-2025-07-18 23:59:56,541 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@kazuph/mcp-taskmanager "HTTP/1.1 200 OK"
-2025-07-18 23:59:56,547 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @kazuph/mcp-taskmanager -> https://server.smithery.ai/@kazuph/mcp-taskmanager
-2025-07-18 23:59:57,264 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@yokingma/time-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:57,271 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @yokingma/time-mcp -> https://server.smithery.ai/@yokingma/time-mcp
-2025-07-18 23:59:58,166 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@linxule/lotus-wisdom-mcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:58,171 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @linxule/lotus-wisdom-mcp -> https://server.smithery.ai/@linxule/lotus-wisdom-mcp
-2025-07-18 23:59:58,982 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@nickclyde/duckduckgo-mcp-server "HTTP/1.1 200 OK"
-2025-07-18 23:59:58,983 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @nickclyde/duckduckgo-mcp-server -> https://server.smithery.ai/@nickclyde/duckduckgo-mcp-server
-2025-07-18 23:59:59,734 - httpx - INFO - HTTP Request: GET https://registry.smithery.ai/servers/@sondotpin/desktopcommandermcp "HTTP/1.1 200 OK"
-2025-07-18 23:59:59,750 - tools.gopiai_integration.mcp_integration_fixed - INFO - Найден доступный сервер: @sondotpin/desktopcommandermcp -> https://server.smithery.ai/@sondotpin/desktopcommandermcp
+[OK] CrewAI ��������. ���������� � �������� �������.
+[�����������] ������ ������������� ������
+[�����������] ����� get_rag_system()
+[�����������] RAGSystem �������: True
+[�����������] �������� SmartDelegator
+[�����������] SmartDelegator ������: True
+[�����������] SERVER_IS_READY = True
+[DIAGNOSTIC] __main__ block, SERVER_IS_READY = True
+[DIAGNOSTIC] Starting server on http://0.0.0.0:5051
+[DIAGNOSTIC] Calling app.run()
+ * Serving Flask app 'crewai_api_server'
+ * Debug mode: off
+20:23:27 [INFO] [API-REQUEST] ������� POST ������ �� /api/process
+20:23:27 [INFO] [API-REQUEST] Content-Type: application/json; charset=utf-8
+20:23:27 [INFO] [API-REQUEST] Raw data: [JSON ��������]
+20:23:27 [INFO] [API-REQUEST] Parsed JSON: [JSON ��������]
+20:23:27 [INFO] [API-REQUEST] Message: ������!
+20:23:27 [INFO] [API-REQUEST] Metadata: {'session_id': 'session_1753714071', 'current_tool': None, 'attachments': [], 'model_provider': 'openrouter', 'model_id': None, 'model_data': None, 'chat_history': [{'id': 'c527bbff-d87b-4d91-a7fd-25f4e22c64bd', 'session_id': 'session_1753714071', 'role': 'user', 'content': '������!', 'timestamp': '2025-07-28T20:23:24.003142'}], 'emotion_analysis': {'primary_emotion': 'neutral', 'confidence': 0.6, 'intensity': 0.5, 'explanation': '', 'recommendations': ['���������� ������ � ������� ������']}, 'preferred_provider': 'gemini', 'system_prompt': '�� - �������� ���������. ������� �� ������� �����. ���� �������� � �������. ���� �� ������ ������, ��� � �����.'}
+20:23:27 [INFO] [TASK-START] Starting task 8c932afa-546a-4413-aa8a-c5dc11a7ea88 for message: '������!'
+20:23:27 [INFO] [MODEL-SELECTION] UI �� ������ ���������������� ������, ���������� ��������� �� ���������
+20:23:27 [INFO] ������� 3 ����������� ��� �������: '������!...'
+20:23:27 [INFO] ���� ��������������� ������: ��������� 1 ��������� �� 1 � �������
+20:23:27 [INFO] [CRITICAL-DEBUG] ������ _call_llm
+20:23:27 [INFO] [CRITICAL-DEBUG] messages_count: 2
+20:23:27 [INFO] [CRITICAL-DEBUG] model_config_manager: True
+20:23:27 [INFO] [LLM] ����� ���������� �������: 5853 ��������
+20:23:27 [INFO] [LLM] ���������� ��������� ������������� ������: meta-llama/llama-3.3-70b-instruct:free (Meta: Llama 3.3 70B Instruct (free) (meta-llama/llama-3.3-70b-instruct:free))
+20:23:27 [INFO] [LLM] ���������: openrouter
+20:23:27 [INFO] [LLM-DEBUG] ��������� ������: meta-llama/llama-3.3-70b-instruct:free
+20:23:27 [INFO] [LLM-DEBUG] �������� 'gemini' in model_id.lower(): False
+20:23:27 [INFO] ���������� OpenRouter ������: meta-llama/llama-3.3-70b-instruct:free
+20:23:27 [INFO] [LLM-DEBUG] ���������� ������ � OpenRouter: final_model=openrouter/meta-llama/llama-3.3-70b-instruct:free, messages_count=2
+20:23:31 [INFO] [LLM-DEBUG] ������� ����� �� OpenRouter: <class 'litellm.types.utils.ModelResponse'>
+20:23:31 [INFO] [LLM-DEBUG] response.choices: [Choices(finish_reason='stop', index=0, message=Message(content='������, ������! ���� ���� ������! ��� � ��� �� �������? ������ ���������� ��� �������� GOPI_AI, ��� ����� ���� ������ ���������? � ��� ��������!', role='assistant', tool_calls=None, function_call=None, provider_specific_fields={'refusal': None, 'reasoning': None}), provider_specific_fields={'native_finish_reason': 'stop'})]
+20:23:31 [INFO] [LLM-DEBUG] ����������� �����: '������, ������! ���� ���� ������! ��� � ��� �� �������? ������ ���������� ��� �������� GOPI_AI, ��� ...' (�����: 144)
+20:23:31 [INFO] OpenRouter ������ �������� �����: 144 ��������
+20:23:31 [INFO] [COMMAND-PROCESSOR] ��������� ����� Gemini �� ������� ������...
+20:23:31 [INFO] [PROCESSOR] ������� � ������ �� �������
+20:23:31 [INFO] [COMMAND-PROCESSOR] ������� � ������ �� �������
+20:23:31 [INFO] [TIMING] Request processed in 4.63 sec
+20:23:31 [INFO] [RESPONSE-MODEL] ����� ������������ �������: Meta: Llama 3.3 70B Instruct (free) (meta-llama/llama-3.3-70b-instruct:free) (openrouter/meta-llama/llama-3.3-70b-instruct:free)
+20:23:31 [INFO] [RESPONSE-FORMATTER] ��������� �������������� ������...
+20:23:31 [INFO] [RESPONSE-FORMATTER] ����� ��������������. �������: False
+20:23:31 [INFO] [TASK-SUCCESS] Task 8c932afa-546a-4413-aa8a-c5dc11a7ea88 processed successfully.
+20:24:22 [INFO] [API-REQUEST] ������� POST ������ �� /api/process
+20:24:22 [INFO] [API-REQUEST] Content-Type: application/json; charset=utf-8
+20:24:22 [INFO] [API-REQUEST] Raw data: [JSON ��������]
+20:24:22 [INFO] [API-REQUEST] Parsed JSON: [JSON ��������]
+20:24:22 [INFO] [API-REQUEST] Message: ��� ����?
+20:24:22 [INFO] [API-REQUEST] Metadata: {'session_id': 'session_1753714071', 'current_tool': None, 'attachments': [], 'model_provider': 'gemini', 'model_id': None, 'model_data': None, 'chat_history': [{'id': 'c527bbff-d87b-4d91-a7fd-25f4e22c64bd', 'session_id': 'session_1753714071', 'role': 'user', 'content': '������!', 'timestamp': '2025-07-28T20:23:24.003142'}, {'id': '67f5c057-4ed5-4172-9b07-49bae36fe2c2', 'session_id': 'session_1753714071', 'role': 'assistant', 'content': '������, ������! ���� ���� ������! ��� � ��� �� �������? ������ ���������� ��� �������� GOPI_AI, ��� ����� ���� ������ ���������? � ��� ��������!', 'timestamp': '2025-07-28T20:23:32.105103'}, {'id': '6ee0c2aa-59f8-466f-a34e-64dd001b5502', 'session_id': 'session_1753714071', 'role': 'user', 'content': '��� ����?', 'timestamp': '2025-07-28T20:24:19.218634'}], 'emotion_analysis': {'primary_emotion': 'neutral', 'confidence': 0.6, 'intensity': 0.5, 'explanation': '', 'recommendations': ['���������� ������ � ������� ������']}, 'preferred_provider': 'gemini', 'system_prompt': '�� - �������� ���������. ������� �� ������� �����. ���� �������� � �������. ���� �� ������ ������, ��� � �����.'}
+20:24:22 [INFO] [TASK-START] Starting task 6ed6529e-cf5a-4706-b1de-5d9002aa81ca for message: '��� ����?'
+20:24:22 [INFO] [MODEL-SELECTION] UI �� ������ ���������������� ������, ���������� ��������� �� ���������
+20:24:22 [INFO] ������� 3 ����������� ��� �������: '��� ����?...'
+20:24:22 [INFO] ���� ��������������� ������: ��������� 3 ��������� �� 3 � �������
+20:24:22 [INFO] [CRITICAL-DEBUG] ������ _call_llm
+20:24:22 [INFO] [CRITICAL-DEBUG] messages_count: 4
+20:24:22 [INFO] [CRITICAL-DEBUG] model_config_manager: True
+20:24:22 [INFO] [LLM] ����� ���������� �������: 5864 ��������
+20:24:22 [INFO] [LLM] ���������� ��������� ������������� ������: meta-llama/llama-3.3-70b-instruct:free (Meta: Llama 3.3 70B Instruct (free) (meta-llama/llama-3.3-70b-instruct:free))
+20:24:22 [INFO] [LLM] ���������: openrouter
+20:24:22 [INFO] [LLM-DEBUG] ��������� ������: meta-llama/llama-3.3-70b-instruct:free
+20:24:22 [INFO] [LLM-DEBUG] �������� 'gemini' in model_id.lower(): False
+20:24:22 [INFO] ���������� OpenRouter ������: meta-llama/llama-3.3-70b-instruct:free
+20:24:22 [INFO] [LLM-DEBUG] ���������� ������ � OpenRouter: final_model=openrouter/meta-llama/llama-3.3-70b-instruct:free, messages_count=4
+20:24:26 [INFO] [LLM-DEBUG] ������� ����� �� OpenRouter: <class 'litellm.types.utils.ModelResponse'>
+20:24:26 [INFO] [LLM-DEBUG] response.choices: [Choices(finish_reason='stop', index=0, message=Message(content='� ���� �� �������, ������� �� ������! � ������ ������ � ������ � �������. � � ����, ������, ��� ����? ��� ������ � ����������� ���������� � ����� �����? ��������, � ��� ���!', role='assistant', tool_calls=None, function_call=None, provider_specific_fields={'refusal': None, 'reasoning': None}), provider_specific_fields={'native_finish_reason': 'stop'})]
+20:24:26 [INFO] [LLM-DEBUG] ����������� �����: '� ���� �� �������, ������� �� ������! � ������ ������ � ������ � �������. � � ����, ������, ��� ���...' (�����: 174)
+20:24:26 [INFO] OpenRouter ������ �������� �����: 174 ��������
+20:24:26 [INFO] [COMMAND-PROCESSOR] ��������� ����� Gemini �� ������� ������...
+20:24:26 [INFO] [PROCESSOR] ������� � ������ �� �������
+20:24:26 [INFO] [COMMAND-PROCESSOR] ������� � ������ �� �������
+20:24:26 [INFO] [TIMING] Request processed in 4.17 sec
+20:24:26 [INFO] [RESPONSE-MODEL] ����� ������������ �������: Meta: Llama 3.3 70B Instruct (free) (meta-llama/llama-3.3-70b-instruct:free) (openrouter/meta-llama/llama-3.3-70b-instruct:free)
+20:24:26 [INFO] [RESPONSE-FORMATTER] ��������� �������������� ������...
+20:24:26 [INFO] [RESPONSE-FORMATTER] ����� ��������������. �������: False
+20:24:26 [INFO] [TASK-SUCCESS] Task 6ed6529e-cf5a-4706-b1de-5d9002aa81ca processed successfully.
 
 
 
 
-2025-07-18 23:59:04,914 - pymorphy3.opencorpora_dict.wrapper - INFO - Loading dictionaries from C:\Users\crazy\GOPI_AI_MODULES\gopiai_env\Lib\site-packages\pymorphy3_dicts_ru\data
-2025-07-18 23:59:05,034 - pymorphy3.opencorpora_dict.wrapper - INFO - format: 2.4, revision: 417150, updated: 2022-01-08T22:09:24.565962
-2025-07-18 23:59:07,039 - gopiai.ui.components.crewai_client - INFO - ✅ spaCy и языковые модели успешно загружены
-2025-07-18 23:59:07,061 - gopiai.ui_core.memory.manager - INFO - Initialized simplified emotion classifier
-2025-07-18 23:59:07,065 - gopiai.ui_core.memory.manager - INFO - Loaded 436 chat messages from disk
-2025-07-18 23:59:07,122 - faiss.loader - DEBUG - Environment variable FAISS_OPT_LEVEL is not set, so let's pick the instruction set according to the current CPU
-2025-07-18 23:59:07,126 - faiss.loader - INFO - Loading faiss with AVX2 support.
-2025-07-18 23:59:07,162 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
-2025-07-18 23:59:07,174 - faiss - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
-2025-07-18 23:59:16,862 - LiteLLM - DEBUG - Using AiohttpTransport...
-2025-07-18 23:59:16,867 - LiteLLM - DEBUG - Creating AiohttpTransport...
-2025-07-18 23:59:17,652 - httpcore.connection - DEBUG - connect_tcp.started host='raw.githubusercontent.com' port=443 local_address=None timeout=5 socket_options=None
-2025-07-18 23:59:17,706 - httpcore.connection - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000015ABBE71E50>
-2025-07-18 23:59:17,708 - httpcore.connection - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x0000015ABBE9FDD0> server_hostname='raw.githubusercontent.com' timeout=5
-2025-07-18 23:59:17,761 - httpcore.connection - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000015ABBEE9640>
-2025-07-18 23:59:17,764 - httpcore.http11 - DEBUG - send_request_headers.started request=<Request [b'GET']>
-2025-07-18 23:59:17,765 - httpcore.http11 - DEBUG - send_request_headers.complete
-2025-07-18 23:59:17,767 - httpcore.http11 - DEBUG - send_request_body.started request=<Request [b'GET']>
-2025-07-18 23:59:17,768 - httpcore.http11 - DEBUG - send_request_body.complete
-2025-07-18 23:59:17,769 - httpcore.http11 - DEBUG - receive_response_headers.started request=<Request [b'GET']>
-2025-07-18 23:59:17,798 - httpcore.http11 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Connection', b'keep-alive'), (b'Content-Length', b'27158'), (b'Cache-Control', b'max-age=300'), (b'Content-Security-Policy', b"default-src 'none'; style-src 'unsafe-inline'; sandbox"), (b'Content-Type', b'text/plain; charset=utf-8'), (b'ETag', b'W/"d576f44d227ed714f57595bcba9dd2f3c597f30b71f01edf22ed5b91befc3f2d"'), (b'Strict-Transport-Security', b'max-age=31536000'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'deny'), (b'X-XSS-Protection', b'1; mode=block'), (b'X-GitHub-Request-Id', b'0C62:C0E01:21EDC7:57509C:687A66CF'), (b'Content-Encoding', b'gzip'), (b'Accept-Ranges', b'bytes'), (b'Date', b'Fri, 18 Jul 2025 18:29:17 GMT'), (b'Via', b'1.1 varnish'), (b'X-Served-By', b'cache-del21734-DEL'), (b'X-Cache', b'HIT'), (b'X-Cache-Hits', b'1'), (b'X-Timer', b'S1752863357.454586,VS0,VE1'), (b'Vary', b'Authorization,Accept-Encoding'), (b'Access-Control-Allow-Origin', b'*'), (b'Cross-Origin-Resource-Policy', b'cross-origin'), (b'X-Fastly-Request-ID', b'c3ac723aa0535b7420d4caa5cd64323dbcd95a3a'), (b'Expires', b'Fri, 18 Jul 2025 18:34:17 GMT'), (b'Source-Age', b'261')])
-2025-07-18 23:59:17,805 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
-2025-07-18 23:59:17,807 - httpcore.http11 - DEBUG - receive_response_body.started request=<Request [b'GET']>
-2025-07-18 23:59:17,815 - httpcore.http11 - DEBUG - receive_response_body.complete
-2025-07-18 23:59:17,817 - httpcore.http11 - DEBUG - response_closed.started
-2025-07-18 23:59:17,818 - httpcore.http11 - DEBUG - response_closed.complete
-2025-07-18 23:59:17,820 - httpcore.connection - DEBUG - close.started
-2025-07-18 23:59:17,821 - httpcore.connection - DEBUG - close.complete
-2025-07-18 23:59:18,390 - LiteLLM - DEBUG - Using AiohttpTransport...
-2025-07-18 23:59:18,393 - LiteLLM - DEBUG - Creating AiohttpTransport...
-2025-07-18 23:59:18,830 - LiteLLM - DEBUG - [Non-Blocking] Unable to import GenericAPILogger - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
-2025-07-18 23:59:19,292 - LiteLLM - DEBUG - [Non-Blocking] Unable to import _ENTERPRISE_ResponsesSessionHandler - LiteLLM Enterprise Feature - No module named 'litellm_enterprise'
-2025-07-18 23:59:19,308 - LiteLLM - DEBUG - Using AiohttpTransport...
-2025-07-18 23:59:19,312 - LiteLLM - DEBUG - Creating AiohttpTransport...
-2025-07-18 23:59:19,324 - LiteLLM - DEBUG - Using AiohttpTransport...
-2025-07-18 23:59:19,326 - LiteLLM - DEBUG - Creating AiohttpTransport...
-2025-07-18 23:59:19,740 - gopiai.ui_core.memory.manager - INFO - Успешно импортирован EMBEDDING_MODEL из rag_config: sentence-transformers/nli-mpnet-base-v2
-2025-07-18 23:59:19,745 - gopiai.ui_core.memory.manager - ERROR - Error initializing embeddings: Unrecognized model in C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\vectors. Should have a `model_type` key in its config.json, or contain one of the following strings in its name: albert, align, altclip, arcee, aria, aria_text, audio-spectrogram-transformer, autoformer, aya_vision, bamba, bark, bart, beit, bert, bert-generation, big_bird, bigbird_pegasus, biogpt, bit, bitnet, blenderbot, blenderbot-small, blip, blip-2, blip_2_qformer, bloom, bridgetower, bros, camembert, canine, chameleon, chinese_clip, chinese_clip_vision_model, clap, clip, clip_text_model, clip_vision_model, clipseg, clvp, code_llama, codegen, cohere, cohere2, colpali, colqwen2, conditional_detr, convbert, convnext, convnextv2, cpmant, csm, ctrl, cvt, d_fine, dab-detr, dac, data2vec-audio, data2vec-text, data2vec-vision, dbrx, deberta, deberta-v2, decision_transformer, deepseek_v3, deformable_detr, deit, depth_anything, depth_pro, deta, detr, dia, diffllama, dinat, dinov2, dinov2_with_registers, distilbert, donut-swin, dots1, dpr, dpt, efficientformer, efficientnet, electra, emu3, encodec, encoder-decoder, ernie, ernie_m, esm, falcon, falcon_h1, falcon_mamba, fastspeech2_conformer, flaubert, flava, fnet, focalnet, fsmt, funnel, fuyu, gemma, gemma2, gemma3, gemma3_text, gemma3n, gemma3n_audio, gemma3n_text, gemma3n_vision, git, glm, glm4, glm4v, glm4v_text, glpn, got_ocr2, gpt-sw3, gpt2, gpt_bigcode, gpt_neo, gpt_neox, gpt_neox_japanese, gptj, gptsan-japanese, granite, granite_speech, granitemoe, granitemoehybrid, granitemoeshared, granitevision, graphormer, grounding-dino, groupvit, helium, hgnet_v2, hiera, hubert, ibert, idefics, idefics2, idefics3, idefics3_vision, ijepa, imagegpt, informer, instructblip, instructblipvideo, internvl, internvl_vision, jamba, janus, jetmoe, jukebox, kosmos-2, kyutai_speech_to_text, layoutlm, layoutlmv2, layoutlmv3, led, levit, lightglue, lilt, llama, llama4, llama4_text, llava, llava_next, llava_next_video, llava_onevision, longformer, longt5, luke, lxmert, m2m_100, mamba, mamba2, marian, markuplm, mask2former, maskformer, maskformer-swin, mbart, mctct, mega, megatron-bert, mgp-str, mimi, minimax, mistral, mistral3, mixtral, mlcd, mllama, mobilebert, mobilenet_v1, mobilenet_v2, mobilevit, mobilevitv2, modernbert, moonshine, moshi, mpnet, mpt, mra, mt5, musicgen, musicgen_melody, mvp, nat, nemotron, nezha, nllb-moe, nougat, nystromformer, olmo, olmo2, olmoe, omdet-turbo, oneformer, open-llama, openai-gpt, opt, owlv2, owlvit, paligemma, patchtsmixer, patchtst, pegasus, pegasus_x, perceiver, persimmon, phi, phi3, phi4_multimodal, phimoe, pix2struct, pixtral, plbart, poolformer, pop2piano, prompt_depth_anything, prophetnet, pvt, pvt_v2, qdqbert, qwen2, qwen2_5_omni, qwen2_5_vl, qwen2_5_vl_text, qwen2_audio, qwen2_audio_encoder, qwen2_moe, qwen2_vl, qwen2_vl_text, qwen3, qwen3_moe, rag, realm, recurrent_gemma, reformer, regnet, rembert, resnet, retribert, roberta, roberta-prelayernorm, roc_bert, roformer, rt_detr, rt_detr_resnet, rt_detr_v2, rwkv, sam, sam_hq, sam_hq_vision_model, sam_vision_model, seamless_m4t, seamless_m4t_v2, segformer, seggpt, sew, sew-d, shieldgemma2, siglip, siglip2, siglip_vision_model, smollm3, smolvlm, smolvlm_vision, speech-encoder-decoder, speech_to_text, speech_to_text_2, speecht5, splinter, squeezebert, stablelm, starcoder2, superglue, superpoint, swiftformer, swin, swin2sr, swinv2, switch_transformers, t5, t5gemma, table-transformer, tapas, textnet, time_series_transformer, timesfm, timesformer, timm_backbone, timm_wrapper, trajectory_transformer, transfo-xl, trocr, tvlt, tvp, udop, umt5, unispeech, unispeech-sat, univnet, upernet, van, video_llava, videomae, vilt, vipllava, vision-encoder-decoder, vision-text-dual-encoder, visual_bert, vit, vit_hybrid, vit_mae, vit_msn, vitdet, vitmatte, vitpose, vitpose_backbone, vits, vivit, vjepa2, wav2vec2, wav2vec2-bert, wav2vec2-conformer, wavlm, whisper, xclip, xglm, xlm, xlm-prophetnet, xlm-roberta, xlm-roberta-xl, xlnet, xmod, yolos, yoso, zamba, zamba2, zoedepth
-2025-07-18 23:59:19,774 - gopiai.ui.components.tools_panel_utils.ToolsManager - INFO - Загружена информация об инструментах из C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\config\tools_info.json
-2025-07-18 23:59:20,640 - opentelemetry.trace - WARNING - Overriding of current TracerProvider is not allowed
-2025-07-18 23:59:22,457 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Initializing memory manager with shared config. Path: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory
-2025-07-18 23:59:22,510 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Loaded 436 messages from shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-2025-07-18 23:59:22,579 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-2025-07-18 23:59:22,631 - gopiai.ui.utils.theme_manager - INFO - Загружена тема: Emerald Garden (dark)
-2025-07-18 23:59:22,635 - gopiai.ui.utils.theme_manager - INFO - Применение темы к QApplication/QCoreApplication
-2025-07-18 23:59:23,083 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-2025-07-18 23:59:23,086 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-2025-07-18 23:59:23,425 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-2025-07-18 23:59:23,425 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-2025-07-18 23:59:23,810 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-2025-07-18 23:59:23,812 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-2025-07-18 23:59:24,175 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-2025-07-18 23:59:24,175 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-2025-07-18 23:59:24,564 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-2025-07-18 23:59:24,564 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-2025-07-18 23:59:24,575 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация ChatWidget начата
-2025-07-18 23:59:24,590 - tools.gopiai_integration.mcp_integration - INFO - SMITHERY_API_KEY загружен: 621c15a8...cb64
-2025-07-18 23:59:25,071 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
-2025-07-18 23:59:25,074 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
-2025-07-18 23:59:25,089 - tools.gopiai_integration.mcp_integration - INFO - SMITHERY_API_KEY загружен: 621c15a8...cb64
-2025-07-18 23:59:25,148 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация менеджера памяти
-2025-07-18 23:59:25,149 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация CrewAI клиента
-2025-07-18 23:59:25,151 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация обработчиков сообщений
-2025-07-18 23:59:25,152 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant visual feedback elements created.
-2025-07-18 23:59:25,164 - UIAssistant_20250718_235925 - INFO - ==================================================
-2025-07-18 23:59:25,167 - UIAssistant_20250718_235925 - INFO - UI Assistant Session Started: 20250718_235925
-2025-07-18 23:59:25,171 - UIAssistant_20250718_235925 - INFO - ==================================================
-2025-07-18 23:59:25,186 - UIAssistant_20250718_235925 - INFO - Removed old log file: ui_assistant_20250714_073232.log
-2025-07-18 23:59:25,188 - UIAssistant_20250718_235925 - INFO - Initializing UIAssistantTool
-2025-07-18 23:59:25,193 - gopiai.ui_core.llm - INFO - LLM client initialized
-2025-07-18 23:59:25,196 - UIAssistant_20250718_235925 - INFO - UIAssistantTool initialized successfully
-2025-07-18 23:59:25,198 - gopiai.utils.performance - DEBUG - Cached result for get_ui_assistant (TTL: 300s)
-2025-07-18 23:59:25,199 - gopiai.ui.components.chat_ui_assistant_handler - INFO - ✅ UI Assistant initialized and signals connected.
-2025-07-18 23:59:25,203 - gopiai.ui.components.chat_widget - INFO - [CHAT] Подключение сигналов обработчиков
-2025-07-18 23:59:25,205 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация ChatWidget завершена
-2025-07-18 23:59:25,210 - gopiai.ui.components.chat_widget - INFO - Theme applied to ChatWidget (placeholder method).
-2025-07-18 23:59:25,221 - tools.gopiai_integration.mcp_integration - INFO - SMITHERY_API_KEY загружен: 621c15a8...cb64
-2025-07-18 23:59:26,536 - gopiai.ui.utils.theme_manager - INFO - Тема успешно применена при инициализации
-2025-07-18 23:59:35,414 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-2025-07-18 23:59:35,426 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-2025-07-18 23:59:35,436 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\memory\chats.json
-2025-07-19 00:00:00,990 - tools.gopiai_integration.mcp_integration - INFO - Отключение от всех серверов MCP выполнено успешно
+2025-07-28 20:17:48 - gopiai.ui.utils.theme_manager - INFO - Загружена тема: Lavender Mist (dark)
+2025-07-28 20:17:48 - gopiai.ui.utils.theme_manager - INFO - Применение темы к QApplication/QCoreApplication
+2025-07-28 20:17:48 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
+2025-07-28 20:17:48 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-28 20:17:49 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
+2025-07-28 20:17:49 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-28 20:17:50 - icon_manager - INFO - [OK] Загружено 1597 Lucide иконок
+2025-07-28 20:17:50 - icon_manager - INFO - Инициализирован UniversalIconManager с Lucide иконками
+2025-07-28 20:17:51 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация ChatWidget начата
+2025-07-28 20:17:51 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация менеджера памяти
+2025-07-28 20:17:51 - tools.gopiai_integration.openrouter_client - INFO - 🔌 OpenRouterClient инициализирован
+2025-07-28 20:17:51 - tools.gopiai_integration.model_config_manager - INFO - 📋 Загружено 324 конфигураций
+2025-07-28 20:17:51 - tools.gopiai_integration.model_config_manager - INFO - 🔧 ModelConfigurationManager инициализирован (конфиг: c:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\tools\model_configurations.json)
+2025-07-28 20:17:51 - gopiai.ui.components.openrouter_model_widget - INFO - Backend клиенты инициализированы
+2025-07-28 20:17:51 - gopiai.ui.components.openrouter_model_widget - INFO - OpenRouterModelWidget инициализирован
+2025-07-28 20:17:51 - gopiai.ui.components.openrouter_model_widget - INFO - Загружаем модели OpenRouter в фоновом потоке...
+2025-07-28 20:17:51 - tools.gopiai_integration.openrouter_client - INFO - 🔄 Получаем список моделей OpenRouter...
+2025-07-28 20:17:51 - gopiai.ui.components.unified_models_tab - INFO - UnifiedModelsTab инициализирован
+2025-07-28 20:17:51 - gopiai.ui.components.chat_widget - INFO - ✅ Вкладка моделей с переключателем инициализирована
+2025-07-28 20:17:51 - gopiai.ui.components.personality_tab - INFO - Найден файл system_prompts.py: c:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\tools\gopiai_integration\system_prompts.py
+2025-07-28 20:17:51 - gopiai.ui.components.personality_tab - INFO - Текст персонализации загружен
+2025-07-28 20:17:51 - gopiai.ui.components.personality_tab - INFO - PersonalityTab инициализирован
+2025-07-28 20:17:51 - gopiai.ui.components.chat_widget - INFO - ✅ Вкладка персонализации инициализирована
+2025-07-28 20:17:51 - gopiai.ui.components.chat_widget - INFO - [CHAT] Создана новая сессия: session_1753714071
+2025-07-28 20:17:51 - gopiai.ui.components.chat_widget - INFO - [CHAT] Нет сохраненных сообщений для сессии
+2025-07-28 20:17:51 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация CrewAI клиента
+2025-07-28 20:17:51 - gopiai_integration.ai_router_llm - INFO - ✅ AIRouterLLM инициализирован с улучшенной системой ротации
+2025-07-28 20:17:51 - gopiai_integration.emotional_classifier - INFO - EmotionalClassifier инициализирован
+2025-07-28 20:17:51 - gopiai.ui.components.crewai_client - INFO - [INIT] ✅ Эмоциональный классификатор инициализирован с AI Router
+2025-07-28 20:17:51 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация объединенного обработчика сообщений
+2025-07-28 20:17:51 - gopiai.ui.components.chat_async_handler - INFO - [ChatAsyncHandler] Объединенный обработчик чата инициализирован
+2025-07-28 20:17:51 - gopiai.ui.components.chat_widget - INFO - [CHAT] Подключение сигналов объединенного обработчика
+2025-07-28 20:17:51 - gopiai.ui.components.chat_widget - INFO - [CHAT] Инициализация ChatWidget завершена
+2025-07-28 20:17:51 - gopiai.ui.components.chat_widget - INFO - Theme applied to ChatWidget
+2025-07-28 20:17:51 - gopiai_integration.terminal_tool - INFO - Терминальный виджет установлен: <gopiai.ui.components.terminal_widget.TerminalWidget(0x1bf0897d170) at 0x000001BF07797200>
+2025-07-28 20:17:52 - tools.gopiai_integration.openrouter_client - INFO - ✅ Получено 320 моделей OpenRouter (все показаны)
+2025-07-28 20:17:52 - tools.gopiai_integration.openrouter_client - INFO - 🆓 Бесплатных моделей: 56
+2025-07-28 20:17:52 - tools.gopiai_integration.openrouter_client - INFO - 💰 Платных моделей: 264
+2025-07-28 20:17:52 - gopiai.ui.components.openrouter_model_widget - INFO - Загружено 320 моделей OpenRouter
+2025-07-28 20:17:52 - gopiai.ui.utils.theme_manager - INFO - Тема успешно применена при инициализации
+2025-07-28 20:17:57 - gopiai.ui.components.openrouter_model_widget - INFO - Загружено 320 моделей OpenRouter
+2025-07-28 20:18:00 - gopiai.ui.components.chat_widget - INFO - [MODEL] Провайдер изменен на: openrouter
+2025-07-28 20:18:00 - gopiai.ui.components.unified_models_tab - INFO - Переключение на провайдера: openrouter
+2025-07-28 20:22:51 - gopiai.ui.components.openrouter_model_widget - INFO - Автообновление моделей OpenRouter...
+2025-07-28 20:22:51 - gopiai.ui.components.openrouter_model_widget - INFO - Загружаем модели OpenRouter в фоновом потоке...
+2025-07-28 20:22:51 - gopiai.ui.components.openrouter_model_widget - INFO - Загружено 320 моделей OpenRouter
+2025-07-28 20:22:51 - gopiai.ui.components.openrouter_model_widget - INFO - Загружено 320 моделей OpenRouter
+2025-07-28 20:23:24 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\.gopiai\memory\chats.json
+2025-07-28 20:23:24 - gopiai.ui.components.chat_widget - INFO - [CHAT] Отправка сообщения с провайдером: openrouter
+2025-07-28 20:23:24 - gopiai.ui.components.chat_async_handler - INFO - [ChatAsyncHandler] Начинаем обработку сообщения: {'message': 'привет!', 'metadata': {'session_id': 'session_1753714071', 'current_tool': None, 'attachments': [], 'model_provider': 'openrouter', 'model_id': None, 'model_data': None}}
+2025-07-28 20:23:24 - gopiai.ui.components.chat_async_handler - INFO - [ChatAsyncHandler] Поток для обработки сообщения запущен успешно
+2025-07-28 20:23:24 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Начало фоновой обработки сообщения
+2025-07-28 20:23:24 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Отправка сообщения в CrewAI: привет!
+2025-07-28 20:23:24 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] CrewAI API доступен: True
+2025-07-28 20:23:24 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Вызываем crew_ai_client.process_request...
+2025-07-28 20:23:24 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Начало обработки сообщ. force_crewai=False, timeout=None
+2025-07-28 20:23:24 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Сообщение: привет!
+2025-07-28 20:23:24 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Initializing memory manager with shared config. Path: C:\Users\crazy\.gopiai\memory
+2025-07-28 20:23:24 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Loaded 351 messages from shared file: C:\Users\crazy\.gopiai\memory\chats.json
+2025-07-28 20:23:24 - gopiai.ui.components.crewai_client - DEBUG - [DYNAMIC-TOOLS] tools_instruction_manager недоступен, возвращаем пустые инструкции
+2025-07-28 20:23:24 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Получаем историю сообщений для сессии: session_1753714071
+2025-07-28 20:23:24 - gopiai.ui.components.crewai_client - INFO - [REQUEST] Получено 1 сообщений из истории для сессии session_1753714071
+2025-07-28 20:23:24 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] История сообщений добавлена в запрос
+2025-07-28 20:23:24 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Продолжаем с отправкой запроса к CrewAI API
+2025-07-28 20:23:24 - gopiai.ui.components.crewai_client - DEBUG - привет!
+2025-07-28 20:23:24 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Анализ эмоционального состояния...
+2025-07-28 20:23:24 - gopiai_integration.ai_router_llm - INFO - 🧠 Обработка промпта 1/1
+2025-07-28 20:23:24 - gopiai_integration.ai_router_llm - INFO - 🧠 Высокий приоритет интеллекта
+2025-07-28 20:23:24 - gopiai_integration.ai_router_llm - INFO - 🎯 Попытка 1: Выбрана модель 'gemini/gemini-1.5-flash' (приоритет: 3, score: 0.5)
+2025-07-28 20:23:24 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-1.5-flash
+2025-07-28 20:23:24 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-1.5-flash: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:24 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-1.5-flash: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:23:24 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 1/2 для модели gemini/gemini-1.5-flash: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:25 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-1.5-flash
+2025-07-28 20:23:25 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-1.5-flash: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:25 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-1.5-flash: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:23:25 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 2/2 для модели gemini/gemini-1.5-flash: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:25 - gopiai_integration.ai_router_llm - WARNING - 🔄 Переключаемся на следующую модель из-за ошибки: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:25 - gopiai_integration.ai_router_llm - INFO - 🎯 Попытка 2: Выбрана модель 'gemini/gemini-2.0-flash-lite' (приоритет: 4, score: 0.5)
+2025-07-28 20:23:25 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-2.0-flash-lite
+2025-07-28 20:23:25 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-2.0-flash-lite: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:25 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-2.0-flash-lite: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:23:25 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 1/2 для модели gemini/gemini-2.0-flash-lite: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:26 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-2.0-flash-lite
+2025-07-28 20:23:26 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-2.0-flash-lite: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:26 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-2.0-flash-lite: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:23:26 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 2/2 для модели gemini/gemini-2.0-flash-lite: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:26 - gopiai_integration.ai_router_llm - WARNING - 🔄 Переключаемся на следующую модель из-за ошибки: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:26 - gopiai_integration.ai_router_llm - INFO - 🎯 Попытка 3: Выбрана модель 'gemini/gemini-2.5-flash-lite-preview' (приоритет: 5, score: 0.5)
+2025-07-28 20:23:26 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-2.5-flash-lite-preview
+2025-07-28 20:23:26 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-2.5-flash-lite-preview: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:26 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-2.5-flash-lite-preview: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:23:26 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 1/2 для модели gemini/gemini-2.5-flash-lite-preview: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:27 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-2.5-flash-lite-preview
+2025-07-28 20:23:27 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-2.5-flash-lite-preview: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:27 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-2.5-flash-lite-preview: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:23:27 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 2/2 для модели gemini/gemini-2.5-flash-lite-preview: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:27 - gopiai_integration.ai_router_llm - WARNING - 🔄 Переключаемся на следующую модель из-за ошибки: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:23:27 - gopiai_integration.ai_router_llm - ERROR - 💥 КРИТИЧЕСКАЯ СИТУАЦИЯ: Все модели недоступны для промпта 1
+2025-07-28 20:23:27 - gopiai_integration.ai_router_llm - ERROR - Blacklist: {}
+2025-07-28 20:23:27 - gopiai_integration.ai_router_llm - ERROR - Попробованные модели: ['gemini/gemini-1.5-flash', 'gemini/gemini-2.0-flash-lite', 'gemini/gemini-2.5-flash-lite-preview']
+2025-07-28 20:23:27 - gopiai_integration.emotional_classifier - WARNING - Ошибка парсинга AI анализа эмоций: JSON не найден в ответе AI
+2025-07-28 20:23:27 - gopiai_integration.emotional_classifier - INFO - Эмоциональный анализ завершен: neutral (confidence: 0.60)
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Результат анализа эмоций: neutral
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Установлен флаг async_processing=True
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - INFO - [MODEL] Запрос с провайдером: openrouter
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - INFO - [MODEL] Используется провайдер по умолчанию: Gemini
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Адаптация системного промпта на основе эмоции: neutral
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Добавлен стандартный системный промпт в metadata
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Подготовка к отправке запроса в CrewAI API
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Установлен таймаут 60 секунд для запроса
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Отправка POST запроса на http://127.0.0.1:5051/api/process с заголовком Content-Type: application/json; charset=utf-8
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Получен ответ от сервера: HTTP 200
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - DEBUG - Полный ответ Gemini: {'created_at': '2025-07-28T20:23:27.094657', 'message': 'Task queued for processing', 'status': 'pending', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Успешно парсим JSON ответ: {'created_at': '2025-07-28T20:23:27.094657', 'message': 'Task queued for processing', 'status': 'pending', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - INFO - [TASK-START] [ASYNC] Получен task_id для асинхронной обработки: 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:27 - gopiai.ui.components.crewai_client - DEBUG - [TASK-START] Начальный статус задачи: pending
+2025-07-28 20:23:27 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Получен ответ от CrewAI: {'created_at': '2025-07-28T20:23:27.094657', 'message': 'Task queued for processing', 'status': 'pending', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:27 - gopiai.ui.components.chat_async_handler - INFO - [ASYNC] Получен task_id: 8c932afa-546a-4413-aa8a-c5dc11a7ea88, запуск опроса статуса
+2025-07-28 20:23:27 - gopiai.ui.components.chat_async_handler - INFO - [POLLING] Запущен опрос статуса для task_id: 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:28 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #1 проверки статуса задачи 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:28 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:28 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5051/api/task/8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:28 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 8c932afa-546a-4413-aa8a-c5dc11a7ea88: {'completed_at': None, 'created_at': '2025-07-28T20:23:27.094657', 'error': None, 'message': 'привет!', 'result': None, 'started_at': '2025-07-28T20:23:27.095652', 'status': 'processing', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:28 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 8c932afa-546a-4413-aa8a-c5dc11a7ea88 в процессе. Статус: processing
+2025-07-28 20:23:28 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': None, 'created_at': '2025-07-28T20:23:27.094657', 'error': None, 'message': 'привет!', 'result': None, 'started_at': '2025-07-28T20:23:27.095652', 'status': 'processing', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:28 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 8c932afa-546a-4413-aa8a-c5dc11a7ea88 в процессе: processing
+2025-07-28 20:23:29 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #2 проверки статуса задачи 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:29 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:29 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5051/api/task/8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:29 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 8c932afa-546a-4413-aa8a-c5dc11a7ea88: {'completed_at': None, 'created_at': '2025-07-28T20:23:27.094657', 'error': None, 'message': 'привет!', 'result': None, 'started_at': '2025-07-28T20:23:27.095652', 'status': 'processing', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:29 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 8c932afa-546a-4413-aa8a-c5dc11a7ea88 в процессе. Статус: processing
+2025-07-28 20:23:29 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': None, 'created_at': '2025-07-28T20:23:27.094657', 'error': None, 'message': 'привет!', 'result': None, 'started_at': '2025-07-28T20:23:27.095652', 'status': 'processing', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:29 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 8c932afa-546a-4413-aa8a-c5dc11a7ea88 в процессе: processing
+2025-07-28 20:23:30 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #3 проверки статуса задачи 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:30 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:30 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5051/api/task/8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:30 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 8c932afa-546a-4413-aa8a-c5dc11a7ea88: {'completed_at': None, 'created_at': '2025-07-28T20:23:27.094657', 'error': None, 'message': 'привет!', 'result': None, 'started_at': '2025-07-28T20:23:27.095652', 'status': 'processing', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:30 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 8c932afa-546a-4413-aa8a-c5dc11a7ea88 в процессе. Статус: processing
+2025-07-28 20:23:30 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': None, 'created_at': '2025-07-28T20:23:27.094657', 'error': None, 'message': 'привет!', 'result': None, 'started_at': '2025-07-28T20:23:27.095652', 'status': 'processing', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:30 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 8c932afa-546a-4413-aa8a-c5dc11a7ea88 в процессе: processing
+2025-07-28 20:23:31 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #4 проверки статуса задачи 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:31 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:31 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5051/api/task/8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:31 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 8c932afa-546a-4413-aa8a-c5dc11a7ea88: {'completed_at': None, 'created_at': '2025-07-28T20:23:27.094657', 'error': None, 'message': 'привет!', 'result': None, 'started_at': '2025-07-28T20:23:27.095652', 'status': 'processing', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:31 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 8c932afa-546a-4413-aa8a-c5dc11a7ea88 в процессе. Статус: processing
+2025-07-28 20:23:31 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': None, 'created_at': '2025-07-28T20:23:27.094657', 'error': None, 'message': 'привет!', 'result': None, 'started_at': '2025-07-28T20:23:27.095652', 'status': 'processing', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:31 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 8c932afa-546a-4413-aa8a-c5dc11a7ea88 в процессе: processing
+2025-07-28 20:23:32 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #5 проверки статуса задачи 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:32 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:32 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5051/api/task/8c932afa-546a-4413-aa8a-c5dc11a7ea88
+2025-07-28 20:23:32 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 8c932afa-546a-4413-aa8a-c5dc11a7ea88: {'completed_at': '2025-07-28T20:23:31.723071', 'created_at': '2025-07-28T20:23:27.094657', 'error': None, 'message': 'привет!', 'result': {'analysis': {'analysis_time': 4.625417232513428, 'complexity': 1, 'requires_crewai': False, 'type': 'general'}, 'formatted': True, 'has_commands': False, 'model_info': {'display_name': 'Meta: Llama 3.3 70B Instruct (free) (meta-llama/llama-3.3-70b-instruct:free)', 'model_id': 'meta-llama/llama-3.3-70b-instruct:free', 'provider': 'openrouter'}, 'processed_with_crewai': False, 'response': 'Привет, Анютка! Рада тебя видеть! Что у нас на сегодня? Хочешь поработать над проектом GOPI_AI, или может быть просто поболтать? Я вся внимание!'}, 'started_at': '2025-07-28T20:23:27.095652', 'status': 'completed', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:32 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 8c932afa-546a-4413-aa8a-c5dc11a7ea88 в процессе. Статус: completed
+2025-07-28 20:23:32 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': '2025-07-28T20:23:31.723071', 'created_at': '2025-07-28T20:23:27.094657', 'error': None, 'message': 'привет!', 'result': {'analysis': {'analysis_time': 4.625417232513428, 'complexity': 1, 'requires_crewai': False, 'type': 'general'}, 'formatted': True, 'has_commands': False, 'model_info': {'display_name': 'Meta: Llama 3.3 70B Instruct (free) (meta-llama/llama-3.3-70b-instruct:free)', 'model_id': 'meta-llama/llama-3.3-70b-instruct:free', 'provider': 'openrouter'}, 'processed_with_crewai': False, 'response': 'Привет, Анютка! Рада тебя видеть! Что у нас на сегодня? Хочешь поработать над проектом GOPI_AI, или может быть просто поболтать? Я вся внимание!'}, 'started_at': '2025-07-28T20:23:27.095652', 'status': 'completed', 'task_id': '8c932afa-546a-4413-aa8a-c5dc11a7ea88'}
+2025-07-28 20:23:32 - gopiai.ui.components.chat_async_handler - INFO - [POLLING-COMPLETE] Задача 8c932afa-546a-4413-aa8a-c5dc11a7ea88 завершена после 5 попыток
+2025-07-28 20:23:32 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-RESULT] Получен результат: {'analysis': {'analysis_time': 4.625417232513428, 'complexity': 1, 'requires_crewai': False, 'type': 'general'}, 'formatted': True, 'has_commands': False, 'model_info': {'display_name': 'Meta: Llama 3.3 70B Instruct (free) (meta-llama/llama-3.3-70b-instruct:free)', 'model_id': 'meta-llama/llama-3.3-70b-instruct:free', 'provider': 'openrouter'}, 'processed_with_crewai': False, 'response': 'Привет, Анютка! Рада тебя видеть! Что у нас на сегодня? Хочешь поработать над проектом GOPI_AI, или может быть просто поболтать? Я вся внимание!'}
+2025-07-28 20:23:32 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\.gopiai\memory\chats.json
+2025-07-28 20:23:32 - gopiai.ui.components.chat_async_handler - INFO - [POLLING-COMPLETE] Результат задачи 8c932afa-546a-4413-aa8a-c5dc11a7ea88 отправлен в UI
+2025-07-28 20:24:09 - gopiai.ui.components.chat_widget - INFO - [MODEL] Провайдер изменен на: gemini
+2025-07-28 20:24:09 - gopiai.ui.components.unified_models_tab - INFO - Переключение на провайдера: gemini
+2025-07-28 20:24:19 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\.gopiai\memory\chats.json
+2025-07-28 20:24:19 - gopiai.ui.components.chat_widget - INFO - [CHAT] Отправка сообщения с провайдером: gemini
+2025-07-28 20:24:19 - gopiai.ui.components.chat_async_handler - INFO - [ChatAsyncHandler] Начинаем обработку сообщения: {'message': 'как дела?', 'metadata': {'session_id': 'session_1753714071', 'current_tool': None, 'attachments': [], 'model_provider': 'gemini', 'model_id': None, 'model_data': None}}
+2025-07-28 20:24:19 - gopiai.ui.components.chat_async_handler - INFO - [ChatAsyncHandler] Поток для обработки сообщения запущен успешно
+2025-07-28 20:24:19 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Начало фоновой обработки сообщения
+2025-07-28 20:24:19 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Отправка сообщения в CrewAI: как дела?
+2025-07-28 20:24:19 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] CrewAI API доступен: True
+2025-07-28 20:24:19 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Вызываем crew_ai_client.process_request...
+2025-07-28 20:24:19 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Начало обработки сообщ. force_crewai=False, timeout=None
+2025-07-28 20:24:19 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Сообщение: как дела?
+2025-07-28 20:24:19 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Initializing memory manager with shared config. Path: C:\Users\crazy\.gopiai\memory
+2025-07-28 20:24:19 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Loaded 353 messages from shared file: C:\Users\crazy\.gopiai\memory\chats.json
+2025-07-28 20:24:19 - gopiai.ui.components.crewai_client - DEBUG - [DYNAMIC-TOOLS] tools_instruction_manager недоступен, возвращаем пустые инструкции
+2025-07-28 20:24:19 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Получаем историю сообщений для сессии: session_1753714071
+2025-07-28 20:24:19 - gopiai.ui.components.crewai_client - INFO - [REQUEST] Получено 3 сообщений из истории для сессии session_1753714071
+2025-07-28 20:24:19 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] История сообщений добавлена в запрос
+2025-07-28 20:24:19 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Продолжаем с отправкой запроса к CrewAI API
+2025-07-28 20:24:19 - gopiai.ui.components.crewai_client - DEBUG - как дела?
+2025-07-28 20:24:19 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Анализ эмоционального состояния...
+2025-07-28 20:24:19 - gopiai_integration.ai_router_llm - INFO - 🧠 Обработка промпта 1/1
+2025-07-28 20:24:19 - gopiai_integration.ai_router_llm - INFO - 🧠 Высокий приоритет интеллекта
+2025-07-28 20:24:19 - gopiai_integration.ai_router_llm - INFO - 🎯 Попытка 1: Выбрана модель 'gemini/gemini-1.5-flash' (приоритет: 3, score: 0.5)
+2025-07-28 20:24:19 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-1.5-flash
+2025-07-28 20:24:19 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-1.5-flash: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:19 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-1.5-flash: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:24:19 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 1/2 для модели gemini/gemini-1.5-flash: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:20 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-1.5-flash
+2025-07-28 20:24:20 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-1.5-flash: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:20 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-1.5-flash: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:24:20 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 2/2 для модели gemini/gemini-1.5-flash: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:20 - gopiai_integration.ai_router_llm - WARNING - 🔄 Переключаемся на следующую модель из-за ошибки: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:20 - gopiai_integration.ai_router_llm - INFO - 🎯 Попытка 2: Выбрана модель 'gemini/gemini-2.0-flash-lite' (приоритет: 4, score: 0.5)
+2025-07-28 20:24:20 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-2.0-flash-lite
+2025-07-28 20:24:20 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-2.0-flash-lite: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:20 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-2.0-flash-lite: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:24:20 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 1/2 для модели gemini/gemini-2.0-flash-lite: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:21 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-2.0-flash-lite
+2025-07-28 20:24:21 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-2.0-flash-lite: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:21 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-2.0-flash-lite: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:24:21 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 2/2 для модели gemini/gemini-2.0-flash-lite: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:21 - gopiai_integration.ai_router_llm - WARNING - 🔄 Переключаемся на следующую модель из-за ошибки: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:21 - gopiai_integration.ai_router_llm - INFO - 🎯 Попытка 3: Выбрана модель 'gemini/gemini-2.5-flash-lite-preview' (приоритет: 5, score: 0.5)
+2025-07-28 20:24:21 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-2.5-flash-lite-preview
+2025-07-28 20:24:21 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-2.5-flash-lite-preview: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:21 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-2.5-flash-lite-preview: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:24:21 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 1/2 для модели gemini/gemini-2.5-flash-lite-preview: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:22 - gopiai_integration.ai_router_llm - INFO - 🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели gemini/gemini-2.5-flash-lite-preview
+2025-07-28 20:24:22 - gopiai_integration.ai_router_llm - WARNING - ❌ Ошибка при запросе к модели gemini/gemini-2.5-flash-lite-preview: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:22 - gopiai_integration.ai_router_llm - INFO - 🔍 Диагностика Google/Gemini модели gemini/gemini-2.5-flash-lite-preview: используется прямой HTTP-клиент без safetySettings
+2025-07-28 20:24:22 - gopiai_integration.ai_router_llm - WARNING - ⚠️ Retry 2/2 для модели gemini/gemini-2.5-flash-lite-preview: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:22 - gopiai_integration.ai_router_llm - WARNING - 🔄 Переключаемся на следующую модель из-за ошибки: BaseLLM.__init__() got an unexpected keyword argument 'api_key'
+2025-07-28 20:24:22 - gopiai_integration.ai_router_llm - ERROR - 💥 КРИТИЧЕСКАЯ СИТУАЦИЯ: Все модели недоступны для промпта 1
+2025-07-28 20:24:22 - gopiai_integration.ai_router_llm - ERROR - Blacklist: {}
+2025-07-28 20:24:22 - gopiai_integration.ai_router_llm - ERROR - Попробованные модели: ['gemini/gemini-1.5-flash', 'gemini/gemini-2.0-flash-lite', 'gemini/gemini-2.5-flash-lite-preview']
+2025-07-28 20:24:22 - gopiai_integration.emotional_classifier - WARNING - Ошибка парсинга AI анализа эмоций: JSON не найден в ответе AI
+2025-07-28 20:24:22 - gopiai_integration.emotional_classifier - INFO - Эмоциональный анализ завершен: neutral (confidence: 0.60)
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Результат анализа эмоций: neutral
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Установлен флаг async_processing=True
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - INFO - [MODEL] Запрос с провайдером: gemini
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - INFO - [MODEL] Используется провайдер по умолчанию: Gemini
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Адаптация системного промпта на основе эмоции: neutral
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Добавлен стандартный системный промпт в metadata
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Подготовка к отправке запроса в CrewAI API
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Установлен таймаут 60 секунд для запроса
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Отправка POST запроса на http://127.0.0.1:5051/api/process с заголовком Content-Type: application/json; charset=utf-8
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Получен ответ от сервера: HTTP 200
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - DEBUG - Полный ответ Gemini: {'created_at': '2025-07-28T20:24:22.306367', 'message': 'Task queued for processing', 'status': 'pending', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - DEBUG - [REQUEST] Успешно парсим JSON ответ: {'created_at': '2025-07-28T20:24:22.306367', 'message': 'Task queued for processing', 'status': 'pending', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - INFO - [TASK-START] [ASYNC] Получен task_id для асинхронной обработки: 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:22 - gopiai.ui.components.crewai_client - DEBUG - [TASK-START] Начальный статус задачи: pending
+2025-07-28 20:24:22 - gopiai.ui.components.chat_async_handler - DEBUG - [ASYNC] Получен ответ от CrewAI: {'created_at': '2025-07-28T20:24:22.306367', 'message': 'Task queued for processing', 'status': 'pending', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:22 - gopiai.ui.components.chat_async_handler - INFO - [ASYNC] Получен task_id: 6ed6529e-cf5a-4706-b1de-5d9002aa81ca, запуск опроса статуса
+2025-07-28 20:24:22 - gopiai.ui.components.chat_async_handler - INFO - [POLLING] Запущен опрос статуса для task_id: 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:23 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #1 проверки статуса задачи 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:23 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:23 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5051/api/task/6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:23 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 6ed6529e-cf5a-4706-b1de-5d9002aa81ca: {'completed_at': None, 'created_at': '2025-07-28T20:24:22.306367', 'error': None, 'message': 'как дела?', 'result': None, 'started_at': '2025-07-28T20:24:22.308369', 'status': 'processing', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:23 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 6ed6529e-cf5a-4706-b1de-5d9002aa81ca в процессе. Статус: processing
+2025-07-28 20:24:23 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': None, 'created_at': '2025-07-28T20:24:22.306367', 'error': None, 'message': 'как дела?', 'result': None, 'started_at': '2025-07-28T20:24:22.308369', 'status': 'processing', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:23 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 6ed6529e-cf5a-4706-b1de-5d9002aa81ca в процессе: processing
+2025-07-28 20:24:24 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #2 проверки статуса задачи 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:24 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:24 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5051/api/task/6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:24 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 6ed6529e-cf5a-4706-b1de-5d9002aa81ca: {'completed_at': None, 'created_at': '2025-07-28T20:24:22.306367', 'error': None, 'message': 'как дела?', 'result': None, 'started_at': '2025-07-28T20:24:22.308369', 'status': 'processing', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:24 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 6ed6529e-cf5a-4706-b1de-5d9002aa81ca в процессе. Статус: processing
+2025-07-28 20:24:24 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': None, 'created_at': '2025-07-28T20:24:22.306367', 'error': None, 'message': 'как дела?', 'result': None, 'started_at': '2025-07-28T20:24:22.308369', 'status': 'processing', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:24 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 6ed6529e-cf5a-4706-b1de-5d9002aa81ca в процессе: processing
+2025-07-28 20:24:25 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #3 проверки статуса задачи 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:25 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:25 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5051/api/task/6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:25 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 6ed6529e-cf5a-4706-b1de-5d9002aa81ca: {'completed_at': None, 'created_at': '2025-07-28T20:24:22.306367', 'error': None, 'message': 'как дела?', 'result': None, 'started_at': '2025-07-28T20:24:22.308369', 'status': 'processing', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:25 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 6ed6529e-cf5a-4706-b1de-5d9002aa81ca в процессе. Статус: processing
+2025-07-28 20:24:25 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': None, 'created_at': '2025-07-28T20:24:22.306367', 'error': None, 'message': 'как дела?', 'result': None, 'started_at': '2025-07-28T20:24:22.308369', 'status': 'processing', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:25 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 6ed6529e-cf5a-4706-b1de-5d9002aa81ca в процессе: processing
+2025-07-28 20:24:26 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #4 проверки статуса задачи 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:26 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:26 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5051/api/task/6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:26 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 6ed6529e-cf5a-4706-b1de-5d9002aa81ca: {'completed_at': None, 'created_at': '2025-07-28T20:24:22.306367', 'error': None, 'message': 'как дела?', 'result': None, 'started_at': '2025-07-28T20:24:22.308369', 'status': 'processing', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:26 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 6ed6529e-cf5a-4706-b1de-5d9002aa81ca в процессе. Статус: processing
+2025-07-28 20:24:26 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': None, 'created_at': '2025-07-28T20:24:22.306367', 'error': None, 'message': 'как дела?', 'result': None, 'started_at': '2025-07-28T20:24:22.308369', 'status': 'processing', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:26 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-PROGRESS] Задача 6ed6529e-cf5a-4706-b1de-5d9002aa81ca в процессе: processing
+2025-07-28 20:24:27 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Попытка #5 проверки статуса задачи 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:27 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Проверка статуса задачи: 6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:27 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Отправка GET запроса на: http://127.0.0.1:5051/api/task/6ed6529e-cf5a-4706-b1de-5d9002aa81ca
+2025-07-28 20:24:27 - gopiai.ui.components.crewai_client - DEBUG - [TASK-CHECK] Получен ответ для задачи 6ed6529e-cf5a-4706-b1de-5d9002aa81ca: {'completed_at': '2025-07-28T20:24:26.479695', 'created_at': '2025-07-28T20:24:22.306367', 'error': None, 'message': 'как дела?', 'result': {'analysis': {'analysis_time': 4.170330047607422, 'complexity': 1, 'requires_crewai': False, 'type': 'general'}, 'formatted': True, 'has_commands': False, 'model_info': {'display_name': 'Meta: Llama 3.3 70B Instruct (free) (meta-llama/llama-3.3-70b-instruct:free)', 'model_id': 'meta-llama/llama-3.3-70b-instruct:free', 'provider': 'openrouter'}, 'processed_with_crewai': False, 'response': 'У меня всё отлично, спасибо за вопрос! Я всегда готова к работе и общению. А у тебя, Анютка, как дела? Что нового и интересного происходит в твоей жизни? Расскажи, я вся уши!'}, 'started_at': '2025-07-28T20:24:22.308369', 'status': 'completed', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:27 - gopiai.ui.components.crewai_client - INFO - [TASK-PROGRESS] Задача 6ed6529e-cf5a-4706-b1de-5d9002aa81ca в процессе. Статус: completed
+2025-07-28 20:24:27 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING] Получен статус: {'completed_at': '2025-07-28T20:24:26.479695', 'created_at': '2025-07-28T20:24:22.306367', 'error': None, 'message': 'как дела?', 'result': {'analysis': {'analysis_time': 4.170330047607422, 'complexity': 1, 'requires_crewai': False, 'type': 'general'}, 'formatted': True, 'has_commands': False, 'model_info': {'display_name': 'Meta: Llama 3.3 70B Instruct (free) (meta-llama/llama-3.3-70b-instruct:free)', 'model_id': 'meta-llama/llama-3.3-70b-instruct:free', 'provider': 'openrouter'}, 'processed_with_crewai': False, 'response': 'У меня всё отлично, спасибо за вопрос! Я всегда готова к работе и общению. А у тебя, Анютка, как дела? Что нового и интересного происходит в твоей жизни? Расскажи, я вся уши!'}, 'started_at': '2025-07-28T20:24:22.308369', 'status': 'completed', 'task_id': '6ed6529e-cf5a-4706-b1de-5d9002aa81ca'}
+2025-07-28 20:24:27 - gopiai.ui.components.chat_async_handler - INFO - [POLLING-COMPLETE] Задача 6ed6529e-cf5a-4706-b1de-5d9002aa81ca завершена после 5 попыток
+2025-07-28 20:24:27 - gopiai.ui.components.chat_async_handler - DEBUG - [POLLING-RESULT] Получен результат: {'analysis': {'analysis_time': 4.170330047607422, 'complexity': 1, 'requires_crewai': False, 'type': 'general'}, 'formatted': True, 'has_commands': False, 'model_info': {'display_name': 'Meta: Llama 3.3 70B Instruct (free) (meta-llama/llama-3.3-70b-instruct:free)', 'model_id': 'meta-llama/llama-3.3-70b-instruct:free', 'provider': 'openrouter'}, 'processed_with_crewai': False, 'response': 'У меня всё отлично, спасибо за вопрос! Я всегда готова к работе и общению. А у тебя, Анютка, как дела? Что нового и интересного происходит в твоей жизни? Расскажи, я вся уши!'}
+2025-07-28 20:24:27 - gopiai.ui.memory.manager - INFO - [UNIFIED-MEMORY] Added message and saved to shared file: C:\Users\crazy\.gopiai\memory\chats.json
+2025-07-28 20:24:27 - gopiai.ui.components.chat_async_handler - INFO - [POLLING-COMPLETE] Результат задачи 6ed6529e-cf5a-4706-b1de-5d9002aa81ca отправлен в UI
+2025-07-28 20:27:51 - gopiai.ui.components.openrouter_model_widget - INFO - Автообновление моделей OpenRouter...
+2025-07-28 20:27:51 - gopiai.ui.components.openrouter_model_widget - INFO - Загружаем модели OpenRouter в фоновом потоке...
+2025-07-28 20:27:51 - gopiai.ui.components.openrouter_model_widget - INFO - Загружено 320 моделей OpenRouter
+2025-07-28 20:27:51 - gopiai.ui.components.openrouter_model_widget - INFO - Загружено 320 моделей OpenRouter

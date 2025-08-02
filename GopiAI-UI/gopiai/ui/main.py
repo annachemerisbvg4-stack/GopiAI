@@ -14,8 +14,12 @@ GopiAI Standalone Interface - Модульная версия с централ�
 import sys
 import os
 import warnings
+import logging
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
+
+import chardet
 
 # Исправляем конфликт OpenMP библиотек
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
@@ -87,8 +91,31 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QPalette
 
 # Импорт компонентов тем
-from gopiai.ui.utils.theme_manager import ThemeManager
-from gopiai.ui.dialogs.settings_dialog import GopiAISettingsDialog
+try:
+    from gopiai.ui.utils.theme_manager import ThemeManager
+    print("✅ ThemeManager импортирован успешно")
+except ImportError as e:
+    print(f"⚠️ Не удалось импортировать ThemeManager: {e}")
+    ThemeManager = None
+
+try:
+    from gopiai.ui.dialogs.settings_dialog import GopiAISettingsDialog
+except ImportError as e:
+    print(f"⚠️ Не удалось импортировать GopiAISettingsDialog: {e}")
+    GopiAISettingsDialog = None
+
+# Добавляем правильные пути к tools для импорта gopiai_integration
+# Правильное формирование project_root
+project_root = r"c:\Users\crazy\GOPI_AI_MODULES"  # Прямое указание пути
+# Путь к tools (а не к GopiAI-CrewAI!) для импорта gopiai_integration
+tools_path = os.path.join(project_root, 'GopiAI-CrewAI', 'tools')
+if os.path.exists(tools_path) and tools_path not in sys.path:
+    sys.path.insert(0, tools_path)
+    print(f"✅ Добавлен путь к tools: {tools_path}")
+else:
+    print(f"⚠️ Путь к tools не найден: {tools_path}")
+
+from gopiai_integration.terminal_tool import set_terminal_widget
 
 # Настройка путей для импорта модулей GopiAI
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -133,18 +160,18 @@ try:
         memory_manager = get_memory_manager()
         print("[MEMORY] Инициализирован MemoryManager")
         
-        # Простой тест работы памяти
-        try:
-            test_session = "test_session_" + str(hash('test'))
-            test_msg = "Тестовая запись от " + str(datetime.now())
-            memory_manager.add_message(
-                session_id=test_session,
-                role="system",
-                content=test_msg
-            )
-            print("[MEMORY] Тестовая запись успешно добавлена")
-        except Exception as test_err:
-            print(f"[WARNING] Предупреждение при тестировании памяти: {test_err}")
+        # Простой тест работы памяти (удалён для чистоты истории)
+        # try:
+        #     test_session = "test_session_" + str(hash('test'))
+        #     test_msg = "Тестовая запись от " + str(datetime.now())
+        #     memory_manager.add_message(
+        #         session_id=test_session,
+        #         role="system",
+        #         content=test_msg
+        #     )
+        #     print("[MEMORY] Тестовая запись успешно добавлена")
+        # except Exception as test_err:
+        #     print(f"[WARNING] Предупреждение при тестировании памяти: {test_err}")
             
     except Exception as e:
         print(f"[ERROR] Ошибка при инициализации памяти: {e}")
@@ -201,18 +228,7 @@ except ImportError as e:
     TabDocumentWidget = lambda parent=None: SimpleWidget("TabDocument")
     TerminalWidget = lambda parent=None: SimpleWidget("Terminal")
 
-    class GlobalFallbackThemeManager:
-        def __init__(self):
-            self.current_theme = "default"
-        
-        def apply_theme(self, app_or_theme):
-            print(f"Fallback: apply_theme({app_or_theme})")
-            return False
-        
-
-
-    if 'ThemeManager' not in globals() or ThemeManager is None:
-        ThemeManager = GlobalFallbackThemeManager
+    # ThemeManager будет определен ниже как FallbackThemeManager если недоступен
 
 # Глобальные переменные для систем
 AutoIconSystem = None
@@ -226,13 +242,34 @@ EXTENSIONS_AVAILABLE = True
 
 
 class FallbackThemeManager:
-    """Fallback менеджер тем для случаев, когда основной ThemeManager недоступен"""
+    """
+    Единый fallback менеджер тем для случаев, когда основной ThemeManager недоступен
+    Используется во всех местах, где требуется fallback функциональность
+    """
     def __init__(self):
         self.current_theme = "default"
+        print("🔧 Инициализирован FallbackThemeManager")
     
     def apply_theme(self, app_or_theme):
-        print(f"Fallback: apply_theme({app_or_theme})")
+        """Применяет fallback тему"""
+        print(f"🎨 Fallback: apply_theme({app_or_theme})")
         return False
+    
+    def get_current_theme(self):
+        """Возвращает текущую тему"""
+        return self.current_theme
+    
+    def set_theme(self, theme_name):
+        """Устанавливает тему (fallback)"""
+        self.current_theme = theme_name
+        print(f"🎨 Fallback: установлена тема {theme_name}")
+        return False
+
+
+# Устанавливаем FallbackThemeManager если основной ThemeManager недоступен
+if ThemeManager is None:
+    print("🔧 Основной ThemeManager недоступен, используем FallbackThemeManager")
+    ThemeManager = FallbackThemeManager
 
 
 class FramelessGopiAIStandaloneWindow(QMainWindow):
@@ -264,10 +301,10 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self._connect_menu_signals()
         self._apply_vscode_like_layout()
         self._setup_panel_shortcuts()
-        
-        # Initialize AI Assistant
-        self._init_ai_assistant()
 
+        self.terminal_widget = TerminalWidget()
+        set_terminal_widget(self.terminal_widget)
+        TerminalWidget.instance = self.terminal_widget  # Singleton-like access
 
         print("[OK] FramelessGopiAIStandaloneWindow готов к работе!")
 
@@ -323,46 +360,25 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self.terminal_widget.setSizePolicy(terminal_size_policy)
         center_vertical_splitter.addWidget(self.terminal_widget)
 
-        # Правая панель - табы с чатом и MCP панелью
-        self.right_tabs = QTabWidget()
-        self.right_tabs.setTabPosition(QTabWidget.TabPosition.South)  # Вкладки внизу
-        self.right_tabs.setMinimumWidth(0)
-        self.right_tabs.setMaximumWidth(800)  # Увеличено для лучшего отображения инструментов
-        right_tabs_size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
-        self.right_tabs.setSizePolicy(right_tabs_size_policy)
-
-        # Вкладка чата с ИИ (модульный)
+        # Правая панель - чат
         self.chat_widget = ChatWidget()
         print("[CHAT] ChatWidget создан успешно")
         if hasattr(self, 'theme_manager'):
             print("[CHAT] Передаем theme_manager в ChatWidget...")
             self.chat_widget.set_theme_manager(self.theme_manager)
             print("[CHAT] theme_manager передан успешно")
-
-        # Вкладка MCP панели (новый компонент)
-        try:
-            from gopiai.ui.components.smithery_mcp_panel import SmitheryMcpPanel
-            self.smithery_mcp_panel = SmitheryMcpPanel()
-            print("[MCP] SmitheryMcpPanel создан успешно")
-        except Exception as e:
-            print(f"[ERROR] Ошибка создания SmitheryMcpPanel: {e}")
-            self.smithery_mcp_panel = QWidget()
-            error_layout = QVBoxLayout(self.smithery_mcp_panel)
-            error_layout.addWidget(QLabel(f"Ошибка загрузки MCP панели:\n{str(e)}"))
-
-        # Добавляем вкладки
-        self.right_tabs.addTab(self.chat_widget, "Чат")
-        self.right_tabs.addTab(self.smithery_mcp_panel, "MCP Tools")
-        
-        main_splitter.addWidget(self.right_tabs)
+        self.chat_widget.setMinimumWidth(0)
+        self.chat_widget.setMaximumWidth(800)
+        chat_size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        self.chat_widget.setSizePolicy(chat_size_policy)
+        main_splitter.addWidget(self.chat_widget)
 
         # Настройка пропорций сплиттеров
-        main_splitter.setSizes([200, 800, 350])  # Проводник | центр | чат/MCP
-        center_vertical_splitter.setSizes([700, 200])  # TabDocumentWidget | терминал
+        main_splitter.setSizes([200, 800, 350])  # Проводник | центр | чат
         main_splitter.setCollapsible(0, True)   # Проводник можно схлопнуть
         main_splitter.setCollapsible(1, False)  # Центр нельзя схлопнуть
         main_splitter.setCollapsible(2, True)   # Чат можно схлопнуть
-        center_vertical_splitter.setChildrenCollapsible(True)
+        center_vertical_splitter.setSizes([700, 200])  # TabDocumentWidget | терминал
         main_splitter.setStretchFactor(0, 0)
         main_splitter.setStretchFactor(1, 10)
         main_splitter.setStretchFactor(2, 0)
@@ -564,48 +580,27 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         """Инициализация системы тем и иконок"""
         # Импорт системы иконок
         try:
-            import qtawesome as qta
-
+            from gopiai.ui.components.icon_file_system_model import UniversalIconManager
             class SimpleIconManager:
                 def __init__(self):
-                    self.qta = qta
+                    self.icon_manager = UniversalIconManager.instance()
 
                 def get_icon(self, name):
-                    # Try several icon prefixes, fallback to a default icon if not found
-                    prefixes = ["fa5.", "fa.", "mdi.", "ei."]
-                    for prefix in prefixes:
-                        try:
-                            icon = self.qta.icon(prefix + name)
-                            if not icon.isNull():
-                                return icon
-                        except Exception:
-                            continue
-                    # Fallback to a default icon if all attempts fail
-                    try:
-                        return self.qta.icon("fa5.question")
-                    except Exception:
-                        return None
+                    return self.icon_manager.get_icon(name)
 
             self.icon_manager = SimpleIconManager()
             self.icon_manager.get_icon("example")
             print("[OK] Система иконок SimpleIconManager инициализирована")
         except ImportError:
             self.icon_manager = None
-            print("[WARNING] Система иконок недоступна")
+            print("[WARNING] UniversalIconManager not available")
         except Exception as e:
             print(f"[WARNING] Ошибка инициализации иконок: {e}")
             self.icon_manager = None
 
         # Инициализация системы тем
         
-        # Определяем LocalFallbackThemeManager один раз здесь, до блока try-except
-        class LocalFallbackThemeManager:
-            def __init__(self):
-                self.current_theme = "default"
-            
-            def apply_theme(self, app_or_theme):
-                print(f"Fallback: apply_theme({app_or_theme})")
-                return False
+        # Используем единый FallbackThemeManager
 
         try:
             if ThemeManager is not None:
@@ -619,11 +614,11 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                         print("✅ Применена тема из файла настроек")
                 else:
                     print("⚠️ Не удалось создать менеджер тем. Используем fallback.")
-                    self.theme_manager = LocalFallbackThemeManager() # Создаем экземпляр
+                    self.theme_manager = FallbackThemeManager() # Создаем экземпляр
             else:
                 print("⚠️ ThemeManager недоступен, используем fallback")
-                # Используем предварительно определенный LocalFallbackThemeManager
-                self.theme_manager = LocalFallbackThemeManager() # Создаем экземпляр
+                # Используем единый FallbackThemeManager
+                self.theme_manager = FallbackThemeManager()
         except Exception as e:
             print(f"[WARNING] Ошибка инициализации менеджера тем: {e}")
             # Используем предварительно определенный LocalFallbackThemeManager в случае ошибки
@@ -659,21 +654,6 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         # Если все попытки применения темы не удались, оставляем стандартные системные стили
         print("[WARNING] Используется системная тема по умолчанию")
 
-
-
-    def _init_ai_assistant(self):
-        """Initialize the AI Assistant functionality in the main chat widget."""
-        try:
-            # AI Assistant functionality is now integrated into the main chat widget
-            if hasattr(self, 'chat_widget') and hasattr(self.chat_widget, 'ui_assistant'):
-                # Set the main window reference for the UI Assistant
-                self.chat_widget.ui_assistant.set_main_window(self)
-                print("[OK] AI Assistant инициализирован в основном чате")
-            else:
-                print("[WARNING] Основной виджет чата не найден или не содержит UI Assistant")
-                
-        except Exception as e:
-            print(f"[ERROR] Ошибка инициализации AI Assistant: {e}")
     
     def _connect_menu_signals(self):
         """Подключение сигналов меню"""
@@ -1101,8 +1081,19 @@ def main():
     """Основная функция запуска приложения"""
     print("[LAUNCH] Запуск модульного GopiAI...")
 
+    # Настройка логирования - каждый запуск перезаписывает файл лога
+    try:
+        from gopiai.logging_config import setup_logging
+        setup_logging(
+            log_file_path='ui_debug.log',
+            level=logging.INFO,
+            console_output=False,  # Отключаем вывод в консоль для чистоты
+            single_file_mode=True  # Включаем режим одного файла
+        )
+        print("[OK] Логирование настроено - файл ui_debug.log будет перезаписываться при каждом запуске")
+    except ImportError as e:
+        print(f"[WARNING] Не удалось настроить логирование: {e}")
     
-
     # Создание приложения
     app = QApplication(sys.argv)
     app.setApplicationName("GopiAI")

@@ -19,11 +19,13 @@ File Explorer Component для GopiAI Standalone Interface
 
 import os
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTreeView, QHBoxLayout, 
-QPushButton, QLineEdit, QHeaderView, QSizePolicy, QFileSystemModel)
+QPushButton, QLineEdit, QHeaderView, QSizePolicy, QFileSystemModel, QTabWidget)
 from PySide6.QtCore import QDir, Signal, Qt, QModelIndex
 from PySide6.QtGui import QIcon
 from .file_type_detector import FileTypeDetector
 from .custom_file_system_model import CustomFileSystemModel
+
+# Виджеты моделей перенесены в ChatWidget
 
 
 class FileExplorerWidget(QWidget):
@@ -66,8 +68,30 @@ class FileExplorerWidget(QWidget):
             print("[ERROR] Не удалось загрузить UniversalIconManager")
 
     def _setup_ui(self):
-        """Настройка интерфейса проводника"""
+        """Настройка интерфейса проводника с вкладками"""
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(5)
+        
+        # Создаем табы
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setTabPosition(QTabWidget.North)
+        self.tab_widget.setMovable(False)
+        
+        # Вкладка 1: Файловый проводник (оригинальная функциональность)
+        self.file_explorer_tab = QWidget()
+        self._setup_file_explorer_tab()
+        self.tab_widget.addTab(self.file_explorer_tab, "📁 Файлы")
+        
+        # Вкладки моделей перенесены в ChatWidget (правая панель)
+        
+        layout.addWidget(self.tab_widget)
+        
+        print("✅ FileExplorerWidget настроен с вкладками")
+    
+    def _setup_file_explorer_tab(self):
+        """Настройка вкладки файлового проводника"""
+        layout = QVBoxLayout(self.file_explorer_tab)
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(5)
         
@@ -230,3 +254,6 @@ class FileExplorerWidget(QWidget):
             # Если это файл, отправляем сигнал об открытии
             file_path = self.model.filePath(index)
             self.file_double_clicked.emit(file_path)
+    
+    # === Обработчики сигналов для OpenRouter интеграции ===
+    # Методы обработки сигналов моделей перенесены в ChatWidget

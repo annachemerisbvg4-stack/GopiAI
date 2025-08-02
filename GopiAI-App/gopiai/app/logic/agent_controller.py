@@ -367,6 +367,8 @@ class AgentController(QObject):
         try:
             callback(data)
         except Exception as e:
+            logger.error(f"Error in callback for {component_id}: {str(e)}")
+
     @staticmethod
     def instance() -> "AgentController":
         """
@@ -378,6 +380,4 @@ class AgentController(QObject):
         if AgentController._instance is None:
             AgentController._instance = AgentController()
         assert AgentController._instance is not None
-        return AgentController._instance
-            AgentController._instance = AgentController()
         return AgentController._instance

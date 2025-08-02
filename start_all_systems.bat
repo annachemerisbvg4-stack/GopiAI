@@ -9,15 +9,6 @@ echo     GOPI_AI System - Starting all components
 echo ===============================================
 echo.
 
-REM Loading Smithery MCP environment variables
-IF EXIST "%~dp0smithery_env.bat" (
-    echo [INFO] Loading Smithery API settings...
-    call "%~dp0smithery_env.bat"
-) ELSE (
-    echo [WARNING] Smithery API settings not found
-    echo    Create smithery_env.bat with your API key to enable MCP tools
-)
-
 REM Setting paths to virtual environments
 set "CREWAI_VENV=C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\crewai_env"
 set "UI_VENV=C:\Users\crazy\GOPI_AI_MODULES\gopiai_env"
@@ -77,11 +68,11 @@ if exist "%CREWAI_VENV%\Scripts\activate.bat" (
     start "CrewAI API Server" cmd /k "title CrewAI API Server && color 0A && cd /d C:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI && echo. && echo ======================================== && echo    CrewAI API Server Environment && echo ======================================== && echo. && echo [WARNING] Using global Python environment && echo [INFO] Directory: GopiAI-CrewAI && echo. && echo [INFO] Starting CrewAI API Server on port 5051... && echo [DIAGNOSTIC] Starting server with extended logging... && set FLASK_DEBUG=1 && python crewai_api_server.py --port 5051 --debug > crewai_api_server_debug.log 2>&1"
 )
 
-echo Waiting for CrewAI server to start (30 seconds)...
+echo Waiting for CrewAI server to start (20 seconds)...
 echo    Initializing server...
 
 REM Step 2: Activate TXTAI environment for vector memory
-timeout /t 210 >nul
+timeout /t 20 >nul
 
 REM Step 2: Activate TXTAI environment for vector memory
 echo.

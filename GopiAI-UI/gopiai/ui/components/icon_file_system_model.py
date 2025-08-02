@@ -56,17 +56,16 @@ class UniversalIconManager:
         self.icon_cache = {}
         self.lucide_manager = None
         self.fallback_icons = {}
+        self._fallback_icons_created = False
         
         # Пытаемся инициализировать Lucide менеджер
         self._init_lucide_manager()
         
-        # Создаем базовые fallback иконки
-        self._create_fallback_icons()
-        
         # Логируем статус
         if self.lucide_manager:
             logger.info(f"Инициализирован UniversalIconManager с Lucide иконками")
-        else:            logger.warning("Инициализирован UniversalIconManager без Lucide иконок")
+        else:            
+            logger.warning("Инициализирован UniversalIconManager без Lucide иконок")
     
     def _init_lucide_manager(self):
         """Инициализация Lucide менеджера иконок"""
@@ -97,7 +96,10 @@ class UniversalIconManager:
             return False
     
     def _create_fallback_icons(self):
-        """Создает базовые fallback иконки"""
+        """Создает базовые fallback иконки (lazy loading)"""
+        if self._fallback_icons_created:
+            return
+            
         # Базовые иконки для часто используемых действий
         icons = {
             "file-plus": self._create_file_plus_icon,
@@ -116,6 +118,8 @@ class UniversalIconManager:
         size = QSize(24, 24)
         for name, creator_func in icons.items():
             self.fallback_icons[name] = creator_func(size)
+            
+        self._fallback_icons_created = True
     
     def get_icon(self, icon_name: str, color: Optional[str] = None, size: Union[QSize, int] = 24) -> QIcon:
         """
@@ -205,6 +209,9 @@ class UniversalIconManager:
             
         # Если все еще нет иконки, используем fallback
         if icon is None:
+            # Создаем fallback иконки при первом обращении
+            self._create_fallback_icons()
+            
             # Проверяем fallback иконки
             if icon_name in self.fallback_icons:
                 icon = self.fallback_icons[icon_name]

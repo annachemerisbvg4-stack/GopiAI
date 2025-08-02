@@ -16,6 +16,8 @@ import logging.handlers
 import os
 import sys
 from pathlib import Path
+import base64
+from typing import Dict, Any, List, Optional, Union
 
 # Настройка логирования для CrewAI клиента
 logger = logging.getLogger(__name__)
@@ -26,6 +28,8 @@ from ..memory.manager import MemoryManager
 # Добавляем путь к модулю emotional_classifier
 import sys
 import os
+print('Current working directory:', os.getcwd())
+print('sys.path:', sys.path)
 
 # --- ИСПРАВЛЕНО: Более надежный способ добавления путей ---
 try:
@@ -46,27 +50,46 @@ try:
 
 except IndexError:
     logger.error("[INIT] Не удалось определить корневую директорию проекта. Проверьте структуру папок.")
+    # Fallback to old method
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    gopiai_integration_path = os.path.join(project_root, 'GopiAI-CrewAI', 'tools', 'gopiai_integration')
+    sys.path.append(gopiai_integration_path)
 
-# Импортируем эмоциональный классификатор
+# Импортируем эмоциональный классификатор и AI Router
 EMOTIONAL_CLASSIFIER_AVAILABLE = False
 EmotionalClassifier = None
 EmotionalState = None
+AIRouterLLM = None
 
 try:
     import spacy
     try:
-        from emotional_classifier import EmotionalClassifier
-        from emotional_classifier.emotional_state import EmotionalState
+        from gopiai_integration.emotional_classifier import EmotionalClassifier, EmotionalState
+        from gopiai_integration.ai_router_llm import AIRouterLLM
         EMOTIONAL_CLASSIFIER_AVAILABLE = True
-        logger.debug("[INIT] Эмоциональный классификатор успешно импортирован")
+        logger.debug("[INIT] Эмоциональный классификатор и AI Router успешно импортированы")
     except ImportError as e:
-        logger.error(f"[INIT] Ошибка импорта модуля emotional_classifier: {e}")
+        logger.error(f"[INIT] Ошибка импорта модулей emotional_classifier/ai_router_llm: {e}")
         logger.error(f"[INIT] Пути в sys.path: {sys.path}")
-        logger.error(f"[INIT] Проверьте наличие файла: {os.path.join(gopiai_integration_path, 'emotional_classifier.py')}")
+        logger.error(f"[INIT] Проверьте наличие файлов в: {gopiai_integration_path}")
         EMOTIONAL_CLASSIFIER_AVAILABLE = False
 except ImportError as e:
     logger.error(f"[INIT] Ошибка импорта модуля spacy: {e}")
     logger.error("[INIT] Модуль spacy недоступен, эмоциональный классификатор отключен")
+
+# === ИНТЕГРАЦИЯ СИСТЕМЫ ДИНАМИЧЕСКИХ ИНСТРУКЦИЙ ===
+# Импортируем систему динамических инструкций для реального UI-чата
+TOOLS_INSTRUCTION_MANAGER_AVAILABLE = False
+ToolsInstructionManager = None
+
+try:
+    from gopiai_integration.tools_instruction_manager import get_tools_instruction_manager
+    TOOLS_INSTRUCTION_MANAGER_AVAILABLE = True
+    logger.info("[INIT] ✅ Система динамических инструкций успешно импортирована в UI-чат")
+except ImportError as e:
+    logger.error(f"[INIT] ❌ Ошибка импорта системы динамических инструкций: {e}")
+    logger.error("[INIT] UI-чат будет работать без динамических инструкций")
+    TOOLS_INSTRUCTION_MANAGER_AVAILABLE = False
 
 # Создаем директорию для логов, если её нет
 # Используем текущую директорию или директорию приложения
@@ -88,12 +111,7 @@ except Exception as e:
 
 # Настраиваем файловый обработчик для логов CrewAI клиента
 crewai_log_file = os.path.join(logs_dir, 'crewai_client.log')
-file_handler = logging.handlers.RotatingFileHandler(
-    crewai_log_file, 
-    maxBytes=5 * 1024 * 1024,  # 5 МБ
-    backupCount=3,  # Хранить 3 файла ротации
-    encoding='utf-8'
-)
+file_handler = logging.FileHandler(crewai_log_file, mode='w', encoding='utf-8')  # mode='w' to overwrite
 
 # Форматтер для логов
 formatter = logging.Formatter(
@@ -134,19 +152,19 @@ class CrewAIClient:
     def __init__(self, base_url="http://127.0.0.1:5051"):  # Стандартный порт CrewAI API сервера
         self.base_url = base_url
         self.timeout = 30  # Таймаут для API запросов (в секундах)
-        self._server_available = None  # Кеш статуса сервера
-        self._last_check = 0  # Время последней проверки
+        self._server_available = None
+        self._last_check = 0
         
         # Инициализация эмоционального классификатора
         self.emotional_classifier = None
         if EMOTIONAL_CLASSIFIER_AVAILABLE:
             try:
-                from emotional_classifier import EmotionalClassifier
-                # Инициализируем с None, так как мы будем использовать моковый роутер
-                self.emotional_classifier = EmotionalClassifier(ai_router=None)
-                logger.info("Emotional classifier initialized")
+                # Создаем AI Router для эмоционального классификатора
+                ai_router = AIRouterLLM()
+                self.emotional_classifier = EmotionalClassifier(ai_router)
+                logger.info("[INIT] ✅ Эмоциональный классификатор инициализирован с AI Router")
             except Exception as e:
-                logger.warning(f"Failed to initialize emotional classifier: {e}")
+                logger.error(f"[INIT] ❌ Ошибка инициализации эмоционального классификатора: {e}")
                 self.emotional_classifier = None
 
     def brave_search_site(self, query):
@@ -233,7 +251,7 @@ class CrewAIClient:
             print(f"⚠️ Ошибка при анализе эмоций: {e}")
             return None
             
-    def process_request(self, message, force_crewai=False, timeout=None):
+    def process_request(self, message: Union[str, Dict[str, Any]], force_crewai: bool = False, timeout: Optional[int] = None) -> Dict[str, Any]:
         """
         Обработка всех типов CrewAI API и выбором оптимального обработчика
         
@@ -281,9 +299,30 @@ class CrewAIClient:
         # --- ИСПРАВЛЕНО: Корректная инициализация MemoryManager и получение истории ---
         memory_manager = MemoryManager()
 
+        # Новая обработка через MCP для инструментов
+        if 'metadata' in message and 'tool' in message['metadata']:
+            tool_type = message['metadata']['tool']
+            args = message['metadata'].get('args', {})
+            try:
+                mcp_response = self.mcp_client.query({"type": tool_type, "args": args})
+                logger.info(f"[MCP] Успешный запрос: {tool_type}")
+                return {"response": mcp_response.get('result', ''), "from_mcp": True, "error": None}
+            except Exception as e:
+                logger.error(f"[MCP-ERROR] Ошибка: {str(e)}")
+                return {"response": "", "error": str(e), "from_mcp": False}
+
+        # === ИНТЕГРАЦИЯ ДИНАМИЧЕСКИХ ИНСТРУКЦИЙ В РЕАЛЬНЫЙ UI-ЧАТ ===
+        # Проверяем, нужны ли детальные инструкции для инструментов
+        dynamic_instructions = self._get_dynamic_tool_instructions(message.get('message', ''))
+        
         # Добавляем метаданные, если их нет
         if 'metadata' not in message:
             message['metadata'] = {}
+            
+        # Добавляем динамические инструкции в метаданные запроса
+        if dynamic_instructions:
+            message['metadata']['dynamic_tool_instructions'] = dynamic_instructions
+            logger.info(f"[DYNAMIC-TOOLS] ✅ Добавлены динамические инструкции для {len(dynamic_instructions)} инструментов")
             
         try:
             # Получаем ID сессии из переданных метаданных
@@ -309,6 +348,24 @@ class CrewAIClient:
             
         logger.debug(f"[REQUEST] Продолжаем с отправкой запроса к CrewAI API")
             
+        # Process attachments if present
+        attachments = message.get('metadata', {}).get('attachments', [])
+        processed_attachments = []
+        for att in attachments:
+            path = att['path']
+            att_type = att['type']
+            name = os.path.basename(path)
+            if att_type == 'image':
+                with open(path, 'rb') as f:
+                    content = base64.b64encode(f.read()).decode('utf-8')
+                processed_attachments.append({'type': 'image', 'content': f'data:image/{os.path.splitext(name)[1][1:]};base64,{content}', 'name': name})
+            elif att_type == 'file':
+                with open(path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                processed_attachments.append({'type': 'text', 'content': content, 'name': name})
+        if processed_attachments:
+            message['metadata']['processed_attachments'] = processed_attachments
+
         # Извлекаем текст сообщения для анализа эмоций
         message_text = message.get('message', '')
         logger.debug(f"[REQUEST] Извлеченный текст сообщения: {message_text[:50]}..." if len(message_text) > 50 else message_text)
@@ -329,6 +386,30 @@ class CrewAIClient:
         # Добавляем флаг асинхронной обработки
         message['async_processing'] = True
         logger.debug("[REQUEST] Установлен флаг async_processing=True")
+        
+        # Обрабатываем информацию о выбранной модели
+        model_provider = message.get('metadata', {}).get('model_provider', 'gemini')
+        model_id = message.get('metadata', {}).get('model_id')
+        model_data = message.get('metadata', {}).get('model_data')
+        
+        logger.info(f"[MODEL] Запрос с провайдером: {model_provider}")
+        if model_id:
+            logger.info(f"[MODEL] Выбранная модель: {model_id}")
+            
+        # Добавляем информацию о модели в метаданные для сервера
+        if model_provider == 'openrouter' and model_id:
+            message['metadata']['preferred_provider'] = 'openrouter'
+            message['metadata']['preferred_model'] = model_id
+            if model_data:
+                message['metadata']['model_info'] = {
+                    'name': model_data.get('name', model_id),
+                    'context_length': model_data.get('context_length', 4096),
+                    'pricing': model_data.get('pricing', {})
+                }
+            logger.info(f"[MODEL] Настроен запрос для OpenRouter модели: {model_id}")
+        else:
+            message['metadata']['preferred_provider'] = 'gemini'
+            logger.info(f"[MODEL] Используется провайдер по умолчанию: Gemini")
         
         # Добавляем системный промпт, если его нет
         system_prompt = (
@@ -363,7 +444,6 @@ class CrewAIClient:
             # Добавляем стандартный системный промпт в metadata
             message['metadata']['system_prompt'] = system_prompt
             logger.debug("[REQUEST] Добавлен стандартный системный промпт в metadata")
-        
             
         logger.debug(f"[REQUEST] Подготовка к отправке запроса в CrewAI API")
         
@@ -386,7 +466,8 @@ class CrewAIClient:
             response.raise_for_status()
             
             # Обработка ответа
-            result = response.json()
+            result: Dict[str, Any] = response.json()
+            logger.debug(f'Полный ответ Gemini: {result}')
             logger.debug(f"[REQUEST] Успешно парсим JSON ответ: {result}")
             
             # Если ответ содержит только текст, оборачиваем его в словарь
@@ -412,6 +493,15 @@ class CrewAIClient:
                 if recommendations:
                     logger.debug(f"[REQUEST] Добавлены рекомендации по ответу: {recommendations}")
                     result['metadata']['recommended_responses'] = recommendations
+            
+            # Добавляем обработку терминального вывода
+            if isinstance(result, dict) and 'terminal_output' in result:
+                term_out = result['terminal_output']
+                formatted_output = f"Команда '{term_out['command']}' выполнена в терминале.\nВывод: {term_out['output']}\nОшибки: {term_out['error'] if term_out['error'] else 'Нет'}"
+                result['response'] = formatted_output
+                result['metadata'] = result.get('metadata', {})
+                result['metadata']['terminal_output'] = term_out
+                logger.info(f"[TERMINAL] Обработан терминальный вывод для команды: {term_out['command']}")
             
             # Убедимся, что ответ содержит хотя бы пустую строку, а не None
             if 'response' not in result or result['response'] is None:
@@ -458,7 +548,16 @@ class CrewAIClient:
                 
                 # Подробное логирование состояния задачи
                 if result.get("done"):
-                    logger.info(f"[TASK-COMPLETE] Задача {task_id} завершена. Результат: {result.get('result', {}).get('response', '')[:100]}...")
+                    # Извлекаем информацию о модели из ответа
+                    task_result = result.get('result', {})
+                    model_info = task_result.get('model_info', {})
+                    
+                    if model_info:
+                        model_display = f"{model_info.get('display_name', 'Unknown')} ({model_info.get('provider', 'unknown')}/{model_info.get('model_id', 'unknown')})"
+                        logger.info(f"[TASK-COMPLETE] ✅ Задача {task_id} завершена. Ответ от модели: {model_display}")
+                        logger.info(f"[RESPONSE-FROM-MODEL] 🤖 Модель: {model_display} | Ответ: {task_result.get('response', '')[:100]}...")
+                    else:
+                        logger.info(f"[TASK-COMPLETE] Задача {task_id} завершена. Результат: {task_result.get('response', '')[:100]}...")
                 else:
                     logger.info(f"[TASK-PROGRESS] Задача {task_id} в процессе. Статус: {result.get('status', 'неизвестно')}")
                 
@@ -492,11 +591,30 @@ class CrewAIClient:
             print(f"❌ Ошибка запроса: {e}")
             return {"error_message": str(e), "processed_with_crewai": False}
 
+    def _get_dynamic_tool_instructions(self, message_text: str) -> dict:
+        """
+        Анализирует сообщение пользователя и определяет, какие инструменты могут понадобиться.
+        Возвращает словарь с детальными инструкциями для релевантных инструментов.
+        
+        Args:
+            message_text: Текст сообщения пользователя
+            
+        Returns:
+            dict: Словарь {tool_name: detailed_instructions} для релевантных инструментов
+        """
+        # tools_instruction_manager временно отключен после удаления MCP
+        if not message_text:
+            return {}
+        
+        # Возвращаем пустой словарь, так как tools_instruction_manager недоступен
+        logger.debug("[DYNAMIC-TOOLS] tools_instruction_manager недоступен, возвращаем пустые инструкции")
+        return {}
+
     def _handle_browser_command(self, message):
         """
         Обрабатывает команды браузера, начинающиеся с /browser или /браузер
         
-        Args:
+{{ ... }}
             message: Полный текст сообщения с командой
             
         Returns:

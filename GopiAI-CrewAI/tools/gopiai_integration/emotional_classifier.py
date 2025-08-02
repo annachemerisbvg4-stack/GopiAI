@@ -707,5 +707,8 @@ def run_tests():
     return success_rate >= 70
 
 
+# Экспорты для использования в других модулях
+__all__ = ['EmotionalClassifier', 'EmotionalState', 'EmotionalAnalysis']
+
 if __name__ == "__main__":
     run_tests()

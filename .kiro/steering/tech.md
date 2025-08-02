@@ -24,7 +24,7 @@ The project uses three isolated environments:
 ### Development Startup
 ```bash
 # Auto-launch all services
-./start_auto_development.bat
+./start_all_services.bat 
 
 # Individual services
 ./start_gopiai_ui.bat          # UI application
@@ -56,7 +56,6 @@ pytest-qt  # For GUI components
 
 ## Configuration
 - **Environment Variables**: `.env` files for API keys and settings
-- **Smithery MCP**: `smithery_env.bat` for Model Context Protocol integration
 - **Logging**: Extensive debug logging to `.log` files
 - **Ports**: CrewAI API server runs on port 5051
 

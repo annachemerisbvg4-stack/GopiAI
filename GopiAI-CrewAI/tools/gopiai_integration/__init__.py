@@ -8,13 +8,15 @@ from .filesystem_tools import GopiAIFileSystemTool
 from .ai_router_tools import GopiAIRouterTool
 from .memory_tools import GopiAIMemoryTool
 from .communication_tools import GopiAICommunicationTool
+from .terminal_tool import TerminalTool
 
 __all__ = [
     'GopiAIBrowserTool',
     'GopiAIFileSystemTool', 
     'GopiAIRouterTool',
     'GopiAIMemoryTool',
-    'GopiAICommunicationTool'
+    'GopiAICommunicationTool',
+    'TerminalTool'
 ]
 
 __version__ = '1.0.0'
@@ -47,6 +49,11 @@ TOOLS_INFO = {
         'class': 'GopiAICommunicationTool',
         'description': 'Communication between agents and with UI',
         'capabilities': ['send', 'receive', 'broadcast', 'notify', 'monitor']
+    },
+    'terminal': {
+        'class': 'TerminalTool',
+        'description': 'Execute commands in the terminal visible to user',
+        'capabilities': ['execute', 'log', 'validate']
     }
 }
 
@@ -57,7 +64,8 @@ def get_all_tools():
         GopiAIFileSystemTool(),
         GopiAIRouterTool(),
         GopiAIMemoryTool(),
-        GopiAICommunicationTool()
+        GopiAICommunicationTool(),
+        TerminalTool(name='terminal', description='Execute shell commands in the UI terminal')
     ]
 
 def get_tool_by_name(tool_name: str):

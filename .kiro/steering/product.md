@@ -18,7 +18,6 @@ GopiAI is a modular AI desktop application with extensible architecture supporti
 - **API-First**: Internal communication via REST APIs (CrewAI server on port 5051)
 - **Event-Driven**: Asynchronous communication between UI and backend services
 - **Embedded Memory**: v2.0+ uses embedded txtai, no separate RAG server required
-- **MCP Integration**: Model Context Protocol support via Smithery for external tool access
 
 ## Component Responsibilities
 - **GopiAI-UI**: Desktop application, chat interface, user interactions

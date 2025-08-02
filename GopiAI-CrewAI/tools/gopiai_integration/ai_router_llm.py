@@ -3,8 +3,18 @@ import traceback
 import time
 from typing import List, Optional, Any, Mapping, ClassVar
 from pydantic import Field
+
+# Импорт нашего кастомного клиента для обхода ограничений безопасности Gemini
+from .gemini_crewai_adapter import GeminiDirectLLM, create_gemini_direct_llm
 from langchain.llms.base import BaseLLM
 from langchain.schema import LLMResult, Generation
+import sys
+import os
+
+# Добавляем путь к корню GopiAI-CrewAI
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
+
 from llm_rotation_config import (
     select_llm_model_safe, 
     rate_limit_monitor, 
@@ -62,21 +72,40 @@ class AIRouterLLM(BaseLLM):
             api_key = get_api_key_for_provider(provider_name)
             if not api_key:
                 raise ValueError(f"API ключ для провайдера {provider_name} не найден")
-            # Создаем экземпляр LLM
-            llm_params = {
-                'model': model_id,
-                'api_key': api_key,
-                'config': {
-                    'temperature': 0.7,
-                    'max_tokens': 2000,
+            
+            # 🚀 КРИТИЧЕСКОЕ УЛУЧШЕНИЕ: Используем кастомный клиент для Google/Gemini
+            # для обхода ограничений безопасности (без safetySettings)
+            if provider_name.lower() == 'google':
+                self.logger.info(f"🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели {model_id}")
+                
+                # Создаем наш кастомный LLM без safetySettings
+                llm_instance = create_gemini_direct_llm(
+                    model=model_id,
+                    api_key=api_key,
+                    temperature=0.7,
+                    max_tokens=8192  # Увеличиваем лимит токенов
+                )
+                
+                self.logger.info(f"✅ GeminiDirectLLM создан для модели {model_id} (БЕЗ safetySettings!)")
+            else:
+                # Для других провайдеров используем стандартный подход
+                llm_params = {
+                    'model': model_id,
+                    'api_key': api_key,
+                    'config': {
+                        'temperature': 0.7,
+                        'max_tokens': 2000,
+                    }
                 }
-            }
-            llm_instance = LLM(**llm_params)
+                llm_instance = LLM(**llm_params)
+                self.logger.info(f"📋 Стандартный LLM создан для модели {model_id}")
+            
             # Добавляем задержку для избежания rate limits
             if attempt_number > 1:
                 delay = min(attempt_number * 2, 10)  # Максимум 10 секунд
                 self.logger.info(f"⏱️ Задержка {delay} секунд перед попыткой {attempt_number}")
                 time.sleep(delay)
+            
             self.logger.info(f"🔄 Попытка {attempt_number}: Отправляем запрос к модели {model_id}")
             
             # Выполняем запрос
@@ -85,10 +114,16 @@ class AIRouterLLM(BaseLLM):
             if not response or response.strip() == "":
                 raise ValueError("Получен пустой ответ от модели")
                 
-            self.logger.info(f"✅ Успешный ответ от модели {model_id}")
+            self.logger.info(f"✅ Успешный ответ от модели {model_id} (длина: {len(response)} символов)")
             return response
+            
         except Exception as e:
             self.logger.warning(f"❌ Ошибка при запросе к модели {model_id}: {e}")
+            
+            # Дополнительная диагностика для Google моделей
+            if 'google' in model_id.lower() or 'gemini' in model_id.lower():
+                self.logger.info(f"🔍 Диагностика Google/Gemini модели {model_id}: используется прямой HTTP-клиент без safetySettings")
+            
             raise e
     def _generate(self, prompts: List[str], stop: Optional[List[str]] = None) -> LLMResult:
         generations = []
