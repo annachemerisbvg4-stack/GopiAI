@@ -31,10 +31,29 @@ import os
 print('Current working directory:', os.getcwd())
 print('sys.path:', sys.path)
 
-# Добавляем пути для импортов
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-gopiai_integration_path = os.path.join(project_root, 'GopiAI-CrewAI', 'tools', 'gopiai_integration')
-sys.path.append(gopiai_integration_path)
+# --- ИСПРАВЛЕНО: Более надежный способ добавления путей ---
+try:
+    # Определяем корневую директорию проекта (GOPI_AI_MODULES)
+    project_root = Path(__file__).resolve().parents[4]
+
+    # Добавляем путь к инструментам CrewAI
+    crewai_tools_path = project_root / 'GopiAI-CrewAI' / 'tools'
+    if crewai_tools_path.exists() and str(crewai_tools_path) not in sys.path:
+        sys.path.insert(0, str(crewai_tools_path))
+        logger.debug(f"[INIT] Добавлен путь к инструментам CrewAI: {crewai_tools_path}")
+
+    # Добавляем путь к gopiai_integration
+    gopiai_integration_path = crewai_tools_path / 'gopiai_integration'
+    if gopiai_integration_path.exists() and str(gopiai_integration_path) not in sys.path:
+        sys.path.insert(0, str(gopiai_integration_path))
+        logger.debug(f"[INIT] Добавлен путь к gopiai_integration: {gopiai_integration_path}")
+
+except IndexError:
+    logger.error("[INIT] Не удалось определить корневую директорию проекта. Проверьте структуру папок.")
+    # Fallback to old method
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    gopiai_integration_path = os.path.join(project_root, 'GopiAI-CrewAI', 'tools', 'gopiai_integration')
+    sys.path.append(gopiai_integration_path)
 
 # Импортируем эмоциональный классификатор и AI Router
 EMOTIONAL_CLASSIFIER_AVAILABLE = False
