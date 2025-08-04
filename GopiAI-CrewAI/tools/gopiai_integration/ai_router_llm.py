@@ -22,7 +22,9 @@ from llm_rotation_config import (
     LLM_MODELS_CONFIG,
     get_active_models,
     get_models_by_intelligence,
-    get_next_available_model
+    get_next_available_model,
+    register_use,
+    is_model_blacklisted
 )
 # Импортируем LLM из crewai
 from crewai.llm import LLM
@@ -152,12 +154,52 @@ class AIRouterLLM(BaseLLM):
                 for model_attempt in range(max_model_attempts):
                     try:
                         # Выбираем модель, исключая уже попробованные
-                        current_model_id = select_llm_model_safe(
-                            "dialog", 
-                            tokens=prompt_tokens, 
-                            intelligence_priority=intelligence_priority,
-                            exclude_models=used_models
+                        # Выбираем модель. Старый параметр exclude_models убран из вызова,
+                        # чтобы не ломать сигнатуру select_llm_model_safe. Исключение уже
+                        # использованных моделей выполняем локально на уровне кода.
+                        # select_llm_model_safe по текущей реализации возвращает СЛОВАРЬ модели,
+                        # а также сам регистрирует её использование. Адаптируемся под это API.
+                        model_cfg = select_llm_model_safe(
+                            task_type="dialog",
+                            tokens=prompt_tokens,
+                            intelligence_priority=intelligence_priority
                         )
+                        # Локально исключаем уже использованные модели и черный список
+                        if model_cfg:
+                            cand_id = model_cfg.get("id")
+                            if cand_id and (cand_id in used_models or is_model_blacklisted(cand_id)):
+                                self.logger.info(
+                                    f"↩️ Модель {cand_id} уже использована или во временном blacklist — запрашиваем следующую"
+                                )
+                                try:
+                                    next_model_cfg = get_next_available_model(
+                                        task_type="dialog",
+                                        tokens=prompt_tokens
+                                    )
+                                    model_cfg = next_model_cfg
+                                except Exception as _e:
+                                    self.logger.debug(f"get_next_available_model недоступен/ошибка: {_e}")
+                        if model_cfg:
+                            candidate_model_id = model_cfg.get("id")
+                        else:
+                            candidate_model_id = None
+                        
+                        # Безопасно пропускаем модели, уже использованные ранее или находящиеся в blacklist
+                        if candidate_model_id and (candidate_model_id in used_models or is_model_blacklisted(candidate_model_id)):
+                            self.logger.info(
+                                f"↩️ Модель {candidate_model_id} уже использована или во временном blacklists — запрашиваем следующую доступную"
+                            )
+                            try:
+                                next_model_cfg = get_next_available_model(
+                                    task_type="dialog",
+                                    tokens=prompt_tokens
+                                )
+                                model_cfg = next_model_cfg
+                                candidate_model_id = next_model_cfg.get("id") if next_model_cfg else None
+                            except Exception as _e:
+                                self.logger.debug(f"get_next_available_model недоступен/вернул ошибку: {_e}")
+                        
+                        current_model_id = candidate_model_id
                         
                         if not current_model_id:
                             self.logger.error(f"❌ Нет доступных моделей после {model_attempt + 1} попыток")
@@ -194,8 +236,9 @@ class AIRouterLLM(BaseLLM):
                                 
                                 # Успех! Регистрируем использование и выходим
                                 response_tokens = len(response_text) // 3
-                                rate_limit_monitor.register_use(
-                                    current_model_id, 
+                                # По новой схеме register_use принимает model_id
+                                register_use(
+                                    current_model_id,
                                     tokens=prompt_tokens + response_tokens
                                 )
                                 
@@ -209,8 +252,11 @@ class AIRouterLLM(BaseLLM):
                                 # Проверяем тип ошибки
                                 if self._is_quota_error(retry_error):
                                     self.logger.error(f"🚫 Quota error обнаружена для модели {current_model_id}")
-                                    # Немедленно блокируем модель и переходим к следующей
-                                    rate_limit_monitor.mark_model_unavailable(current_model_id, duration=3600)
+                                    # В новой реализации у трекера нет прямого mark_model_unavailable.
+                                    # Полагемся на мягкий blacklist внутри UsageTracker (автоматически при превышении RPM),
+                                    # а также избегаем повторного использования модели в текущем цикле:
+                                    if current_model_id:
+                                        used_models.append(current_model_id)
                                     break  # Выходим из retry loop и пробуем другую модель
                                 
                                 # Для других ошибок продолжаем retry
@@ -232,7 +278,8 @@ class AIRouterLLM(BaseLLM):
                         
                         # Если это quota error, блокируем модель
                         if current_model_id and self._is_quota_error(model_error):
-                            rate_limit_monitor.mark_model_unavailable(current_model_id, duration=3600)
+                            # Аналогично, мягкий blacklist и исключение модели из повторного выбора
+                            used_models.append(current_model_id)
                         
                         # Продолжаем к следующей модели
                         continue
@@ -274,6 +321,7 @@ class AIRouterLLM(BaseLLM):
         """
         try:
             # Выбираем лучшую доступную модель
+            # Убираем использование несуществующих параметров в select_llm_model_safe
             model_id = select_llm_model_safe("dialog", intelligence_priority=True)
             
             if not model_id:
@@ -311,7 +359,7 @@ class AIRouterLLM(BaseLLM):
         """Возвращает текущий статус системы ротации"""
         blacklist = rate_limit_monitor.get_blacklist_status()
         available_models = [m['id'] for m in get_active_models() 
-                          if not rate_limit_monitor.is_model_blocked(m['id'])]
+                          if not is_model_blacklisted(m['id'])]
         
         return {
             "blacklisted_models": blacklist,
@@ -322,10 +370,10 @@ class AIRouterLLM(BaseLLM):
         }
     def force_unblock_model(self, model_id):
         """Принудительно разблокирует модель (для отладки)"""
-        if model_id in rate_limit_monitor.blacklisted_models:
-            del rate_limit_monitor.blacklisted_models[model_id]
-            self.logger.info(f"🔓 Модель {model_id} принудительно разблокирована")
-            return True
+        # В новой реализации нет прямого доступа к структурам blacklist.
+        # Поскольку используется мягкий blacklist по времени, явная разблокировка не поддерживается.
+        # Возвращаем False и логируем подсказку.
+        self.logger.info("⛔ Принудительная разблокировка недоступна в текущей реализации UsageTracker")
         return False
     def get_model_health(self):
         """Возвращает health check всех моделей"""
@@ -334,7 +382,7 @@ class AIRouterLLM(BaseLLM):
             model_id = model['id']
             # Если нет метода get_model_usage_stats, просто пропускаем usage_stats или используем заглушку
             health[model_id] = {
-                "available": not rate_limit_monitor.is_model_blocked(model_id),
+                "available": not is_model_blacklisted(model_id),
                 "usage_stats": None,  # или {} если нужен пустой словарь
                 "priority": model['priority'],
                 "deprecated": model.get('deprecated', False)

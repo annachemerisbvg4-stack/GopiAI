@@ -9,7 +9,7 @@ from typing import Optional, cast
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, 
                                QFileDialog, QSizePolicy, QMessageBox, QListWidget, QListWidgetItem, QTabWidget)
 from PySide6.QtCore import Qt, Slot, QPoint, QTimer
-from PySide6.QtGui import QResizeEvent, QTextCursor, QDropEvent, QDragEnterEvent, QTextCursor, QTextCharFormat, QColor, QTextOption
+from PySide6.QtGui import QResizeEvent, QTextCursor, QDropEvent, QDragEnterEvent, QTextCharFormat, QColor, QTextOption
 import uuid
 from datetime import datetime
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QImageWriter
@@ -48,6 +48,10 @@ class ChatWidget(QWidget):
         self.setObjectName("ChatWidget")
         self.setAcceptDrops(True)
         
+        # Опциональные атрибуты для типизатора/проверок
+        self.model_selector_widget = None
+        self.openrouter_widget = None
+
         self.session_id = None
         self._waiting_message_id = None
         self.theme_manager = None
@@ -705,19 +709,17 @@ class ChatWidget(QWidget):
         """Обрабатывает частичные ответы для streaming отображения"""
         # Fallback для обычного QTextEdit
         cursor = self.history.textCursor()
-        cursor.movePosition(cursor.End)
+        cursor.movePosition(QTextCursor.MoveOperation.End)
         cursor.insertText(partial_text)
         self.history.setTextCursor(cursor)
         
         self._scroll_history_to_end()
 
-    def _append_message_with_style(self, role: str, message: str):
+    def _append_message_basic(self, role: str, message: str):
         """Метод для добавления сообщений с базовым стилем"""
-        # Используем обычный QTextEdit
         timestamp = datetime.now().strftime("%H:%M")
         role_class = f"{role}-message"
         avatar_class = f"{role}-avatar"
-        
         html_message = f"""
         <div class="message {role_class}">
             <div class="avatar {avatar_class}"></div>
@@ -725,11 +727,9 @@ class ChatWidget(QWidget):
             <div class="timestamp">{timestamp}</div>
         </div>
         """
-        
         cursor = self.history.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
         cursor.insertHtml(html_message)
-        
         self._scroll_history_to_end()
 
     def _handle_terminal_output(self, term_out: dict):
@@ -928,7 +928,7 @@ class ChatWidget(QWidget):
         print(f"Запрос переключения на провайдера: {provider}")
         
         # Переключаемся на соответствующую вкладку
-        if provider == "gemini" and hasattr(self, 'model_selector_widget'):
+        if provider == "gemini" and getattr(self, 'model_selector_widget', None) is not None:
             # Находим индекс вкладки с ModelSelectorWidget
             for i in range(self.tab_widget.count()):
                 if self.tab_widget.widget(i) == self.model_selector_widget:
@@ -961,7 +961,7 @@ class ChatWidget(QWidget):
     
     def switch_to_model_selector_tab(self):
         """Переключается на вкладку выбора моделей"""
-        if hasattr(self, 'model_selector_widget'):
+        if getattr(self, 'model_selector_widget', None) is not None:
             for i in range(self.tab_widget.count()):
                 if self.tab_widget.widget(i) == self.model_selector_widget:
                     self.tab_widget.setCurrentIndex(i)

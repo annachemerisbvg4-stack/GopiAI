@@ -369,7 +369,7 @@ def get_models_by_intelligence(min_score: float = 0.0):
 # Legacy functions expected elsewhere
 get_active_models = lambda: [m for m in MODELS if get_api_key_for_provider(m["provider"])]
 
-def select_llm_model_safe(task_type: str = "dialog", tokens: int = 0):
+def select_llm_model_safe(task_type: str = "dialog", tokens: int = 0, intelligence_priority: bool = False):
     """Legacy helper: return first available model and register its usage.
     Keeps API surface for old ai_router_llm import.
     """

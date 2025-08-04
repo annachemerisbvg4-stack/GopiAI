@@ -33,5 +33,14 @@
     "xline.mcp.mode": "full",
     "xline.mcpMarketplace.enabled": true,
     "xline.preferredLanguage": "Russian - Русский",
-    "codium.codeCompletion.enable": true
+    "codium.codeCompletion.enable": true,
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./GopiAI-UI",
+        "-p",
+        "test*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true
 }

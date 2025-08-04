@@ -195,8 +195,9 @@ class ChatAsyncHandler(QObject):
         """Запускает таймер для опроса статуса задачи. Должен вызываться из основного UI потока."""
         self._current_task_id = task_id
         self._current_polling_attempt = 0
-        self._polling_timer.start(1000) # 1 секунда
-        logger.info(f"[POLLING] Запущен опрос статуса для task_id: {task_id}")
+        # стартуем с текущей адаптивной задержкой
+        self._polling_timer.start(self.current_delay)
+        logger.info(f"[POLLING] Запущен опрос статуса для task_id: {task_id} с initial_delay={self.current_delay}ms")
         self.status_update.emit("Обрабатываю запрос...")
 
     def _check_task_status(self):
@@ -255,6 +256,14 @@ class ChatAsyncHandler(QObject):
                         self.message_error.emit(result.get("response", "Ошибка обработки"))
                     else:
                         self.response_ready.emit(result)
+                else:
+                    # Адаптивная (экспоненциальная) задержка: увеличиваем интервал до потолка
+                    prev_delay = self.current_delay
+                    self.current_delay = int(min(self.max_delay, max(self.initial_delay, self.current_delay * self.delay_multiplier)))
+                    if self._polling_timer.isActive():
+                        self._polling_timer.stop()
+                    self._polling_timer.start(self.current_delay)
+                    logger.debug(f"[POLLING-BACKOFF] attempt={self._current_polling_attempt}, delay: {prev_delay}ms -> {self.current_delay}ms")
                 
                 # Проверяем на зацикливание - если больше 30 попыток, останавливаем
                 if self._current_polling_attempt > 30:

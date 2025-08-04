@@ -3947,12 +3947,36 @@
         "temperature": 0.7,
         "max_tokens": 4096
       }
+    },
+    "openrouter_cognitivecomputations/dolphin3.0-mistral-24b": {
+      "provider": "openrouter",
+      "model_id": "cognitivecomputations/dolphin3.0-mistral-24b",
+      "display_name": "Dolphin3.0 Mistral 24B (cognitivecomputations/dolphin3.0-mistral-24b)",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "is_active": false,
+      "is_default": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
+    },
+    "openrouter_tngtech/deepseek-r1t-chimera": {
+      "provider": "openrouter",
+      "model_id": "tngtech/deepseek-r1t-chimera",
+      "display_name": "TNG: DeepSeek R1T Chimera (tngtech/deepseek-r1t-chimera)",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "is_active": false,
+      "is_default": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
     }
   },
   "current": {
     "provider": "openrouter",
-    "model_id": "tencent/hunyuan-a13b-instruct:free"
+    "model_id": "moonshotai/kimi-k2:free"
   },
   "version": "1.0",
-  "last_updated": "1754176326.470016"
+  "last_updated": "1753762898.876158"
 }

@@ -73,7 +73,8 @@ try:
         except (OSError, PermissionError):
             print(f"[WARNING] Не удалось удалить старый лог файл {log_file}, возможно он открыт в редакторе")
     
-    file_handler = logging.FileHandler(log_file, mode='w', encoding='utf-8')
+    from logging.handlers import RotatingFileHandler
+    file_handler = RotatingFileHandler(log_file, mode='a', encoding='utf-8', maxBytes=10 * 1024 * 1024, backupCount=5)
     file_handler.setFormatter(UltraCleanFormatter())
     handlers.append(file_handler)
     print(f"[OK] Логирование настроено с записью в файл: {log_file}")
