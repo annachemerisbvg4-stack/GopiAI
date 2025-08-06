@@ -139,8 +139,29 @@ class ChatWidget(QWidget):
         self.history = QTextEdit(self)
         self.history.setObjectName("ChatHistory")
         self.history.setReadOnly(True)
-        # Применяем базовые стили
-        self.history.setStyleSheet(self._get_basic_chat_styles())
+        # Включаем корректные переносы и ограничение ширины
+        opt = self.history.document().defaultTextOption()
+        opt.setWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
+        self.history.document().setDefaultTextOption(opt)
+        self.history.setWordWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
+        self.history.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+        self.history.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        # Применяем объединенные стили (базовые + markdown)
+        # Перебиваем глобальные стили и темы: добавляем повышенную специфичность и !important
+        def _strong_css(css: str) -> str:
+            # оборачиваем правила для повышения специфичности и добавляем !important к ключевым свойствам переноса
+            css = css.replace("QTextEdit {", "QTextEdit, QTextEdit#ChatHistory {")
+            replacements = [
+                ("word-break: break-word;", "word-break: break-word !important;"),
+                ("word-wrap: break-word;", "word-wrap: break-word !important;"),
+                ("overflow-wrap: anywhere;", "overflow-wrap: anywhere !important;"),
+                ("white-space: pre-wrap;", "white-space: pre-wrap !important;"),
+                ("max-width: 100%;", "max-width: 100% !important;"),
+            ]
+            for old, new in replacements:
+                css = css.replace(old, new)
+            return css
+        self.history.setStyleSheet(_strong_css(self._get_basic_chat_styles() + self._get_markdown_styles()))
         
         chat_area_layout.addWidget(self.history)
         self.tab_widget.addTab(self.chat_area_widget, "Чат")
@@ -315,7 +336,8 @@ class ChatWidget(QWidget):
             background: transparent;
             white-space: pre-wrap;
             word-wrap: break-word;
-            word-break: break-all;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }
         
         .message {
@@ -330,7 +352,8 @@ class ChatWidget(QWidget):
             position: relative;
             white-space: pre-wrap;
             word-wrap: break-word;
-            word-break: break-all;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }
         
         .message:hover {
@@ -447,9 +470,9 @@ class ChatWidget(QWidget):
         
         /* Markdown стили */
         h1, h2, h3 { margin: 8px 0; }
-        code { background: rgba(0,0,0,0.05); padding: 2px 4px; border-radius: 4px; }
-        pre { background: rgba(0,0,0,0.05); padding: 8px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; max-height: 300px; }
-        a { color: inherit; text-decoration: underline; }
+        code { background: rgba(0,0,0,0.05); padding: 2px 4px; border-radius: 4px; word-break: break-word; overflow-wrap: anywhere; }
+        pre { background: rgba(0,0,0,0.05); padding: 8px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: anywhere; max-height: 300px; max-width: 100%; }
+        a { color: inherit; text-decoration: underline; word-break: break-word; overflow-wrap: anywhere; }
         blockquote { border-left: 2px solid rgba(0,0,0,0.2); padding-left: 8px; opacity: 0.9; }
         """
 
@@ -631,10 +654,17 @@ class ChatWidget(QWidget):
         
         timestamp = datetime.now().strftime('%H:%M')
         
+        # Инлайн-стили, чтобы перебить глобальные qApp стили/темы
+        bubble_style = "max-width:75%; display:inline-block; position:relative; white-space:pre-wrap; word-wrap:break-word; word-break:break-word; overflow-wrap:anywhere;"
+        pre_style = "background:rgba(0,0,0,0.05); padding:8px; border-radius:8px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; word-break:break-word; overflow-wrap:anywhere; max-height:300px; max-width:100%;"
+        code_style = "background:rgba(0,0,0,0.05); padding:2px 4px; border-radius:4px; word-break:break-word; overflow-wrap:anywhere;"
+        # Подставляем стили в сгенерированный HTML (минимально инвазивно)
+        formatted_text_styled = formatted_text.replace("<pre>", f'<pre style="{pre_style}">').replace("<code>", f'<code style="{code_style}">')
+        
         message_html = f"""
-        <div id="{msg_id}" class="message {style_class}">
+        <div id="{msg_id}" class="message {style_class}" style="{bubble_style}">
             {avatar}
-            <b>{author}:</b> {formatted_text}
+            <b>{author}:</b> {formatted_text_styled}
             <div class="timestamp">{timestamp}</div>
         </div>
         """
@@ -646,6 +676,9 @@ class ChatWidget(QWidget):
         self.history.document().setTextWidth(self.history.viewport().width())
         self.history.document().adjustSize()
         self.history.ensureCursorVisible()
+        # На всякий случай отключаем горизонтальный скролл и выставляем перенос по виджету каждый раз
+        self.history.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+        self.history.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._scroll_history_to_end()
 
     def _update_status_display(self, text: str):

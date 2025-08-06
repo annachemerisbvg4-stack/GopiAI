@@ -89,21 +89,65 @@ class InteractiveTerminal(QTextEdit):
 
 
 class TerminalWidget(QWidget):
-    """Виджет терминала с вкладками"""
-    
+    """Виджет терминала с вкладками (встраиваемый док). Плавающие окна запрещены."""
+    # Singleton-ссылка на встроенный экземпляр
+    instance: "TerminalWidget | None" = None  # type: ignore[name-defined]
+
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # Если кто-то создаёт TerminalWidget без родителя, не позволяем сделать его отдельным окном
+        if parent is None:
+            try:
+                self.setWindowFlags(Qt.WindowType.Widget)
+                self.setVisible(False)
+            except Exception:
+                pass
+
+        # Политика размеров: терминал плавно масштабируется по ширине и имеет фиксированную высоту
+        try:
+            from PySide6.QtWidgets import QSizePolicy
+            size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            size_policy.setHorizontalStretch(1)
+            size_policy.setVerticalStretch(0)
+            self.setSizePolicy(size_policy)
+        except Exception:
+            pass
+
+        # Внешние отступы: небольшой отступ СНИЗУ, как у других панелей
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 0, 8, 8)  # top=0, bottom=8
+        layout.setSpacing(6)
+
+        # Область вкладок терминала
         self.tabs = QTabWidget()
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(self.close_tab)
-        layout.addWidget(self.tabs)
-        
-        # Add button for new tab
+        layout.addWidget(self.tabs, 1)
+
+        # Нижняя панель действий + заголовок слева (единая линия управления)
+        controls = QHBoxLayout()
+        controls.setContentsMargins(0, 6, 0, 0)
+        title = QLabel("Терминал")
+        title.setObjectName("panelHeader")
+        title.setFixedHeight(24)
+        controls.addWidget(title)
+        controls.addStretch()
         add_tab_btn = QPushButton("New Tab")
         add_tab_btn.clicked.connect(self.add_tab)
-        layout.addWidget(add_tab_btn)
-        
+        controls.addWidget(add_tab_btn)
+        layout.addLayout(controls)
+
+        # Рекомендуемые пределы высоты, чтобы работало “между” панелями
+        self.setMinimumHeight(150)
+        self.setMaximumHeight(400)
+
+        # Устанавливаем singleton
+        try:
+            TerminalWidget.instance = self  # type: ignore[assignment]
+        except Exception:
+            pass
+
         self.add_tab()
 
     def add_tab(self):
@@ -124,6 +168,12 @@ class TerminalWidget(QWidget):
             terminal.insertPlainText(command + '\n')
             terminal.process.write(command.encode() + b'\n')
             terminal.insertPlainText(terminal.prompt)
+
+    def log_ai_command(self, command, output):
+        current_terminal = cast(InteractiveTerminal, self.tabs.currentWidget())
+        if current_terminal:
+            current_terminal.insertPlainText(f'[AI] Executed: {command}\n{output}\n')
+            current_terminal.insertPlainText(current_terminal.prompt)
 
     def log_ai_command(self, command, output):
         current_terminal = cast(InteractiveTerminal, self.tabs.currentWidget())

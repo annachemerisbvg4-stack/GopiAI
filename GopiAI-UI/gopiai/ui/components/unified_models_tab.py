@@ -10,6 +10,9 @@ from PySide6.QtWidgets import (
     QButtonGroup, QRadioButton, QStackedWidget
 )
 from PySide6.QtCore import Qt, Signal
+import os
+import json
+import requests
 from PySide6.QtGui import QFont
 
 # Импорт системы иконок
@@ -28,7 +31,11 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class UnifiedModelsTab(QWidget):
-    """Объединенная вкладка для переключения между Gemini и OpenRouter"""
+    """Объединенная вкладка для переключения между Gemini и OpenRouter
+
+    Дополнительно синхронизирует выбранного провайдера/модель с CrewAI API сервером
+    через POST /internal/state.
+    """
     
     # Сигналы
     provider_changed = Signal(str)  # provider
@@ -207,6 +214,14 @@ class UnifiedModelsTab(QWidget):
             self.provider_changed.emit(new_provider)
             
             logger.info(f"Переключение на провайдера: {new_provider}")
+            # Синхронизируем провайдера с сервером (с текущей моделью, если есть)
+            try:
+                current_model_getter = getattr(getattr(self, "openrouter_page", None), "get_selected_model_id", None)
+                model_id = current_model_getter() if callable(current_model_getter) else None
+                model_id_str = str(model_id) if model_id is not None else None
+                self._sync_state_with_server(provider=new_provider, model_id=model_id_str)
+            except Exception as e:
+                logger.warning(f"Не удалось синхронизировать провайдера: {e}")
     
     def _update_status(self):
         """Обновляет статус в зависимости от выбранного провайдера"""
@@ -221,13 +236,18 @@ class UnifiedModelsTab(QWidget):
             model_id = model_data['id']
             self.model_changed.emit("openrouter", model_id)
             logger.info(f"Выбрана модель OpenRouter: {model_id}")
+            # Синхронизируем выбранную модель с сервером
+            try:
+                self._sync_state_with_server(provider="openrouter", model_id=model_id)
+            except Exception as e:
+                logger.warning(f"Не удалось синхронизировать модель: {e}")
     
     def get_current_provider(self):
         """Возвращает текущего провайдера"""
         return self.current_provider
     
     def set_provider(self, provider: str):
-        """Устанавливает провайдера программно"""
+        """Устанавливает провайдера программно и синхронизирует состояние с сервером"""
         if provider == "gemini":
             self.gemini_radio.setChecked(True)
             self.stacked_widget.setCurrentIndex(0)
@@ -239,19 +259,46 @@ class UnifiedModelsTab(QWidget):
             self.current_provider = provider
             self._update_status()
             self.provider_changed.emit(provider)
+            # Синхронизируем провайдера с сервером (с актуальной моделью если выбрана)
+            try:
+                current_model_getter = getattr(getattr(self, "openrouter_page", None), "get_selected_model_id", None)
+                model_id = current_model_getter() if callable(current_model_getter) else None
+                model_id_str = str(model_id) if model_id is not None else None
+                self._sync_state_with_server(provider=provider, model_id=model_id_str)
+            except Exception as e:
+                logger.warning(f"Не удалось синхронизировать провайдера (programmatic): {e}")
 
+
+    def _sync_state_with_server(self, provider: str, model_id: str | None):
+        """
+        Синхронизирует выбранного провайдера/модель с CrewAI API сервером.
+        Требования сервера: оба поля обязательны.
+        """
+        try:
+            base_url = os.environ.get("CREWAI_API_BASE_URL", "http://127.0.0.1:5051")
+            url = f"{base_url}/internal/state"
+            # Сервер ожидает оба поля, поэтому если model_id отсутствует — передаём пустую строку
+            payload = {"provider": provider, "model_id": model_id or ""}
+            headers = {"Content-Type": "application/json; charset=utf-8"}
+            resp = requests.post(url, data=json.dumps(payload), headers=headers, timeout=5)
+            if resp.status_code != 200:
+                logger.warning(f"Сервер вернул {resp.status_code}: {resp.text}")
+            else:
+                logger.info("Состояние провайдера/модели синхронизировано с сервером")
+        except Exception as e:
+            logger.warning(f"Ошибка синхронизации состояния с сервером: {e}")
 
 def test_unified_models_tab():
     """Тестовая функция для объединенной вкладки моделей"""
     import sys
     from PySide6.QtWidgets import QApplication
-    
+
     app = QApplication(sys.argv)
-    
+
     widget = UnifiedModelsTab()
     widget.setWindowTitle("Unified Models Tab Test")
     widget.show()
-    
+
     sys.exit(app.exec())
 
 

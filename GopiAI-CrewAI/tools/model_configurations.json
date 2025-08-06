@@ -4011,7 +4011,7 @@
   },
   "current": {
     "provider": "openrouter",
-    "model_id": "agentica-org/deepcoder-14b-preview:free"
+    "model_id": "google/gemma-3-27b-it:free"
   },
   "version": "1.0",
   "last_updated": "1754405628.6248908"

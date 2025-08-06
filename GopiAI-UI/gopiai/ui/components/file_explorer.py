@@ -75,7 +75,7 @@ class FileExplorerWidget(QWidget):
         
         # Создаем табы
         self.tab_widget = QTabWidget()
-        self.tab_widget.setTabPosition(QTabWidget.North)
+        self.tab_widget.setTabPosition(QTabWidget.TabPosition.North)
         self.tab_widget.setMovable(False)
         
         # Вкладка 1: Файловый проводник (оригинальная функциональность)

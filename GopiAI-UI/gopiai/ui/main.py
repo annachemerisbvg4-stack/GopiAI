@@ -346,7 +346,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self.file_explorer.setSizePolicy(size_policy)
         main_splitter.addWidget(self.file_explorer)
 
-        # Центральная область: вертикальный сплиттер (TabDocumentWidget | терминал)
+        # Центральная область: вертикальный сплиттер (только редактор; терминал будет в доке снизу)
         center_vertical_splitter = QSplitter(Qt.Orientation.Vertical)
         main_splitter.addWidget(center_vertical_splitter)
 
@@ -355,13 +355,30 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self.tab_document.setMinimumWidth(500)
         center_vertical_splitter.addWidget(self.tab_document)
 
-        # Нижняя панель — терминал под TabDocumentWidget
-        self.terminal_widget = TerminalWidget()
-        self.terminal_widget.setMinimumHeight(150)
-        self.terminal_widget.setMaximumHeight(400)
-        terminal_size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.terminal_widget.setSizePolicy(terminal_size_policy)
-        center_vertical_splitter.addWidget(self.terminal_widget)
+        # Терминал — ТОЛЬКО по требованию через меню (по умолчанию скрыт)
+        self.terminal_widget = TerminalWidget(self)
+        set_terminal_widget(self.terminal_widget)
+        try:
+            setattr(TerminalWidget, "instance", self.terminal_widget)  # type: ignore[attr-defined]
+        except Exception:
+            pass
+
+        self.terminal_dock = QDockWidget("Терминал", self)
+        self.terminal_dock.setObjectName("terminal_dock")
+        # Разрешим все области, чтобы поведение было предсказуемым, но по умолчанию сделаем float
+        self.terminal_dock.setAllowedAreas(
+            Qt.DockWidgetArea.AllDockWidgetAreas
+        )
+        # Делает док плавающим окном (floating) сразу при открытии
+        self.terminal_dock.setFloating(True)
+        # Убираем изначальную привязку: не добавляем в конкретную область дока
+        # но оставляем как дочерний док-виджет главного окна
+        self.terminal_dock.setWidget(self.terminal_widget)
+        # Не добавляем через addDockWidget, чтобы избежать принудительной привязки
+        # self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.terminal_dock)
+
+        # Стартовая видимость отключена — откроется только через меню/шорткат в плавающем режиме
+        self.terminal_dock.hide()
 
         # Правая панель - чат
         # Явная инициализация переменной, чтобы Pyright видел привязку до использования
@@ -386,12 +403,10 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         main_splitter.setCollapsible(0, True)   # Проводник можно схлопнуть
         main_splitter.setCollapsible(1, False)  # Центр нельзя схлопнуть
         main_splitter.setCollapsible(2, True)   # Чат можно схлопнуть
-        center_vertical_splitter.setSizes([700, 200])  # TabDocumentWidget | терминал
         main_splitter.setStretchFactor(0, 0)
         main_splitter.setStretchFactor(1, 10)
         main_splitter.setStretchFactor(2, 0)
         center_vertical_splitter.setStretchFactor(0, 1)
-        center_vertical_splitter.setStretchFactor(1, 0)
 
         self._configure_splitter_behavior()
         self._setup_splitter_constraints()  # Добавляем этот вызов
@@ -503,9 +518,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             )
             
             toggle_terminal = QShortcut(QKeySequence("Ctrl+`"), self)
-            toggle_terminal.activated.connect(
-                lambda: self.terminal_widget.setVisible(not self.terminal_widget.isVisible())
-            )
+            toggle_terminal.activated.connect(self._toggle_terminal)
             
             # Ctrl+Shift+C - переключение чата
             toggle_chat = QShortcut(QKeySequence("Ctrl+Shift+C"), self)
@@ -698,6 +711,7 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             if hasattr(menu_bar, "openChatRequested"):
                 menu_bar.openChatRequested.connect(self._toggle_chat)
             if hasattr(menu_bar, "openTerminalRequested"):
+                # По запросу из меню открываем (если скрыт) или скрываем (если открыт)
                 menu_bar.openTerminalRequested.connect(self._toggle_terminal)
             if hasattr(menu_bar, "toggleFileExplorerRequested"):
                 menu_bar.toggleFileExplorerRequested.connect(
@@ -948,8 +962,30 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         self.chat_widget.setVisible(not self.chat_widget.isVisible())
 
     def _toggle_terminal(self):
-        """Переключение видимости терминала"""
-        self.terminal_widget.setVisible(not self.terminal_widget.isVisible())
+        """Переключение видимости терминала (плавающее окно по умолчанию)"""
+        try:
+            if not self.terminal_dock.isVisible():
+                # Перед показом гарантируем плавающий режим
+                self.terminal_dock.setFloating(True)
+                # Опционально: выставим разумный стартовый размер и позицию
+                try:
+                    # Центруем относительно главного окна
+                    geo = self.geometry()
+                    width = int(geo.width() * 0.6)
+                    height = int(geo.height() * 0.35)
+                    left = geo.x() + int((geo.width() - width) / 2)
+                    top = geo.y() + int((geo.height() - height) / 2)
+                    self.terminal_dock.resize(width, height)
+                    self.terminal_dock.move(left, top)
+                except Exception:
+                    pass
+                self.terminal_dock.show()
+                self.terminal_dock.raise_()
+                self.terminal_dock.activateWindow()
+            else:
+                self.terminal_dock.hide()
+        except Exception as e:
+            print(f"[WARNING] Ошибка переключения терминала: {e}")
 
     def on_change_theme(self, theme_name):
         """Обработчик смены темы"""
