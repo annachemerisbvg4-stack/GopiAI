@@ -229,7 +229,15 @@ class ChatAsyncHandler(QObject):
             
             logger.debug(f"[POLLING] Попытка #{self._current_polling_attempt} проверки статуса задачи {self._current_task_id}")
             
-            status_raw = self.crew_ai_client.check_task_status(self._current_task_id)
+            # Проверяем наличие метода check_task_status или get_task_status
+            if hasattr(self.crew_ai_client, 'check_task_status'):
+                status_raw = self.crew_ai_client.check_task_status(self._current_task_id)
+            elif hasattr(self.crew_ai_client, 'get_task_status'):
+                status_raw = self.crew_ai_client.get_task_status(self._current_task_id)
+            else:
+                logger.error("[POLLING-ERROR] Клиент CrewAI не имеет методов check_task_status или get_task_status")
+                status_raw = {"error": "Метод проверки статуса недоступен", "status": "error"}
+                
             logger.debug("[POLLING] Получен статус: %s", status_raw)
             status: Dict[str, Any] = status_raw if isinstance(status_raw, dict) else {"status": str(status_raw)}
             

@@ -632,6 +632,19 @@ class CrewAIClient:
             logger.error(f"[TASK-ERROR] Ошибка соединения при проверке задачи {task_id}: {str(e)}")
             return {"error": f"Ошибка соединения: {str(e)}", "status": "error"}
             
+    def get_task_status(self, task_id):
+        """
+        Алиас для check_task_status для обратной совместимости
+        
+        Args:
+            task_id: ID задачи для проверки
+            
+        Returns:
+            dict: Состояние задачи или сообщение об ошибке
+        """
+        logger.debug(f"[TASK-CHECK] Вызов get_task_status (алиас) для задачи: {task_id}")
+        return self.check_task_status(task_id)
+            
     def index_documentation(self):
         """Запускает индексацию документации CrewAI"""
         if not self.is_available():
