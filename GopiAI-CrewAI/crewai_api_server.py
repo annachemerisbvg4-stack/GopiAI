@@ -429,6 +429,13 @@ def cleanup_on_exit():
     logger.info("Cleaning up resources...")
 
 if __name__ == '__main__':
+    # [AUDIT] Разовая диагностика загруженных модулей с префиксом "gopiai."
+    try:
+        loaded = sorted([m for m in sys.modules.keys() if m.startswith("gopiai.")])
+        print(f"[AUDIT][CREWAI] Loaded gopiai.* modules (pre-run): {loaded}")
+        logging.getLogger(__name__).info("[AUDIT][CREWAI] Loaded gopiai.* modules (pre-run): %s", loaded)
+    except Exception as _e:
+        print(f"[AUDIT][CREWAI] Error while auditing modules: {_e}")
     # Регистрируем обработчики сигналов
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -440,6 +447,22 @@ if __name__ == '__main__':
         logger.info(f"[STARTUP] Server starting on http://{HOST}:{PORT}")
         try:
             print("[DIAGNOSTIC] Calling app.run()")
+
+            # Дополнительно планируем аудит уже после старта (через отдельный поток-таймер)
+            try:
+                def _late_audit():
+                    import time as _t
+                    _t.sleep(3)
+                    try:
+                        late_loaded = sorted([m for m in sys.modules.keys() if m.startswith("gopiai.")])
+                        print(f"[AUDIT][CREWAI] Loaded gopiai.* modules (post-run): {late_loaded}")
+                        logging.getLogger(__name__).info("[AUDIT][CREWAI] Loaded gopiai.* modules (post-run): %s", late_loaded)
+                    except Exception as __e:
+                        print(f"[AUDIT][CREWAI] Error while late auditing modules: {__e}")
+                threading.Thread(target=_late_audit, daemon=True).start()
+            except Exception as __e:
+                print(f"[AUDIT][CREWAI] Unable to schedule late audit: {__e}")
+
             app.run(host=HOST, port=PORT, debug=DEBUG, threaded=True, use_reloader=False)
             print("[DIAGNOSTIC] After app.run() - this message should not appear")
         except KeyboardInterrupt:

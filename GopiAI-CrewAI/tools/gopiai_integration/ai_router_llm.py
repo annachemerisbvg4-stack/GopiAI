@@ -18,7 +18,6 @@ sys.path.append(project_root)
 from llm_rotation_config import (
     select_llm_model_safe, 
     rate_limit_monitor, 
-    get_api_key_for_provider, 
     LLM_MODELS_CONFIG,
     get_available_models,
     get_models_by_intelligence,
@@ -26,6 +25,8 @@ from llm_rotation_config import (
     register_use,
     is_model_blacklisted
 )
+# ЕДИНЫЙ ИСТОЧНИК ПРАВДЫ: менеджер конфигураций моделей
+from .model_config_manager import get_model_config_manager, ModelProvider
 # Импортируем LLM из crewai
 from crewai.llm import LLM
 class AIRouterLLM(BaseLLM):
@@ -43,6 +44,13 @@ class AIRouterLLM(BaseLLM):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.model_configs = {m['id']: m for m in LLM_MODELS_CONFIG}
+        # Инициализируем менеджер конфигураций как single source of truth
+        try:
+            self.model_config_manager = get_model_config_manager()
+            self.logger.info("✅ AIRouterLLM инициализирован с ModelConfigurationManager (SSOT)")
+        except Exception as e:
+            self.model_config_manager = None
+            self.logger.warning(f"⚠️ ModelConfigurationManager недоступен: {e}")
         self.logger.info("✅ AIRouterLLM инициализирован с улучшенной системой ротации")
     def _is_quota_error(self, error):
         """Детектирует все типы ошибок лимитов и квот"""
@@ -70,14 +78,22 @@ class AIRouterLLM(BaseLLM):
             model_config = self.model_configs.get(model_id)
             if not model_config:
                 raise ValueError(f"Конфигурация для модели {model_id} не найдена")
-            provider_name = model_config['provider']
-            api_key = get_api_key_for_provider(provider_name)
+            # ЖЕСТКО: берём провайдера и ключ из SSOT (model_configurations.json через менеджер)
+            provider_name = model_config.get('provider')
+            api_key_env = model_config.get('api_key_env')
+            if self.model_config_manager:
+                # Нормализация env: поддерживаем GOOGLE_API_KEY и GEMINI_API_KEY как эквивалентные для Gemini
+                if provider_name == 'gemini' and api_key_env == 'GOOGLE_API_KEY':
+                    api_key_env = 'GEMINI_API_KEY' if os.getenv('GEMINI_API_KEY') else 'GOOGLE_API_KEY'
+                api_key = os.getenv(api_key_env or '')
+            else:
+                api_key = os.getenv(api_key_env or '')
             if not api_key:
-                raise ValueError(f"API ключ для провайдера {provider_name} не найден")
+                raise ValueError(f"API ключ не найден: env={api_key_env} для провайдера {provider_name}")
             
             # 🚀 КРИТИЧЕСКОЕ УЛУЧШЕНИЕ: Используем кастомный клиент для Google/Gemini
             # для обхода ограничений безопасности (без safetySettings)
-            if provider_name.lower() == 'google':
+            if provider_name.lower() in ('google', 'gemini'):
                 self.logger.info(f"🔥 Используем GeminiDirectClient для обхода ограничений безопасности модели {model_id}")
                 
                 # Создаем наш кастомный LLM без safetySettings
@@ -323,33 +339,45 @@ class AIRouterLLM(BaseLLM):
             # Выбираем лучшую доступную модель
             # Убираем использование несуществующих параметров в select_llm_model_safe
             model_id = select_llm_model_safe("dialog", intelligence_priority=True)
-            
             if not model_id:
-                # Fallback: пробуем любую доступную модель
                 model_id = select_llm_model_safe("dialog", intelligence_priority=False)
-                
             if not model_id:
                 raise ValueError("Нет доступных моделей для CrewAI")
             
             model_config = self.model_configs.get(model_id)
             if not model_config:
                 raise ValueError(f"Конфигурация для модели {model_id} не найдена")
-                
-            provider_name = model_config['provider']
-            api_key = get_api_key_for_provider(provider_name)
-            if not api_key:
-                raise ValueError(f"API ключ для провайдера {provider_name} не найден")
-            llm_params = {
-                'model': model_id,
-                'api_key': api_key,
-                'config': {
-                    'temperature': 0.7,
-                    'max_tokens': 2000,
-                }
-            }
             
-            self.logger.info(f"🎯 CrewAI будет использовать модель: {model_id}")
-            return LLM(**llm_params)
+            provider_name = model_config.get('provider')
+            api_key_env = model_config.get('api_key_env')
+            # Единый источник правды: ключ берём из api_key_env
+            if provider_name == 'gemini' and api_key_env == 'GOOGLE_API_KEY':
+                api_key_env = 'GEMINI_API_KEY' if os.getenv('GEMINI_API_KEY') else 'GOOGLE_API_KEY'
+            api_key = os.getenv(api_key_env or '')
+            if not api_key:
+                raise ValueError(f"API ключ не найден: env={api_key_env} для провайдера {provider_name}")
+            
+            # Для Gemini используем наш безопасный клиент; иначе стандартный LLM
+            if provider_name and provider_name.lower() in ('google', 'gemini'):
+                llm_instance = create_gemini_direct_llm(
+                    model=model_id,
+                    api_key=api_key,
+                    temperature=0.7,
+                    max_tokens=8192
+                )
+                self.logger.info(f"🎯 CrewAI использует GeminiDirectLLM: {model_id} (env={api_key_env})")
+                return llm_instance  # совместим с crewai.llm.LLM интерфейсом-адаптером
+            else:
+                llm_params = {
+                    'model': model_id,
+                    'api_key': api_key,
+                    'config': {
+                        'temperature': 0.7,
+                        'max_tokens': 2000,
+                    }
+                }
+                self.logger.info(f"🎯 CrewAI использует стандартный LLM: {model_id} провайдер={provider_name} (env={api_key_env})")
+                return LLM(**llm_params)
             
         except Exception as e:
             self.logger.error(f"❌ Ошибка при создании LLM instance для CrewAI: {e}")

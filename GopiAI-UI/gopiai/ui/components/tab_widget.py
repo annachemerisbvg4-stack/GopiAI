@@ -86,28 +86,16 @@ ErrorDisplayWidget = _NoopErrorDisplay  # type: ignore
 import sys
 import os
 
-# Добавляем путь к модулю GopiAI-Widgets
-widgets_path = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "..", "GopiAI-Widgets"
-)
-widgets_path = os.path.abspath(widgets_path)
-if widgets_path not in sys.path:
-    sys.path.insert(0, widgets_path)
-
-# TextEditorWidget необходим. Если модуль недоступен, создаем минимальный адаптер.
-try:
-    from gopiai.widgets.core.text_editor import TextEditorWidget  # type: ignore
-    TEXT_EDITOR_AVAILABLE = True
-except Exception:
-    from PySide6.QtWidgets import QTextEdit
-    class TextEditorWidget(QTextEdit):  # type: ignore
-        # минимальная совместимость: .text_editor и .setPlainText доступны
-        def __init__(self, *a, **k):
-            super().__init__(*a, **k)
-            self.text_editor = self
-        def setPlainText(self, text):
-            super().setPlainText(text)
-    TEXT_EDITOR_AVAILABLE = False  # укажем False, чтобы ветки fallback продолжали работать
+# Полный отказ от зависимости gopiai.widgets: используем локальный минимальный редактор.
+from PySide6.QtWidgets import QTextEdit
+class TextEditorWidget(QTextEdit):  # type: ignore
+    # минимальная совместимость: .text_editor и .setPlainText доступны
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.text_editor = self
+    def setPlainText(self, text):
+        super().setPlainText(text)
+TEXT_EDITOR_AVAILABLE = False  # держим False, чтобы ветки fallback продолжали работать
 
 try:
     from gopiai.ui.components.rich_text_notebook_widget import NotebookEditorWidget

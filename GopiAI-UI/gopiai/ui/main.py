@@ -121,11 +121,13 @@ from gopiai_integration.terminal_tool import set_terminal_widget
 script_dir = os.path.dirname(os.path.abspath(__file__))
 gopiai_modules_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 
+# [AUDIT-STEP-A] Отключаем автоподключение старых пакетов (Core/Widgets/App/Extensions)
+# Сохраняем только то, что реально необходимо UI. Остальные пути закомментированы намеренно.
 module_paths = [
-    os.path.join(gopiai_modules_root, "GopiAI-Core"),
-    os.path.join(gopiai_modules_root, "GopiAI-Widgets"),
-    os.path.join(gopiai_modules_root, "GopiAI-App"),
-    os.path.join(gopiai_modules_root, "GopiAI-Extensions"),
+    # os.path.join(gopiai_modules_root, "GopiAI-Core"),
+    # os.path.join(gopiai_modules_root, "GopiAI-Widgets"),
+    # os.path.join(gopiai_modules_root, "GopiAI-App"),
+    # os.path.join(gopiai_modules_root, "GopiAI-Extensions"),
     os.path.join(gopiai_modules_root, "rag_memory_system"),
     gopiai_modules_root,
 ]
@@ -1160,6 +1162,22 @@ def main():
         print("[SUCCESS] GopiAI v0.3.0 успешно запущен!")
         print("[INFO] Модульная архитектура активна")
         print("[INFO] Размер основного файла значительно уменьшен")
+
+        # [AUDIT] Временная диагностика загруженных модулей с префиксом "gopiai."
+        try:
+            from PySide6.QtCore import QTimer
+            def _audit_loaded_modules():
+                try:
+                    mods = sorted([m for m in sys.modules.keys() if m.startswith("gopiai.")])
+                    print(f"[AUDIT][UI] Loaded gopiai.* modules: {mods}")
+                    # Также пишем в лог-файл если доступен стандартный logging
+                    import logging
+                    logging.getLogger(__name__).info("[AUDIT][UI] Loaded gopiai.* modules: %s", mods)
+                except Exception as _e:
+                    print(f"[AUDIT][UI] Error while auditing modules: {_e}")
+            QTimer.singleShot(3000, _audit_loaded_modules)
+        except Exception as _e:
+            print(f"[AUDIT][UI] Unable to schedule audit: {_e}")
 
         # Запуск цикла приложения
         # Вызываем заранее извлечённый метод exec()
