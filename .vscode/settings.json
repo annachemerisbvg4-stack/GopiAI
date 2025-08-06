@@ -1,46 +1,11 @@
 {
-    "python.defaultInterpreterPath": "./rag_memory_env/Scripts/python.exe",
-    "python.analysis.extraPaths": [
-        "./GopiAI-UI",
-        "./GopiAI-CrewAI",
-        "./GopiAI-Core",
-        "./rag_memory_system"
-    ],
-    "python.analysis.autoImportCompletions": true,
-    "python.analysis.typeCheckingMode": "basic",
-    // UI settings
-    "files.associations": {
-        "*.md": "markdown"
-    },
-    "copilot.enable": {
-        "*": true,
-        "markdown": true,
-        "python": true
-    },
-    "cody.commandCodeLenses": true,
-    "cody.debug.verbose": true,
-    "cody.experimental.tracing": true,
-    "cody.internal.debug.tokenUsage": false,
-    "cody.agentic.context.experimentalOptions": {},
-    "cursorpyright.analysis.autoImportCompletions": true,
-    "cursorpyright.analysis.extraPaths": [
-        "./GopiAI-UI",
-        "./GopiAI-Core",
-        "./rag_memory_system"
-    ],
-    "cursorpyright.analysis.typeCheckingMode": "basic",
-    "xline.disableBrowserTool": false,
-    "xline.mcp.mode": "full",
-    "xline.mcpMarketplace.enabled": true,
-    "xline.preferredLanguage": "Russian - Русский",
-    "codium.codeCompletion.enable": true,
-    "python.testing.unittestArgs": [
-        "-v",
-        "-s",
-        "./GopiAI-UI",
-        "-p",
-        "test*.py"
-    ],
-    "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true
+  "python.analysis.extraPaths": [
+    "GopiAI-CrewAI/tools",
+    "GopiAI-CrewAI/tools/gopiai_integration",
+    "GopiAI-UI"
+  ],
+  "python.envFile": "${workspaceFolder}/.env",
+  "python.analysis.diagnosticMode": "workspace",
+  "python.testing.pytestEnabled": false,
+  "python.analysis.useLibraryCodeForTypes": true
 }

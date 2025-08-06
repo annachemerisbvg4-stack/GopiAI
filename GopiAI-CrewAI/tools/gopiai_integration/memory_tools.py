@@ -203,32 +203,37 @@ class GopiAIMemoryTool(BaseTool):
         self._save_local_memory(memory)
         return f"✅ Информация сохранена в память (категория: {category}, ключ: {key})"
 
-    def _search_memories(self, query: str = "", category: str = None, 
-                        conversation_id: str = None) -> List[Dict]:
+    def _search_memories(self, query: str = "", category: str | None = None, 
+                        conversation_id: str | None = None) -> List[Dict]:
         """Ищет информацию в памяти с фильтрацией по категории и беседе"""
+        # Нормализуем входы, чтобы избежать .lower() на None
+        norm_query = (query or "").lower()
         memory = self._load_local_memory()
         
         # Фильтрация по категории и беседе
-        results = []
+        results: List[Dict] = []
         for mem in memory.get("memories", []):
             # Применяем фильтры
-            if category and mem.get("category") != category:
+            if category is not None and mem.get("category") != category:
                 continue
-            if conversation_id and mem.get("conversation_id") != conversation_id:
+            if conversation_id is not None and mem.get("conversation_id") != conversation_id:
                 continue
                 
             # Если есть поисковый запрос, проверяем вхождение в данные или ключ
-            if query.lower() not in str(mem.get("data", "")).lower() and \
-               query.lower() not in str(mem.get("key", "")).lower():
+            data_str = str(mem.get("data", ""))
+            key_str = str(mem.get("key", ""))
+            if norm_query and (norm_query not in data_str.lower() and norm_query not in key_str.lower()):
                 continue
                 
             results.append(mem)
             
         return results
 
-    def _search_memory(self, query: str, category: str = None, 
-                      conversation_id: str = None) -> str:
+    def _search_memory(self, query: str, category: str | None = None, 
+                      conversation_id: str | None = None) -> str:
         """Ищет информацию в памяти с фильтрацией по беседе"""
+        # Гарантируем строковый тип для совместимости с сигнатурой _search_memories
+        query = query or ""
         memories = self._search_memories(query, category, conversation_id)
         if not memories:
             return "Ничего не найдено в памяти."
@@ -255,29 +260,31 @@ class GopiAIMemoryTool(BaseTool):
             
         return "\n".join(result)
 
-    def _retrieve_memory(self, key: str, conversation_id: str = None) -> str:
+    def _retrieve_memory(self, key: str | None, conversation_id: str | None = None) -> str:
         """Получает информацию по ключу с учетом беседы"""
+        key = key or ""
         memory = self._load_local_memory()
         
         # Ищем по ключу и conversation_id
         for mem in memory.get("memories", []):
             if mem.get("key") == key:
-                if conversation_id and mem.get("conversation_id") != conversation_id:
+                if conversation_id is not None and mem.get("conversation_id") != conversation_id:
                     continue
                 return f"🔑 Найдено по ключу '{key}':\n{mem.get('data', '')}"
                 
         return f"❌ Запись с ключом '{key}' не найдена" + \
                (f" в беседе {conversation_id}" if conversation_id else "")
 
-    def _delete_memory(self, key: str, conversation_id: str = None) -> str:
+    def _delete_memory(self, key: str | None, conversation_id: str | None = None) -> str:
         """Удаляет информацию из памяти с учетом беседы"""
+        key = key or ""
         memory = self._load_local_memory()
         
         # Ищем и удаляем по ключу и conversation_id
         removed = False
         for mem in memory["memories"][:]:
             if mem.get("key") == key:
-                if conversation_id and mem.get("conversation_id") != conversation_id:
+                if conversation_id is not None and mem.get("conversation_id") != conversation_id:
                     continue
                 memory["memories"].remove(mem)
                 removed = True
@@ -290,10 +297,11 @@ class GopiAIMemoryTool(BaseTool):
             return f"❌ Запись с ключом '{key}' не найдена" + \
                   (f" в беседе {conversation_id}" if conversation_id else "")
 
-    def _summarize_memories(self, topic: str, conversation_id: str = None) -> str:
+    def _summarize_memories(self, topic: str | None, conversation_id: str | None = None) -> str:
         """Создает сводку по теме с учетом контекста беседы"""
         # Получаем релевантные записи
-        memories = self._search_memories(topic, conversation_id=conversation_id)
+        topic_str = topic or ""
+        memories = self._search_memories(topic_str, conversation_id=conversation_id)
         
         if not memories:
             return f"Не найдено информации по теме '{topic}'" + \
@@ -325,12 +333,13 @@ class GopiAIMemoryTool(BaseTool):
                 
             result.append(f"{i}. {content[:200]}{'...' if len(content) > 200 else ''}")
         
-        if len(memories) < len(self._search_memories(topic, conversation_id=conversation_id)):
-            result.append(f"\nПоказано {len(memories)} из {len(self._search_memories(topic, conversation_id=conversation_id))} записей. Уточните запрос для более точных результатов.")
+        total_found = len(self._search_memories(topic_str, conversation_id=conversation_id))
+        if len(memories) < total_found:
+            result.append(f"\nПоказано {len(memories)} из {total_found} записей. Уточните запрос для более точных результатов.")
             
         return "\n".join(result)
 
-    def _list_memories(self, category: str = None, conversation_id: str = None) -> str:
+    def _list_memories(self, category: str | None = None, conversation_id: str | None = None) -> str:
         """Выводит список сохраненной информации с фильтрацией по категории и беседе"""
         memories = self._search_memories("", category, conversation_id)
         if not memories:

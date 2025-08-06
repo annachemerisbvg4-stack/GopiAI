@@ -6,11 +6,12 @@ import os
 import threading
 import time
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, TypedDict, Union, cast
 from PySide6.QtCore import QObject, Signal, QTimer, Slot
 
 # Настройка логирования для ChatAsyncHandler
 logger = logging.getLogger(__name__)
+logger.propagate = False  # avoid duplicate logs if root logger configured elsewhere
 
 # Создаем директорию для логов, если её нет
 try:
@@ -23,21 +24,27 @@ except Exception:
 
 # Настраиваем файловый обработчик для логов
 async_log_file = os.path.join(logs_dir, 'chat_async_handler.log')
-file_handler = logging.handlers.RotatingFileHandler(
-    async_log_file, 
-    maxBytes=5 * 1024 * 1024,  # 5 МБ
-    backupCount=3,
-    encoding='utf-8'
-)
-
-formatter = logging.Formatter(
-    '%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-file_handler.setFormatter(formatter)
-file_handler.setLevel(logging.DEBUG)
-logger.addHandler(file_handler)
-logger.setLevel(logging.DEBUG)
+try:
+    file_handler = logging.handlers.RotatingFileHandler(
+        async_log_file, 
+        maxBytes=5 * 1024 * 1024,  # 5 МБ
+        backupCount=3,
+        encoding='utf-8'
+    )
+    formatter = logging.Formatter(
+        '%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.DEBUG)
+    # Prevent adding duplicate handlers if module reloaded
+    if not any(isinstance(h, logging.handlers.RotatingFileHandler) and getattr(h, 'baseFilename', None) == file_handler.baseFilename for h in logger.handlers):
+        logger.addHandler(file_handler)
+    logger.setLevel(logging.DEBUG)
+except Exception as _log_exc:
+    # Fall back to basicConfig
+    logging.basicConfig(level=logging.DEBUG)
+    logger.warning("Failed to attach RotatingFileHandler: %s", _log_exc)
 
 class ChatAsyncHandler(QObject):
     """Объединенный асинхронный обработчик чата с оптимизированным polling"""
@@ -54,7 +61,7 @@ class ChatAsyncHandler(QObject):
     status_updated = Signal(str)  # Алиас для status_update
     start_polling_signal = Signal(str)  # Сигнал для безопасного запуска таймера
 
-    def __init__(self, crew_ai_client, parent=None):
+    def __init__(self, crew_ai_client: Any, parent: Optional[QObject] = None):
         super().__init__(parent)
         self.crew_ai_client = crew_ai_client
         self._current_task_id = None
@@ -79,7 +86,7 @@ class ChatAsyncHandler(QObject):
         
         logger.info("[ChatAsyncHandler] Объединенный обработчик чата инициализирован")
 
-    def send_message(self, message: str, metadata: dict = None) -> bool:
+    def send_message(self, message: str, metadata: Optional[Dict[str, Any]] = None) -> bool:
         """
         Отправка сообщения и начало асинхронной обработки (улучшенный интерфейс)
         
@@ -106,7 +113,7 @@ class ChatAsyncHandler(QObject):
             self.message_error.emit(str(e))
             return False
 
-    def process_message(self, message_data: dict):
+    def process_message(self, message_data: Dict[str, Any]) -> None:
         """Запускает асинхронную обработку сообщения в отдельном потоке."""
         logger.info(f"[ChatAsyncHandler] Начинаем обработку сообщения: {message_data}")
         
@@ -127,7 +134,7 @@ class ChatAsyncHandler(QObject):
             logger.error(f"[ChatAsyncHandler] Ошибка при запуске потока: {e}", exc_info=True)
             self.message_error.emit(str(e))
 
-    def _process_in_background(self, message_data: dict):
+    def _process_in_background(self, message_data: Dict[str, Any]) -> None:
         try:
             print("[DEBUG-ASYNC-BG] Начало фоновой обработки сообщения")
             logger.debug(f"[ASYNC] Начало фоновой обработки сообщения")
@@ -167,22 +174,29 @@ class ChatAsyncHandler(QObject):
             response = self.crew_ai_client.process_request(message_data)
             
             print(f"[DEBUG-ASYNC-BG] Получен ответ от CrewAI: {response}")
-            logger.debug(f"[ASYNC] Получен ответ от CrewAI: {response}")
+            logger.debug(f"[ASYNC] Получен ответ от CrewAI: %s", response)
             
             if not response:
                 print("[DEBUG-ASYNC-BG-ERROR] Получен пустой ответ от сервера")
                 logger.error("[ASYNC-ERROR] Получен пустой ответ от сервера")
                 raise ValueError("Received an empty response from the server.")
             
-            if isinstance(response, dict) and "task_id" in response:
-                # ### ИЗМЕНЕНО: Не запускаем таймер напрямую, а испускаем сигнал ###
-                print(f"[DEBUG-ASYNC-BG] Получен task_id: {response['task_id']}, запуск опроса статуса")
-                logger.info(f"[ASYNC] Получен task_id: {response['task_id']}, запуск опроса статуса")
-                self.start_polling_signal.emit(response["task_id"])
+            # Ожидаемые варианты ответа: dict с task_id (асинхронный) или dict/str для синхронного
+            if isinstance(response, dict) and "task_id" in response and isinstance(response["task_id"], str):
+                task_id = cast(str, response["task_id"])
+                print(f"[DEBUG-ASYNC-BG] Получен task_id: {task_id}, запуск опроса статуса")
+                logger.info(f"[ASYNC] Получен task_id: %s, запуск опроса статуса", task_id)
+                self.start_polling_signal.emit(task_id)
             else:
                 print("[DEBUG-ASYNC-BG] Получен синхронный ответ, отправка в UI")
                 logger.info("[ASYNC] Получен синхронный ответ, отправка в UI")
-                self.response_ready.emit(response)
+                # Нормализуем тип: UI ожидает dict, обернем строку/иные типы
+                normalized: Dict[str, Any]
+                if isinstance(response, dict):
+                    normalized = response
+                else:
+                    normalized = {"response": str(response)}
+                self.response_ready.emit(normalized)
 
         except Exception as e:
             print(f"[DEBUG-ASYNC-BG-ERROR] Ошибка в фоновой обработке: {e}")
@@ -200,7 +214,7 @@ class ChatAsyncHandler(QObject):
         logger.info(f"[POLLING] Запущен опрос статуса для task_id: {task_id} с initial_delay={self.current_delay}ms")
         self.status_update.emit("Обрабатываю запрос...")
 
-    def _check_task_status(self):
+    def _check_task_status(self) -> None:
         """Периодически опрашивает сервер о ходе выполнения задачи."""
         if self._current_task_id is None:
             logger.warning("[POLLING] Попытка опроса статуса без task_id, останавливаем таймер")
@@ -215,51 +229,63 @@ class ChatAsyncHandler(QObject):
             
             logger.debug(f"[POLLING] Попытка #{self._current_polling_attempt} проверки статуса задачи {self._current_task_id}")
             
-            status = self.crew_ai_client.check_task_status(self._current_task_id)
-            logger.debug(f"[POLLING] Получен статус: {status}")
+            status_raw = self.crew_ai_client.check_task_status(self._current_task_id)
+            logger.debug("[POLLING] Получен статус: %s", status_raw)
+            status: Dict[str, Any] = status_raw if isinstance(status_raw, dict) else {"status": str(status_raw)}
             
             # Ожидаем, что сервер возвращает словарь с ключами `done` и `result`
             # Также проверяем статус на "completed" или "error" для завершения опроса
-            if status.get("done") or status.get("status") == "completed" or status.get("status") == "error":
+            done = bool(status.get("done")) or status.get("status") in ("completed", "error")
+            if done:
                 logger.info(f"[POLLING-COMPLETE] Задача {self._current_task_id} завершена после {self._current_polling_attempt} попыток")
                 self._polling_timer.stop()
                 
                 # Проверяем наличие результата
                 result = status.get("result")
                 if result:
-                    logger.debug(f"[POLLING-RESULT] Получен результат: {result}")
+                    logger.debug("[POLLING-RESULT] Получен результат: %s", result)
                 else:
-                    logger.warning(f"[POLLING-RESULT] Задача завершена, но результат пуст")
+                    logger.warning("[POLLING-RESULT] Задача завершена, но результат пуст")
                 
                 # Сбрасываем счетчик и идентификатор задачи
                 task_id = self._current_task_id
                 self._current_task_id = None
                 self._current_polling_attempt = 0
                 
-                # Отправляем результат в UI
-                self.response_ready.emit(result)
+                # Отправляем результат в UI (нормализуем до dict)
+                norm_result: Dict[str, Any]
+                if isinstance(result, dict):
+                    norm_result = result
+                elif result is None:
+                    norm_result = {"response": "Пустой результат"}
+                else:
+                    norm_result = {"response": str(result)}
+                self.response_ready.emit(norm_result)
                 logger.info(f"[POLLING-COMPLETE] Результат задачи {task_id} отправлен в UI")
             else:
                 # Обновляем статус в UI
-                status_text = status.get("status", "Обрабатываю запрос...")
+                status_text = str(status.get("status", "Обрабатываю запрос..."))
                 logger.debug(f"[POLLING-PROGRESS] Задача {self._current_task_id} в процессе: {status_text}")
                 self.status_update.emit(status_text)
                 
                 # Проверяем статус на "completed" или "error" для завершения опроса
-                if status_text == "completed" or status_text == "error":
+                if status_text in ("completed", "error"):
                     logger.info(f"[POLLING-STATUS-COMPLETE] Задача {self._current_task_id} завершена со статусом: {status_text}")
                     self._polling_timer.stop()
                     result = status.get("result", {"response": f"Задача завершена со статусом: {status_text}"})
                     self._current_task_id = None
                     self._current_polling_attempt = 0
                     if status_text == "error":
-                        self.message_error.emit(result.get("response", "Ошибка обработки"))
+                        # Нормализуем и отправляем ошибку
+                        resp_text = result.get("response") if isinstance(result, dict) else str(result)
+                        self.message_error.emit(resp_text or "Ошибка обработки")
                     else:
-                        self.response_ready.emit(result)
+                        norm_result = result if isinstance(result, dict) else {"response": str(result)}
+                        self.response_ready.emit(norm_result)
                 else:
                     # Адаптивная (экспоненциальная) задержка: увеличиваем интервал до потолка
                     prev_delay = self.current_delay
-                    self.current_delay = int(min(self.max_delay, max(self.initial_delay, self.current_delay * self.delay_multiplier)))
+                    self.current_delay = int(min(self.max_delay, max(self.initial_delay, int(self.current_delay * self.delay_multiplier))))
                     if self._polling_timer.isActive():
                         self._polling_timer.stop()
                     self._polling_timer.start(self.current_delay)

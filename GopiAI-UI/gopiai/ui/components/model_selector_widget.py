@@ -13,6 +13,7 @@ Dependencies: PySide6, requests
 from __future__ import annotations
 
 import os
+import sys
 import requests
 from pathlib import Path
 from typing import Optional
@@ -32,7 +33,16 @@ from PySide6.QtWidgets import (
 )
 
 # Backend helpers
-from GopiAI_CrewAI.llm_rotation_config import (
+# Resolve import robustly relative to repo root so Pyright can find it
+# Repo root: .../GOPI_AI_MODULES/
+# We need to import from "GopiAI-CrewAI/llm_rotation_config.py"
+_repo_root = Path(__file__).resolve().parents[2]  # points to .../GopiAI-UI
+_repo_root = _repo_root.parent  # now .../GOPI_AI_MODULES
+crewai_dir = _repo_root / "GopiAI-CrewAI"
+if str(crewai_dir) not in sys.path:
+    sys.path.append(str(crewai_dir))
+
+from llm_rotation_config import (  # type: ignore
     PROVIDER_KEY_ENV,
     get_api_key_for_provider,
     get_available_models,
@@ -69,7 +79,8 @@ class ModelSelectorWidget(QWidget):
         # Provider & API key
         self.provider_combo = QComboBox()
         self.api_key_edit = QLineEdit()
-        self.api_key_edit.setEchoMode(QLineEdit.Password)
+        # Use QLineEdit.EchoMode.Password for PySide6 type safety
+        self.api_key_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.save_key_btn = QPushButton("Save API key")
 
         form = QFormLayout()
@@ -88,7 +99,8 @@ class ModelSelectorWidget(QWidget):
 
         # Status
         self.status_lbl = QLabel()
-        self.status_lbl.setAlignment(Qt.AlignLeft)
+        # Use Qt.AlignmentFlag.AlignLeft for PySide6 type safety
+        self.status_lbl.setAlignment(Qt.AlignmentFlag.AlignLeft)
         main.addWidget(self.status_lbl)
 
     def _wire_signals(self) -> None:

@@ -49,6 +49,8 @@ class AIMindTool(BaseTool):
             )
 
         minds_client = Client(api_key=self.api_key)
+        # Ensure datasources is a list for iteration below
+        self.datasources = self.datasources or []
 
         # Convert the datasources to DatabaseConfig objects.
         datasources = []
@@ -69,7 +71,7 @@ class AIMindTool(BaseTool):
             name=name, datasources=datasources, replace=True
         )
 
-        self.mind_name = mind.name
+        self.mind_name = str(mind.name)
 
     def _run(
         self,
@@ -79,9 +81,14 @@ class AIMindTool(BaseTool):
         # The Minds API is OpenAI compatible and therefore, the OpenAI client can be used.
         openai_client = OpenAI(base_url=AIMindToolConstants.MINDS_API_BASE_URL, api_key=self.api_key)
 
-        completion = openai_client.chat.completions.create(
+        if not self.mind_name:
+            raise RuntimeError("Mind is not initialized")
+
+        # Use a typed structure to satisfy static type checkers if needed
+        messages = [{"role": "user", "content": query}]
+        completion = openai_client.chat.completions.create(  # type: ignore[reportCallIssue]
             model=self.mind_name,
-            messages=[{"role": "user", "content": query}],
+            messages=messages,  # type: ignore[arg-type]
             stream=False,
         )
 

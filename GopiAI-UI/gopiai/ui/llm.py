@@ -7,21 +7,35 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING, Callable, Any
 
 # Добавляем путь к CrewAI модулям для доступа к llm_rotation_config
 crewai_path = Path(__file__).parent.parent.parent.parent / "GopiAI-CrewAI"
 if str(crewai_path) not in sys.path:
     sys.path.append(str(crewai_path))
 
-try:
-    from llm_rotation_config import select_llm_model_safe, safe_llm_call
-except ImportError:
-    # Fallback если не удается импортировать
-    def select_llm_model_safe(task_type, **kwargs):
-        return {"id": "gemini/gemini-1.5-flash", "name": "Gemini 1.5 Flash"}
-    
-    def safe_llm_call(prompt, llm_call_func, task_type, **kwargs):
-        return "LLM недоступен"
+# Для статической типизации Pyright и надёжного рантайм-импорта
+if TYPE_CHECKING:
+    from typing import Protocol
+    class _SelectLLM(Protocol):
+        def __call__(self, task_type: str, **kwargs: Any) -> dict: ...
+    class _SafeCall(Protocol):
+        def __call__(self, prompt: str, llm_call_func: Callable[[str], str], task_type: str, **kwargs: Any) -> str: ...
+    select_llm_model_safe: "_SelectLLM"
+    safe_llm_call: "_SafeCall"
+else:
+    try:
+        import importlib
+        _mod = importlib.import_module("llm_rotation_config")
+        select_llm_model_safe = getattr(_mod, "select_llm_model_safe")
+        safe_llm_call = getattr(_mod, "safe_llm_call")
+    except Exception:
+        # Fallback если не удается импортировать
+        def select_llm_model_safe(task_type: str, **kwargs: Any) -> dict:
+            return {"id": "gemini/gemini-1.5-flash", "name": "Gemini 1.5 Flash"}
+        
+        def safe_llm_call(prompt: str, llm_call_func: Callable[[str], str], task_type: str, **kwargs: Any) -> str:
+            return "LLM недоступен"
 
 logger = logging.getLogger(__name__)
 

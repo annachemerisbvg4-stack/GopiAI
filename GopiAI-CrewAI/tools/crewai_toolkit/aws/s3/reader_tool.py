@@ -1,4 +1,4 @@
-from typing import Any, Type, List
+from typing import Any, Type, List, Tuple
 import os
 
 from crewai.tools import BaseTool
@@ -19,8 +19,8 @@ class S3ReaderTool(BaseTool):
 
     def _run(self, file_path: str) -> str:
         try:
-            import boto3
-            from botocore.exceptions import ClientError
+            import boto3  # type: ignore[reportMissingImports]
+            from botocore.exceptions import ClientError  # type: ignore[reportMissingImports]
         except ImportError:
             raise ImportError("`boto3` package not found, please run `uv add boto3`")
 
@@ -42,6 +42,6 @@ class S3ReaderTool(BaseTool):
         except ClientError as e:
             return f"Error reading file from S3: {str(e)}"
 
-    def _parse_s3_path(self, file_path: str) -> tuple:
+    def _parse_s3_path(self, file_path: str) -> Tuple[str, str]:
         parts = file_path.replace("s3://", "").split("/", 1)
         return parts[0], parts[1]

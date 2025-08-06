@@ -7,7 +7,7 @@ Unified Model Widget для GopiAI UI
 import logging
 import sys
 import os
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Protocol, runtime_checkable
 from datetime import datetime
 
 from PySide6.QtWidgets import (
@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, QTimer, QThread
 from PySide6.QtGui import QFont, QPixmap, QIcon
+from typing import cast, Iterable
 
 # Добавляем путь к backend для импорта клиентов
 try:
@@ -46,14 +47,16 @@ try:
         print(f"✅ Добавлен путь к tools: {tools_path}")
     
     # Импортируем ModelProvider
-    from gopiai_integration.model_config_manager import ModelProvider
+    # Импортируем ModelProvider, но не привязываем локальный тип напрямую, чтобы не конфликтовать с фолбэком
+    from gopiai_integration.model_config_manager import ModelProvider as ExternalModelProvider
+    ModelProvider = ExternalModelProvider  # type: ignore[assignment]
     MODEL_PROVIDER_AVAILABLE = True
     print(f"✅ ModelProvider импортирован успешно: {list(ModelProvider)}")
 except Exception as e:
     print(f"⚠️ Не удалось добавить backend путь или импортировать ModelProvider: {e}")
-    # Создаем fallback enum
+    # Создаем fallback enum, совпадающий по имени с ожидаемым
     from enum import Enum
-    class ModelProvider(Enum):
+    class ModelProvider(Enum):  # type: ignore[no-redef]
         GEMINI = "gemini"
         OPENROUTER = "openrouter"
     MODEL_PROVIDER_AVAILABLE = False
@@ -76,8 +79,8 @@ class UnifiedModelWidget(QWidget):
         self.available_models = {"gemini": [], "openrouter": []}
         
         # Backend клиенты
-        self.model_config_manager = None
-        self.openrouter_client = None
+        self.model_config_manager: Optional[object] = None
+        self.openrouter_client: Optional[object] = None
         
         self._setup_ui()
         self._initialize_backend_clients()
@@ -268,7 +271,7 @@ class UnifiedModelWidget(QWidget):
             return
         
         try:
-            current_config = self.model_config_manager.get_current_configuration()
+            current_config = getattr(self.model_config_manager, "get_current_configuration")()
             
             if current_config:
                 self.current_provider = current_config.provider.value
@@ -310,15 +313,20 @@ class UnifiedModelWidget(QWidget):
         """Загружает модели Gemini"""
         try:
             provider_enum = ModelProvider.GEMINI
-            models = self.model_config_manager.get_configurations_by_provider(provider_enum)
-            available_models = [m for m in models if m.is_available()]
+            # Типовой хинт для pyright: model_config_manager ожидается с методом get_configurations_by_provider
+            manager = self.model_config_manager
+            if manager is None:
+                return
+            models = cast(Iterable[Any], getattr(manager, "get_configurations_by_provider")(provider_enum))  # type: ignore[call-arg]
+            available_models = [m for m in models if getattr(m, "is_available", lambda: False)()]
             
             for model in available_models:
-                display_text = f"{model.display_name}"
-                if model.is_default:
+                display_name = getattr(model, "display_name", getattr(model, "model_id", "unknown"))
+                display_text = f"{display_name}"
+                if getattr(model, "is_default", False):
                     display_text += " (по умолчанию)"
                 
-                self.model_combo.addItem(display_text, model.model_id)
+                self.model_combo.addItem(display_text, getattr(model, "model_id", "unknown"))
             
             # Устанавливаем текущую модель
             if self.current_model:
@@ -338,16 +346,26 @@ class UnifiedModelWidget(QWidget):
             if not self.openrouter_client:
                 return
             
-            models = self.openrouter_client.get_models_sync()
-            
+            client = self.openrouter_client
+            models = getattr(client, "get_models_sync")()
+            # Приводим к списку словарей для унифицированного доступа
+            normalized: List[Dict[str, Any]] = []
             for model in models:
-                model_id = model.get('id', 'unknown')
-                model_name = model.get('name', model_id)
-                
-                self.model_combo.addItem(f"{model_name}", model_id)
+                # Некоторые клиенты возвращают dataclass/объекты – извлекаем атрибуты
+                if isinstance(model, dict):
+                    data = model
+                else:
+                    data = {
+                        'id': getattr(model, 'id', 'unknown'),
+                        'name': getattr(model, 'name', getattr(model, 'id', 'unknown')),
+                        'created_by': getattr(model, 'created_by', None),
+                        'pricing': getattr(model, 'pricing', None),
+                    }
+                normalized.append(data)
+                self.model_combo.addItem(str(data.get("name", data.get("id", "unknown"))), data.get("id", "unknown"))
             
-            self.available_models["openrouter"] = models
-            logger.info(f"Загружено {len(models)} моделей OpenRouter")
+            self.available_models["openrouter"] = normalized
+            logger.info(f"Загружено {len(normalized)} моделей OpenRouter")
             
         except Exception as e:
             logger.error(f"Ошибка загрузки моделей OpenRouter: {e}")
@@ -360,11 +378,11 @@ class UnifiedModelWidget(QWidget):
         search_text = self.search_input.text().lower()
         self.model_combo.clear()
         
-        models = self.available_models.get("openrouter", [])
+        models = cast(List[Dict[str, Any]], self.available_models.get("openrouter", []))
         
         for model in models:
-            model_id = model.get('id', 'unknown')
-            model_name = model.get('name', model_id)
+            model_id = str(model.get('id', 'unknown'))
+            model_name = str(model.get('name', model_id))
             
             if not search_text or search_text in model_name.lower() or search_text in model_id.lower():
                 self.model_combo.addItem(f"{model_name}", model_id)
@@ -381,7 +399,7 @@ class UnifiedModelWidget(QWidget):
                         else ModelProvider.OPENROUTER
                     )
                     
-                    success = self.model_config_manager.set_current_configuration(
+                    success = getattr(self.model_config_manager, "set_current_configuration")(  # type: ignore[call-arg]
                         provider_enum, model_id
                     )
                     
@@ -410,14 +428,14 @@ class UnifiedModelWidget(QWidget):
             
             if self.current_provider == "openrouter":
                 # Дополнительная информация для OpenRouter
-                models = self.available_models.get("openrouter", [])
+                models = cast(List[Dict[str, Any]], self.available_models.get("openrouter", []))
                 current_model_data = next((m for m in models if m.get('id') == self.current_model), None)
                 
                 if current_model_data:
                     info_text += f"📝 Название: {current_model_data.get('name', 'N/A')}\n"
                     info_text += f"🏢 Создатель: {current_model_data.get('created_by', 'N/A')}\n"
                     
-                    pricing = current_model_data.get('pricing', {})
+                    pricing = cast(Dict[str, Any], current_model_data.get('pricing', {}))
                     if pricing:
                         prompt_cost = pricing.get('prompt', 'N/A')
                         completion_cost = pricing.get('completion', 'N/A')

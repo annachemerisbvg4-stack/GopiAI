@@ -39,6 +39,7 @@ try:
     from tools.gopiai_integration.ai_router_tools import GopiAIRouterTool
     from tools.gopiai_integration.memory_tools import GopiAIMemoryTool
     from tools.gopiai_integration.communication_tools import GopiAICommunicationTool
+    from tools.gopiai_integration.huggingface_tools import GopiAIHuggingFaceTool
     
     # Импорт системы динамических инструкций
     from tools.gopiai_integration.crewai_tools_integration import (

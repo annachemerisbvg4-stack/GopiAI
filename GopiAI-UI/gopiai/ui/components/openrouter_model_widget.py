@@ -25,13 +25,17 @@ try:
 except ImportError:
     icon_manager = None
 
-# Добавляем путь к backend для импорта клиентов
+# Добавляем пути к gopiai_integration инструментам из GopiAI-CrewAI для статического анализа и рантайма
 try:
-    backend_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "GopiAI-CrewAI")
-    if backend_path not in sys.path:
-        sys.path.append(backend_path)
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../"))
+    crew_tools_path = os.path.join(repo_root, "GopiAI-CrewAI", "tools")
+    gopiai_integration_path = os.path.join(crew_tools_path, "gopiai_integration")
+    # Добавляем оба, так как часть модулей может импортироваться как "tools.gopiai_integration.*" и "gopiai_integration.*"
+    for p in (crew_tools_path, gopiai_integration_path):
+        if os.path.isdir(p) and p not in sys.path:
+            sys.path.append(p)
 except Exception as e:
-    print(f"Не удалось добавить backend путь: {e}")
+    print(f"Не удалось добавить пути для gopiai_integration: {e}")
 
 logger = logging.getLogger(__name__)
 
@@ -167,7 +171,7 @@ class ModelListItem(QWidget):
     
     def mousePressEvent(self, event):
         """Обработка клика по элементу"""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.set_selected(True)
             self.model_selected.emit(self.model_data)
         super().mousePressEvent(event)
@@ -342,9 +346,17 @@ class OpenRouterModelWidget(QWidget):
     def _initialize_backend_clients(self):
         """Инициализирует клиенты backend"""
         try:
-            from tools.gopiai_integration.openrouter_client import get_openrouter_client
-            from tools.gopiai_integration.model_config_manager import get_model_config_manager
-            
+            # Импортируем из пространства имен tools.gopiai_integration если доступно,
+            # иначе пробуем прямой пакет gopiai_integration.*
+            try:
+                from tools.gopiai_integration.openrouter_client import get_openrouter_client  # type: ignore
+            except ImportError:
+                from gopiai_integration.openrouter_client import get_openrouter_client  # type: ignore
+            try:
+                from tools.gopiai_integration.model_config_manager import get_model_config_manager  # type: ignore
+            except ImportError:
+                from gopiai_integration.model_config_manager import get_model_config_manager  # type: ignore
+
             self.openrouter_client = get_openrouter_client()
             self.model_config_manager = get_model_config_manager()
             

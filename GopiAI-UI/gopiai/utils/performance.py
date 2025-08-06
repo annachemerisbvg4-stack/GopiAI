@@ -3,9 +3,9 @@
 
 Содержит утилиты для асинхронного выполнения задач и кэширования.
 """
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed, Future
 from functools import wraps, lru_cache
-from typing import Any, Callable, TypeVar, Optional
+from typing import Any, Callable, TypeVar, Optional, ParamSpec, Generic
 import time
 import logging
 from datetime import datetime, timedelta
@@ -25,9 +25,10 @@ _result_cache = {}
 _cache_lock = Lock()
 
 # Тип для аннотаций
+P = ParamSpec('P')
 T = TypeVar('T')
 
-def async_execute(func: Callable[..., T]) -> Callable[..., T]:
+def async_execute(func: Callable[P, T]) -> Callable[P, Future[T]]:
     """
     Декоратор для асинхронного выполнения функции в пуле потоков.
     
@@ -38,35 +39,37 @@ def async_execute(func: Callable[..., T]) -> Callable[..., T]:
         Обертка, которая запускает функцию в отдельном потоке
     """
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Future[T]:
         # Запускаем функцию в пуле потоков
-        future = _global_thread_pool.submit(func, *args, **kwargs)
+        future: Future[T] = _global_thread_pool.submit(func, *args, **kwargs)
         return future
     return wrapper
 
-class AsyncTask:
+class AsyncTask(Generic[T]):
     """Класс для управления асинхронными задачами"""
     
     def __init__(self, func: Callable[..., T], *args, **kwargs):
         self.func = func
         self.args = args
         self.kwargs = kwargs
-        self._future = None
+        self._future: Optional[Future[T]] = None
         
-    def start(self) -> 'AsyncTask':
+    def start(self) -> 'AsyncTask[T]':
         """Запускает задачу в пуле потоков"""
         self._future = _global_thread_pool.submit(self.func, *self.args, **self.kwargs)
         return self
     
-    def result(self, timeout: Optional[float] = None) -> Any:
+    def result(self, timeout: Optional[float] = None) -> T:
         """Получает результат выполнения задачи"""
         if self._future is None:
             self.start()
+        assert self._future is not None
         return self._future.result(timeout=timeout)
     
     def done(self) -> bool:
         """Проверяет, завершена ли задача"""
-        return self._future is not None and self._future.done()
+        f = self._future
+        return f is not None and f.done()
 
 class CachedResult:
     """Класс для хранения закэшированных результатов"""
@@ -100,14 +103,14 @@ def cached(ttl: int = 300, maxsize: int = 128):
                     cached_result = _result_cache[cache_key]
                     if not cached_result.is_expired():
                         logger.debug(f"Cache hit for {func.__name__}")
-                        return cached_result.value
-                
-                # Выполняем функцию, если кэш пуст или истек
-                result = func(*args, **kwargs)
+                        return cached_result.value  # type: ignore[return-value]
+            
+            # Выполняем функцию, если кэш пуст или истек
+            result: T = func(*args, **kwargs)
+            with _cache_lock:
                 _result_cache[cache_key] = CachedResult(result, ttl)
                 logger.debug(f"Cached result for {func.__name__} (TTL: {ttl}s)")
-                return result
-        
+            return result
         return wrapper
     return decorator
 

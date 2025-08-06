@@ -4,7 +4,13 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from crewai.tools import BaseTool
-from crewai_tools.adapters.tool_collection import ToolCollection
+# Поддержка разных версий структуры пакета crewai_tools
+try:
+    # Новые версии экспортируют напрямую из корня
+    from crewai_tools import ToolCollection  # type: ignore[reportMissingImports]
+except Exception:
+    # Фолбэк для старых версий
+    from crewai_tools.tool_collection import ToolCollection  # type: ignore[reportMissingImports]
 """
 MCPServer for CrewAI.
 
@@ -14,17 +20,22 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from mcp import StdioServerParameters
-    from mcpadapt.core import MCPAdapt
-    from mcpadapt.crewai_adapter import CrewAIAdapter
+    try:
+        from mcpadapt.core import MCPAdapt  # type: ignore[reportMissingImports]
+        from mcpadapt.crewai_adapter import CrewAIAdapter  # type: ignore[reportMissingImports]
+    except Exception:
+        # Подсказки типизации, если пакета нет в окружении
+        from typing import Any as MCPAdapt  # type: ignore[assignment]
+        from typing import Any as CrewAIAdapter  # type: ignore[assignment]
 
 
 try:
-    from mcp import StdioServerParameters
-    from mcpadapt.core import MCPAdapt
-    from mcpadapt.crewai_adapter import CrewAIAdapter
+    from mcp import StdioServerParameters  # type: ignore[reportMissingImports]
+    from mcpadapt.core import MCPAdapt  # type: ignore[reportMissingImports]
+    from mcpadapt.crewai_adapter import CrewAIAdapter  # type: ignore[reportMissingImports]
 
     MCP_AVAILABLE = True
-except ImportError:
+except Exception:
     MCP_AVAILABLE = False
 
 
@@ -71,8 +82,8 @@ class MCPServerAdapter:
         """
 
         super().__init__()
-        self._adapter = None
-        self._tools = None
+        self._adapter: "MCPAdapt | None" = None
+        self._tools: "ToolCollection[BaseTool] | None" = None
 
         if not MCP_AVAILABLE:
             import click
@@ -107,11 +118,14 @@ class MCPServerAdapter:
 
     def start(self):
         """Start the MCP server and initialize the tools."""
-        self._tools = self._adapter.__enter__()
+        if self._adapter is None:
+            raise RuntimeError("MCP adapter is not initialized")
+        self._tools = self._adapter.__enter__()  # type: ignore[reportAttributeAccessIssue]
 
     def stop(self):
         """Stop the MCP server"""
-        self._adapter.__exit__(None, None, None)
+        if self._adapter is not None:
+            self._adapter.__exit__(None, None, None)  # type: ignore[reportAttributeAccessIssue]
 
     @property
     def tools(self) -> ToolCollection[BaseTool]:
@@ -138,4 +152,6 @@ class MCPServerAdapter:
 
     def __exit__(self, exc_type, exc_value, traceback):
         """Exit the context manager."""
-        return self._adapter.__exit__(exc_type, exc_value, traceback)
+        if self._adapter is not None:
+            return self._adapter.__exit__(exc_type, exc_value, traceback)  # type: ignore[reportAttributeAccessIssue]
+        return None

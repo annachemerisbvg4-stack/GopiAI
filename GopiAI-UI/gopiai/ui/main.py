@@ -17,7 +17,7 @@ import warnings
 import logging
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import Optional, cast
 
 import chardet
 
@@ -304,7 +304,10 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
 
         self.terminal_widget = TerminalWidget()
         set_terminal_widget(self.terminal_widget)
-        TerminalWidget.instance = self.terminal_widget  # Singleton-like access
+        try:
+            setattr(TerminalWidget, "instance", self.terminal_widget)  # type: ignore[attr-defined]
+        except Exception:
+            pass  # безопасно игнорируем, если класс не поддерживает атрибут
 
         print("[OK] FramelessGopiAIStandaloneWindow готов к работе!")
 
@@ -361,12 +364,17 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         center_vertical_splitter.addWidget(self.terminal_widget)
 
         # Правая панель - чат
-        self.chat_widget = ChatWidget()
+        # Явная инициализация переменной, чтобы Pyright видел привязку до использования
+        self.chat_widget: ChatWidget = ChatWidget()  # type: ignore[valid-type]
         print("[CHAT] ChatWidget создан успешно")
-        if hasattr(self, 'theme_manager'):
+        if hasattr(self, 'theme_manager') and self.theme_manager is not None:
             print("[CHAT] Передаем theme_manager в ChatWidget...")
-            self.chat_widget.set_theme_manager(self.theme_manager)
-            print("[CHAT] theme_manager передан успешно")
+            # Защитно вызываем метод установки темы, если он существует
+            if hasattr(self.chat_widget, "set_theme_manager"):
+                self.chat_widget.set_theme_manager(self.theme_manager)  # type: ignore[attr-defined]
+                print("[CHAT] theme_manager передан успешно")
+            else:
+                print("[CHAT] ChatWidget не поддерживает set_theme_manager")
         self.chat_widget.setMinimumWidth(0)
         self.chat_widget.setMaximumWidth(800)
         chat_size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
@@ -621,8 +629,8 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
                 self.theme_manager = FallbackThemeManager()
         except Exception as e:
             print(f"[WARNING] Ошибка инициализации менеджера тем: {e}")
-            # Используем предварительно определенный LocalFallbackThemeManager в случае ошибки
-            self.theme_manager = LocalFallbackThemeManager() # Создаем экземпляр
+            # Используем локальный fallback менеджер тем
+            self.theme_manager = FallbackThemeManager()  # Создаем экземпляр
 
     def _apply_default_styles(self):
         """Применение стилей по умолчанию"""
@@ -847,35 +855,37 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
             print(f"⚠️ Ошибка применения настроек: {e}")
 
     def _show_settings(self):
-            """Показать диалог настроек"""
-            try:
-                # Сохраняем диалог как атрибут экземпляра, чтобы избежать удаления
-                if hasattr(self, "_settings_dialog") and self._settings_dialog is not None:
-                    try:
-                        self._settings_dialog.close()
-                    except Exception:
-                        pass
-                    self._settings_dialog = None
-                self._settings_dialog = GopiAISettingsDialog(self.theme_manager, self)
-                # Подключаем сигнал для применения настроек
-                self._settings_dialog.settings_applied.connect(self._on_settings_changed)
-                
-                
-                self._settings_dialog.themeChanged.connect(self.on_change_theme)
-    
-                # Показываем диалог
-                if (
-                    self._settings_dialog.exec()
-                    == self._settings_dialog.DialogCode.Accepted
-                ):
-                    print("✅ Настройки применены")
-                self._settings_dialog = None
-    
-            except Exception as e:
-                print(f"⚠️ Ошибка отображения диалога настроек: {e}")
+        """Показать диалог настроек - упрощенная версия"""
+        try:
+            # Проверяем, что диалог настроек доступен
+            if GopiAISettingsDialog is None:
+                print("⚠️ GopiAISettingsDialog недоступен")
                 from PySide6.QtWidgets import QMessageBox
-    
-                QMessageBox.warning(self, "Ошибка", f"Не удалось открыть настройки: {e}")
+                QMessageBox.warning(self, "Ошибка", "Диалог настроек недоступен")
+                return
+            
+            # Создаем диалог
+            settings_dialog = GopiAISettingsDialog(self.theme_manager, self)
+            
+            # Подключаем сигналы
+            if hasattr(settings_dialog, "settings_applied"):
+                settings_dialog.settings_applied.connect(self._on_settings_changed)
+            if hasattr(settings_dialog, "themeChanged"):
+                settings_dialog.themeChanged.connect(self.on_change_theme)
+            
+            # Показываем диалог и получаем результат
+            result = settings_dialog.exec()
+            
+            # Обрабатываем результат
+            if result == settings_dialog.DialogCode.Accepted:
+                print("✅ Настройки применены")
+            else:
+                print("⚠️ Настройки отменены")
+                
+        except Exception as e:
+            print(f"⚠️ Ошибка отображения диалога настроек: {e}")
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Ошибка", f"Не удалось открыть настройки: {e}")
 
 
     def _apply_theme_change(self, theme_key: str):
@@ -1099,6 +1109,9 @@ def main():
     app.setApplicationName("GopiAI")
     app.setApplicationVersion("0.3.0")
     app.setOrganizationName("GopiAI Team")
+    # Подсказка для Pyright: QApplication.exec() возвращает int
+    from typing import Callable
+    _exec_method: Callable[[], int] = app.exec  # type: ignore[reportOptionalMemberAccess, assignment]
 
     # Отключение предупреждений Qt
     warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -1113,7 +1126,9 @@ def main():
         print("[INFO] Размер основного файла значительно уменьшен")
 
         # Запуск цикла приложения
-        sys.exit(app.exec())
+        # Вызываем заранее извлечённый метод exec()
+        exit_code: int = _exec_method()
+        sys.exit(exit_code)
     except Exception as e:
         print(f"[CRITICAL ERROR] Критическая ошибка: {e}")
         import traceback
@@ -1123,6 +1138,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

@@ -105,6 +105,7 @@ import signal
 import atexit
 from pathlib import Path
 from datetime import datetime, timedelta
+from typing import Any, cast
 
 # Исправляем конфликт OpenMP библиотек
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
@@ -215,8 +216,11 @@ try:
     print(f"[ДИАГНОСТИКА] RAGSystem получен: {rag_system_instance is not None}")
     
     # 2. Создаем SmartDelegator, передавая ему наш единственный экземпляр RAG
+    # Примечание по типам: SmartDelegator ожидает свой тип RAGSystem из другого модуля,
+    # а локальный RAGSystem из GopiAI-CrewAI.rag_system имеет другое происхождение типов для Pyright.
+    # В рантайме они совместимы, поэтому выполняем cast к Any, чтобы устранить конфликт типов.
     print("[ДИАГНОСТИКА] Создание SmartDelegator")
-    smart_delegator_instance = SmartDelegator(rag_system=rag_system_instance)
+    smart_delegator_instance = SmartDelegator(rag_system=cast(Any, rag_system_instance))
     print(f"[ДИАГНОСТИКА] SmartDelegator создан: {smart_delegator_instance is not None}")
     
     logger.info("✅ Smart Delegator и RAG System успешно инициализированы.")
@@ -234,11 +238,29 @@ except Exception as e:
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    rag_status = "OK" if rag_system_instance and rag_system_instance.embeddings else "NOT INITIALIZED"
+    # Безопасные проверки на None для Pyright и рантайма
+    indexed_documents = 0
+    rag_status = "NOT INITIALIZED"
+    try:
+        if rag_system_instance is not None:
+            embeddings = getattr(rag_system_instance, "embeddings", None)
+            if embeddings is not None:
+                # count может быть методом либо свойством
+                count_attr = getattr(embeddings, "count", None)
+                if callable(count_attr):
+                    indexed_documents = count_attr()
+                elif isinstance(count_attr, (int, float)):
+                    indexed_documents = int(count_attr)
+                rag_status = "OK"
+    except Exception as _e:
+        # В случае любой ошибки оставляем значения по умолчанию
+        rag_status = "ERROR"
+        indexed_documents = 0
+
     return jsonify({
         "status": "online" if SERVER_IS_READY else "limited_mode",
         "rag_status": rag_status,
-        "indexed_documents": rag_system_instance.embeddings.count() if rag_status == "OK" else 0
+        "indexed_documents": indexed_documents
     })
 
 def process_task(task_id: str):

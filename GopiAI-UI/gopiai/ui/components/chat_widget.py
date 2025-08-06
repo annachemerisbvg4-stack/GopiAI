@@ -904,6 +904,9 @@ class ChatWidget(QWidget):
             self.current_model_data = None
         
         print(f"Провайдер изменен на: {provider}")
+        
+        # Автоматически переключаемся на вкладку чата
+        self.switch_to_chat_tab()
     
     def _on_model_changed(self, provider: str, model_id: str):
         """Обработчик изменения модели"""
@@ -911,6 +914,9 @@ class ChatWidget(QWidget):
         self.current_model_id = model_id
         logger.info(f"[MODEL] Модель изменена: {provider}/{model_id}")
         print(f"Модель изменена: {provider}/{model_id}")
+        
+        # Автоматически переключаемся на вкладку чата
+        self.switch_to_chat_tab()
     
     def _on_openrouter_model_selected(self, model_data: dict):
         """Обработчик выбора модели OpenRouter"""
@@ -922,6 +928,9 @@ class ChatWidget(QWidget):
         logger.info(f"[MODEL] Выбрана модель OpenRouter: {model_id}")
         logger.debug(f"[MODEL] Данные модели: {model_data}")
         print(f"Выбрана модель OpenRouter: {model_id}")
+        
+        # Автоматически переключаемся на вкладку чата
+        self.switch_to_chat_tab()
     
     def _on_provider_switch_requested(self, provider: str):
         """Обработчик запроса переключения провайдера"""
@@ -967,4 +976,14 @@ class ChatWidget(QWidget):
                     self.tab_widget.setCurrentIndex(i)
                     print("Переключились на вкладку выбора моделей")
                     return True
+        return False
+    
+    def switch_to_chat_tab(self):
+        """Переключается на вкладку чата"""
+        # Находим индекс вкладки чата (первая вкладка)
+        for i in range(self.tab_widget.count()):
+            if self.tab_widget.tabText(i) == "Чат":
+                self.tab_widget.setCurrentIndex(i)
+                print("Переключились на вкладку чата")
+                return True
         return False

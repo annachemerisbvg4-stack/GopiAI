@@ -5,8 +5,9 @@ Custom File System Model с поддержкой иконок
 Кастомная модель файловой системы для интеграции с системой иконок GopiAI.
 """
 
+from typing import Any, Union
 from PySide6.QtWidgets import QFileSystemModel
-from PySide6.QtCore import QModelIndex, Qt
+from PySide6.QtCore import QModelIndex, QPersistentModelIndex, Qt
 from PySide6.QtGui import QIcon
 from .file_type_detector import FileTypeDetector
 
@@ -24,24 +25,29 @@ class CustomFileSystemModel(QFileSystemModel):
         
         print(f"[FILE SYSTEM] CustomFileSystemModel инициализирована с icon_manager: {type(icon_manager)}")
     
-    def data(self, index: QModelIndex, role: int):
+    def data(self, index: Union[QModelIndex, QPersistentModelIndex], role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         """Переопределенный метод для предоставления иконок"""
+        # Для статической типизации Pyright: приведём тип к объединению уже в сигнатуре.
+        # Используем индекс напрямую: QPersistentModelIndex совместим с API QModelIndex.
+        if not index.isValid():
+            return super().data(index, role)
+
         if role == Qt.ItemDataRole.DecorationRole and index.column() == 0:
             # Получаем путь к файлу
             file_path = self.filePath(index)
-            
+
             # Проверяем кеш
             if file_path in self._icon_cache:
                 return self._icon_cache[file_path]
-            
+
             # Определяем иконку на основе типа файла
             icon = self._get_icon_for_file(file_path)
-            
+
             # Кешируем результат
             self._icon_cache[file_path] = icon
-            
+
             return icon
-        
+
         # Для всех остальных ролей используем родительскую реализацию
         return super().data(index, role)
     

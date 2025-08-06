@@ -20,7 +20,7 @@ from llm_rotation_config import (
     rate_limit_monitor, 
     get_api_key_for_provider, 
     LLM_MODELS_CONFIG,
-    get_active_models,
+    get_available_models,
     get_models_by_intelligence,
     get_next_available_model,
     register_use,
@@ -358,7 +358,7 @@ class AIRouterLLM(BaseLLM):
     def get_system_status(self):
         """Возвращает текущий статус системы ротации"""
         blacklist = rate_limit_monitor.get_blacklist_status()
-        available_models = [m['id'] for m in get_active_models() 
+        available_models = [m['id'] for m in get_available_models() 
                           if not is_model_blacklisted(m['id'])]
         
         return {

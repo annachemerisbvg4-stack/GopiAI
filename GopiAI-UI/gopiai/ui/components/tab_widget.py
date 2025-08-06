@@ -183,6 +183,7 @@ class CustomTabWidget(QTabWidget):
     @safe_widget_operation("context_menu_creation")
     def contextMenuEvent(self, event):
         """Обработка правого клика для показа контекстного меню с улучшенной обработкой ошибок"""
+        tab_index = -1
         try:
             # Определяем, на какой вкладке был клик
             tab_index = self.tabBar().tabAt(event.pos())
@@ -875,10 +876,11 @@ class TabDocumentWidget(QWidget):
                     editor.setPlainText(text)
                 
                 # Подключаем сигнал изменения имени файла (если есть)
-                if hasattr(editor, 'file_name_changed'):
+                sig = getattr(editor, "file_name_changed", None)
+                if sig is not None:
                     try:
-                        editor.file_name_changed.connect(
-                            lambda name: self._update_tab_title(editor, name)
+                        sig.connect(
+                            lambda name, ed=editor: self._update_tab_title(ed, name)  # type: ignore[attr-defined]
                         )
                     except Exception:
                         pass
@@ -971,17 +973,6 @@ class TabDocumentWidget(QWidget):
         except Exception as e:
             logger.error(f"Ошибка обработки повтора: {e}")
 
-    def _handle_error_dismiss(self):
-        """Обработка отклонения сообщения об ошибке"""
-        try:
-            logger.debug("Пользователь отклонил сообщение об ошибке")
-            
-            # Скрываем сообщение об ошибке
-            if self._error_display:
-                self._error_display.setVisible(False)
-                
-        except Exception as e:
-            logger.error(f"Ошибка отклонения сообщения об ошибке: {e}")
 
     def get_stability_metrics(self) -> Dict[str, Any]:
         """Метрики без подсистемы стабильности"""
@@ -1015,40 +1006,6 @@ class TabDocumentWidget(QWidget):
         except Exception as e:
             logger.error(f"Ошибка принудительной очистки: {e}", exc_info=True)
 
-    def _cleanup_tab_widget(self, widget):
-        """Правильная очистка виджета при закрытии вкладки"""
-        try:
-            if not widget:
-                return
-
-            widget_id = id(widget)
-            
-            # Удаляем ссылку из словаря для освобождения памяти
-            if widget_id in self._widget_references:
-                del self._widget_references[widget_id]
-                logger.debug(f"Удалена ссылка на виджет {widget_id}")
-                
-            # В этой ветке отмена регистрации не требуется
-
-            # Дополнительная очистка для специфических типов виджетов
-            try:
-                # Для текстовых редакторов
-                if hasattr(widget, 'clear'):
-                    widget.clear()
-                    
-                # Для веб-виджетов
-                if hasattr(widget, 'page') and hasattr(widget.page(), 'deleteLater'):
-                    widget.page().deleteLater()
-                    
-                # Для виджетов с таймерами
-                if hasattr(widget, 'timer') and hasattr(widget.timer, 'stop'):
-                    widget.timer.stop()
-                    
-            except Exception as cleanup_error:
-                logger.warning(f"Ошибка дополнительной очистки виджета: {cleanup_error}")
-
-        except Exception as e:
-            logger.error(f"Ошибка очистки виджета: {e}", exc_info=True)
 
     @safe_widget_operation("tab_closing")
     def _close_tab(self, index):
@@ -1348,28 +1305,7 @@ class TabDocumentWidget(QWidget):
         if editor:
             editor.setPlainText(text)
 
-    def _handle_error_retry(self):
-        """Обработка запроса повтора после ошибки"""
-        try:
-            logger.info("Пользователь запросил повтор после ошибки")
-            
-            # Скрываем сообщение об ошибке
-            if self._error_display:
-                self._error_display.setVisible(False)
-                
-            # Можно добавить логику повтора последней операции
-            # Пока просто логируем событие
-            
-        except Exception as e:
-            logger.error(f"Ошибка обработки повтора: {e}")
 
-    def _handle_error_dismiss(self):
-        """Обработка закрытия сообщения об ошибке"""
-        try:
-            if self._error_display:
-                self._error_display.setVisible(False)
-        except Exception as e:
-            logger.error(f"Ошибка при скрытии сообщения об ошибке: {e}")
 
     def _safe_tab_creation(self, creation_func, fallback_func, error_context: str):
         """
@@ -1521,10 +1457,11 @@ class TabDocumentWidget(QWidget):
                     editor.setPlainText(text)
                 
                 tab_title = os.path.basename(file_path)
-                if hasattr(editor, 'file_name_changed'):
+                sig = getattr(editor, "file_name_changed", None)
+                if sig is not None:
                     try:
-                        editor.file_name_changed.connect(
-                            lambda name: self._update_tab_title(editor, name)
+                        sig.connect(
+                            lambda name, ed=editor: self._update_tab_title(ed, name)  # type: ignore[attr-defined]
                         )
                     except Exception:
                         pass
@@ -1605,6 +1542,22 @@ class TabDocumentWidget(QWidget):
                 except Exception as e:
                     logger.warning(f"Ошибка очистки текстового редактора: {e}")
             
+            # Дополнительная универсальная очистка
+            try:
+                if hasattr(widget, 'clear'):
+                    widget.clear()
+                if hasattr(widget, 'page'):
+                    try:
+                        page = widget.page()
+                        if page and hasattr(page, 'deleteLater'):
+                            page.deleteLater()
+                    except Exception as pe:
+                        logger.warning(f"Ошибка очистки страницы веб-виджета: {pe}")
+                if hasattr(widget, 'timer') and hasattr(widget.timer, 'stop'):
+                    widget.timer.stop()
+            except Exception as cleanup_error:
+                logger.warning(f"Ошибка дополнительной очистки виджета: {cleanup_error}")
+            
             # Общая очистка QWidget
             try:
                 widget.deleteLater()
@@ -1616,8 +1569,13 @@ class TabDocumentWidget(QWidget):
             logger.error(f"Ошибка очистки виджета: {e}", exc_info=True)
 
     def _handle_error_dismiss(self):
-        """Обработка закрытия ошибки"""
-        logger.debug("Ошибка закрыта пользователем")
+        """Обработка закрытия сообщения об ошибке"""
+        try:
+            logger.debug("Пользователь отклонил сообщение об ошибке")
+            if self._error_display:
+                self._error_display.setVisible(False)
+        except Exception as e:
+            logger.error(f"Ошибка отклонения сообщения об ошибке: {e}")
 
     def add_terminal_tab(self, title="Терминал"):
         """Добавление новой вкладки с терминалом"""

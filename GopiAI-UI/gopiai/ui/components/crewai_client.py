@@ -64,15 +64,46 @@ AIRouterLLM = None
 try:
     import spacy
     try:
-        from gopiai_integration.emotional_classifier import EmotionalClassifier, EmotionalState
-        from gopiai_integration.ai_router_llm import AIRouterLLM
+        # Пытаемся импортировать как пакет с sys.path
+        from gopiai_integration.emotional_classifier import EmotionalClassifier as _EmotionalClassifier, EmotionalState as _EmotionalState
+        from gopiai_integration.ai_router_llm import AIRouterLLM as _AIRouterLLM
+        EmotionalClassifier = _EmotionalClassifier
+        EmotionalState = _EmotionalState
+        AIRouterLLM = _AIRouterLLM
         EMOTIONAL_CLASSIFIER_AVAILABLE = True
         logger.debug("[INIT] Эмоциональный классификатор и AI Router успешно импортированы")
-    except ImportError as e:
-        logger.error(f"[INIT] Ошибка импорта модулей emotional_classifier/ai_router_llm: {e}")
-        logger.error(f"[INIT] Пути в sys.path: {sys.path}")
-        logger.error(f"[INIT] Проверьте наличие файлов в: {gopiai_integration_path}")
-        EMOTIONAL_CLASSIFIER_AVAILABLE = False
+    except ImportError as e1:
+        # Фоллбек: прямой импорт из файлового пути при известной структуре проекта
+        try:
+            import importlib.util
+            ec_path = str((Path(project_root) / 'GopiAI-CrewAI' / 'tools' / 'gopiai_integration' / 'emotional_classifier.py').resolve())
+            ar_path = str((Path(project_root) / 'GopiAI-CrewAI' / 'tools' / 'gopiai_integration' / 'ai_router_llm.py').resolve())
+            spec_ec = importlib.util.spec_from_file_location("gopiai_integration.emotional_classifier", ec_path)
+            spec_ar = importlib.util.spec_from_file_location("gopiai_integration.ai_router_llm", ar_path)
+            if spec_ec and spec_ar and spec_ec.loader and spec_ar.loader:
+                ec_module = importlib.util.module_from_spec(spec_ec)
+                ar_module = importlib.util.module_from_spec(spec_ar)
+                sys.modules["gopiai_integration.emotional_classifier"] = ec_module
+                sys.modules["gopiai_integration.ai_router_llm"] = ar_module
+                spec_ec.loader.exec_module(ec_module)
+                spec_ar.loader.exec_module(ar_module)
+                EmotionalClassifier = getattr(ec_module, "EmotionalClassifier", None)
+                EmotionalState = getattr(ec_module, "EmotionalState", None)
+                AIRouterLLM = getattr(ar_module, "AIRouterLLM", None)
+                if EmotionalClassifier and EmotionalState and AIRouterLLM:
+                    EMOTIONAL_CLASSIFIER_AVAILABLE = True
+                    logger.debug("[INIT] Эмоциональный классификатор и AI Router импортированы через прямые пути")
+                else:
+                    EMOTIONAL_CLASSIFIER_AVAILABLE = False
+                    logger.error("[INIT] Классы не найдены при импорте через прямой путь")
+            else:
+                EMOTIONAL_CLASSIFIER_AVAILABLE = False
+                logger.error("[INIT] Не удалось создать спецификации модулей для прямого импорта")
+        except Exception as e2:
+            logger.error(f"[INIT] Ошибка импорта модулей emotional_classifier/ai_router_llm: {e1} | fallback: {e2}")
+            logger.error(f"[INIT] Пути в sys.path: {sys.path}")
+            logger.error(f"[INIT] Проверьте наличие файлов в: {gopiai_integration_path}")
+            EMOTIONAL_CLASSIFIER_AVAILABLE = False
 except ImportError as e:
     logger.error(f"[INIT] Ошибка импорта модуля spacy: {e}")
     logger.error("[INIT] Модуль spacy недоступен, эмоциональный классификатор отключен")
@@ -83,13 +114,34 @@ TOOLS_INSTRUCTION_MANAGER_AVAILABLE = False
 ToolsInstructionManager = None
 
 try:
+    # Пытаемся импортировать стандартно
     from gopiai_integration.tools_instruction_manager import get_tools_instruction_manager
     TOOLS_INSTRUCTION_MANAGER_AVAILABLE = True
     logger.info("[INIT] ✅ Система динамических инструкций успешно импортирована в UI-чат")
-except ImportError as e:
-    logger.error(f"[INIT] ❌ Ошибка импорта системы динамических инструкций: {e}")
-    logger.error("[INIT] UI-чат будет работать без динамических инструкций")
-    TOOLS_INSTRUCTION_MANAGER_AVAILABLE = False
+except ImportError as e1:
+    # Фоллбек на прямой путь
+    try:
+        import importlib.util
+        tim_path = str((Path(project_root) / 'GopiAI-CrewAI' / 'tools' / 'gopiai_integration' / 'tools_instruction_manager.py').resolve())
+        spec_tim = importlib.util.spec_from_file_location("gopiai_integration.tools_instruction_manager", tim_path)
+        if spec_tim and spec_tim.loader:
+            tim_module = importlib.util.module_from_spec(spec_tim)
+            sys.modules["gopiai_integration.tools_instruction_manager"] = tim_module
+            spec_tim.loader.exec_module(tim_module)
+            get_tools_instruction_manager = getattr(tim_module, "get_tools_instruction_manager", None)  # type: ignore[assignment]
+            if get_tools_instruction_manager:
+                TOOLS_INSTRUCTION_MANAGER_AVAILABLE = True
+                logger.info("[INIT] ✅ Система динамических инструкций импортирована через прямой путь")
+            else:
+                TOOLS_INSTRUCTION_MANAGER_AVAILABLE = False
+                logger.error("[INIT] ❌ Функция get_tools_instruction_manager не найдена в модуле")
+        else:
+            TOOLS_INSTRUCTION_MANAGER_AVAILABLE = False
+            logger.error("[INIT] ❌ Не удалось создать спецификацию для tools_instruction_manager")
+    except Exception as e2:
+        logger.error(f"[INIT] ❌ Ошибка импорта системы динамических инструкций: {e1} | fallback: {e2}")
+        logger.error("[INIT] UI-чат будет работать без динамических инструкций")
+        TOOLS_INSTRUCTION_MANAGER_AVAILABLE = False
 
 # Создаем директорию для логов, если её нет
 # Используем текущую директорию или директорию приложения
@@ -154,10 +206,13 @@ class CrewAIClient:
         self.timeout = 30  # Таймаут для API запросов (в секундах)
         self._server_available = None
         self._last_check = 0
+
+        # MCP клиент отключен по умолчанию, чтобы избежать ошибок отсутствия атрибута
+        self.mcp_client = None
         
         # Инициализация эмоционального классификатора
         self.emotional_classifier = None
-        if EMOTIONAL_CLASSIFIER_AVAILABLE:
+        if EMOTIONAL_CLASSIFIER_AVAILABLE and AIRouterLLM and EmotionalClassifier:
             try:
                 # Создаем AI Router для эмоционального классификатора
                 ai_router = AIRouterLLM()
@@ -166,6 +221,8 @@ class CrewAIClient:
             except Exception as e:
                 logger.error(f"[INIT] ❌ Ошибка инициализации эмоционального классификатора: {e}")
                 self.emotional_classifier = None
+        else:
+            logger.debug("[INIT] Эмоциональный классификатор недоступен или модули не импортированы")
 
     def brave_search_site(self, query):
         """
@@ -304,7 +361,12 @@ class CrewAIClient:
             tool_type = message['metadata']['tool']
             args = message['metadata'].get('args', {})
             try:
-                mcp_response = self.mcp_client.query({"type": tool_type, "args": args})
+                if not getattr(self, "mcp_client", None):
+                    logger.warning("[MCP] mcp_client недоступен, пропускаем обработку через MCP")
+                    return {"response": "", "error": "mcp_client_unavailable", "from_mcp": False}
+                # Pylance: mcp_client может быть None — подсказываем типу
+                mcp = self.mcp_client  # type: ignore[assignment]
+                mcp_response = mcp.query({"type": tool_type, "args": args})  # type: ignore[call-arg]
                 logger.info(f"[MCP] Успешный запрос: {tool_type}")
                 return {"response": mcp_response.get('result', ''), "from_mcp": True, "error": None}
             except Exception as e:

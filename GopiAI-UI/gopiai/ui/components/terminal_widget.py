@@ -9,23 +9,25 @@ import subprocess
 import threading
 import os
 import sys
-from typing import Optional, cast
+from typing import Optional, cast, Any
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QTextEdit, QLineEdit
 from PySide6.QtCore import QTimer, Signal, Qt, QProcess
 from PySide6.QtGui import QTextCursor, QFont, QKeyEvent
 # Импорт ansi2html с fallback
 try:
-    from ansi2html import Ansi2HTMLConverter
+    # Локально алиасим внешний класс, чтобы Pyright видел единый символ
+    from ansi2html import Ansi2HTMLConverter as _ExternalAnsi2HTMLConverter  # type: ignore[import-not-found]
+    Ansi2HTMLConverter = _ExternalAnsi2HTMLConverter  # type: ignore[assignment]
     ANSI2HTML_AVAILABLE = True
 except ImportError:
     print("⚠️ ansi2html недоступен, используем fallback")
     ANSI2HTML_AVAILABLE = False
-    
+
     class Ansi2HTMLConverter:
         """Fallback класс для ansi2html"""
         def __init__(self):
             pass
-        
+
         def convert(self, text, full=True):
             # Простая очистка ANSI кодов
             import re
@@ -60,7 +62,7 @@ class InteractiveTerminal(QTextEdit):
 
     def handle_stdout(self):
         data = bytes(self.process.readAllStandardOutput().data()).decode('cp866')  # Декодируем в CP866 (для cmd.exe на русском)
-        converter = Ansi2HTMLConverter()
+        converter: Any = Ansi2HTMLConverter()
         html = converter.convert(data, full=False)
         self.insertHtml(html)
         self.insertPlainText(self.prompt)
@@ -68,7 +70,7 @@ class InteractiveTerminal(QTextEdit):
 
     def handle_stderr(self):
         data = bytes(self.process.readAllStandardError().data()).decode('cp866')  # Декодируем в CP866
-        converter = Ansi2HTMLConverter()
+        converter: Any = Ansi2HTMLConverter()
         html = converter.convert(data, full=False)
         self.insertHtml(f'<font color="red">{html}</font>')
         self.insertPlainText(self.prompt)

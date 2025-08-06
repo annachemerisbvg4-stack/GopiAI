@@ -11,9 +11,10 @@ import subprocess
 import platform
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
+from bs4.element import NavigableString, ResultSet
 import urllib.parse
 import re
 from urllib.robotparser import RobotFileParser
@@ -502,15 +503,20 @@ class LocalMCPTools:
                 # Извлекаем все ссылки
                 links = []
                 for link in soup.find_all('a', href=True):
-                    href = link['href']
-                    text = link.get_text(strip=True)
-                    # Преобразуем относительные ссылки в абсолютные
-                    absolute_url = urllib.parse.urljoin(url, href)
-                    links.append({
-                        "url": absolute_url,
-                        "text": text,
-                        "original_href": href
-                    })
+                    # Явно приводим к Tag для доступа к методам
+                    if isinstance(link, Tag):
+                        href = link.get('href', '')
+                        # Преобразуем относительные ссылки в абсолютные
+                        if isinstance(href, str):
+                            absolute_url = urllib.parse.urljoin(url, href)
+                        else:
+                            absolute_url = href
+                        text = link.get_text(strip=True)
+                        links.append({
+                            "url": absolute_url,
+                            "text": text,
+                            "original_href": href
+                        })
                 return {
                     "success": True,
                     "url": url,

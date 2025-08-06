@@ -8,7 +8,7 @@ import os
 import json
 import logging
 from typing import Dict, List, Optional, Any, Union
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from enum import Enum
 from pathlib import Path
 
@@ -29,11 +29,8 @@ class ModelConfiguration:
     api_key_env: str
     is_active: bool = True
     is_default: bool = False
-    parameters: Dict[str, Any] = None
+    parameters: Optional[Dict[str, Any]] = field(default_factory=dict)
     
-    def __post_init__(self):
-        if self.parameters is None:
-            self.parameters = {}
     
     def to_dict(self) -> Dict[str, Any]:
         """Преобразует конфигурацию в словарь"""
@@ -401,10 +398,13 @@ class ModelConfigurationManager:
                 "max_tokens": 4096
             }
         
+        # Примечание: parameters гарантированно dict благодаря default_factory=dict
+        # Для статического анализатора явно приводим к dict, чтобы убрать предупреждение распаковки
+        params: Dict[str, Any] = current_config.parameters or {}
         config = {
             "model": current_config.get_litellm_model_name(),
             "api_key": os.getenv(current_config.api_key_env),
-            **current_config.parameters
+            **params
         }
         
         logger.debug(f"🔧 LiteLLM конфигурация: {current_config.display_name}")

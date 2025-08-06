@@ -93,10 +93,10 @@ class GopiAISettingsDialog(QDialog):
     settings_applied = Signal(dict)  # Сигнал применения настроек
     themeChanged = Signal(str)  # Сигнал изменения темы
 
-    # Коды диалога
-    class DialogCode:
-        Accepted = 1
-        Rejected = 0
+    # Не переопределяем QDialog.DialogCode, объявляем собственный набор кодов
+    class ResultCode:
+        Accepted = int(QDialog.DialogCode.Accepted)
+        Rejected = int(QDialog.DialogCode.Rejected)
 
     # Функция для определения яркости цвета
     def _is_light_color(self, color):

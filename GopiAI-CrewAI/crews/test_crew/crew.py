@@ -109,7 +109,7 @@ class TestCrew:
         result = crew.kickoff(inputs=inputs)
         
         print(f"✅ Crew завершил работу!")
-        return result
+        return str(result)
 
 if __name__ == "__main__":
     # Простой тест

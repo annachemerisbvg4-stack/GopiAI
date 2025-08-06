@@ -1,4 +1,4 @@
-from typing import Type, Optional, Dict, Any, List
+from typing import Type, Optional, Dict, Any, List, cast
 import os
 import json
 import uuid
@@ -24,18 +24,18 @@ class BedrockInvokeAgentTool(BaseTool):
     name: str = "Bedrock Agent Invoke Tool"
     description: str = "An agent responsible for policy analysis."
     args_schema: Type[BaseModel] = BedrockInvokeAgentToolInput
-    agent_id: str = None
-    agent_alias_id: str = None
-    session_id: str = None
+    agent_id: Optional[str] = None
+    agent_alias_id: Optional[str] = None
+    session_id: Optional[str] = None
     enable_trace: bool = False
     end_session: bool = False
     package_dependencies: List[str] = ["boto3"]
 
     def __init__(
         self,
-        agent_id: str = None,
-        agent_alias_id: str = None,
-        session_id: str = None,
+        agent_id: Optional[str] = None,
+        agent_alias_id: Optional[str] = None,
+        session_id: Optional[str] = None,
         enable_trace: bool = False,
         end_session: bool = False,
         description: Optional[str] = None,
@@ -67,6 +67,11 @@ class BedrockInvokeAgentTool(BaseTool):
         # Validate parameters
         self._validate_parameters()
 
+        # After validation, these should be non-None strings; help the type checker
+        self.agent_id = cast(str, self.agent_id)
+        self.agent_alias_id = cast(str, self.agent_alias_id)
+        self.session_id = cast(str, self.session_id)
+
     def _validate_parameters(self):
         """Validate the parameters according to AWS API requirements."""
         try:
@@ -91,8 +96,8 @@ class BedrockInvokeAgentTool(BaseTool):
 
     def _run(self, query: str) -> str:
         try:
-            import boto3
-            from botocore.exceptions import ClientError
+            import boto3  # type: ignore[reportMissingImports]
+            from botocore.exceptions import ClientError  # type: ignore[reportMissingImports]
         except ImportError:
             raise ImportError("`boto3` package not found, please run `uv add boto3`")
 

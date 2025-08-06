@@ -6,7 +6,7 @@ import logging
 import uuid
 import datetime
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, TYPE_CHECKING, Any
 
 # --- Настройка логирования ---
 logging.basicConfig(
@@ -24,8 +24,13 @@ try:
     TXT_AI_AVAILABLE = True
 except ImportError:
     logger.warning("[WARNING] txtai is not installed. Semantic memory will be disabled. Run: pip install txtai[faiss]")
-    Embeddings = None
     TXT_AI_AVAILABLE = False
+
+# Для статической типизации (Pyright/Mypy) безопасно импортируем тип только при проверке типов
+if TYPE_CHECKING:
+    from txtai.embeddings import Embeddings as EmbeddingsType
+else:
+    EmbeddingsType = Any
 
 class RAGSystem:
     """
@@ -44,7 +49,7 @@ class RAGSystem:
             return
         
         logger.info("--- Инициализация экземпляра RAGSystem (Singleton) ---")
-        self.embeddings: Optional[Embeddings] = None
+        self.embeddings: Optional[EmbeddingsType] = None
         
         # ### ИЗМЕНЕНО: ГАРАНТИРУЕМ НАЛИЧИЕ ВСЕХ ФАЙЛОВ ###
         self._ensure_memory_structure()

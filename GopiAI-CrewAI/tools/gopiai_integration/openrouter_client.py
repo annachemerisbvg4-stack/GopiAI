@@ -133,11 +133,13 @@ class OpenRouterClient:
             headers["Authorization"] = f"Bearer {self.api_key}"
         
         # Опциональные метаданные для OpenRouter
-        if os.getenv('OR_SITE_URL'):
-            headers["HTTP-Referer"] = os.getenv('OR_SITE_URL')
+        site_url = os.getenv('OR_SITE_URL')
+        if site_url:
+            headers["HTTP-Referer"] = site_url
         
-        if os.getenv('OR_APP_NAME'):
-            headers["X-Title"] = os.getenv('OR_APP_NAME')
+        app_name = os.getenv('OR_APP_NAME')
+        if app_name:
+            headers["X-Title"] = app_name
         
         return headers
     

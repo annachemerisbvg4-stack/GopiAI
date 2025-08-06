@@ -1,6 +1,11 @@
 from typing import Any, Optional, Type
 
-from embedchain.models.data_type import DataType
+try:
+    # Newer embedchain
+    from embedchain.types import DataType  # type: ignore
+except Exception:  # pragma: no cover
+    # Older embedchain fallback
+    from embedchain.models.data_type import DataType  # type: ignore
 from pydantic import BaseModel, Field
 
 from ..rag.rag_tool import RagTool
@@ -37,13 +42,13 @@ class CodeDocsSearchTool(RagTool):
             self._generate_description()
 
     def add(self, docs_url: str) -> None:
-        super().add(docs_url, data_type=DataType.DOCS_SITE)
+        super().add(docs_url, data_type=DataType.DOCS)
 
     def _run(
         self,
-        search_query: str,
+        query: str,
         docs_url: Optional[str] = None,
     ) -> str:
         if docs_url is not None:
             self.add(docs_url)
-        return super()._run(query=search_query)
+        return super()._run(query=query)

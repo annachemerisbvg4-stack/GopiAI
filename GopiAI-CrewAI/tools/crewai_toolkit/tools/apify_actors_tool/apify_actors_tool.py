@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List
 import os
 
 if TYPE_CHECKING:
-    from langchain_apify import ApifyActorsTool as _ApifyActorsTool
+    from langchain_apify import ApifyActorsTool as _ApifyActorsTool  # type: ignore[reportMissingImports]
 
 class ApifyActorsTool(BaseTool):
     env_vars: List[EnvVar] = [
@@ -58,7 +58,7 @@ class ApifyActorsTool(BaseTool):
             raise ValueError(msg)
 
         try:
-            from langchain_apify import ApifyActorsTool as _ApifyActorsTool
+            from langchain_apify import ApifyActorsTool as _ApifyActorsTool  # type: ignore[reportMissingImports]
         except ImportError:
             raise ImportError(
                 "Could not import langchain_apify python package. "

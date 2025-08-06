@@ -1,4 +1,4 @@
-from typing import Type, Optional, List, Dict, Any
+from typing import Type, Optional, List, Dict, Any, Tuple
 import os
 import json
 from dotenv import load_dotenv
@@ -21,7 +21,7 @@ class BedrockKBRetrieverTool(BaseTool):
     name: str = "Bedrock Knowledge Base Retriever Tool"
     description: str = "Retrieves information from an Amazon Bedrock Knowledge Base given a query"
     args_schema: Type[BaseModel] = BedrockKBRetrieverToolInput
-    knowledge_base_id: str = None
+    knowledge_base_id: Optional[str] = None
     number_of_results: Optional[int] = 5
     retrieval_configuration: Optional[Dict[str, Any]] = None
     guardrail_configuration: Optional[Dict[str, Any]] = None
@@ -30,7 +30,7 @@ class BedrockKBRetrieverTool(BaseTool):
 
     def __init__(
         self,
-        knowledge_base_id: str = None,
+        knowledge_base_id: Optional[str] = None,
         number_of_results: Optional[int] = 5,
         retrieval_configuration: Optional[Dict[str, Any]] = None,
         guardrail_configuration: Optional[Dict[str, Any]] = None,
@@ -178,8 +178,8 @@ class BedrockKBRetrieverTool(BaseTool):
 
     def _run(self, query: str) -> str:
         try:
-            import boto3
-            from botocore.exceptions import ClientError
+            import boto3  # type: ignore[reportMissingImports]
+            from botocore.exceptions import ClientError  # type: ignore[reportMissingImports]
         except ImportError:
             raise ImportError("`boto3` package not found, please run `uv add boto3`")
 

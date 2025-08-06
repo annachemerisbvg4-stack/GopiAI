@@ -10,9 +10,20 @@ with open("debug_output.txt", "w", encoding="utf-8") as f:
     f.write(f"Текущая директория: {os.getcwd()}\n")
     
     try:
-        # Пытаемся импортировать Flask
+        # Пытаемся импортировать Flask и получить версию безопасно
         import flask
-        f.write(f"Flask версия: {flask.__version__}\n")
+        try:
+            # Flask 2.x exposes __version__, Flask 3.x moved version to packaging metadata
+            version = getattr(flask, "__version__", None)
+            if version is None:
+                try:
+                    from importlib.metadata import version as pkg_version  # Python 3.8+
+                except Exception:
+                    from importlib_metadata import version as pkg_version  # Backport
+                version = pkg_version("flask")
+            f.write(f"Flask версия: {version}\n")
+        except Exception as ve:
+            f.write(f"Не удалось определить версию Flask: {ve}\n")
         
         # Пытаемся создать приложение Flask
         from flask import Flask

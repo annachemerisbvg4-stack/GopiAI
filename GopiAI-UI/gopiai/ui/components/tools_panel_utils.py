@@ -9,6 +9,7 @@ import logging
 from typing import Dict, List, Optional, Tuple
 from PySide6.QtWidgets import QPushButton, QLabel, QFrame, QVBoxLayout, QScrollArea, QWidget
 from PySide6.QtCore import Qt, Signal, QObject
+from PySide6.QtGui import QCursor
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +158,12 @@ class ToolsManager(QObject):
         name = tool_info.get("name", tool_id)
         name_button = QPushButton(name)
         name_button.setStyleSheet("font-weight: bold; font-size: 13px;")
-        name_button.setCursor(Qt.PointingHandCursor)
+        # PySide6: use QCursor with Qt.CursorShape
+        try:
+            name_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))  # type: ignore[attr-defined]
+        except Exception:
+            # Conservative fallback to ArrowCursor
+            name_button.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
         layout.addWidget(name_button)
         
         # Описание инструмента
@@ -170,7 +176,10 @@ class ToolsManager(QObject):
         if "usage" in tool_info:
             usage_button = QPushButton("Показать примеры использования")
             usage_button.setStyleSheet("font-size: 11px; color: #bd93f9;")
-            usage_button.setCursor(Qt.PointingHandCursor)
+            try:
+                usage_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))  # type: ignore[attr-defined]
+            except Exception:
+                usage_button.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
             
             usage_label = QLabel(tool_info["usage"])
             usage_label.setStyleSheet("font-family: 'Courier New'; background-color: rgba(40, 42, 54, 0.4); padding: 5px; border-radius: 4px;")

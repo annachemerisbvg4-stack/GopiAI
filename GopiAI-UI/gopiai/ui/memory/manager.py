@@ -54,15 +54,18 @@ class MemoryManager:
                 logger.info(f"[UNIFIED-MEMORY] Loaded {len(self.chats)} messages from shared file: {CHATS_FILE_PATH}")
                 
                 # Создаем словарь сессий на основе загруженных чатов
-                session_ids = set(msg.get('session_id') for msg in self.chats if msg.get('session_id'))
+                session_ids_raw = set(msg.get('session_id') for msg in self.chats if msg.get('session_id'))
+                # Явно фильтруем и приводим к str, чтобы удовлетворить Pylance (ключи словаря строго строки)
+                session_ids = [str(sid) for sid in session_ids_raw if isinstance(sid, (str, int))]
                 for session_id in session_ids:
-                    session_msgs = [msg for msg in self.chats if msg.get('session_id') == session_id]
+                    session_msgs = [msg for msg in self.chats if str(msg.get('session_id')) == session_id]
                     if session_msgs:
-                        first_msg = min(session_msgs, key=lambda x: x.get('timestamp', '0'))
+                        first_msg = min(session_msgs, key=lambda x: x.get('timestamp') or '0')
+                        created_at = first_msg.get('timestamp') or datetime.now().isoformat()
                         self.sessions[session_id] = {
                             'id': session_id,
-                            'title': first_msg.get('content', '')[:30],
-                            'created_at': first_msg.get('timestamp')
+                            'title': (first_msg.get('content', '') or '')[:30],
+                            'created_at': created_at
                         }
             else:
                 logger.info(f"[UNIFIED-MEMORY] No shared chats file found at {CHATS_FILE_PATH}. Creating a new one.")
@@ -81,15 +84,16 @@ class MemoryManager:
 
         # Управляем сессиями
         if session_id not in self.sessions:
-            self.sessions[session_id] = {  # type: ignore[type-arg]
-                'id': session_id, 
+            sid = str(session_id)
+            self.sessions[sid] = {  # type: ignore[type-arg]
+                'id': sid, 
                 'title': content[:30], # Название чата - первые 30 символов
                 'created_at': datetime.now().isoformat()
             }
         
         message = {
             'id': str(uuid.uuid4()),
-            'session_id': session_id,
+            'session_id': str(session_id),
             'role': role,
             'content': content,
             'timestamp': datetime.now().isoformat(),
@@ -111,10 +115,11 @@ class MemoryManager:
     def get_chat_history(self, session_id: str) -> List[Dict]:
         """Gets chat history for a session from the in-memory list."""
         if session_id:
-            # Фильтруем сообщения для текущей сессии
-            session_messages = [msg for msg in self.chats if msg.get('session_id') == session_id]
+            sid = str(session_id)
+            # Фильтруем сообщения для текущей сессии (приводим к строке для надежного сравнения)
+            session_messages = [msg for msg in self.chats if str(msg.get('session_id')) == sid]
             # Сортируем их по времени
-            session_messages.sort(key=lambda x: x.get('timestamp', '0'))
+            session_messages.sort(key=lambda x: x.get('timestamp') or '0')
             return session_messages
         return []
 
@@ -127,15 +132,15 @@ class MemoryManager:
 
     def update_session_title(self, session_id: str, title: str):
         if session_id in self.sessions:
-            self.sessions[session_id]['title'] = title
+            self.sessions[str(session_id)]['title'] = title
             self._save_data()
 
     def delete_session(self, session_id: str):
         if not session_id:
             return
         if session_id in self.sessions:
-            del self.sessions[session_id]
-        self.chats = [msg for msg in self.chats if msg.get('session_id') != session_id]
+            del self.sessions[str(session_id)]
+        self.chats = [msg for msg in self.chats if str(msg.get('session_id')) != str(session_id)]
         self._save_data()
 
     def _save_data(self):

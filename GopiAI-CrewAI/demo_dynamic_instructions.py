@@ -80,15 +80,17 @@ def demo_agent_enhancement():
         )
         
         print(f"   - Роль: {original_agent.role}")
-        print(f"   - Количество инструментов: {len(original_agent.tools)}")
-        print(f"   - Тип инструментов: {[tool.__class__.__name__ for tool in original_agent.tools]}")
+        orig_tools = list(original_agent.tools or [])
+        print(f"   - Количество инструментов: {len(orig_tools)}")
+        print(f"   - Тип инструментов: {[tool.__class__.__name__ for tool in orig_tools]}")
         
         print("\n2. Улучшение агента динамическими инструкциями...")
         # Улучшаем агента
         enhanced_agent = enhance_agent_with_instructions(original_agent)
         
         print(f"   - Агент успешно улучшен!")
-        print(f"   - Количество инструментов: {len(enhanced_agent.tools)}")
+        enh_tools = list(enhanced_agent.tools or [])
+        print(f"   - Количество инструментов: {len(enh_tools)}")
         print(f"   - Динамические инструкции активированы")
         
         print("\n3. Сравнение:")
@@ -120,7 +122,7 @@ def demo_crew_enhancement():
     try:
         from tools.gopiai_integration.crewai_tools_integration import enhance_crew_with_instructions
         from tools.gopiai_integration.filesystem_tools import GopiAIFileSystemTool
-        from tools.gopiai_integration.local_mcp_tools import GopiAILocalMCPTool
+        from tools.gopiai_integration.local_mcp_tools import get_local_mcp_tools
         
         # Создаем LLM
         llm = LLM(
@@ -141,11 +143,13 @@ def demo_crew_enhancement():
         )
         
         # API агент
+        # Для локальных MCP в этом проекте предоставлен менеджер инструментов, а не BaseTool.
+        # Поэтому демонстрационно оставляем список инструментов пустым и используем менеджер при необходимости.
         api_agent = Agent(
             role='API Specialist',
             goal='Работать с веб-сервисами и API',
             backstory='Эксперт по интеграции с внешними сервисами',
-            tools=[GopiAILocalMCPTool()],
+            tools=[],
             llm=llm,
             verbose=True
         )
@@ -160,7 +164,7 @@ def demo_crew_enhancement():
         print(f"   - Количество агентов: {len(original_crew.agents)}")
         print(f"   - Агенты: {[agent.role for agent in original_crew.agents]}")
         
-        total_tools = sum(len(agent.tools) for agent in original_crew.agents)
+        total_tools = sum(len(list(agent.tools or [])) for agent in original_crew.agents)
         print(f"   - Общее количество инструментов: {total_tools}")
         
         print("\n2. Улучшение команды динамическими инструкциями...")
@@ -171,7 +175,7 @@ def demo_crew_enhancement():
         print(f"   - Все агенты получили динамические инструкции")
         print(f"   - Количество агентов: {len(enhanced_crew.agents)}")
         
-        enhanced_total_tools = sum(len(agent.tools) for agent in enhanced_crew.agents)
+        enhanced_total_tools = sum(len(list(agent.tools or [])) for agent in enhanced_crew.agents)
         print(f"   - Общее количество инструментов: {enhanced_total_tools}")
         
         print("\n3. Преимущества улучшенной команды:")

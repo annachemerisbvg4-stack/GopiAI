@@ -49,8 +49,8 @@ MATERIAL_SKY_THEME = {
         "border_color": "#8f9195",
         "titlebar_text": "#cde5ff"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 EMERALD_GARDEN_THEME = {
@@ -82,8 +82,8 @@ EMERALD_GARDEN_THEME = {
         "border_color": "#909189",
         "titlebar_text": "#b9f47d"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 CRIMSON_RELIC_THEME = {
@@ -115,8 +115,8 @@ CRIMSON_RELIC_THEME = {
         "border_color": "#9b8e8c",
         "titlebar_text": "#ffdad7"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 GOLDEN_EMBER_THEME = {
@@ -148,8 +148,8 @@ GOLDEN_EMBER_THEME = {
         "border_color": "#9b8e8a",
         "titlebar_text": "#ffdbcf"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 SUNLIT_MEADOW_THEME = {
@@ -181,8 +181,8 @@ SUNLIT_MEADOW_THEME = {
         "border_color": "#969086",
         "titlebar_text": "#ffdf91"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 MINT_FROST_THEME = {
@@ -214,8 +214,8 @@ MINT_FROST_THEME = {
         "border_color": "#8e928e",
         "titlebar_text": "#c8ead9"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 VIOLET_DREAM_THEME = {
@@ -247,8 +247,8 @@ VIOLET_DREAM_THEME = {
         "border_color": "#929096",
         "titlebar_text": "#e0e0ff"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 INDIGO_CANDY_THEME = {
@@ -280,8 +280,8 @@ INDIGO_CANDY_THEME = {
         "border_color": "#929095",
         "titlebar_text": "#e1e0ff"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 PINK_MIRAGE_THEME = {
@@ -313,8 +313,8 @@ PINK_MIRAGE_THEME = {
         "border_color": "#988e93",
         "titlebar_text": "#ffd7f2"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 OLIVE_LIBRARY_THEME = {
@@ -346,8 +346,8 @@ OLIVE_LIBRARY_THEME = {
         "border_color": "#939189",
         "titlebar_text": "#eae2c9"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 LAVENDER_MIST_THEME = {
@@ -379,8 +379,8 @@ LAVENDER_MIST_THEME = {
         "border_color": "#929094",
         "titlebar_text": "#e0e1f2"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 GRAPHITE_NIGHT_THEME = {
@@ -412,8 +412,8 @@ GRAPHITE_NIGHT_THEME = {
         "border_color": "#8e9192",
         "titlebar_text": "#dde4e3"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 PUMPKIN_FIELD_THEME = {
@@ -445,8 +445,8 @@ PUMPKIN_FIELD_THEME = {
         "border_color": "#9a8e88",
         "titlebar_text": "#ffdcc6"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 SCARLET_FIRE_THEME = {
@@ -478,8 +478,74 @@ SCARLET_FIRE_THEME = {
         "border_color": "#9c8d8b",
         "titlebar_text": "#ffdad5"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
+}
+
+MORNING_ROSE_THEME = {
+    "name": "Morning Rose",
+    "description": "Утренняя роза: нежные розовые тона с зелёными акцентами",
+    "light": {
+        "main_color": "#ffffff",
+        "header_color": "#f2c1ae",
+        "control_color": "#b4bf8a",
+        "accent_color": "#8c7480",
+        "titlebar_background": "#b4bf8a",
+        "button_color": "#f2c1ae",
+        "button_hover_color": "#8c7480",
+        "button_active_color": "#a64b63",
+        "text_color": "#1c1b1b",
+        "border_color": "#767870",
+        "titlebar_text": "#0a2126"
+    },
+    "dark": {
+        "main_color": "#333333",
+        "header_color": "#8c7480",
+        "control_color": "#b4bf8a",
+        "accent_color": "#a64b63",
+        "titlebar_background": "#b4bf8a",
+        "button_color": "#0a2126",
+        "button_hover_color": "#f2c1ae",
+        "button_active_color": "#a64b63",
+        "text_color": "#ffffff",
+        "border_color": "#767870",
+        "titlebar_text": "#a64b63"
+    },
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
+}
+
+RUBY_THEME = {
+    "name": "Ruby",
+    "description": "Рубиновая тема: глубокий красный с серыми акцентами",
+    "light": {
+        "main_color": "#ffffff",
+        "header_color": "#9f1c2c",
+        "control_color": "#5f7080",
+        "accent_color": "#b0afb5",
+        "titlebar_background": "#5f7080",
+        "button_color": "#d2647a",
+        "button_hover_color": "#4a605a",
+        "button_active_color": "#b0afb5",
+        "text_color": "#9f1c2c",
+        "border_color": "#767870",
+        "titlebar_text": "#9f1c2c"
+    },
+    "dark": {
+        "main_color": "#333333",
+        "header_color": "#9f1c2c",
+        "control_color": "#5f7080",
+        "accent_color": "#b0afb5",
+        "titlebar_background": "#5f7080",
+        "button_color": "#b0afb5",
+        "button_hover_color": "#4a605a",
+        "button_active_color": "#d2647a",
+        "text_color": "#9f1c2c",
+        "border_color": "#767870",
+        "titlebar_text": "#9f1c2c"
+    },
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 DUSTY_ROSE_THEME = {
@@ -511,8 +577,8 @@ DUSTY_ROSE_THEME = {
         "border_color": "#7f7572",
         "titlebar_text": "#fedbd2"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
 TROPICAL_BOUQUET_THEME = {
@@ -544,11 +610,11 @@ TROPICAL_BOUQUET_THEME = {
         "border_color": "#9a8e90",
         "titlebar_text": "#ffd9e2"
     },
-    "font_family": "Roboto",
-    "font_weights": {"bold": 700, "medium": 500, "regular": 400}
+    "font_family": "Inter",
+    "font_weights": {"bold": 600, "medium": 500, "regular": 400}
 }
 
-THEME_COLLECTION = [MATERIAL_SKY_THEME, EMERALD_GARDEN_THEME, CRIMSON_RELIC_THEME, GOLDEN_EMBER_THEME, SUNLIT_MEADOW_THEME, MINT_FROST_THEME, VIOLET_DREAM_THEME, INDIGO_CANDY_THEME, PINK_MIRAGE_THEME, OLIVE_LIBRARY_THEME, LAVENDER_MIST_THEME, GRAPHITE_NIGHT_THEME, PUMPKIN_FIELD_THEME, SCARLET_FIRE_THEME, TROPICAL_BOUQUET_THEME]
+THEME_COLLECTION = [MATERIAL_SKY_THEME, EMERALD_GARDEN_THEME, CRIMSON_RELIC_THEME, GOLDEN_EMBER_THEME, SUNLIT_MEADOW_THEME, MINT_FROST_THEME, VIOLET_DREAM_THEME, INDIGO_CANDY_THEME, PINK_MIRAGE_THEME, OLIVE_LIBRARY_THEME, LAVENDER_MIST_THEME, GRAPHITE_NIGHT_THEME, PUMPKIN_FIELD_THEME, SCARLET_FIRE_THEME, MORNING_ROSE_THEME, RUBY_THEME, DUSTY_ROSE_THEME, TROPICAL_BOUQUET_THEME]
 
 # --- ФУНКЦИИ ДЛЯ РАБОТЫ С ТЕМАМИ ---
 def theme_palette_to_struct(palette):
@@ -744,13 +810,25 @@ def apply_theme(app):
         palette.setColor(QPalette.ColorRole.Highlight, accent_color)
         palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.white)
         
-        # Добавляем стиль для улучшения контраста всех виджетов
+        # Определяем семейство шрифта из темы или используем Inter по умолчанию
+        font_family = theme.get("font_family", "Inter")
+        
+        # Добавляем стиль для улучшения контраста всех виджетов и применения шрифта
         app.setStyleSheet(f"""
+        /* Глобальные стили шрифта */
+        * {{
+            font-family: '{font_family}', sans-serif;
+            font-size: 16px;
+        }}
+        
         /* Стили для кнопок */
         QPushButton {{
             color: {button_text_color.name()};
             background-color: {button_color.name()};
             border: 1px solid {border_color.name()};
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 6px;
         }}
         QPushButton:hover {{
             color: {button_hover_text_color.name()};
@@ -761,15 +839,18 @@ def apply_theme(app):
             background-color: {theme.get("button_active_color", "#0078D7")};
         }}
 
-                /* Стили для titlebar */
+        /* Стили для titlebar */
         #titlebarWidget, QWidget[objectName="titlebarWidget"] {{
             background-color: {theme.get("titlebar_background", header_color.name())};
             color: {theme.get("titlebar_text", text_color.name())};
             border-bottom: 1px solid {border_color.name()};
+            font-weight: 600;
         }}
         #windowTitle, QLabel[objectName="windowTitle"] {{
             color: {theme.get("titlebar_text", text_color.name())};
             background-color: transparent;
+            font-weight: 600;
+            font-size: 18px;
         }}
         #minimizeButton, #maximizeButton, #restoreButton, #closeButton,
         QPushButton[objectName="minimizeButton"], QPushButton[objectName="maximizeButton"],
@@ -778,6 +859,8 @@ def apply_theme(app):
             color: {theme.get("titlebar_text", text_color.name())};
             border: none;
             border-radius: 4px;
+            font-weight: 500;
+            font-size: 14px;
         }}
         #minimizeButton:hover, #maximizeButton:hover, #restoreButton:hover,
         QPushButton[objectName="minimizeButton"]:hover, QPushButton[objectName="maximizeButton"]:hover,
@@ -801,59 +884,71 @@ def apply_theme(app):
         /* Стили для всех других виджетов */
         QLabel {{
             color: {text_color.name()};
+            font-weight: 400;
         }}
         QComboBox {{
             color: {button_text_color.name()};
             background-color: {button_color.name()};
             border: 1px solid {border_color.name()};
-            border-radius: 4px;
+            border-radius: 6px;
+            font-weight: 500;
+            padding: 4px 8px;
         }}
         QComboBox QAbstractItemView {{
             color: {text_color.name()};
             background-color: {main_color.name()};
             selection-background-color: {accent_color.name()};
             selection-color: #cccccc;
+            font-weight: 400;
         }}
         QLineEdit, QTextEdit, QPlainTextEdit {{
             color: {text_color.name()};
             background-color: {main_color.name()};
             border: 1px solid {border_color.name()};
-            border-radius: 4px;
+            border-radius: 6px;
+            font-weight: 400;
+            padding: 6px 8px;
         }}
         QMenuBar::item:selected, QMenu::item:selected {{
             color: #cccccc;
             background-color: {accent_color.name()};
             border: 1px solid {border_color.name()};
             border-radius: 4px;
+            font-weight: 500;
         }}
         QCheckBox, QRadioButton {{
             color: {text_color.name()};
             border: 1px solid {border_color.name()};
             border-radius: 4px;
+            font-weight: 400;
         }}
         QTabBar::tab {{
             color: {button_text_color.name()};
             background-color: {button_color.name()};
             border: 1px solid {border_color.name()};
-            border-radius: 2px;
+            border-radius: 6px;
+            font-weight: 500;
+            padding: 6px 16px;
         }}
         QTabBar::tab:selected {{
             color: {button_active_text_color.name()};
             background-color: {theme.get("button_active_color", "#0078D7")};
             border: 1px solid {border_color.name()};
-            border-radius: 2px;
+            border-radius: 6px;
         }}
         QToolTip {{
             color: {text_color.name()};
             background-color: {main_color.name()};
             border: 1px solid {border_color.name()};
-            border-radius: 4px;
+            border-radius: 6px;
+            font-weight: 400;
         }}
         QTreeView, QListView, QTableView {{
             color: {text_color.name()};
             background-color: {main_color.name()};
             border: 1px solid {border_color.name()};
-            border-radius: 4px;
+            border-radius: 6px;
+            font-weight: 400;
         }}
         QTreeView::item:selected, QListView::item:selected, QTableView::item:selected {{
             color: #cccccc;
@@ -866,24 +961,53 @@ def apply_theme(app):
             background-color: {header_color.name()};
             border: 1px solid {border_color.name()};
             border-radius: 4px;
+            font-weight: 600;
+            padding: 8px;
+            font-size: 15px;
         }}
         QToolButton {{
             color: {button_text_color.name()};
             background-color: {button_color.name()};
             border: 1px solid {border_color.name()};
-            border-radius: 4px;
+            border-radius: 6px;
+            font-weight: 500;
+            padding: 6px 8px;
         }}
         QToolButton:hover {{
             color: {button_hover_text_color.name()};
             background-color: {theme.get("button_hover_color", "#F0F0F0")};
             border: 1px solid {border_color.name()};
-            border-radius: 4px;
+            border-radius: 6px;
         }}
         QToolButton:pressed {{
             color: {button_active_text_color.name()};
             background-color: {theme.get("button_active_color", "#0078D7")};
             border: 1px solid {border_color.name()};
-            border-radius: 4px;
+            border-radius: 6px;
+        }}
+        
+        /* Дополнительные стили для улучшения читаемости */
+        QMainWindow, QWidget, QDialog, QFrame {{
+            font-family: '{font_family}', sans-serif;
+            font-size: 16px;
+        }}
+        
+        QStatusBar {{
+            font-family: '{font_family}', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+        }}
+        
+        QMenuBar {{
+            font-family: '{font_family}', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+        }}
+        
+        QMenu {{
+            font-family: '{font_family}', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
         }}
         """)
         app.setPalette(palette)

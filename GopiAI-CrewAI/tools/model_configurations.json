@@ -3971,12 +3971,48 @@
         "temperature": 0.7,
         "max_tokens": 4096
       }
+    },
+    "openrouter_anthropic/claude-opus-4.1": {
+      "provider": "openrouter",
+      "model_id": "anthropic/claude-opus-4.1",
+      "display_name": "Anthropic: Claude Opus 4.1 (anthropic/claude-opus-4.1)",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "is_active": false,
+      "is_default": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
+    },
+    "openrouter_openai/gpt-oss-120b": {
+      "provider": "openrouter",
+      "model_id": "openai/gpt-oss-120b",
+      "display_name": "OpenAI: GPT OSS 120B (openai/gpt-oss-120b)",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "is_active": false,
+      "is_default": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
+    },
+    "openrouter_openai/gpt-oss-20b": {
+      "provider": "openrouter",
+      "model_id": "openai/gpt-oss-20b",
+      "display_name": "OpenAI: GPT OSS 20B (openai/gpt-oss-20b)",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "is_active": false,
+      "is_default": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
     }
   },
   "current": {
     "provider": "openrouter",
-    "model_id": "moonshotai/kimi-k2:free"
+    "model_id": "agentica-org/deepcoder-14b-preview:free"
   },
   "version": "1.0",
-  "last_updated": "1753762898.876158"
+  "last_updated": "1754405628.6248908"
 }

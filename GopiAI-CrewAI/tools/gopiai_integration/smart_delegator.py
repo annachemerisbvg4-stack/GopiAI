@@ -527,6 +527,9 @@ class SmartDelegator:
         logger.info(f"[CRITICAL-DEBUG] messages_count: {len(messages)}")
         logger.info(f"[CRITICAL-DEBUG] model_config_manager: {self.model_config_manager is not None}")
         
+        # Инициализируем estimated_tokens в начале метода для использования в блоке except
+        estimated_tokens = 0
+        
         try:
             # Выводим длину системного промпта для диагностики
             system_prompt_len = len(messages[0]['content']) if messages and messages[0]['role'] == 'system' else 0
@@ -538,7 +541,7 @@ class SmartDelegator:
                 if isinstance(msg.get('content'), list) else str(msg.get('content', '')) 
                 for msg in messages
             ])
-            estimated_tokens = len(total_text) // 4  # Примерная оценка: 4 символа на токен
+            estimated_tokens = len(total_text) // 4  # Примерная оценка: 4 символа на токen
             
             # Проверяем, есть ли текущая конфигурация модели (выбранная пользователем)
             current_config = None

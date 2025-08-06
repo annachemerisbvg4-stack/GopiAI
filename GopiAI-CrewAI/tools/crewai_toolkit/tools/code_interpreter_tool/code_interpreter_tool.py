@@ -17,7 +17,13 @@ from docker.errors import ImageNotFound, NotFound
 from docker.models.containers import Container
 from pydantic import BaseModel, Field
 
-from crewai_tools.printer import Printer
+try:
+    from crewai_tools.printer import Printer  # type: ignore[reportMissingImports]
+except Exception:
+    class Printer:  # fallback Printer
+        @staticmethod
+        def print(msg: str, color: str = "") -> None:
+            print(msg)
 
 
 class CodeInterpreterSchema(BaseModel):
@@ -151,7 +157,9 @@ class CodeInterpreterTool(BaseTool):
             The directory path where the package is installed.
         """
         spec = importlib.util.find_spec("crewai_tools")
-        return os.path.dirname(spec.origin)
+        if spec is None or getattr(spec, "origin", None) is None:
+            raise ImportError("Package 'crewai_tools' is not installed or not discoverable")
+        return os.path.dirname(spec.origin)  # type: ignore[arg-type]
 
     def _verify_docker_image(self) -> None:
         """Verifies if the Docker image is available or builds it if necessary.

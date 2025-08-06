@@ -221,6 +221,13 @@ class UniversalIconManager:
           # Кешируем и возвращаем результат
         self.icon_cache[cache_key] = icon
         return icon
+
+    def get_lucide_icon(self, icon_name: str, color: Optional[str] = None, size: Union[QSize, int] = 24) -> QIcon:
+        """
+        Совместимый шим-метод для Lucide: перенаправляет в get_icon.
+        Нужен для совместимости с внешними вызовами и статической типизацией (Pyright).
+        """
+        return self.get_icon(icon_name, color, size)
     
     def _load_svg_icon(self, icon_name: str, size: QSize) -> Optional[QIcon]:
         """Загружает SVG иконку из файловой системы"""
