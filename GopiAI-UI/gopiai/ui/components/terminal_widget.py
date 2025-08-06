@@ -36,20 +36,35 @@ except ImportError:
 
 
 class InteractiveTerminal(QTextEdit):
-    """Интерактивный терминал с поддержкой ввода команд"""
+    """Интерактивный терминал с поддержкой ввода команд (строго ВСТРОЕННЫЙ виджет, не окно)"""
     
     command_executed = Signal(str)  # Сигнал для выполненной команды
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        # ЖЕСТКАЯ ЗАЩИТА ОТ "ПЛАВАЮЩЕГО ОКНА"
+        # Принудительно запрещаем любые оконные флаги и всплывающее отображение
+        try:
+            # Только виджет, без флагов окна
+            self.setWindowFlags(Qt.WindowType.Widget)
+            # На всякий случай скрыт (видимость контролирует контейнер внизу)
+            self.setVisible(True)
+        except Exception:
+            pass
+
         self.prompt = '> '
         self.setFont(QFont("Consolas", 10))
         self.setStyleSheet("background-color: black; color: white;")
+        self.setReadOnly(False)
+
+        # Процесс терминала
         self.process = QProcess(self)
         self.process.readyReadStandardOutput.connect(self.handle_stdout)
         self.process.readyReadStandardError.connect(self.handle_stderr)
         self.process.stateChanged.connect(self.handle_state)
-        self.process.start("cmd.exe")
+        # Всегда запускаем в текущем окружении без открытия дополнительных окон
+        self.process.setProgram("cmd.exe")
+        self.process.start()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return: # type: ignore[attr-defined]
@@ -151,7 +166,13 @@ class TerminalWidget(QWidget):
         self.add_tab()
 
     def add_tab(self):
-        terminal = InteractiveTerminal()
+        # Создаем терминал только как дочерний виджет вкладки
+        terminal = InteractiveTerminal(parent=self)
+        # На всякий случай убеждаемся, что это не отдельное окно
+        try:
+            terminal.setWindowFlags(Qt.WindowType.Widget)
+        except Exception:
+            pass
         index = self.tabs.addTab(terminal, f"Terminal {self.tabs.count() + 1}")
         self.tabs.setCurrentIndex(index)
         return index
@@ -165,15 +186,14 @@ class TerminalWidget(QWidget):
             tab_index = self.tabs.currentIndex()
         terminal = cast(InteractiveTerminal, self.tabs.widget(tab_index))
         if terminal:
+            # НИКОГДА не показывать отдельное окно — работаем только во встроенном виджете
+            try:
+                terminal.setWindowFlags(Qt.WindowType.Widget)
+            except Exception:
+                pass
             terminal.insertPlainText(command + '\n')
             terminal.process.write(command.encode() + b'\n')
             terminal.insertPlainText(terminal.prompt)
-
-    def log_ai_command(self, command, output):
-        current_terminal = cast(InteractiveTerminal, self.tabs.currentWidget())
-        if current_terminal:
-            current_terminal.insertPlainText(f'[AI] Executed: {command}\n{output}\n')
-            current_terminal.insertPlainText(current_terminal.prompt)
 
     def log_ai_command(self, command, output):
         current_terminal = cast(InteractiveTerminal, self.tabs.currentWidget())
