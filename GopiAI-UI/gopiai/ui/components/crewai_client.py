@@ -666,6 +666,76 @@ class CrewAIClient:
             print(f"❌ Ошибка запроса: {e}")
             return {"error_message": str(e), "processed_with_crewai": False}
 
+    def get_terminal_unsafe(self) -> Optional[bool]:
+        """Возвращает текущее значение флага небезопасного терминала из CrewAI API.
+
+        Пробует основной путь без префикса /api, затем с /api как запасной.
+        """
+        logger.debug("[UNSAFE] Запрос текущего состояния terminal_unsafe")
+        if not self.is_available():
+            logger.error("[UNSAFE] Сервер CrewAI недоступен")
+            return None
+
+        endpoints = [
+            f"{self.base_url}/settings/terminal_unsafe",
+            f"{self.base_url}/api/settings/terminal_unsafe",
+        ]
+        for url in endpoints:
+            try:
+                resp = requests.get(url, timeout=10)
+                logger.debug(f"[UNSAFE] GET {url} -> {resp.status_code}")
+                if resp.status_code == 200:
+                    data = resp.json()
+                    # поддерживаем оба варианта ответа
+                    if isinstance(data, dict):
+                        if "terminal_unsafe" in data:
+                            return bool(data["terminal_unsafe"])
+                        if "value" in data:
+                            return bool(data["value"])
+                    # если вернули просто true/false
+                    if isinstance(data, bool):
+                        return data
+                else:
+                    logger.warning(f"[UNSAFE] Ошибка ответа: {resp.status_code} {resp.text}")
+            except requests.RequestException as e:
+                logger.error(f"[UNSAFE] Ошибка запроса GET {url}: {e}")
+        return None
+
+    def set_terminal_unsafe(self, value: bool) -> bool:
+        """Устанавливает флаг небезопасного терминала через CrewAI API.
+
+        Возвращает True при успехе, False иначе. Пробует /settings и /api/settings пути.
+        """
+        logger.info(f"[UNSAFE] Установка terminal_unsafe={value}")
+        if not self.is_available():
+            logger.error("[UNSAFE] Сервер CrewAI недоступен")
+            return False
+
+        payload = {"terminal_unsafe": bool(value)}
+        headers = {"Content-Type": "application/json; charset=utf-8"}
+        endpoints = [
+            f"{self.base_url}/settings/terminal_unsafe",
+            f"{self.base_url}/api/settings/terminal_unsafe",
+        ]
+        for url in endpoints:
+            try:
+                resp = requests.post(url, json=payload, headers=headers, timeout=10)
+                logger.debug(f"[UNSAFE] POST {url} -> {resp.status_code}")
+                if resp.status_code in (200, 204):
+                    return True
+                # некоторые реализации возвращают JSON с success
+                if resp.status_code == 200:
+                    try:
+                        data = resp.json()
+                        if isinstance(data, dict) and data.get("success", False):
+                            return True
+                    except Exception:
+                        pass
+                logger.warning(f"[UNSAFE] Ошибка ответа POST: {resp.status_code} {resp.text}")
+            except requests.RequestException as e:
+                logger.error(f"[UNSAFE] Ошибка запроса POST {url}: {e}")
+        return False
+
     def _get_dynamic_tool_instructions(self, message_text: str) -> dict:
         """
         Анализирует сообщение пользователя и определяет, какие инструменты могут понадобиться.

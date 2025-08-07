@@ -26,6 +26,12 @@ from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QFont, QIcon, QPixmap
 from pathlib import Path
 
+# Клиент CrewAI API для работы с настройкой небезопасного терминала
+try:
+    from ..components.crewai_client import crewai_client
+except Exception as e:
+    crewai_client = None
+    print(f"⚠️ Не удалось импортировать crewai_client: {e}")
 
 class SettingsCard(QFrame):
     """Карточка настроек"""
@@ -132,6 +138,70 @@ class GopiAISettingsDialog(QDialog):
             print("🔧 Вызываем load_current_settings()")
             self.load_current_settings()
             print("🔧 load_current_settings() завершен")
+
+    def _load_terminal_unsafe(self):
+        """Читает текущее значение terminal_unsafe из CrewAI и обновляет чекбокс."""
+        try:
+            if not hasattr(self, 'terminal_unsafe_check') or self.terminal_unsafe_check is None:
+                return
+            # По умолчанию делаем неактивным до получения данных
+            self.terminal_unsafe_check.setEnabled(False)
+            if crewai_client is None:
+                self.terminal_unsafe_check.setToolTip("CrewAI клиент недоступен")
+                return
+            value = crewai_client.get_terminal_unsafe()
+            if value is None:
+                # Сервер недоступен или ошибка — оставляем выключенным
+                self.terminal_unsafe_check.setChecked(False)
+                self.terminal_unsafe_check.setToolTip("Не удалось получить состояние с сервера CrewAI")
+            else:
+                # Блокируем сигнал на время программной установки
+                try:
+                    self.terminal_unsafe_check.blockSignals(True)
+                    self.terminal_unsafe_check.setChecked(bool(value))
+                finally:
+                    self.terminal_unsafe_check.blockSignals(False)
+                self.terminal_unsafe_check.setToolTip(
+                    "Небезопасный терминал включен" if value else "Небезопасный терминал выключен"
+                )
+            # Разблокируем возможность изменения, если клиент есть
+            self.terminal_unsafe_check.setEnabled(crewai_client is not None)
+        except Exception as e:
+            print(f"❌ Ошибка при загрузке terminal_unsafe: {e}")
+            try:
+                self.terminal_unsafe_check.setEnabled(False)
+            except Exception:
+                pass
+
+    def _on_terminal_unsafe_toggled(self, state: int):
+        """Обработчик изменения чекбокса: отправляет новое значение на сервер CrewAI."""
+        try:
+            if crewai_client is None:
+                print("⚠️ Невозможно сохранить terminal_unsafe: crewai_client недоступен")
+                return
+            value = bool(state == Qt.CheckState.Checked)
+            ok = crewai_client.set_terminal_unsafe(value)
+            if not ok:
+                print("❌ Не удалось обновить terminal_unsafe на сервере — откатываем состояние")
+                try:
+                    self.terminal_unsafe_check.blockSignals(True)
+                    # Откатываем в реальное состояние сервера
+                    current = crewai_client.get_terminal_unsafe()
+                    self.terminal_unsafe_check.setChecked(bool(current) if current is not None else False)
+                finally:
+                    self.terminal_unsafe_check.blockSignals(False)
+            else:
+                # Обновим тултип
+                self.terminal_unsafe_check.setToolTip(
+                    "Небезопасный терминал включен" if value else "Небезопасный терминал выключен"
+                )
+        except Exception as e:
+            print(f"❌ Ошибка при установке terminal_unsafe: {e}")
+            try:
+                self.terminal_unsafe_check.blockSignals(True)
+                self.terminal_unsafe_check.setChecked(False)
+            finally:
+                self.terminal_unsafe_check.blockSignals(False)
             print("🔧 GopiAISettingsDialog.__init__ завершен")    
     def _get_theme_colors_for_dialog(self):
         """Получает полную палитру цветов для диалога настроек"""
@@ -721,6 +791,25 @@ class GopiAISettingsDialog(QDialog):
         logging_card.add_content(log_widget)
         layout.addWidget(logging_card)
 
+        # Карточка инструментов (терминал)
+        tools_card = SettingsCard(
+            "Инструменты",
+            "Настройка инструментов. Внимание: небезопасный терминал позволяет выполнять реальные команды ОС. Используйте с осторожностью!",
+        )
+
+        tools_layout = QVBoxLayout()
+        self.terminal_unsafe_check = QCheckBox("Разрешить терминал без ограничений (ОПАСНО)")
+        self.terminal_unsafe_check.setToolTip(
+            "Включает реальное выполнение команд в терминале без ограничений безопасности."
+        )
+        self.terminal_unsafe_check.stateChanged.connect(self._on_terminal_unsafe_toggled)
+        tools_layout.addWidget(self.terminal_unsafe_check)
+
+        tools_widget = QWidget()
+        tools_widget.setLayout(tools_layout)
+        tools_card.add_content(tools_widget)
+        layout.addWidget(tools_card)
+
         # Карточка сброса настроек
         reset_card = SettingsCard(
             "Сброс настроек", "Восстановление настроек по умолчанию"
@@ -739,6 +828,9 @@ class GopiAISettingsDialog(QDialog):
 
         layout.addStretch()
         self.tab_widget.addTab(scroll, "Дополнительно")
+
+        # Загрузим состояние небезопасного терминала после построения вкладки
+        self._load_terminal_unsafe()
 
     def load_current_settings(self):
         """Загрузка текущих настроек"""

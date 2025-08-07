@@ -280,6 +280,8 @@ class AgentTemplateSystem:
             from gopiai_integration.memory_tools import GopiAIMemoryTool
             from gopiai_integration.communication_tools import GopiAICommunicationTool
             from gopiai_integration.ai_router_tools import GopiAIRouterTool
+            from gopiai_integration.terminal_tool import TerminalTool
+            from gopiai_integration.huggingface_tools import GopiAIHuggingFaceTool
             
             # Сопоставление имен и классов инструментов
             tool_mapping = {
@@ -288,6 +290,7 @@ class AgentTemplateSystem:
                 "memory": GopiAIMemoryTool,
                 "communication": GopiAICommunicationTool,
                 "router": GopiAIRouterTool,
+                "terminal": TerminalTool,
                 "huggingface": GopiAIHuggingFaceTool
             }
             

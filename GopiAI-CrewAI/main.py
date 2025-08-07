@@ -18,10 +18,51 @@ sys.path.append(str(current_dir.parent))  # GOPI_AI_MODULES
 sys.path.append(str(current_dir))  # GopiAI-CrewAI
 sys.path.append(str(current_dir / 'tools'))  # tools directory
 
-# Загружаем переменные окружения
+# Загружаем переменные окружения (.env из нескольких локаций)
 from dotenv import load_dotenv
-env_path = current_dir / '.env'  # Исправляем путь - .env файл в текущей папке
-load_dotenv(env_path, override=True)
+
+def _load_env_multi():
+    """Поддержка загрузки .env из типичных путей, чтобы .exe работал "из коробки".
+    Приоритет: GOPIAI_ENV_PATH (файл/директория) → CWD → script dir → parent → exe dir.
+    Каждая найденная .env загружается с override=True.
+    """
+    candidates = []
+
+    # 1) Явный путь
+    custom = os.getenv('GOPIAI_ENV_PATH')
+    if custom:
+        p = Path(custom)
+        if p.is_file():
+            candidates.append(p)
+        elif p.is_dir():
+            candidates.append(p / '.env')
+
+    # 2) Текущая директория
+    candidates.append(Path.cwd() / '.env')
+
+    # 3) Директория скрипта
+    candidates.append(current_dir / '.env')
+
+    # 4) Родительская директория
+    candidates.append(current_dir.parent / '.env')
+
+    # 5) Директория исполняемого файла (актуально для упакованного .exe)
+    exe_dir = Path(getattr(sys, 'frozen', False) and Path(sys.executable).parent or current_dir)
+    candidates.append(exe_dir / '.env')
+
+    loaded = False
+    for path in candidates:
+        try:
+            if path and path.is_file():
+                load_dotenv(path, override=True)
+                print(f"✅ .env загружен: {path}")
+                loaded = True
+        except Exception as e:
+            print(f"⚠️ Не удалось загрузить .env ({path}): {e}")
+    if not loaded:
+        print("ℹ️ .env не найден (это не критично)")
+
+_load_env_multi()
 
 # Импорт CrewAI
 from crewai import Agent, Task, Crew, LLM
@@ -40,6 +81,7 @@ try:
     from tools.gopiai_integration.memory_tools import GopiAIMemoryTool
     from tools.gopiai_integration.communication_tools import GopiAICommunicationTool
     from tools.gopiai_integration.huggingface_tools import GopiAIHuggingFaceTool
+    from tools.gopiai_integration.terminal_tool import TerminalTool
     
     # Импорт системы динамических инструкций
     from tools.gopiai_integration.crewai_tools_integration import (
@@ -229,7 +271,9 @@ def create_demo_agents(llm):
         GopiAIMemoryTool(),
         GopiAIFileSystemTool(),
         GopiAIBrowserTool(),
-        GopiAIRouterTool()
+        GopiAIRouterTool(),
+        GopiAIHuggingFaceTool(),
+        TerminalTool(),
     ]
     
     # ЯВНО привязываем инструменты к LLM, чтобы исключить галлюцинации tool-calls

@@ -240,6 +240,26 @@ cleanup_thread = threading.Thread(target=cleanup_old_tasks, daemon=True)
 cleanup_thread.start()
 
 app = Flask(__name__)
+ 
+# --- Settings manager for UI toggle ---
+try:
+    from tools.gopiai_integration.settings_manager import (
+        read_settings as _read_settings,
+        write_settings as _write_settings,
+        set_terminal_unsafe as _set_terminal_unsafe,
+        get_primary_settings_path as _get_primary_settings_path,
+    )
+except Exception:
+    # Graceful fallback if module layout differs
+    def _read_settings():
+        return {}
+    def _write_settings(data):
+        raise RuntimeError("settings_manager not available")
+    def _set_terminal_unsafe(enabled: bool):
+        raise RuntimeError("settings_manager not available")
+    def _get_primary_settings_path(create_dirs: bool = False):
+        from pathlib import Path as __P
+        return __P.cwd() / "settings.json"
 
 # Flask before/after request hooks to implement DeerFlow request_in/request_out
 @app.before_request
@@ -556,6 +576,135 @@ def get_current_state():
     except Exception as e:
         logger.error(f"Error loading state: {str(e)}", exc_info=True)
         return jsonify({"error": f"Failed to load state: {str(e)}"}), 500
+
+# --- UI toggle for Terminal Unsafe Mode ---
+def _compute_terminal_unsafe_status() -> dict:
+    """Возвращает effective-статус небезопасного режима терминала и источник."""
+    src = "default"
+    value = False
+    try:
+        env_val = os.getenv("GOPIAI_TERMINAL_UNSAFE", "").strip().lower()
+        if env_val in {"1", "true", "yes", "on"}:
+            return {"enabled": True, "source": "env:GOPIAI_TERMINAL_UNSAFE"}
+        if env_val in {"0", "false", "no", "off"}:
+            # env задаёт явный false — считаем источником env
+            return {"enabled": False, "source": "env:GOPIAI_TERMINAL_UNSAFE"}
+    except Exception:
+        pass
+
+    # Если env не зафиксировал состояние, читаем settings.json
+    try:
+        cfg = _read_settings()
+        if isinstance(cfg, dict) and "terminal_unsafe" in cfg:
+            value = bool(cfg.get("terminal_unsafe"))
+            src = "settings.json"
+    except Exception:
+        value = False
+        src = "default"
+
+    return {"enabled": value, "source": src}
+
+
+@app.route('/settings/terminal_unsafe', methods=['GET'])
+def get_terminal_unsafe():
+    """Текущий effective-статус unsafe режима терминала."""
+    try:
+        status = _compute_terminal_unsafe_status()
+        status["settings_path"] = str(_get_primary_settings_path(create_dirs=False))
+        return jsonify(status)
+    except Exception as e:
+        logger.error(f"Error in GET /settings/terminal_unsafe: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/settings/terminal_unsafe', methods=['POST'])
+def set_terminal_unsafe():
+    """Устанавливает флаг в settings.json. Приоритет ENV выше, но UI пишет конфиг."""
+    try:
+        data = request.get_json(silent=True) or {}
+        enabled = bool(data.get("enabled"))
+        path = _set_terminal_unsafe(enabled)
+        status = _compute_terminal_unsafe_status()
+        status.update({
+            "written": True,
+            "written_path": str(path),
+        })
+        return jsonify(status)
+    except Exception as e:
+        logger.error(f"Error in POST /settings/terminal_unsafe: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/ui/terminal_unsafe', methods=['GET'])
+def ui_terminal_unsafe():
+    """Простейшая HTML-страница с чекбоксом для переключения режима."""
+    html = """
+    <!doctype html>
+    <html lang=\"ru\">
+    <head>
+      <meta charset=\"utf-8\" />
+      <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+      <title>GopiAI — Настройки терминала</title>
+      <style>
+        body { font-family: system-ui, Arial, sans-serif; padding: 24px; background: #111; color: #eee; }
+        .card { max-width: 680px; margin: 0 auto; background: #1b1b1b; border: 1px solid #2c2c2c; border-radius: 10px; padding: 20px; }
+        h1 { font-size: 20px; margin: 0 0 12px; }
+        p.desc { color: #c7c7c7; margin-top: 0; }
+        label { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+        input[type=checkbox] { width: 20px; height: 20px; }
+        .row { margin-top: 14px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #2f2f2f; font-size: 12px; color: #bbb; }
+        .status { margin-top: 10px; }
+        button { padding: 8px 12px; border-radius: 8px; border: 1px solid #2c2c2c; background: #2a2a2a; color: #fff; cursor: pointer; }
+        button:hover { background: #333; }
+        code { background: #222; padding: 2px 6px; border-radius: 6px; }
+      </style>
+    </head>
+    <body>
+      <div class=\"card\">
+        <h1>Настройки терминала</h1>
+        <p class=\"desc\">Переключатель небезопасного режима терминала. Включай только если доверяешь задачам и окружению.</p>
+        <div class=\"row\">
+          <label>
+            <input id=\"toggle\" type=\"checkbox\" /> Разрешить терминал без ограничений
+          </label>
+        </div>
+        <div class=\"row status\">
+          <span id=\"source\" class=\"badge\"></span>
+        </div>
+        <div class=\"row\">
+          <button id=\"save\">Сохранить</button>
+          <span id=\"saved\" style=\"margin-left:10px;color:#7bd87b;display:none;\">Сохранено ✔</span>
+        </div>
+        <div class=\"row\" style=\"margin-top:12px;color:#aaa;\">
+          Приоритет: <code>GOPIAI_TERMINAL_UNSAFE</code> в среде > <code>settings.json</code>
+        </div>
+      </div>
+      <script>
+        async function refresh(){
+          const r = await fetch('/settings/terminal_unsafe');
+          const j = await r.json();
+          document.getElementById('toggle').checked = !!j.enabled;
+          document.getElementById('source').textContent = 'Источник: '+(j.source||'default');
+          document.getElementById('saved').style.display = 'none';
+        }
+        document.getElementById('save').addEventListener('click', async()=>{
+          const enabled = document.getElementById('toggle').checked;
+          const r = await fetch('/settings/terminal_unsafe', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({enabled})});
+          const j = await r.json();
+          if(!j.error){
+            document.getElementById('saved').style.display = 'inline';
+            document.getElementById('source').textContent = 'Источник: '+(j.source||'settings.json');
+          } else {
+            alert('Ошибка: '+j.error);
+          }
+        });
+        refresh();
+      </script>
+    </body>
+    </html>
+    """
+    return html
 
 # Обработка сигналов для корректного завершения
 def signal_handler(signum, frame):
