@@ -23,6 +23,11 @@ except ImportError:
         class AST:
             pass
 
+        @staticmethod
+        def parse(source: str, filename: str = "<unknown>", mode: str = "exec"):
+            # Простейшая заглушка: возвращаем None, что совместимо с Optional[Any] в get_ast
+            return None
+
     ast = AstModule
 
 

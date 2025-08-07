@@ -165,7 +165,7 @@ def main():
         patch_pyside_logging()
         
         # Импортируем главный модуль
-        import GopiAI_UI.gopiai.ui.main as gopiai_main
+        import gopiai.ui.main as gopiai_main
         
         logger.info("🎯 Запускаем main() функцию...")
         
