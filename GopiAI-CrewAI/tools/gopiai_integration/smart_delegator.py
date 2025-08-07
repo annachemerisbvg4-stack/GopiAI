@@ -47,7 +47,8 @@ except Exception:
 # Старый MCP импорт удален, используем новую систему инструкций
 # from tools.gopiai_integration.mcp_integration_fixed import get_mcp_tools_manager
 from .local_mcp_tools import get_local_mcp_tools
-from .command_executor import CommandExecutor
+# Legacy CommandExecutor отключен — переходим полностью на современные tool_calls CrewAI/MCP
+# from .command_executor import CommandExecutor
 from .response_formatter import ResponseFormatter
 from .openrouter_client import get_openrouter_client
 from .model_config_manager import get_model_config_manager, ModelProvider
@@ -81,13 +82,9 @@ class SmartDelegator:
         self.mcp_available = False
         logger.info("[INFO] Внешняя MCP интеграция отключена, используем локальные инструменты")
         
-        # Инициализируем исполнитель команд для обработки ответов Gemini
-        try:
-            self.command_executor = CommandExecutor()
-            logger.info("[OK] CommandExecutor инициализирован для обработки команд Gemini")
-        except Exception as e:
-            self.command_executor = None
-            logger.warning(f"[WARNING] Не удалось инициализировать CommandExecutor: {str(e)}")
+        # Полностью отключаем устаревший CommandExecutor — используем прямые tool_calls
+        self.command_executor = None
+        logger.info("[INFO] CommandExecutor отключён: используется современная система tool_calls")
         
         # Инициализируем форматировщик ответов для чистого отображения
         try:

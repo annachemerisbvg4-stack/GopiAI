@@ -10,7 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "GopiAI-UI" / "gopiai"))
 
-from llm_rotation_config_fixed import (
+from llm_rotation_config import (
     UsageTracker, 
     PROVIDER_KEY_ENV, 
     MODELS, 

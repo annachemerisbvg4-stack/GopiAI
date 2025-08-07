@@ -23,10 +23,10 @@ def print_migration_guide():
     print()
     print("1. ЗАМЕНА ИМПОРТОВ:")
     print("   Было:")
-    print("   >>> from llm_rotation_config import ...")
+    print("   >>> from llm_rotation_config_fixed import ...")
     print()
     print("   Стало:")
-    print("   >>> from llm_rotation_config_fixed import ...")
+    print("   >>> from llm_rotation_config import ...")
     print()
     
     print("2. НАСТРОЙКА API КЛЮЧЕЙ:")
@@ -66,7 +66,7 @@ def check_current_setup():
     
     # Проверяем наличие необходимых файлов
     required_files = [
-        "llm_rotation_config_fixed.py",
+        "llm_rotation_config.py",
         "crewai_api_server.py", 
         "state_manager.py",
         "model_selector_widget.py"
