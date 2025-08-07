@@ -227,13 +227,24 @@ class AgentTemplateSystem:
             if "temperature" in template:
                 additional_params["temperature"] = kwargs.get("temperature", template.get("temperature"))
             
+            # ЯВНЫЙ BINDING ИНСТРУМЕНТОВ К LLM
+            llm_bound = llm
+            try:
+                if tools and hasattr(llm, "bind_tools") and callable(getattr(llm, "bind_tools")):
+                    llm_bound = llm.bind_tools(tools)
+                    self.logger.info(f"🔗 LLM привязан к {len(tools)} инструментам через .bind_tools() (agent template)")
+                else:
+                    self.logger.debug("ℹ️ .bind_tools() недоступен или список tools пуст — используем исходный LLM")
+            except Exception as e:
+                self.logger.warning(f"⚠️ Не удалось привязать инструменты к LLM через .bind_tools(): {e}")
+            
             # Создание агента
             agent = Agent(
                 role=role,
                 goal=goal,
                 backstory=backstory,
                 tools=tools,
-                llm=llm,
+                llm=llm_bound,
                 verbose=verbose,
                 allow_delegation=allow_delegation,
                 **additional_params

@@ -12,7 +12,7 @@ Key features
    scattered dicts.
 5. Convenience helpers: `get_available_models`, `get_next_available_model`,
    `register_use`, `mark_unavailable`, `get_model_usage_stats`.
-6. State synchronization with ~/.gopiai_state.json
+6. State synchronization with $HOME/.gopiai/state.json (with legacy migration from ~/.gopiai_state.json)
 7. Soft blacklist implementation for rate limiting violations
 
 This module aims to be drop-in compatible with existing import points
@@ -272,6 +272,12 @@ except ImportError:
 _state = load_state()
 _current_provider = _state.get("provider", "gemini")
 _current_model = _state.get("model_id", "")
+# Диагностика расположения state-файла для прозрачности окружения
+try:
+    from .state_manager import get_state_path as _get_state_path  # type: ignore
+except Exception:
+    from state_manager import get_state_path as _get_state_path  # type: ignore
+print(f"[INFO] llm_rotation_config: state path -> {_get_state_path()}")
 
 # expose helpers for other modules/UI
 CURRENT_PROVIDER = _current_provider

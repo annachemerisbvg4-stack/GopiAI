@@ -4019,11 +4019,59 @@
         "temperature": 0.7,
         "max_tokens": 4096
       }
+    },
+    "openrouter_openai/gpt-5": {
+      "provider": "openrouter",
+      "model_id": "openai/gpt-5",
+      "display_name": "OpenAI: GPT-5 (openai/gpt-5)",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "is_active": false,
+      "is_default": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
+    },
+    "openrouter_openai/gpt-5-chat": {
+      "provider": "openrouter",
+      "model_id": "openai/gpt-5-chat",
+      "display_name": "OpenAI: GPT-5 Chat (openai/gpt-5-chat)",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "is_active": false,
+      "is_default": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
+    },
+    "openrouter_openai/gpt-5-mini": {
+      "provider": "openrouter",
+      "model_id": "openai/gpt-5-mini",
+      "display_name": "OpenAI: GPT-5 Mini (openai/gpt-5-mini)",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "is_active": false,
+      "is_default": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
+    },
+    "openrouter_openai/gpt-5-nano": {
+      "provider": "openrouter",
+      "model_id": "openai/gpt-5-nano",
+      "display_name": "OpenAI: GPT-5 Nano (openai/gpt-5-nano)",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "is_active": false,
+      "is_default": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
     }
   },
   "current": {
     "provider": "openrouter",
-    "model_id": "google/gemma-3-27b-it:free"
+    "model_id": "google/gemini-2.0-flash-exp:free"
   },
   "version": "1.0",
   "last_updated": "1754405628.6248908"

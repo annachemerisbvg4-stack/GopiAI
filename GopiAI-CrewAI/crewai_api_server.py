@@ -6,7 +6,16 @@ import uuid
 from typing import Any, Dict
 
 # Настройка читаемого логирования для CrewAI сервера
-log_file = 'crewai_api_server_debug.log'
+# Логи переносим в $HOME/.gopiai/logs с гарантированным созданием каталога.
+from pathlib import Path as _Path
+_LOG_DIR = _Path.home() / ".gopiai" / "logs"
+try:
+    _LOG_DIR.mkdir(parents=True, exist_ok=True)
+except Exception as _e:
+    # В случае ошибки — fallback в текущий каталог
+    print(f"[WARNING] Не удалось создать каталог логов {_LOG_DIR}: {_e}. Используем текущий каталог.")
+    _LOG_DIR = _Path(".")
+log_file = str(_LOG_DIR / "crewai_api_server_debug.log")
 
 class UltraCleanFormatter(logging.Formatter):
     """Форматтер который убирает ВСЕ нечитаемые символы"""
@@ -74,6 +83,12 @@ try:
             os.remove(log_file)
         except (OSError, PermissionError):
             print(f"[WARNING] Не удалось удалить старый лог файл {log_file}, возможно он открыт в редакторе")
+    else:
+        # гарантируем наличие родительского каталога
+        try:
+            os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        except Exception as _e:
+            print(f"[WARNING] Не удалось создать родительский каталог для лога: {os.path.dirname(log_file)}: {_e}")
     
     from logging.handlers import RotatingFileHandler
     file_handler = RotatingFileHandler(log_file, mode='a', encoding='utf-8', maxBytes=10 * 1024 * 1024, backupCount=5)
