@@ -1,0 +1,24 @@
+{
+  "summary": {
+    "total_problems": 48,
+    "by_severity": {
+      "high": 27,
+      "low": 4,
+      "medium": 17
+    },
+    "by_category": {
+      "security_issue": 27,
+      "todo_fixme": 4,
+      "exception_handling": 16,
+      "deprecated_api": 1
+    },
+    "by_module": {
+      "GopiAI-CrewAI": 25,
+      "GopiAI-UI": 23
+    }
+  },
+  "problems": [
+    {
+      "file_path": "GopiAI-CrewAI\\main.py",
+      "line_number": 475,
+      "category": 

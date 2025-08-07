@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Exclude local utilities folder from VCS
+/03_UTILITIES/
 # C extensions
 *.so
 

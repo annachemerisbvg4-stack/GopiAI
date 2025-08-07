@@ -11,6 +11,7 @@ import sys
 import shutil
 import random
 import string
+import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
@@ -154,8 +155,7 @@ class TestProjectGenerator:
         
         return issues
 
-    def
- add_code_quality_issues(self) -> Dict[str, Any]:
+    def add_code_quality_issues(self) -> Dict[str, Any]:
         """
         Add code quality issues to the project.
         
@@ -308,8 +308,9 @@ class mixedNamingClass:
         self._write_file(naming_file, naming_content)
         issues["inconsistent_naming"].append(str(naming_file))
         
-        return issues   
- def add_dead_code_issues(self) -> Dict[str, Any]:
+        return issues
+    
+    def add_dead_code_issues(self) -> Dict[str, Any]:
         """
         Add dead code issues to the project.
         
@@ -623,8 +624,9 @@ def process_order_data(order_data):
         
         issues["similar_code"].append(str(similar_code_file1))
         
-        return issues    def add_
-dependency_issues(self) -> Dict[str, Any]:
+        return issues
+    
+    def add_dependency_issues(self) -> Dict[str, Any]:
         """
         Add dependency-related issues to the project.
         
@@ -682,8 +684,9 @@ unused-lib==2.0.0  # Not actually used in the code
         issues["version_conflicts"].append(str(ui_requirements))
         issues["unused_dependencies"].append(str(ui_requirements))
         
-        return issues    d
-ef add_documentation_issues(self) -> Dict[str, Any]:
+        return issues
+    
+    def add_documentation_issues(self) -> Dict[str, Any]:
         """
         Add documentation-related issues to the project.
         
@@ -841,8 +844,9 @@ class DataHandler:
         self._write_file(inconsistent_docs_file, inconsistent_docs_content)
         issues["inconsistent_docs"].append(str(inconsistent_docs_file))
         
-        return issues    def 
-add_conflict_issues(self) -> Dict[str, Any]:
+        return issues
+    
+    def add_conflict_issues(self) -> Dict[str, Any]:
         """
         Add potential conflict issues to the project.
         
@@ -1113,8 +1117,9 @@ class DatabaseConnection:
             import json
             json.dump(edge_cases, f, indent=2)
         
-        return edge_cases    def
- _write_file(self, path: Path, content: str) -> None:
+        return edge_cases
+    
+    def _write_file(self, path: Path, content: str) -> None:
         """
         Write content to a file, creating parent directories if needed.
         
@@ -1331,8 +1336,7 @@ if __name__ == "__main__":
         print(f"Generating test project '{args.project_name}'...")
         issues = generator.generate_test_project(args.project_name)
         print(f"Test project created at: {issues['project_dir']}")
-        print(f"Known issues saved to: {issues['project_dir']}/known_issues.json")  
-  def add_edge_case_files(self) -> Dict[str, Any]:
+        print(f"Known issues saved to: {issues['project_dir']}/known_issues.json")
         """
         Add edge case files to the project for testing extreme scenarios.
         

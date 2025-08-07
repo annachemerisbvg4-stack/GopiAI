@@ -5,7 +5,8 @@ from typing import Any, Dict, List
 
 import pytest
 
-from gopiai.llm import ToolSpec, build_payload
+from gopiai.llm.tool_spec import ToolSpec
+from gopiai.llm.payload_builder import build_payload
 from gopiai.llm.mock_provider import MockProvider
 
 

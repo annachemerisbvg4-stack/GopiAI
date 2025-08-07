@@ -4007,6 +4007,18 @@
         "temperature": 0.7,
         "max_tokens": 4096
       }
+    },
+    "openrouter_openai/gpt-oss-20b:free": {
+      "provider": "openrouter",
+      "model_id": "openai/gpt-oss-20b:free",
+      "display_name": "OpenAI: gpt-oss-20b (free) (openai/gpt-oss-20b:free)",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "is_active": false,
+      "is_default": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
     }
   },
   "current": {
