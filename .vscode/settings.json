@@ -12,5 +12,14 @@
     "GopiAI-CrewAI",
     "GopiAI-UI",
     "GopiAI-Assets"
-  ]
+  ],
+  "python.testing.unittestArgs": [
+    "-v",
+    "-s",
+    "./test_infrastructure",
+    "-p",
+    "*test.py"
+  ],
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestEnabled": true
 }
