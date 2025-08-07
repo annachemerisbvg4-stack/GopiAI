@@ -108,6 +108,7 @@ import atexit
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Any, cast
+from typing import Optional, Dict
 
 # Исправляем конфликт OpenMP библиотек
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
@@ -162,6 +163,9 @@ TASK_CLEANUP_INTERVAL = 300
 # --- Глобальное хранилище задач ---
 TASKS = {}
 TASKS_LOCK = threading.Lock()
+
+# Храним последнюю effective-конфигурацию (без секретов) для echo-эндпоинта
+EFFECTIVE_CONFIG_LAST: Optional[Dict[str, Any]] = None
 
 class TaskStatus:
     PENDING = "pending"
@@ -369,6 +373,29 @@ def process_task(task_id: str):
 
 @app.route('/api/process', methods=['POST'])
 def process_request():
+    global EFFECTIVE_CONFIG_LAST
+    rid = request.environ.get("gopiai.request_id") or ensure_request_id(request.headers.get("X-Request-ID"))
+    op_start = now_ms()
+    jlog(level="INFO", event="api_entry", request_id=rid, route="/api/process", method="POST")
+
+    # Собираем примитивный effective-config без секретов (демо для echo)
+    # В боевом коде сюда можно добавить merge(defaults, user/org, overrides)
+    try:
+        data_preview = {}
+        if request.is_json:
+            data_preview = request.get_json(silent=True) or {}
+        EFFECTIVE_CONFIG_LAST = {
+            "provider": os.getenv("PROVIDER_DEFAULT", "openrouter"),
+            "model": os.getenv("MODEL_DEFAULT", "openai/gpt-4o"),
+            "temperature": float(os.getenv("TEMPERATURE_DEFAULT", "0.2")),
+            "top_p": float(os.getenv("TOP_P_DEFAULT", "0.95")),
+            "route": "/api/process",
+            "request_id": rid,
+            "payload_keys": list(data_preview.keys()),
+        }
+    except Exception:
+        # Не прерываем обработку запроса
+        pass
     rid = request.environ.get("gopiai.request_id") or ensure_request_id(request.headers.get("X-Request-ID"))
     op_start = now_ms()
     jlog(level="INFO", event="api_entry", request_id=rid, route="/api/process", method="POST")
@@ -489,6 +516,21 @@ def update_provider_model_state():
     except Exception as e:
         logger.error(f"Error updating state: {str(e)}", exc_info=True)
         return jsonify({"error": f"Failed to update state: {str(e)}"}), 500
+
+@app.route('/settings/effective', methods=['GET'])
+def get_effective_config():
+    """
+    Echo-эндпоинт DeerFlow для отладки:
+    Возвращает последнюю сохранённую effective-конфигурацию без секретов.
+    """
+    try:
+        if EFFECTIVE_CONFIG_LAST is None:
+            return jsonify({"error": "No effective config captured yet"}), 404
+        return jsonify(EFFECTIVE_CONFIG_LAST)
+    except Exception as e:
+        logger.error(f"Error in /settings/effective: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to fetch effective config: {str(e)}"}), 500
+
 
 @app.route('/internal/state', methods=['GET'])
 def get_current_state():
