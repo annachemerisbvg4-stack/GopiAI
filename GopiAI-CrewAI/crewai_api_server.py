@@ -2,6 +2,8 @@
 
 import logging
 import os
+import uuid
+from typing import Any, Dict
 
 # Настройка читаемого логирования для CrewAI сервера
 log_file = 'crewai_api_server_debug.log'
@@ -119,6 +121,21 @@ load_dotenv(dotenv_path=".env")
 
 from flask import Flask, request, jsonify
 
+# DeerFlow logging integration
+try:
+    from gopiai.logging.json_logger import jlog, ensure_request_id, mask_headers, now_ms  # type: ignore
+except Exception:
+    # fallback no-op if module not available
+    def jlog(*args, **kwargs):  # type: ignore
+        logging.getLogger(__name__).log(getattr(logging, kwargs.get("level","INFO")), kwargs.get("message",""))
+    def ensure_request_id(existing=None):  # type: ignore
+        return str(uuid.uuid4())
+    def mask_headers(h):  # type: ignore
+        return None
+    def now_ms():  # type: ignore
+        import time as _t
+        return int(_t.time()*1000)
+
 # --- Настройка путей и импортов ---
 current_dir = Path(__file__).parent
 sys.path.append(str(current_dir))
@@ -204,6 +221,56 @@ cleanup_thread = threading.Thread(target=cleanup_old_tasks, daemon=True)
 cleanup_thread.start()
 
 app = Flask(__name__)
+
+# Flask before/after request hooks to implement DeerFlow request_in/request_out
+@app.before_request
+def _before_request_logging():
+    rid = ensure_request_id(request.headers.get("X-Request-ID"))
+    # stash in flask.g via request context (werkzeug local)
+    request.environ["gopiai.request_id"] = rid
+    request.environ["gopiai.start_ms"] = now_ms()
+    try:
+        payload_keys = []
+        if request.is_json:
+            try:
+                data = request.get_json(silent=True) or {}
+                payload_keys = list(data.keys())
+            except Exception:
+                payload_keys = []
+        jlog(
+            level="INFO",
+            event="request_in",
+            request_id=rid,
+            route=str(request.url),
+            method=request.method,
+            headers_masked=mask_headers({k: v for k, v in request.headers.items()}),
+            payload_keys=payload_keys,
+        )
+    except Exception:
+        # never break request processing due to logging
+        pass
+
+@app.after_request
+def _after_request_logging(response):
+    try:
+        rid = request.environ.get("gopiai.request_id") or ensure_request_id(request.headers.get("X-Request-ID"))
+        start_ms = request.environ.get("gopiai.start_ms") or now_ms()
+        latency = now_ms() - int(start_ms)
+        jlog(
+            level="INFO",
+            event="request_out",
+            request_id=rid,
+            route=str(request.url),
+            method=request.method,
+            status_code=response.status_code,
+            latency_ms=latency,
+            success=200 <= response.status_code < 400,
+        )
+        # propagate X-Request-ID back to client
+        response.headers["X-Request-ID"] = rid
+    except Exception:
+        pass
+    return response
 
 # --- Инициализация всех систем при старте ---
 try:
@@ -302,6 +369,9 @@ def process_task(task_id: str):
 
 @app.route('/api/process', methods=['POST'])
 def process_request():
+    rid = request.environ.get("gopiai.request_id") or ensure_request_id(request.headers.get("X-Request-ID"))
+    op_start = now_ms()
+    jlog(level="INFO", event="api_entry", request_id=rid, route="/api/process", method="POST")
     if not SERVER_IS_READY:
         return jsonify({"error": "Server started in limited mode due to initialization error."}), 503
 
@@ -314,6 +384,7 @@ def process_request():
         # Пробуем получить JSON данные
         data = request.get_json(force=True)
         logger.info(f"[API-REQUEST] Parsed JSON: {data}")
+        jlog(level="DEBUG", event="api_payload", request_id=rid, payload_keys=list((data or {}).keys()))
         
         if not data or 'message' not in data:
             logger.error(f"[API-REQUEST] Ошибка: нет поля 'message' в данных: {data}")
@@ -338,12 +409,23 @@ def process_request():
     thread = threading.Thread(target=process_task, args=(task_id,), daemon=True)
     thread.start()
 
+    jlog(
+        level="INFO",
+        event="request_out",
+        request_id=rid,
+        route="/api/process",
+        method="POST",
+        status_code=202,
+        latency_ms=now_ms() - op_start,
+        success=True,
+    )
     return jsonify({
         "task_id": task_id,
         "status": TaskStatus.PENDING,
         "message": "Task queued for processing",
-        "created_at": task.created_at.isoformat()
-    })
+        "created_at": task.created_at.isoformat(),
+        "request_id": rid,
+    }), 202
 
 @app.route('/api/task/<task_id>', methods=['GET'])
 def get_task_status(task_id):
