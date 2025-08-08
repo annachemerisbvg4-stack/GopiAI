@@ -132,12 +132,12 @@ class CrewAIToolsIntegrator:
                 'description': 'Веб-скрапинг через Firecrawl API'
             },
             
-            # GitHub интеграция
+            # GitHub интеграция (наша рабочая реализация)
             'github_search': {
-                'module': 'tools.crewai_toolkit.tools.github_search_tool.github_search_tool',
-                'class': 'GithubSearchTool',
+                'module': 'tools.gopiai_integration.github_integration_tool',
+                'class': 'GitHubIntegrationTool',
                 'category': 'development',
-                'description': 'Поиск в GitHub репозиториях'
+                'description': 'Поиск в GitHub репозиториях, коде, issues (рабочая реализация)'
             },
             
             # AI генерация
