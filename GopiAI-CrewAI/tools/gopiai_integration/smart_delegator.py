@@ -76,6 +76,18 @@ class SmartDelegator:
             self.local_tools_available = False
             logger.warning(f"[WARNING] Не удалось инициализировать локальные MCP инструменты: {str(e)}")
         
+        # Инициализируем CrewAI инструменты
+        try:
+            from .crewai_tools_integrator import get_crewai_tools_integrator
+            self.crewai_tools = get_crewai_tools_integrator()
+            self.crewai_tools_available = True
+            crewai_tools_count = len(self.crewai_tools.get_available_tools())
+            logger.info(f"[OK] CrewAI инструменты инициализированы. Доступно: {crewai_tools_count}")
+        except Exception as e:
+            self.crewai_tools = None
+            self.crewai_tools_available = False
+            logger.warning(f"[WARNING] Не удалось инициализировать CrewAI инструменты: {str(e)}")
+        
         # Устаревшая внешняя MCP интеграция удалена
         # Используем только локальные инструменты и новую систему ToolsInstructionManager
         self.mcp_manager = None
@@ -398,6 +410,117 @@ class SmartDelegator:
         # Проверяем простые команды в тексте сообщения
         message_lower = message.lower()
         
+        # 🔥 АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ ТЕРМИНАЛЬНЫХ КОМАНД
+        # Список популярных команд для автоматического выполнения
+        terminal_commands = [
+            'ls', 'dir', 'pwd', 'cd', 'mkdir', 'rmdir', 'cp', 'mv', 'rm', 'cat', 'type',
+            'echo', 'ps', 'top', 'netstat', 'ipconfig', 'ifconfig', 'ping', 'curl', 'wget',
+            'git', 'npm', 'pip', 'python', 'node', 'java', 'gcc', 'make', 'cmake',
+            'systemctl', 'service', 'docker', 'kubectl', 'ssh', 'scp', 'rsync'
+        ]
+        
+        # Проверяем, начинается ли сообщение с команды терминала
+        words = message.strip().split()
+        if words and words[0] in terminal_commands:
+            return {
+                'tool_name': 'execute_shell',
+                'server_name': 'local',
+                'params': {'command': message.strip()}
+            }
+        
+        # Проверяем паттерны команд с аргументами
+        import re
+        terminal_patterns = [
+            r'^(ls|dir)\s+.*',
+            r'^(cat|type)\s+.*',
+            r'^(cd)\s+.*',
+            r'^(mkdir|rmdir)\s+.*',
+            r'^(cp|mv|rm)\s+.*',
+            r'^(git)\s+.*',
+            r'^(npm|pip)\s+.*',
+            r'^(python|node|java)\s+.*',
+            r'^(docker)\s+.*',
+            r'^(curl|wget)\s+.*'
+        ]
+        
+        for pattern in terminal_patterns:
+            if re.match(pattern, message.strip(), re.IGNORECASE):
+                return {
+                    'tool_name': 'execute_shell',
+                    'server_name': 'local',
+                    'params': {'command': message.strip()}
+                }
+        
+        # 🌐 АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ WEB-ЗАПРОСОВ
+        # URL паттерны для веб-скрапинга
+        url_pattern = r'https?://[\w\.-]+(?:\.[a-zA-Z]{2,})+(?:/[\w\.-]*)*/?(?:\?[\w&=%-]*)?'
+        urls = re.findall(url_pattern, message)
+        
+        if urls and any(keyword in message_lower for keyword in ['открой', 'скачай', 'проанализируй', 'извлеки', 'парси', 'scrape', 'parse', 'analyze']):
+            action = 'get_text'  # По умолчанию
+            if any(keyword in message_lower for keyword in ['ссылки', 'links']):
+                action = 'get_links'
+            elif any(keyword in message_lower for keyword in ['таблицы', 'tables']):
+                action = 'get_tables'
+            elif any(keyword in message_lower for keyword in ['изображения', 'картинки', 'images']):
+                action = 'get_images'
+            
+            return {
+                'tool_name': 'web_scraper',
+                'server_name': 'local',
+                'params': {'url': urls[0], 'action': action}
+            }
+        
+        # 🔍 АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ API ЗАПРОСОВ
+        if urls and any(keyword in message_lower for keyword in ['api', 'запрос', 'request', 'get', 'post']):
+            method = 'GET'  # По умолчанию
+            if any(keyword in message_lower for keyword in ['post', 'создай', 'отправь']):
+                method = 'POST'
+            elif any(keyword in message_lower for keyword in ['put', 'обнови']):
+                method = 'PUT'
+            elif any(keyword in message_lower for keyword in ['delete', 'удали']):
+                method = 'DELETE'
+            
+            return {
+                'tool_name': 'api_client',
+                'server_name': 'local',
+                'params': {'url': urls[0], 'method': method}
+            }
+        
+        # 📁 АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ ФАЙЛОВЫХ ОПЕРАЦИЙ
+        file_keywords = ['файл', 'file', 'читай', 'read', 'запиши', 'write', 'создай файл', 'create file']
+        if any(keyword in message_lower for keyword in file_keywords):
+            # Ищем пути к файлам
+            file_patterns = [
+                r'[a-zA-Z]:\\[\w\\.-]+',  # Windows пути
+                r'/[\w/.-]+',  # Unix пути
+                r'\./[\w/.-]+',  # Относительные пути
+                r'[\w.-]+\.[a-zA-Z]{2,4}'  # Файлы с расширениями
+            ]
+            
+            file_path = None
+            for pattern in file_patterns:
+                matches = re.findall(pattern, message)
+                if matches:
+                    file_path = matches[0]
+                    break
+            
+            if file_path:
+                operation = 'read'  # По умолчанию
+                if any(keyword in message_lower for keyword in ['запиши', 'write', 'создай', 'create']):
+                    operation = 'write'
+                elif any(keyword in message_lower for keyword in ['список', 'list', 'ls']):
+                    operation = 'list'
+                
+                return {
+                    'tool_name': 'file_operations',
+                    'server_name': 'local',
+                    'params': {'operation': operation, 'path': file_path}
+                }
+        
+        # Остальные проверки остаются как есть...
+        message_lower = message.lower()
+        
         # Проверяем запросы на системную информацию
         if any(keyword in message_lower for keyword in ['системная информация', 'info', 'статус системы', 'system info']):
             return {
@@ -436,10 +559,39 @@ class SmartDelegator:
         return None
         
     def _call_tool(self, tool_name: str, server_name: str, params: Dict) -> Dict:
-        """Вызывает MCP инструмент через MCPToolsManager или локальные инструменты."""
-        logger.info(f"Вызов MCP инструмента {tool_name} на сервере {server_name} с параметрами: {params}")
+        """Вызывает инструмент через многоуровневую систему: CrewAI -> Local MCP -> External MCP."""
+        logger.info(f"Вызов инструмента {tool_name} на сервере {server_name} с параметрами: {params}")
         
-        # Если это локальный инструмент
+        # 🔥 УРОВЕНЬ 1: CrewAI Toolkit инструменты (приоритет)
+        if self.crewai_tools_available and self.crewai_tools:
+            available_crewai_tools = self.crewai_tools.get_available_tools()
+            
+            # Маппинг локальных инструментов на CrewAI аналоги
+            crewai_mapping = {
+                'execute_shell': 'code_interpreter',  # Код может выполнять shell команды
+                'web_scraper': 'selenium_scraping',   # Продвинутый скрапинг
+                'api_client': 'scrape_website',       # Базовые HTTP запросы
+                'file_operations': 'file_read',       # Файловые операции
+                'web_search': 'serper_dev'            # Поиск в интернете
+            }
+            
+            # Проверяем, есть ли CrewAI аналог
+            crewai_tool_name = crewai_mapping.get(tool_name)
+            if crewai_tool_name and crewai_tool_name in available_crewai_tools:
+                try:
+                    logger.info(f"🚀 Используем CrewAI инструмент {crewai_tool_name} вместо {tool_name}")
+                    
+                    # Адаптируем параметры для CrewAI инструмента
+                    adapted_params = self._adapt_params_for_crewai(tool_name, crewai_tool_name, params)
+                    
+                    result = self.crewai_tools.execute_tool(crewai_tool_name, adapted_params)
+                    logger.info(f"✅ CrewAI инструмент {crewai_tool_name} выполнен успешно")
+                    return result
+                    
+                except Exception as e:
+                    logger.warning(f"⚠️ CrewAI инструмент {crewai_tool_name} не сработал: {e}. Fallback на локальные инструменты")
+        
+        # 🔧 УРОВЕНЬ 2: Локальные MCP инструменты (fallback)
         if server_name == 'local':
             if not self.local_tools_available or not self.local_tools:
                 raise Exception("Локальные MCP инструменты не инициализированы или недоступны")
@@ -455,7 +607,7 @@ class SmartDelegator:
             logger.info(f"Получен результат от локального инструмента: {str(result)[:200]}...")
             return result
         
-        # Если это внешний инструмент
+        # 🌐 УРОВЕНЬ 3: Внешние MCP инструменты (последний fallback)
         else:
             if not self.mcp_available or not self.mcp_manager:
                 raise Exception("Внешний MCP менеджер не инициализирован или недоступен")
@@ -469,6 +621,46 @@ class SmartDelegator:
             result = self.mcp_manager.execute_tool(tool, **params)
             logger.info(f"Получен результат от внешнего MCP инструмента: {str(result)[:200]}...")
             return result
+    
+    def _adapt_params_for_crewai(self, original_tool: str, crewai_tool: str, params: Dict) -> Dict:
+        """Адаптирует параметры для CrewAI инструментов"""
+        adapted = params.copy()
+        
+        # Адаптация параметров для разных инструментов
+        if original_tool == 'execute_shell' and crewai_tool == 'code_interpreter':
+            # Преобразуем shell команду в Python код
+            command = params.get('command', '')
+            adapted = {
+                'code': f'import subprocess; result = subprocess.run("{command}", shell=True, capture_output=True, text=True); print(f"stdout: {{result.stdout}}\\nstderr: {{result.stderr}}\\nreturncode: {{result.returncode}}")'
+            }
+        
+        elif original_tool == 'web_scraper' and crewai_tool == 'selenium_scraping':
+            # Преобразуем параметры скрапинга
+            adapted = {
+                'website_url': params.get('url', ''),
+                'css_element': params.get('selector', 'body'),
+                'screenshot': False
+            }
+        
+        elif original_tool == 'file_operations' and crewai_tool == 'file_read':
+            # Преобразуем файловые операции
+            if params.get('operation') == 'read':
+                adapted = {'file_path': params.get('path', '')}
+            elif params.get('operation') == 'write':
+                # Переключаемся на file_writer
+                adapted = {
+                    'filename': params.get('path', ''),
+                    'content': params.get('content', '')
+                }
+        
+        elif original_tool == 'web_search' and crewai_tool == 'serper_dev':
+            # Преобразуем параметры поиска
+            adapted = {
+                'search_query': params.get('query', params.get('q', '')),
+                'n_results': params.get('limit', 10)
+            }
+        
+        return adapted
     
     def _format_prompt_with_tool_result(self, user_message: str, rag_context: Optional[str], 
                                       chat_history: List[Dict], tool_request: Dict, 

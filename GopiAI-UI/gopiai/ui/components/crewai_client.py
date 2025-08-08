@@ -747,13 +747,62 @@ class CrewAIClient:
         Returns:
             dict: Словарь {tool_name: detailed_instructions} для релевантных инструментов
         """
-        # tools_instruction_manager временно отключен после удаления MCP
         if not message_text:
             return {}
         
-        # Возвращаем пустой словарь, так как tools_instruction_manager недоступен
-        logger.debug("[DYNAMIC-TOOLS] tools_instruction_manager недоступен, возвращаем пустые инструкции")
-        return {}
+        # Проверяем доступность менеджера инструкций
+        if not TOOLS_INSTRUCTION_MANAGER_AVAILABLE:
+            logger.warning("[DYNAMIC-TOOLS] ❌ tools_instruction_manager недоступен, возвращаем пустые инструкции")
+            return {}
+        
+        try:
+            # Получаем экземпляр менеджера инструкций
+            manager = get_tools_instruction_manager()
+            if not manager:
+                logger.error("[DYNAMIC-TOOLS] ❌ Не удалось получить экземпляр tools_instruction_manager")
+                return {}
+            
+            # Получаем список доступных инструментов
+            tools_summary = manager.get_tools_summary()
+            
+            # Предварительная обработка сообщения для определения потенциальных инструментов
+            message_lower = message_text.lower()
+            result = {}
+            
+            # Простая эвристика для определения необходимых инструментов
+            # Проверяем ключевые слова в сообщении
+            tool_keywords = {
+                "filesystem_tools": ["файл", "директор", "папк", "zip", "архив", "поиск файл", "json", "csv"],
+                "local_mcp_tools": ["сайт", "скрап", "парс", "api", "запрос", "post", "get", "http"],
+                "browser_tools": ["браузер", "открой сайт", "перейди", "нажми", "скриншот", "selenium"],
+                "web_search": ["найди", "поиск", "погугли", "поищи", "google", "yandex", "найти информацию"],
+                "page_analyzer": ["проанализируй", "анализ сайта", "seo", "оцени сайт", "скорость сайта"]
+            }
+            
+            # Выявляем инструменты по ключевым словам
+            for tool_name, keywords in tool_keywords.items():
+                if any(kw in message_lower for kw in keywords):
+                    detailed_instructions = manager.get_tool_detailed_instructions(tool_name)
+                    if detailed_instructions:
+                        result[tool_name] = detailed_instructions
+                        logger.info(f"[DYNAMIC-TOOLS] ✅ Добавлены инструкции для инструмента: {tool_name}")
+            
+            # Если ни одного инструмента не определено, возвращаем базовый набор для основных задач
+            if not result:
+                # Базовый набор инструментов для типичных задач
+                default_tools = ["filesystem_tools", "web_search"]
+                for tool_name in default_tools:
+                    detailed_instructions = manager.get_tool_detailed_instructions(tool_name)
+                    if detailed_instructions:
+                        result[tool_name] = detailed_instructions
+                        logger.info(f"[DYNAMIC-TOOLS] ✅ Добавлены базовые инструкции: {tool_name}")
+            
+            logger.debug(f"[DYNAMIC-TOOLS] Сформированы инструкции для {len(result)} инструментов")
+            return result
+            
+        except Exception as e:
+            logger.error(f"[DYNAMIC-TOOLS] ❌ Ошибка при генерации инструкций: {e}")
+            return {}
 
     def _handle_browser_command(self, message):
         """
