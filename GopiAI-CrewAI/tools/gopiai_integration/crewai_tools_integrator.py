@@ -44,7 +44,7 @@ class CrewAIToolsIntegrator:
         priority_tools = {
             # Выполнение кода
             'code_interpreter': {
-                'module': 'tools.code_interpreter_tool.code_interpreter_tool',
+                'module': 'tools.crewai_toolkit.tools.code_interpreter_tool.code_interpreter_tool',
                 'class': 'CodeInterpreterTool',
                 'category': 'code_execution',
                 'description': 'Выполнение Python кода в безопасной среде'
@@ -52,7 +52,7 @@ class CrewAIToolsIntegrator:
             
             # Веб-скрапинг (улучшенный)
             'selenium_scraping': {
-                'module': 'tools.selenium_scraping_tool.selenium_scraping_tool',
+                'module': 'tools.crewai_toolkit.tools.selenium_scraping_tool.selenium_scraping_tool',
                 'class': 'SeleniumScrapingTool',
                 'category': 'web_scraping',
                 'description': 'Продвинутый веб-скрапинг с Selenium'
@@ -60,14 +60,14 @@ class CrewAIToolsIntegrator:
             
             # Поиск в интернете
             'serper_dev': {
-                'module': 'tools.serper_dev_tool.serper_dev_tool',
+                'module': 'tools.crewai_toolkit.tools.serper_dev_tool.serper_dev_tool',
                 'class': 'SerperDevTool',
                 'category': 'web_search',
                 'description': 'Поиск в интернете через Serper API'
             },
             
             'brave_search': {
-                'module': 'tools.brave_search_tool.brave_search_tool',
+                'module': 'tools.crewai_toolkit.tools.brave_search_tool.brave_search_tool',
                 'class': 'BraveSearchTool',
                 'category': 'web_search',
                 'description': 'Поиск через Brave Search API'
@@ -75,21 +75,21 @@ class CrewAIToolsIntegrator:
             
             # Файловые операции (улучшенные)
             'file_read': {
-                'module': 'tools.file_read_tool.file_read_tool',
+                'module': 'tools.crewai_toolkit.tools.file_read_tool.file_read_tool',
                 'class': 'FileReadTool',
                 'category': 'file_operations',
                 'description': 'Чтение файлов с поддержкой различных форматов'
             },
             
             'file_writer': {
-                'module': 'tools.file_writer_tool.file_writer_tool',
+                'module': 'tools.crewai_toolkit.tools.file_writer_tool.file_writer_tool',
                 'class': 'FileWriterTool',
                 'category': 'file_operations',
                 'description': 'Запись файлов с поддержкой различных форматов'
             },
             
             'directory_read': {
-                'module': 'tools.directory_read_tool.directory_read_tool',
+                'module': 'tools.crewai_toolkit.tools.directory_read_tool.directory_read_tool',
                 'class': 'DirectoryReadTool',
                 'category': 'file_operations',
                 'description': 'Чтение содержимого директорий'
@@ -97,21 +97,21 @@ class CrewAIToolsIntegrator:
             
             # Поиск в файлах
             'csv_search': {
-                'module': 'tools.csv_search_tool.csv_search_tool',
+                'module': 'tools.crewai_toolkit.tools.csv_search_tool.csv_search_tool',
                 'class': 'CSVSearchTool',
                 'category': 'file_search',
                 'description': 'Поиск в CSV файлах'
             },
             
             'json_search': {
-                'module': 'tools.json_search_tool.json_search_tool',
+                'module': 'tools.crewai_toolkit.tools.json_search_tool.json_search_tool',
                 'class': 'JSONSearchTool',
                 'category': 'file_search',
                 'description': 'Поиск в JSON файлах'
             },
             
             'pdf_search': {
-                'module': 'tools.pdf_search_tool.pdf_search_tool',
+                'module': 'tools.crewai_toolkit.tools.pdf_search_tool.pdf_search_tool',
                 'class': 'PDFSearchTool',
                 'category': 'file_search',
                 'description': 'Поиск в PDF файлах'
@@ -119,14 +119,14 @@ class CrewAIToolsIntegrator:
             
             # Веб-скрапинг альтернативы
             'scrape_website': {
-                'module': 'tools.scrape_website_tool.scrape_website_tool',
+                'module': 'tools.crewai_toolkit.tools.scrape_website_tool.scrape_website_tool',
                 'class': 'ScrapeWebsiteTool',
                 'category': 'web_scraping',
-                'description': 'Базовый веб-скрапинг'
+                'description': 'Базовый веб-скрапинг сайтов'
             },
             
             'firecrawl_scrape': {
-                'module': 'tools.firecrawl_scrape_website_tool.firecrawl_scrape_website_tool',
+                'module': 'tools.crewai_toolkit.tools.firecrawl_scrape_website_tool.firecrawl_scrape_website_tool',
                 'class': 'FirecrawlScrapeWebsiteTool',
                 'category': 'web_scraping',
                 'description': 'Веб-скрапинг через Firecrawl API'
@@ -134,22 +134,22 @@ class CrewAIToolsIntegrator:
             
             # GitHub интеграция
             'github_search': {
-                'module': 'tools.github_search_tool.github_search_tool',
+                'module': 'tools.crewai_toolkit.tools.github_search_tool.github_search_tool',
                 'class': 'GithubSearchTool',
-                'category': 'code_search',
+                'category': 'development',
                 'description': 'Поиск в GitHub репозиториях'
             },
             
-            # AI инструменты
+            # AI генерация
             'dalle': {
-                'module': 'tools.dalle_tool.dalle_tool',
+                'module': 'tools.crewai_toolkit.tools.dalle_tool.dalle_tool',
                 'class': 'DallETool',
                 'category': 'ai_generation',
-                'description': 'Генерация изображений через DALL-E'
+                'description': 'Генерация изображений с помощью DALL-E'
             },
             
             'vision': {
-                'module': 'tools.vision_tool.vision_tool',
+                'module': 'tools.crewai_toolkit.tools.vision_tool.vision_tool',
                 'class': 'VisionTool',
                 'category': 'ai_analysis',
                 'description': 'Анализ изображений с помощью AI'

@@ -34,3 +34,9 @@ logs/
 *.sqlite3
 *.db
 .gopiai_state.json
+
+# Environment variables (ВАЖНО для безопасности!)
+.env
+.env.local
+.env.production
+*.env
