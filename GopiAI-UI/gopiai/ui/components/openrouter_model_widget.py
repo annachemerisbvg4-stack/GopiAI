@@ -17,13 +17,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, QTimer, QThread
 from PySide6.QtGui import QFont, QPixmap, QIcon
+from gopiai.ui.utils.icon_helpers import create_icon_button
 
-# Импорт системы иконок
-try:
-    from ..components.icon_file_system_model import UniversalIconManager
-    icon_manager = UniversalIconManager.instance()
-except ImportError:
-    icon_manager = None
+# Унифицированные иконки берём через icon_helpers.create_icon_button; без локальных менеджеров
 
 # Добавляем пути к gopiai_integration инструментам из GopiAI-CrewAI для статического анализа и рантайма
 try:
@@ -95,24 +91,8 @@ class ModelListItem(QWidget):
         
         # Статус (бесплатная/платная)
         price_info = self.model_data.get('price_info', '')
-        if 'Бесплатная' in price_info:
-            status_label = QLabel("FREE")
-            status_label.setStyleSheet("color: green; font-weight: bold;")
-            if icon_manager:
-                free_icon = icon_manager.get_icon("gift")
-                if not free_icon.isNull():
-                    status_label.setText("")
-                    status_label.setPixmap(free_icon.pixmap(16, 16))
-                    status_label.setToolTip("FREE")
-        else:
-            status_label = QLabel("PAID")
-            status_label.setStyleSheet("color: orange; font-weight: bold;")
-            if icon_manager:
-                paid_icon = icon_manager.get_icon("credit-card")
-                if not paid_icon.isNull():
-                    status_label.setText("")
-                    status_label.setPixmap(paid_icon.pixmap(16, 16))
-                    status_label.setToolTip("PAID")
+        status_label = QLabel("FREE" if 'Бесплатная' in price_info else "PAID")
+        status_label.setToolTip(status_label.text())
         
         header_layout.addWidget(status_label)
         header_layout.addStretch()
@@ -121,7 +101,6 @@ class ModelListItem(QWidget):
         
         # ID модели
         id_label = QLabel(f"ID: {self.model_data.get('id', 'unknown')}")
-        id_label.setStyleSheet("color: gray; font-size: 9px;")
         layout.addWidget(id_label)
         
         # Дополнительная информация
@@ -131,17 +110,11 @@ class ModelListItem(QWidget):
         context_length = self.model_data.get('context_length', 0)
         if context_length > 0:
             context_label = QLabel(f"{context_length:,} токенов")
-            context_label.setStyleSheet("font-size: 9px; color: #666;")
-            if icon_manager:
-                context_icon = icon_manager.get_icon("file-text")
-                if not context_icon.isNull():
-                    context_label.setPixmap(context_icon.pixmap(12, 12))
             info_layout.addWidget(context_label)
         
         # Цена
         if price_info and 'Бесплатная' not in price_info:
             price_label = QLabel(price_info)
-            price_label.setStyleSheet("font-size: 9px; color: #666;")
             info_layout.addWidget(price_label)
         
         info_layout.addStretch()
@@ -152,22 +125,9 @@ class ModelListItem(QWidget):
         if description and len(description) > 0:
             desc_label = QLabel(description[:100] + "..." if len(description) > 100 else description)
             desc_label.setWordWrap(True)
-            desc_label.setStyleSheet("font-size: 9px; color: #888; font-style: italic;")
             layout.addWidget(desc_label)
         
-        # Стиль для выделения
-        self.setStyleSheet("""
-            ModelListItem {
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                background-color: white;
-                margin: 2px;
-            }
-            ModelListItem:hover {
-                background-color: #f0f8ff;
-                border-color: #4a90e2;
-            }
-        """)
+        # Без жестких стилей — оформление отдаём теме Qt
     
     def mousePressEvent(self, event):
         """Обработка клика по элементу"""
@@ -179,28 +139,7 @@ class ModelListItem(QWidget):
     def set_selected(self, selected: bool):
         """Устанавливает состояние выделения"""
         self.is_selected = selected
-        if selected:
-            self.setStyleSheet("""
-                ModelListItem {
-                    border: 2px solid #4a90e2;
-                    border-radius: 4px;
-                    background-color: #e6f3ff;
-                    margin: 2px;
-                }
-            """)
-        else:
-            self.setStyleSheet("""
-                ModelListItem {
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    background-color: white;
-                    margin: 2px;
-                }
-                ModelListItem:hover {
-                    background-color: #f0f8ff;
-                    border-color: #4a90e2;
-                }
-            """)
+        # Не задаём inline-стили — тема сама отрисует состояние
 
 class OpenRouterModelWidget(QWidget):
     """Виджет для работы с моделями OpenRouter"""
@@ -245,26 +184,11 @@ class OpenRouterModelWidget(QWidget):
         header_layout.addWidget(title_label)
         
         # Кнопка обновления
-        self.refresh_btn = QPushButton()
-        self.refresh_btn.setToolTip("Обновить список моделей")
-        self.refresh_btn.setFixedSize(30, 30)
-        if icon_manager:
-            refresh_icon = icon_manager.get_icon("refresh-cw")
-            if not refresh_icon.isNull():
-                self.refresh_btn.setIcon(refresh_icon)
-            else:
-                self.refresh_btn.setText("↻")
-        else:
-            self.refresh_btn.setText("↻")
+        self.refresh_btn = create_icon_button("refresh-cw", "Обновить список моделей")
         header_layout.addWidget(self.refresh_btn)
         
         # Кнопка переключения на основную конфигурацию
-        self.switch_btn = QPushButton("Gemini")
-        self.switch_btn.setToolTip("Переключиться на основную конфигурацию (Gemini)")
-        if icon_manager:
-            switch_icon = icon_manager.get_icon("arrow-left-right")
-            if not switch_icon.isNull():
-                self.switch_btn.setIcon(switch_icon)
+        self.switch_btn = create_icon_button("arrow-left-right", "Переключиться на основную конфигурацию (Gemini)")
         header_layout.addWidget(self.switch_btn)
         
         header_layout.addStretch()
@@ -276,10 +200,7 @@ class OpenRouterModelWidget(QWidget):
         # Поле поиска
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Поиск по названию модели...")
-        if icon_manager:
-            search_icon = icon_manager.get_icon("search")
-            if not search_icon.isNull():
-                self.search_input.addAction(search_icon, QLineEdit.ActionPosition.LeadingPosition)
+        # Не добавляем явные иконки к полю ввода — полагаемся на placeholder и тему
         search_layout.addWidget(self.search_input)
         
         # Фильтры
@@ -300,7 +221,6 @@ class OpenRouterModelWidget(QWidget):
         
         # Статистика
         self.stats_label = QLabel("Загрузка...")
-        self.stats_label.setStyleSheet("color: #666; font-size: 10px;")
         layout.addWidget(self.stats_label)
         
         # Прогресс-бар для загрузки
@@ -333,12 +253,8 @@ class OpenRouterModelWidget(QWidget):
         info_layout.addWidget(self.selected_info)
         
         # Кнопка выбора модели
-        self.select_btn = QPushButton("Использовать эту модель")
+        self.select_btn = create_icon_button("check", "Использовать эту модель")
         self.select_btn.setEnabled(False)
-        if icon_manager:
-            select_icon = icon_manager.get_icon("check")
-            if not select_icon.isNull():
-                self.select_btn.setIcon(select_icon)
         info_layout.addWidget(self.select_btn)
         
         layout.addWidget(info_group)

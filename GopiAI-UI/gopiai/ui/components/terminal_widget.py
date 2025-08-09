@@ -13,6 +13,7 @@ from typing import Optional, cast, Any
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTabWidget, QTextEdit, QLineEdit
 from PySide6.QtCore import QTimer, Signal, Qt, QProcess
 from PySide6.QtGui import QTextCursor, QFont, QKeyEvent
+from gopiai.ui.utils.icon_helpers import create_icon_button
 # Импорт ansi2html с fallback
 try:
     # Локально алиасим внешний класс, чтобы Pyright видел единый символ
@@ -54,7 +55,6 @@ class InteractiveTerminal(QTextEdit):
 
         self.prompt = '> '
         self.setFont(QFont("Consolas", 10))
-        self.setStyleSheet("background-color: black; color: white;")
         self.setReadOnly(False)
 
         # Процесс терминала
@@ -85,9 +85,10 @@ class InteractiveTerminal(QTextEdit):
 
     def handle_stderr(self):
         data = bytes(self.process.readAllStandardError().data()).decode('cp866')  # Декодируем в CP866
+        # Не используем жесткие цвета — выводим как простой текст с пометкой stderr
         converter: Any = Ansi2HTMLConverter()
-        html = converter.convert(data, full=False)
-        self.insertHtml(f'<font color="red">{html}</font>')
+        text = converter.convert(data, full=False)
+        self.insertPlainText(f"[stderr] {text}")
         self.insertPlainText(self.prompt)
         self._scroll_to_bottom()
 
@@ -148,7 +149,7 @@ class TerminalWidget(QWidget):
         title.setFixedHeight(24)
         controls.addWidget(title)
         controls.addStretch()
-        add_tab_btn = QPushButton("New Tab")
+        add_tab_btn = create_icon_button("plus", "Новая вкладка терминала")
         add_tab_btn.clicked.connect(self.add_tab)
         controls.addWidget(add_tab_btn)
         layout.addLayout(controls)

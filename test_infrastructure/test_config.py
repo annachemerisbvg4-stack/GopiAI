@@ -242,3 +242,60 @@ class TestConfigManager:
 
 # Global configuration instance
 config_manager = TestConfigManager()
+
+#
+ Enhanced problem discovery integration
+class ProblemAwareTestConfig:
+    """Test configuration that integrates with problem discovery."""
+    
+    def __init__(self, config_manager: TestConfigManager):
+        self.config_manager = config_manager
+        self.logger = logging.getLogger(__name__)
+    
+    def get_known_issues_markers(self) -> Dict[str, List[str]]:
+        """Get pytest markers for known issues."""
+        try:
+            from problem_discovery import ProblemDiscovery
+            discovery = ProblemDiscovery()
+            problems = discovery.discover_all_problems()
+            
+            # Group problems by file for marker generation
+            markers = {}
+            for problem in problems:
+                if problem.test_marker:
+                    file_key = problem.file_path.replace('/', '_').replace('\\', '_')
+                    if file_key not in markers:
+                        markers[file_key] = []
+                    markers[file_key].append(problem.test_marker)
+            
+            return markers
+        except Exception as e:
+            self.logger.error(f"Failed to get known issues markers: {e}")
+            return {}
+    
+    def should_skip_test(self, test_path: str, test_name: str) -> bool:
+        """Determine if a test should be skipped based on known issues."""
+        # This can be extended to implement intelligent test skipping
+        # based on problem discovery results
+        return False
+    
+    def get_test_timeout(self, test_category: str) -> int:
+        """Get timeout for specific test category."""
+        config = self.config_manager.config
+        if not config:
+            return 30
+        
+        timeouts = {
+            "unit": config.default_timeout,
+            "integration": config.default_timeout * 2,
+            "ui": config.default_timeout * 3,
+            "e2e": config.default_timeout * 5,
+            "performance": config.default_timeout * 10,
+            "security": config.default_timeout * 2
+        }
+        
+        return timeouts.get(test_category, config.default_timeout)
+
+
+# Enhanced configuration with problem awareness
+problem_aware_config = ProblemAwareTestConfig(config_manager)

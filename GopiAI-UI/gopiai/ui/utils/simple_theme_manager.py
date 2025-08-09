@@ -764,20 +764,20 @@ def load_theme():
     return None
 
 def apply_theme(app):
-    """Применяет тему к приложению."""
+    """Применяет тему с super-fancy эффектами, градиентами и авто-контрастом для текста кнопок."""
     if not app:
         logger.error("QApplication не предоставлен")
         return False
     theme = load_theme()
     if not theme:
         default_colors = generate_default_colors()
-        save_result = save_theme(default_colors)
+        save_theme(default_colors)
         theme = load_theme()
         if not theme:
             return False
-            
-    # Автоматически настраиваем контраст текста для всех элементов
+
     theme = _adjust_text_contrast(theme)
+
     try:
         palette = QPalette()
         main_color = QColor(theme.get("main_color", "#cccccc"))
@@ -786,13 +786,18 @@ def apply_theme(app):
         border_color = QColor(theme.get("border_color", "#CCCCCC"))
         button_color = QColor(theme.get("button_color", "#E0E0E0"))
         header_color = QColor(theme.get("header_color", "#F0F0F0"))
-        
-        # Специфические цвета текста для различных элементов
-        button_text_color = QColor(theme.get("button_text", "#000000" if _is_light(theme.get("button_color", "#E0E0E0")) else "#cccccc"))
-        button_hover_text_color = QColor(theme.get("button_hover_text", "#000000" if _is_light(theme.get("button_hover_color", "#F0F0F0")) else "#cccccc"))
-        button_active_text_color = QColor(theme.get("button_active_text", "#000000" if _is_light(theme.get("button_active_color", "#0078D7")) else "#cccccc"))
-        
-        # Устанавливаем цвета элементов
+
+        def auto_text_color(bg_color):
+            return "#000000" if _is_light(bg_color) else "#FFFFFF"
+
+        button_text_color = QColor(theme.get("button_text", auto_text_color(theme.get("button_color", "#E0E0E0"))))
+        button_hover_text_color = QColor(theme.get("button_hover_text", auto_text_color(theme.get("button_hover_color", "#F0F0F0"))))
+        button_active_text_color = QColor(theme.get("button_active_text", auto_text_color(theme.get("button_active_color", "#0078D7"))))
+
+        # Создаём светлый и тёмный оттенки акцента для градиентов
+        accent_light = accent_color.lighter(130).name()
+        accent_dark = accent_color.darker(150).name()
+
         palette.setColor(QPalette.ColorRole.Window, main_color)
         palette.setColor(QPalette.ColorRole.WindowText, text_color)
         palette.setColor(QPalette.ColorRole.Base, main_color)
@@ -801,215 +806,64 @@ def apply_theme(app):
         palette.setColor(QPalette.ColorRole.ToolTipText, text_color)
         palette.setColor(QPalette.ColorRole.Text, text_color)
         palette.setColor(QPalette.ColorRole.Button, button_color)
-        
-        # Применяем специфические цвета текста для кнопок вместо общего text_color
         palette.setColor(QPalette.ColorRole.ButtonText, button_text_color)
-        
         palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.white)
         palette.setColor(QPalette.ColorRole.Link, accent_color)
         palette.setColor(QPalette.ColorRole.Highlight, accent_color)
         palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.white)
-        
-        # Определяем семейство шрифта из темы или используем Inter по умолчанию
+
         font_family = theme.get("font_family", "Inter")
-        
-        # Добавляем стиль для улучшения контраста всех виджетов и применения шрифта
+        rgb = f"{main_color.red()}, {main_color.green()}, {main_color.blue()}"
+
         app.setStyleSheet(f"""
-        /* Глобальные стили шрифта */
         * {{
             font-family: '{font_family}', sans-serif;
             font-size: 16px;
         }}
-        
-        /* Стили для кнопок */
+
         QPushButton {{
             color: {button_text_color.name()};
             background-color: {button_color.name()};
             border: 1px solid {border_color.name()};
-            font-weight: 500;
-            padding: 6px 12px;
             border-radius: 6px;
+            padding: 6px 12px;
+            background-image: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                              stop:0 {accent_light}, stop:1 {accent_dark});
         }}
         QPushButton:hover {{
             color: {button_hover_text_color.name()};
-            background-color: {theme.get("button_hover_color", "#F0F0F0")};
+            background-color: {accent_light};
+            border: 1px solid {accent_color.name()};
         }}
         QPushButton:pressed {{
             color: {button_active_text_color.name()};
-            background-color: {theme.get("button_active_color", "#0078D7")};
+            background-color: {accent_dark};
         }}
 
-        /* Стили для titlebar */
-        #titlebarWidget, QWidget[objectName="titlebarWidget"] {{
-            background-color: {theme.get("titlebar_background", header_color.name())};
+        /* Glow эффект при фокусе */
+        QPushButton:focus, QLineEdit:focus, QComboBox:focus {{
+            border: 2px solid {accent_color.name()};
+        }}
+
+        /* Заголовок с градиентом */
+        #titlebarWidget {{
+            background-image: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                              stop:0 {accent_light}, stop:1 {accent_dark});
             color: {theme.get("titlebar_text", text_color.name())};
-            border-bottom: 1px solid {border_color.name()};
-            font-weight: 600;
         }}
-        #windowTitle, QLabel[objectName="windowTitle"] {{
-            color: {theme.get("titlebar_text", text_color.name())};
-            background-color: transparent;
-            font-weight: 600;
-            font-size: 18px;
+
+        /* Лёгкая прозрачность */
+        QMainWindow, QFrame {{
+            background-color: rgba({rgb}, 180);
         }}
-        #minimizeButton, #maximizeButton, #restoreButton, #closeButton,
-        QPushButton[objectName="minimizeButton"], QPushButton[objectName="maximizeButton"],
-        QPushButton[objectName="restoreButton"], QPushButton[objectName="closeButton"] {{
-            background-color: transparent;
-            color: {theme.get("titlebar_text", text_color.name())};
-            border: none;
-            border-radius: 4px;
-            font-weight: 500;
-            font-size: 14px;
-        }}
-        #minimizeButton:hover, #maximizeButton:hover, #restoreButton:hover,
-        QPushButton[objectName="minimizeButton"]:hover, QPushButton[objectName="maximizeButton"]:hover,
-        QPushButton[objectName="restoreButton"]:hover {{
-            background-color: {theme.get("button_hover_color", "#F0F0F0")};
-        }}
-        #closeButton:hover, QPushButton[objectName="closeButton"]:hover {{
-            background-color: #ff6b6b;
-            color: white;
-        }}
-        #minimizeButton:pressed, #maximizeButton:pressed, #restoreButton:pressed,
-        QPushButton[objectName="minimizeButton"]:pressed, QPushButton[objectName="maximizeButton"]:pressed,
-        QPushButton[objectName="restoreButton"]:pressed {{
-            background-color: {theme.get("button_active_color", "#0078D7")};
-        }}
-        #closeButton:pressed, QPushButton[objectName="closeButton"]:pressed {{
-            background-color: #ff5252;
-            color: white;
-        }}
-                
-        /* Стили для всех других виджетов */
-        QLabel {{
-            color: {text_color.name()};
-            font-weight: 400;
-        }}
-        QComboBox {{
-            color: {button_text_color.name()};
-            background-color: {button_color.name()};
-            border: 1px solid {border_color.name()};
-            border-radius: 6px;
-            font-weight: 500;
-            padding: 4px 8px;
-        }}
-        QComboBox QAbstractItemView {{
-            color: {text_color.name()};
-            background-color: {main_color.name()};
-            selection-background-color: {accent_color.name()};
-            selection-color: #cccccc;
-            font-weight: 400;
-        }}
-        QLineEdit, QTextEdit, QPlainTextEdit {{
-            color: {text_color.name()};
-            background-color: {main_color.name()};
-            border: 1px solid {border_color.name()};
-            border-radius: 6px;
-            font-weight: 400;
-            padding: 6px 8px;
-        }}
-        QMenuBar::item:selected, QMenu::item:selected {{
-            color: #cccccc;
-            background-color: {accent_color.name()};
-            border: 1px solid {border_color.name()};
-            border-radius: 4px;
-            font-weight: 500;
-        }}
-        QCheckBox, QRadioButton {{
-            color: {text_color.name()};
-            border: 1px solid {border_color.name()};
-            border-radius: 4px;
-            font-weight: 400;
-        }}
-        QTabBar::tab {{
-            color: {button_text_color.name()};
-            background-color: {button_color.name()};
-            border: 1px solid {border_color.name()};
-            border-radius: 6px;
-            font-weight: 500;
-            padding: 6px 16px;
-        }}
-        QTabBar::tab:selected {{
-            color: {button_active_text_color.name()};
-            background-color: {theme.get("button_active_color", "#0078D7")};
-            border: 1px solid {border_color.name()};
-            border-radius: 6px;
-        }}
-        QToolTip {{
-            color: {text_color.name()};
-            background-color: {main_color.name()};
-            border: 1px solid {border_color.name()};
-            border-radius: 6px;
-            font-weight: 400;
-        }}
-        QTreeView, QListView, QTableView {{
-            color: {text_color.name()};
-            background-color: {main_color.name()};
-            border: 1px solid {border_color.name()};
-            border-radius: 6px;
-            font-weight: 400;
-        }}
-        QTreeView::item:selected, QListView::item:selected, QTableView::item:selected {{
-            color: #cccccc;
-            background-color: {accent_color.name()};
-            border: 1px solid {border_color.name()};
-            border-radius: 4px;
-        }}
-        QHeaderView::section {{
-            color: {text_color.name()};
-            background-color: {header_color.name()};
-            border: 1px solid {border_color.name()};
-            border-radius: 4px;
-            font-weight: 600;
-            padding: 8px;
-            font-size: 15px;
-        }}
-        QToolButton {{
-            color: {button_text_color.name()};
-            background-color: {button_color.name()};
-            border: 1px solid {border_color.name()};
-            border-radius: 6px;
-            font-weight: 500;
-            padding: 6px 8px;
-        }}
-        QToolButton:hover {{
-            color: {button_hover_text_color.name()};
-            background-color: {theme.get("button_hover_color", "#F0F0F0")};
-            border: 1px solid {border_color.name()};
-            border-radius: 6px;
-        }}
-        QToolButton:pressed {{
-            color: {button_active_text_color.name()};
-            background-color: {theme.get("button_active_color", "#0078D7")};
-            border: 1px solid {border_color.name()};
-            border-radius: 6px;
-        }}
-        
-        /* Дополнительные стили для улучшения читаемости */
-        QMainWindow, QWidget, QDialog, QFrame {{
-            font-family: '{font_family}', sans-serif;
-            font-size: 16px;
-        }}
-        
-        QStatusBar {{
-            font-family: '{font_family}', sans-serif;
-            font-size: 14px;
-            font-weight: 400;
-        }}
-        
-        QMenuBar {{
-            font-family: '{font_family}', sans-serif;
-            font-size: 15px;
-            font-weight: 500;
-        }}
-        
-        QMenu {{
-            font-family: '{font_family}', sans-serif;
-            font-size: 14px;
-            font-weight: 400;
+
+        /* Glow иконок при hover */
+        QLabel:hover, QToolButton:hover {{
+            color: {accent_color.name()};
+            font-size: 17px;
         }}
         """)
+
         app.setPalette(palette)
         app.setStyle("Fusion")
         return True

@@ -122,33 +122,6 @@ class ToolsManager(QObject):
         """
         card = QFrame()
         card.setObjectName("toolCard")
-        card.setStyleSheet("""
-            QFrame#toolCard {
-                background-color: rgba(60, 62, 74, 0.5);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 8px;
-                padding: 5px;
-            }
-            QFrame#toolCard:hover {
-                background-color: rgba(80, 82, 94, 0.6);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-            }
-            QLabel { 
-                color: #f8f8f2;
-                background-color: transparent;
-            }
-            QPushButton {
-                text-align: left;
-                border: none;
-                padding: 5px;
-                border-radius: 4px;
-                background-color: transparent;
-                color: #8be9fd;
-            }
-            QPushButton:hover {
-                background-color: rgba(139, 233, 253, 0.1);
-            }
-        """)
         
         layout = QVBoxLayout(card)
         layout.setContentsMargins(10, 8, 10, 8)
@@ -157,7 +130,6 @@ class ToolsManager(QObject):
         # Название инструмента (кнопка)
         name = tool_info.get("name", tool_id)
         name_button = QPushButton(name)
-        name_button.setStyleSheet("font-weight: bold; font-size: 13px;")
         # PySide6: use QCursor with Qt.CursorShape
         try:
             name_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))  # type: ignore[attr-defined]
@@ -175,14 +147,12 @@ class ToolsManager(QObject):
         # Использование (свернуто по умолчанию)
         if "usage" in tool_info:
             usage_button = QPushButton("Показать примеры использования")
-            usage_button.setStyleSheet("font-size: 11px; color: #bd93f9;")
             try:
                 usage_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))  # type: ignore[attr-defined]
             except Exception:
                 usage_button.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
             
             usage_label = QLabel(tool_info["usage"])
-            usage_label.setStyleSheet("font-family: 'Courier New'; background-color: rgba(40, 42, 54, 0.4); padding: 5px; border-radius: 4px;")
             usage_label.setWordWrap(True)
             usage_label.hide()
             

@@ -14,12 +14,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
-# Импорт системы иконок
-try:
-    from ..components.icon_file_system_model import UniversalIconManager
-    icon_manager = UniversalIconManager.instance()
-except ImportError:
-    icon_manager = None
+from gopiai.ui.utils.icon_helpers import create_icon_button
 
 logger = logging.getLogger(__name__)
 
@@ -105,28 +100,13 @@ class PersonalityTab(QWidget):
         # Кнопки управления
         buttons_layout = QHBoxLayout()
         
-        self.load_btn = QPushButton("Загрузить")
-        self.load_btn.setToolTip("Загрузить текст персонализации из файла")
-        if icon_manager:
-            load_icon = icon_manager.get_icon("folder-open")
-            if not load_icon.isNull():
-                self.load_btn.setIcon(load_icon)
+        self.load_btn = create_icon_button("folder-open", "Загрузить текст персонализации из файла")
         buttons_layout.addWidget(self.load_btn)
         
-        self.save_btn = QPushButton("Сохранить")
-        self.save_btn.setToolTip("Сохранить изменения в файл")
-        if icon_manager:
-            save_icon = icon_manager.get_icon("save")
-            if not save_icon.isNull():
-                self.save_btn.setIcon(save_icon)
+        self.save_btn = create_icon_button("save", "Сохранить изменения в файл")
         buttons_layout.addWidget(self.save_btn)
         
-        self.reset_btn = QPushButton("Сброс")
-        self.reset_btn.setToolTip("Сбросить к исходному тексту")
-        if icon_manager:
-            reset_icon = icon_manager.get_icon("rotate-ccw")
-            if not reset_icon.isNull():
-                self.reset_btn.setIcon(reset_icon)
+        self.reset_btn = create_icon_button("rotate-ccw", "Сбросить к исходному тексту")
         buttons_layout.addWidget(self.reset_btn)
         
         buttons_layout.addStretch()
@@ -150,27 +130,60 @@ class PersonalityTab(QWidget):
             return
         
         try:
+            # 1) Считываем весь файл как текст (для безопасного парсинга тройных кавычек)
             with open(self.system_prompts_file, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-            
-            # Извлекаем строки с описанием Гипатии (строки 72-150)
-            if len(lines) >= self.personality_end_line:
-                personality_lines = lines[self.personality_start_line-1:self.personality_end_line]
-                personality_text = ''.join(personality_lines)
-                
-                # Убираем тройные кавычки, если есть
-                personality_text = personality_text.strip()
-                if personality_text.startswith('"""'):
-                    personality_text = personality_text[3:]
-                if personality_text.endswith('"""'):
-                    personality_text = personality_text[:-3]
-                
-                self.personality_editor.setPlainText(personality_text.strip())
-                self.status_label.setText("Текст загружен успешно")
-                logger.info("Текст персонализации загружен")
-            else:
-                self.status_label.setText("Ошибка: файл слишком короткий")
-                
+                file_text = f.read()
+
+            # 2) Находим функцию get_base_assistant_prompt и первую тройную кавычку внутри неё
+            import re
+            func_pattern = r"def\s+get_base_assistant_prompt\s*\([^)]*\)\s*:\s*\n"
+            func_match = re.search(func_pattern, file_text)
+            if not func_match:
+                # Фоллбэк: работаем по старой логике построчного среза
+                lines = file_text.splitlines(keepends=False)
+                if len(lines) >= self.personality_end_line:
+                    personality_lines = lines[self.personality_start_line-1:self.personality_end_line]
+                    self.personality_editor.setPlainText("\n".join(personality_lines).strip())
+                    self.status_label.setText("Текст загружен (fallback)")
+                    logger.warning("Fallback загрузки персонализации по абсолютным строкам")
+                    return
+                else:
+                    self.status_label.setText("Ошибка: файл слишком короткий")
+                    return
+
+            # 3) Ищем первую тройную кавычку после определения функции
+            start_idx = func_match.end()
+            triple_start = file_text.find('"""', start_idx)
+            if triple_start == -1:
+                self.status_label.setText("Ошибка: не найдена начальная тройная кавычка в промпте")
+                return
+
+            # 4) Ищем соответствующую закрывающую тройную кавычку
+            triple_end = file_text.find('"""', triple_start + 3)
+            if triple_end == -1:
+                self.status_label.setText("Ошибка: не найдена закрывающая тройная кавычка в промпте")
+                return
+
+            prompt_body = file_text[triple_start + 3:triple_end]
+
+            # 5) Нормализуем переносы строк и извлекаем только 72–150 строки ТЕЛА промпта
+            body_lines = prompt_body.splitlines()
+            # Гарантируем границы
+            start_line = max(1, self.personality_start_line)
+            end_line = max(start_line, self.personality_end_line)
+            if len(body_lines) < start_line:
+                self.status_label.setText("Ошибка: промпт короче ожидаемого (меньше 72 строк)")
+                return
+            slice_lines = body_lines[start_line-1: min(end_line, len(body_lines))]
+
+            # 6) Убираем возможную общую табуляцию/отступ
+            import textwrap
+            personality_text = textwrap.dedent("\n".join(slice_lines)).strip()
+
+            self.personality_editor.setPlainText(personality_text)
+            self.status_label.setText("Текст загружен успешно")
+            logger.info("Текст персонализации загружен из тела промпта")
+        
         except Exception as e:
             self.status_label.setText(f"Ошибка загрузки: {e}")
             logger.error(f"Ошибка загрузки персонализации: {e}")
@@ -194,43 +207,64 @@ class PersonalityTab(QWidget):
             return
         
         try:
-            # Читаем весь файл
+            # Читаем весь файл как текст для безопасной реконструкции
             with open(self.system_prompts_file, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
+                file_text = f.read()
+
+            # Новый текст персонализации из редактора
+            new_personality_text = self.personality_editor.toPlainText().rstrip()
+
+            # Находим функцию и границы тела тройной кавычечной строки
+            import re
+            func_pattern = r"def\s+get_base_assistant_prompt\s*\([^)]*\)\s*:\s*\n"
+            func_match = re.search(func_pattern, file_text)
+            if not func_match:
+                self.status_label.setText("Ошибка: не найдена функция get_base_assistant_prompt()")
+                return
+
+            start_idx = func_match.end()
+            triple_start = file_text.find('"""', start_idx)
+            if triple_start == -1:
+                self.status_label.setText("Ошибка: не найдена начальная тройная кавычка")
+                return
+            triple_end = file_text.find('"""', triple_start + 3)
+            if triple_end == -1:
+                self.status_label.setText("Ошибка: не найдена закрывающая тройная кавычка")
+                return
+
+            before = file_text[:triple_start + 3]
+            prompt_body = file_text[triple_start + 3:triple_end]
+            after = file_text[triple_end:]
+
+            body_lines = prompt_body.splitlines()
+            start_line = max(1, self.personality_start_line)
+            end_line = max(start_line, self.personality_end_line)
+
+            # Расширяем список строк при необходимости пустыми строками, чтобы границы были корректны
+            if len(body_lines) < end_line:
+                body_lines += [""] * (end_line - len(body_lines))
+
+            # Заменяем диапазон 72–150 новым текстом (построчно)
+            new_lines_block = new_personality_text.splitlines()
+            body_lines[start_line-1:end_line] = new_lines_block
+
+            # Восстанавливаем тело промпта и весь файл
+            new_prompt_body = "\n".join(body_lines)
+            new_file_text = before + new_prompt_body + after
+
+            with open(self.system_prompts_file, 'w', encoding='utf-8') as f:
+                f.write(new_file_text)
+
+            self.status_label.setText("Изменения сохранены успешно")
+            logger.info("Персонализация сохранена в system_prompts.py (внутри тела промпта)")
             
-            # Получаем новый текст персонализации
-            new_personality_text = self.personality_editor.toPlainText()
-            
-            # Форматируем новый текст (добавляем отступы и структуру)
-            formatted_lines = []
-            for line in new_personality_text.split('\n'):
-                formatted_lines.append(line + '\n')
-            
-            # Заменяем строки с описанием Гипатии
-            if len(lines) >= self.personality_end_line:
-                # Заменяем строки 72-150
-                new_lines = (
-                    lines[:self.personality_start_line-1] + 
-                    formatted_lines + 
-                    lines[self.personality_end_line:]
-                )
-                
-                # Сохраняем файл
-                with open(self.system_prompts_file, 'w', encoding='utf-8') as f:
-                    f.writelines(new_lines)
-                
-                self.status_label.setText("Изменения сохранены успешно")
-                logger.info("Персонализация сохранена в system_prompts.py")
-                
-                # Показываем сообщение об успехе
-                QMessageBox.information(
-                    self,
-                    "Сохранение завершено",
-                    "Изменения персонализации Гипатии сохранены.\n\nДля применения изменений может потребоваться перезапуск системы."
-                )
-            else:
-                self.status_label.setText("Ошибка: неверная структура файла")
-                
+            # Сообщение об успехе
+            QMessageBox.information(
+                self,
+                "Сохранение завершено",
+                "Изменения персонализации Гипатии сохранены.\n\nДля применения изменений может потребоваться перезапуск системы."
+            )
+        
         except Exception as e:
             self.status_label.setText(f"Ошибка сохранения: {e}")
             logger.error(f"Ошибка сохранения персонализации: {e}")

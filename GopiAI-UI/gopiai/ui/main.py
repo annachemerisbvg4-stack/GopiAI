@@ -767,11 +767,11 @@ class FramelessGopiAIStandaloneWindow(QMainWindow):
         """Создание новой вкладки-блокнота с форматированием"""
         if MODULES_LOADED and hasattr(self.tab_document, "add_notebook_tab"):
             menu_bar = getattr(self.titlebar_with_menu, "menu_bar", None)
-            self.tab_document.add_notebook_tab("Новый блокнот", "<h2>Новая заметка</h2><p>Введите текст...</p>", menu_bar=menu_bar)
+            self.tab_document.add_notebook_tab("Новый блокнот", "Введите текст...", menu_bar=menu_bar)
         else:
             # Fallback: создаём простую вкладку с QLabel или QTextEdit
             if hasattr(self.tab_document, "add_new_tab"):
-                self.tab_document.add_new_tab("Новый блокнот (fallback)", "<h2>Новая заметка (fallback)</h2><p>Введите текст...</p>")
+                self.tab_document.add_new_tab("Новый блокнот (fallback)", "Введите текст...")
             else:
                 print("📝 Новый блокнот не может быть создан: нет метода add_new_tab (fallback режим)")
             print("📝 Новый блокнот создан (fallback режим)")

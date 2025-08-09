@@ -27,10 +27,10 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
+from gopiai.ui.utils.icon_helpers import create_icon_button
 
 # Backend helpers
 # Resolve import robustly relative to repo root so Pyright can find it
@@ -81,7 +81,7 @@ class ModelSelectorWidget(QWidget):
         self.api_key_edit = QLineEdit()
         # Use QLineEdit.EchoMode.Password for PySide6 type safety
         self.api_key_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.save_key_btn = QPushButton("Save API key")
+        self.save_key_btn = create_icon_button("key", "Сохранить API ключ")
 
         form = QFormLayout()
         form.addRow("Provider", self.provider_combo)
@@ -91,7 +91,7 @@ class ModelSelectorWidget(QWidget):
 
         # Models
         self.model_combo = QComboBox()
-        self.refresh_models_btn = QPushButton("Refresh models")
+        self.refresh_models_btn = create_icon_button("refresh-cw", "Обновить список моделей")
         hl = QHBoxLayout()
         hl.addWidget(self.model_combo, 1)
         hl.addWidget(self.refresh_models_btn)

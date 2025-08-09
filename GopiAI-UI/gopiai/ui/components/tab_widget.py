@@ -18,11 +18,13 @@ from PySide6.QtWidgets import (
     QMenu,
     QLabel,
     QStackedWidget,
+    QToolButton,
 )
-from PySide6.QtCore import Qt, QUrl, QPoint
+from PySide6.QtCore import Qt, QUrl, QPoint, QEvent, QSize
 from PySide6.QtGui import QPixmap
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebEngineCore import QWebEnginePage
+from gopiai.ui.utils.icon_helpers import create_icon_button, get_icon
 
 import chardet
 import traceback
@@ -167,6 +169,48 @@ class CustomTabWidget(QTabWidget):
         super().__init__(parent)
         self.parent_widget = parent
         self._tab_close_in_progress = False  # Флаг для предотвращения рекурсивных закрытий
+        # Устанавливаем иконки на кнопки прокрутки вкладок и следим за изменениями
+        try:
+            self.tabBar().installEventFilter(self)
+            self._apply_scroll_button_icons()
+        except Exception as e:
+            logger.debug(f"Не удалось установить иконки кнопок прокрутки: {e}")
+
+    def eventFilter(self, obj, event):
+        try:
+            if obj is self.tabBar() and event.type() in (
+                QEvent.Type.Show,
+                QEvent.Type.Resize,
+                QEvent.Type.LayoutRequest,
+                QEvent.Type.PolishRequest,
+            ):
+                self._apply_scroll_button_icons()
+        except Exception as e:
+            logger.debug(f"Ошибка в eventFilter для таббара: {e}")
+        return super().eventFilter(obj, event)
+
+    def _apply_scroll_button_icons(self):
+        """Назначает Lucide-иконки стрелок на кнопки прокрутки вкладок."""
+        try:
+            left_icon = get_icon("arrow-left", size=16)
+            right_icon = get_icon("arrow-right", size=16)
+            for btn in self.findChildren(QToolButton):
+                # Кнопки прокрутки обычно имеют arrowType Left/Right
+                at = getattr(btn, "arrowType", lambda: Qt.ArrowType.NoArrow)()
+                if at == Qt.ArrowType.LeftArrow:
+                    if left_icon:
+                        btn.setArrowType(Qt.ArrowType.NoArrow)
+                        btn.setIcon(left_icon)
+                        btn.setIconSize(QSize(16, 16))
+                        btn.setToolTip("Прокрутить вкладки влево")
+                elif at == Qt.ArrowType.RightArrow:
+                    if right_icon:
+                        btn.setArrowType(Qt.ArrowType.NoArrow)
+                        btn.setIcon(right_icon)
+                        btn.setIconSize(QSize(16, 16))
+                        btn.setToolTip("Прокрутить вкладки вправо")
+        except Exception as e:
+            logger.debug(f"Не удалось применить иконки для кнопок прокрутки: {e}")
 
     @safe_widget_operation("context_menu_creation")
     def contextMenuEvent(self, event):
@@ -1058,21 +1102,15 @@ class TabDocumentWidget(QWidget):
             nav_layout.setSpacing(5)
 
             # Кнопка "Назад"
-            back_btn = QPushButton("←")
-            back_btn.setFixedSize(30, 30)
-            back_btn.setToolTip("Назад")
+            back_btn = create_icon_button("arrow-left", "Назад")
             back_btn.setObjectName("browserBackBtn")
 
             # Кнопка "Вперед"
-            forward_btn = QPushButton("→")
-            forward_btn.setFixedSize(30, 30)
-            forward_btn.setToolTip("Вперед")
+            forward_btn = create_icon_button("arrow-right", "Вперед")
             forward_btn.setObjectName("browserForwardBtn")
 
             # Кнопка "Обновить"
-            refresh_btn = QPushButton("↻")
-            refresh_btn.setFixedSize(30, 30)
-            refresh_btn.setToolTip("Обновить")
+            refresh_btn = create_icon_button("refresh-cw", "Обновить")
             refresh_btn.setObjectName("browserRefreshBtn")
 
             # Адресная строка
@@ -1081,9 +1119,7 @@ class TabDocumentWidget(QWidget):
             address_bar.setObjectName("browserAddressBar")
 
             # Кнопка "Перейти"
-            go_btn = QPushButton("➤")
-            go_btn.setFixedSize(30, 30)
-            go_btn.setToolTip("Перейти")
+            go_btn = create_icon_button("corner-down-right", "Перейти")
             go_btn.setObjectName("browserGoBtn")
 
             # Добавляем элементы в панель навигации

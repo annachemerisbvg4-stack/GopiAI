@@ -10,9 +10,10 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QGroupBox, 
     QPushButton, QLabel, QFrame, QSizePolicy, QButtonGroup, QRadioButton
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QFont
 import requests
+from gopiai.ui.utils.icon_helpers import create_icon_button
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,6 @@ class AgentItemWidget(QWidget):
         # Описание
         desc_label = QLabel(self.agent_data.get('description', ''))
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: #666;")
         info_layout.addWidget(desc_label)
         
         layout.addLayout(info_layout, 1)
@@ -53,20 +53,12 @@ class AgentItemWidget(QWidget):
         type_label = QLabel(self.agent_data.get('type', '').upper())
         type_label.setFixedWidth(60)
         type_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        agent_type = self.agent_data.get('type', '')
-        if agent_type == 'agent':
-            type_label.setStyleSheet("QLabel { background-color: #28a745; color: white; padding: 4px; border-radius: 3px; }")
-        elif agent_type == 'flow':
-            type_label.setStyleSheet("QLabel { background-color: #007bff; color: white; padding: 4px; border-radius: 3px; }")
-        else:
-            type_label.setStyleSheet("QLabel { background-color: #6c757d; color: white; padding: 4px; border-radius: 3px; }")
+        # Убираем хардкод цветов — полагаемся на тему/палитру
         
         layout.addWidget(type_label)
         
-        # Кнопка прикрепления
-        attach_btn = QPushButton("Прикрепить")
-        attach_btn.setFixedWidth(80)
+        # Кнопка прикрепления (иконка)
+        attach_btn = create_icon_button("paperclip", "Прикрепить к сообщению")
         attach_btn.clicked.connect(self._on_attach_clicked)
         layout.addWidget(attach_btn)
     
@@ -111,7 +103,6 @@ class AgentsTab(QWidget):
         # Прикрепленные элементы
         attached_frame = QFrame()
         attached_frame.setFrameStyle(QFrame.Shape.Box)
-        attached_frame.setStyleSheet("QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; }")
         attached_layout = QVBoxLayout(attached_frame)
         
         attached_title = QLabel("Прикрепленные к сообщению:")
@@ -136,17 +127,17 @@ class AgentsTab(QWidget):
         flow_layout.addWidget(self.attached_flow_label, 1)
         attached_layout.addLayout(flow_layout)
         
-        # Кнопки очистки
+        # Кнопки очистки (иконки)
         clear_layout = QHBoxLayout()
-        clear_agents_btn = QPushButton("Очистить агентов")
+        clear_agents_btn = create_icon_button("eraser", "Очистить прикрепленных агентов")
         clear_agents_btn.clicked.connect(self._clear_agents)
         clear_layout.addWidget(clear_agents_btn)
         
-        clear_flow_btn = QPushButton("Очистить флоу")
+        clear_flow_btn = create_icon_button("minus-circle", "Очистить прикрепленный флоу")
         clear_flow_btn.clicked.connect(self._clear_flow)
         clear_layout.addWidget(clear_flow_btn)
         
-        clear_all_btn = QPushButton("Очистить все")
+        clear_all_btn = create_icon_button("trash-2", "Очистить всё")
         clear_all_btn.clicked.connect(self._clear_all)
         clear_layout.addWidget(clear_all_btn)
         
@@ -166,8 +157,8 @@ class AgentsTab(QWidget):
         scroll_area.setWidget(self.agents_container)
         layout.addWidget(scroll_area, 1)
         
-        # Кнопка обновления
-        refresh_btn = QPushButton("Обновить список")
+        # Кнопка обновления (иконка)
+        refresh_btn = create_icon_button("refresh-cw", "Обновить список агентов")
         refresh_btn.clicked.connect(self._load_agents)
         layout.addWidget(refresh_btn)
     

@@ -38,8 +38,8 @@ from .crewai_client import CrewAIClient
 from ..memory import get_memory_manager
 from .chat_async_handler import ChatAsyncHandler
 # from .optimized_chat_widget import OptimizedChatWidget  # Модуль не найден, закомментировано
-from .icon_file_system_model import UniversalIconManager
 from .terminal_widget import TerminalWidget
+from gopiai.ui.utils.icon_helpers import create_icon_button
 
 class ChatWidget(QWidget):
     
@@ -295,7 +295,6 @@ class ChatWidget(QWidget):
         self.input = QTextEdit(self)
         self.input.setPlaceholderText("Введите сообщение...")
         self.input.setObjectName("ChatInput")
-        self.input.setFixedHeight(80)
         self.input.keyPressEvent = self._input_key_press_event
         bottom_layout.addWidget(self.input, 1)
 
@@ -312,27 +311,22 @@ class ChatWidget(QWidget):
 
     def _setup_action_buttons(self, parent_layout):
         """Настраивает кнопки действий"""
-        icon_mgr = UniversalIconManager.instance()
         action_buttons_layout = QVBoxLayout()
         
         # Кнопка прикрепления файла
-        self.attach_file_btn = QPushButton(icon_mgr.get_icon("paperclip"), "", self)
-        self.attach_file_btn.setToolTip("Прикрепить файл")
+        self.attach_file_btn = create_icon_button("paperclip", "Прикрепить файл")
         self.attach_file_btn.clicked.connect(self.attach_file)
         action_buttons_layout.addWidget(self.attach_file_btn)
         
         # Кнопка прикрепления изображения
-        self.attach_image_btn = QPushButton(icon_mgr.get_icon("image"), "", self)
-        self.attach_image_btn.setToolTip("Прикрепить изображение")
+        self.attach_image_btn = create_icon_button("image", "Прикрепить изображение")
         self.attach_image_btn.clicked.connect(self.attach_image)
         action_buttons_layout.addWidget(self.attach_image_btn)
         
         parent_layout.addLayout(action_buttons_layout)
 
         # Кнопка отправки
-        self.send_btn = QPushButton(icon_mgr.get_icon("send"), "", self)
-        self.send_btn.setToolTip("Отправить сообщение")
-        self.send_btn.setFixedSize(40, 80)
+        self.send_btn = create_icon_button("send", "Отправить сообщение")
         self.send_btn.clicked.connect(self.send_message)
         parent_layout.addWidget(self.send_btn)
 

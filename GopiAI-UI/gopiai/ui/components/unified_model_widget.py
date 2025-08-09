@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer, QThread
 from PySide6.QtGui import QFont, QPixmap, QIcon
 from typing import cast, Iterable
+from gopiai.ui.utils.icon_helpers import create_icon_button
 
 # Добавляем путь к backend для импорта клиентов
 try:
@@ -97,14 +98,6 @@ class UnifiedModelWidget(QWidget):
         
         # Заголовок
         title_label = QLabel("🤖 Модели ИИ")
-        title_label.setStyleSheet("""
-            QLabel {
-                font-size: 18px;
-                font-weight: bold;
-                color: #2c3e50;
-                padding: 5px;
-            }
-        """)
         layout.addWidget(title_label)
         
         # Переключатель провайдеров
@@ -126,13 +119,6 @@ class UnifiedModelWidget(QWidget):
         
         # Статус провайдера
         self.provider_status = QLabel("Gemini активен")
-        self.provider_status.setStyleSheet("""
-            QLabel {
-                color: #27ae60;
-                font-weight: bold;
-                padding: 5px;
-            }
-        """)
         provider_layout.addWidget(self.provider_status)
         
         layout.addWidget(provider_group)
@@ -150,8 +136,7 @@ class UnifiedModelWidget(QWidget):
         model_select_layout.addWidget(self.model_combo)
         
         # Кнопка обновления
-        self.refresh_btn = QPushButton("🔄 Обновить")
-        self.refresh_btn.setMaximumWidth(100)
+        self.refresh_btn = create_icon_button("refresh-cw", "Обновить список моделей")
         model_select_layout.addWidget(self.refresh_btn)
         
         model_layout.addLayout(model_select_layout)
@@ -179,16 +164,6 @@ class UnifiedModelWidget(QWidget):
         self.model_info = QTextEdit()
         self.model_info.setMaximumHeight(150)
         self.model_info.setReadOnly(True)
-        self.model_info.setStyleSheet("""
-            QTextEdit {
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
-                border-radius: 4px;
-                padding: 8px;
-                font-family: 'Consolas', 'Monaco', monospace;
-                font-size: 12px;
-            }
-        """)
         info_layout.addWidget(self.model_info)
         
         layout.addWidget(info_group)
@@ -196,8 +171,8 @@ class UnifiedModelWidget(QWidget):
         # Кнопки управления
         buttons_layout = QHBoxLayout()
         
-        self.test_connection_btn = QPushButton("🔍 Тест соединения")
-        self.reset_config_btn = QPushButton("🔄 Сброс настроек")
+        self.test_connection_btn = create_icon_button("activity", "Тест соединения")
+        self.reset_config_btn = create_icon_button("rotate-ccw", "Сброс настроек")
         
         buttons_layout.addWidget(self.test_connection_btn)
         buttons_layout.addWidget(self.reset_config_btn)

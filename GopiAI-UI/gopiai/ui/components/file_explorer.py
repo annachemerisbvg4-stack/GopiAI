@@ -81,7 +81,7 @@ class FileExplorerWidget(QWidget):
         # Вкладка 1: Файловый проводник (оригинальная функциональность)
         self.file_explorer_tab = QWidget()
         self._setup_file_explorer_tab()
-        self.tab_widget.addTab(self.file_explorer_tab, "📁 Файлы")
+        self.tab_widget.addTab(self.file_explorer_tab, "Файлы")
         
         # Вкладки моделей перенесены в ChatWidget (правая панель)
         

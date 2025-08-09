@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont
 import requests
+from gopiai.ui.utils.icon_helpers import create_icon_button, get_icon
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,6 @@ class ToolItemWidget(QWidget):
         # Описание
         desc_label = QLabel(self.tool_data.get('description', ''))
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: #666;")
         info_layout.addWidget(desc_label)
         
         layout.addLayout(info_layout, 1)
@@ -57,23 +57,23 @@ class ToolItemWidget(QWidget):
         controls_layout = QHBoxLayout()
         controls_layout.setSpacing(4)
         
-        # Переключатель включен/выключен
-        self.toggle_btn = QPushButton()
-        self.toggle_btn.setFixedWidth(60)
+        # Переключатель включен/выключен (иконка)
+        self.toggle_btn = create_icon_button(
+            "power-off" if self.tool_data.get('enabled', True) else "power",
+            "Выключить инструмент" if self.tool_data.get('enabled', True) else "Включить инструмент",
+        )
         self._update_toggle_button()
         self.toggle_btn.clicked.connect(self._on_toggle_clicked)
         controls_layout.addWidget(self.toggle_btn)
         
-        # Кнопка установки ключа
-        self.key_btn = QPushButton()
-        self.key_btn.setFixedWidth(80)
+        # Кнопка установки ключа (иконка)
+        self.key_btn = create_icon_button("key", "Добавить ключ")
         self._update_key_button()
         self.key_btn.clicked.connect(self._on_key_clicked)
         controls_layout.addWidget(self.key_btn)
         
-        # Кнопка прикрепления
-        attach_btn = QPushButton("Прикрепить")
-        attach_btn.setFixedWidth(80)
+        # Кнопка прикрепления (иконка)
+        attach_btn = create_icon_button("paperclip", "Прикрепить к сообщению")
         attach_btn.clicked.connect(lambda: self.tool_attached.emit(self.tool_name))
         controls_layout.addWidget(attach_btn)
         
@@ -82,20 +82,19 @@ class ToolItemWidget(QWidget):
     def _update_toggle_button(self):
         enabled = self.tool_data.get('enabled', True)
         if enabled:
-            self.toggle_btn.setText("Выкл")
-            self.toggle_btn.setStyleSheet("QPushButton { background-color: #28a745; color: white; }")
+            icon = get_icon("power-off")
+            if icon:
+                self.toggle_btn.setIcon(icon)
+            self.toggle_btn.setToolTip("Выключить инструмент")
         else:
-            self.toggle_btn.setText("Вкл")
-            self.toggle_btn.setStyleSheet("QPushButton { background-color: #dc3545; color: white; }")
+            icon = get_icon("power")
+            if icon:
+                self.toggle_btn.setIcon(icon)
+            self.toggle_btn.setToolTip("Включить инструмент")
     
     def _update_key_button(self):
         has_key = self.tool_data.get('has_custom_key', False)
-        if has_key:
-            self.key_btn.setText("Изм. ключ")
-            self.key_btn.setStyleSheet("QPushButton { background-color: #007bff; color: white; }")
-        else:
-            self.key_btn.setText("Доб. ключ")
-            self.key_btn.setStyleSheet("QPushButton { background-color: #6c757d; color: white; }")
+        self.key_btn.setToolTip("Изменить API ключ" if has_key else "Добавить API ключ")
     
     def _on_toggle_clicked(self):
         current_enabled = self.tool_data.get('enabled', True)
@@ -151,7 +150,6 @@ class ToolsTab(QWidget):
         # Прикрепленные инструменты
         attached_frame = QFrame()
         attached_frame.setFrameStyle(QFrame.Shape.Box)
-        attached_frame.setStyleSheet("QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; }")
         attached_layout = QVBoxLayout(attached_frame)
         
         attached_title = QLabel("Прикрепленные к сообщению:")
@@ -164,7 +162,7 @@ class ToolsTab(QWidget):
         self.attached_label.setWordWrap(True)
         attached_layout.addWidget(self.attached_label)
         
-        clear_btn = QPushButton("Очистить все")
+        clear_btn = create_icon_button("trash-2", "Очистить прикрепления")
         clear_btn.clicked.connect(self._clear_attached)
         attached_layout.addWidget(clear_btn)
         
@@ -184,7 +182,7 @@ class ToolsTab(QWidget):
         layout.addWidget(scroll_area, 1)
         
         # Кнопка обновления
-        refresh_btn = QPushButton("Обновить список")
+        refresh_btn = create_icon_button("refresh-cw", "Обновить список инструментов")
         refresh_btn.clicked.connect(self._load_tools)
         layout.addWidget(refresh_btn)
     

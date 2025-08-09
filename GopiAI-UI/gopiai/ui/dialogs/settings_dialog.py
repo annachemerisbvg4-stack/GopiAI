@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QFont, QIcon, QPixmap
 from pathlib import Path
+from gopiai.ui.utils.icon_helpers import create_icon_button
 
 # Клиент CrewAI API для работы с настройкой небезопасного терминала
 try:
@@ -487,35 +488,6 @@ class GopiAISettingsDialog(QDialog):
 
 
 
-    def _apply_close_button_style(self):
-        """Применяет стиль к кнопке закрытия с интеграцией темы"""
-        colors = self._get_theme_colors_for_dialog()
-        
-        # Автоматически определяем контрастный цвет текста для фона
-        def get_contrast_text_color(bg_color):
-            """Возвращает контрастный цвет текста для данного фона"""
-            is_light = self._is_light_color(bg_color)
-            return "#1a1a1a" if is_light else "#e5e5e5"
-        
-        close_button_text_color = get_contrast_text_color(colors['bg_color'])
-        
-        self.close_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: transparent;
-                color: {close_button_text_color};
-                font-weight: bold;
-                border: none;
-                border-radius: 1px;
-            }}
-            QPushButton:hover {{
-                background-color: #ff6b6b;
-                color: white;
-            }}
-            QPushButton:pressed {{
-                background-color: #ff5252;
-            }}
-        """)
-        
     def setup_ui(self):
         """Настройка пользовательского интерфейса"""
         self.setWindowTitle("Настройки GopiAI")
@@ -539,10 +511,8 @@ class GopiAISettingsDialog(QDialog):
         header_layout.addWidget(title_label)
 
         # Добавляем кнопку закрытия для безрамочного режима
-        self.close_button = QPushButton("✕")
-        self.close_button.setMaximumSize(30, 30)
+        self.close_button = create_icon_button("x", "Закрыть настройки")
         self.close_button.clicked.connect(self.reject)
-        self._apply_close_button_style()  # Применяем стиль с интеграцией темы
         header_layout.addWidget(self.close_button)
 
         main_layout.addLayout(header_layout)
@@ -560,15 +530,15 @@ class GopiAISettingsDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.addStretch()
 
-        self.apply_button = QPushButton("Применить")
+        self.apply_button = create_icon_button("check", "Применить")
         self.apply_button.clicked.connect(self.apply_settings)
         button_layout.addWidget(self.apply_button)
 
-        self.ok_button = QPushButton("OK")
+        self.ok_button = create_icon_button("check", "OK")
         self.ok_button.clicked.connect(self.accept_settings)
         button_layout.addWidget(self.ok_button)
 
-        self.cancel_button = QPushButton("Отмена")
+        self.cancel_button = create_icon_button("x", "Отмена")
         self.cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(self.cancel_button)
 
