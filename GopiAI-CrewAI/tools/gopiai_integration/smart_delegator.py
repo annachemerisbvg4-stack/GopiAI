@@ -172,8 +172,32 @@ class SmartDelegator:
         else:
             logger.info("[MODEL-SELECTION] UI не указал предпочтительную модель, используем настройки по умолчанию")
         
+        # 0.5. Обрабатываем принудительное использование инструментов/агентов из UI
+        force_tools = metadata.get('force_tools', [])
+        force_agents = metadata.get('force_agents', [])
+        force_flow = metadata.get('force_flow')
+        
+        if force_tools:
+            logger.info(f"[TOOLS-SELECTION] UI запросил принудительное использование инструментов: {force_tools}")
+        if force_agents:
+            logger.info(f"[AGENTS-SELECTION] UI запросил принудительное использование агентов: {force_agents}")
+        if force_flow:
+            logger.info(f"[FLOW-SELECTION] UI запросил принудительное использование флоу: {force_flow}")
+        
+        # Добавляем информацию о принудительных инструментах в анализ
+        forced_selections = {
+            'tools': force_tools,
+            'agents': force_agents,
+            'flow': force_flow
+        }
+        
         # 1. Анализ (пока заглушка, можно вернуть старую логику позже)
-        analysis = {"type": "general", "complexity": 1, "requires_crewai": False}
+        analysis = {
+            "type": "general", 
+            "complexity": 1, 
+            "requires_crewai": False,
+            "forced_selections": forced_selections
+        }
         
         # 2. Получение RAG-контекста
         rag_context: Optional[str] = None

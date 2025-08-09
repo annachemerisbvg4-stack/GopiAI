@@ -329,7 +329,13 @@ try:
     smart_delegator_instance = SmartDelegator(rag_system=cast(Any, rag_system_instance))
     print(f"[ДИАГНОСТИКА] SmartDelegator создан: {smart_delegator_instance is not None}")
     
-    logger.info("✅ Smart Delegator и RAG System успешно инициализированы.")
+    # 3. Инициализируем интегратор инструментов
+    print("[ДИАГНОСТИКА] Инициализация CrewAI Tools Integrator")
+    from tools.gopiai_integration.crewai_tools_integrator import get_crewai_tools_integrator
+    tools_integrator_instance = get_crewai_tools_integrator()
+    print(f"[ДИАГНОСТИКА] Tools Integrator создан: {tools_integrator_instance is not None}")
+    
+    logger.info("✅ Smart Delegator, RAG System и Tools Integrator успешно инициализированы.")
     SERVER_IS_READY = True
     print("[ДИАГНОСТИКА] SERVER_IS_READY = True")
 except Exception as e:
@@ -337,6 +343,7 @@ except Exception as e:
     logger.error(f"CRITICAL ERROR DURING SERVER STARTUP: {e}", exc_info=True)
     rag_system_instance = None
     smart_delegator_instance = None
+    tools_integrator_instance = None
     SERVER_IS_READY = False
     print("[DIAGNOSTIC] SERVER_IS_READY = False, server will not be started")
 
@@ -576,6 +583,146 @@ def get_current_state():
     except Exception as e:
         logger.error(f"Error loading state: {str(e)}", exc_info=True)
         return jsonify({"error": f"Failed to load state: {str(e)}"}), 500
+
+# --- API endpoints for Tools Management ---
+
+@app.route('/api/tools', methods=['GET'])
+def get_tools():
+    """Получить список всех инструментов с их статусом"""
+    try:
+        if not tools_integrator_instance:
+            return jsonify({"error": "Tools integrator not initialized"}), 500
+        
+        # Получаем сводку инструментов по категориям
+        tools_summary = tools_integrator_instance.get_tools_summary()
+        
+        # Читаем настройки переключателей и ключей
+        settings = _read_settings()
+        tool_toggles = settings.get('tools', {}).get('toggles', {})
+        tool_keys = settings.get('tools', {}).get('keys', {})
+        
+        # Формируем ответ
+        result = {}
+        for category, tools in tools_summary.items():
+            result[category] = []
+            for tool in tools:
+                tool_name = tool['name']
+                # Проверяем, включен ли инструмент (по умолчанию включен)
+                enabled = tool_toggles.get(tool_name, True)
+                # Проверяем наличие кастомного ключа
+                has_custom_key = tool_name in tool_keys
+                
+                result[category].append({
+                    'name': tool_name,
+                    'description': tool['description'],
+                    'enabled': enabled,
+                    'has_custom_key': has_custom_key,
+                    'available': tool['available']
+                })
+        
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error getting tools: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/tools/toggle', methods=['POST'])
+def toggle_tool():
+    """Переключить состояние инструмента (включен/выключен)"""
+    try:
+        data = request.get_json()
+        tool_name = data.get('tool_name')
+        enabled = data.get('enabled', True)
+        
+        if not tool_name:
+            return jsonify({"error": "tool_name is required"}), 400
+        
+        # Читаем текущие настройки
+        settings = _read_settings()
+        if 'tools' not in settings:
+            settings['tools'] = {}
+        if 'toggles' not in settings['tools']:
+            settings['tools']['toggles'] = {}
+        
+        # Обновляем состояние
+        settings['tools']['toggles'][tool_name] = enabled
+        
+        # Сохраняем настройки
+        _write_settings(settings)
+        
+        logger.info(f"Tool {tool_name} {'enabled' if enabled else 'disabled'}")
+        return jsonify({"success": True, "tool_name": tool_name, "enabled": enabled})
+    
+    except Exception as e:
+        logger.error(f"Error toggling tool: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/tools/set_key', methods=['POST'])
+def set_tool_key():
+    """Установить кастомный API ключ для инструмента"""
+    try:
+        data = request.get_json()
+        tool_name = data.get('tool_name')
+        api_key = data.get('api_key', '')
+        
+        if not tool_name:
+            return jsonify({"error": "tool_name is required"}), 400
+        
+        # Читаем текущие настройки
+        settings = _read_settings()
+        if 'tools' not in settings:
+            settings['tools'] = {}
+        if 'keys' not in settings['tools']:
+            settings['tools']['keys'] = {}
+        
+        # Обновляем ключ (или удаляем, если пустой)
+        if api_key.strip():
+            settings['tools']['keys'][tool_name] = api_key.strip()
+            logger.info(f"API key set for tool {tool_name}")
+        else:
+            settings['tools']['keys'].pop(tool_name, None)
+            logger.info(f"API key removed for tool {tool_name}")
+        
+        # Сохраняем настройки
+        _write_settings(settings)
+        
+        return jsonify({"success": True, "tool_name": tool_name, "has_key": bool(api_key.strip())})
+    
+    except Exception as e:
+        logger.error(f"Error setting tool key: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/agents', methods=['GET'])
+def get_agents():
+    """Получить список доступных CrewAI агентов и флоу"""
+    try:
+        # Пока возвращаем заглушку - в будущем интегрируем с SmartDelegator
+        # для получения реального списка агентов и флоу
+        agents = [
+            {
+                "id": "research_agent",
+                "name": "Research Agent",
+                "description": "Агент для исследовательских задач",
+                "type": "agent"
+            },
+            {
+                "id": "coding_agent",
+                "name": "Coding Agent", 
+                "description": "Агент для программирования",
+                "type": "agent"
+            },
+            {
+                "id": "analysis_flow",
+                "name": "Analysis Flow",
+                "description": "Флоу для комплексного анализа",
+                "type": "flow"
+            }
+        ]
+        
+        return jsonify({"agents": agents})
+    
+    except Exception as e:
+        logger.error(f"Error getting agents: {e}")
+        return jsonify({"error": str(e)}), 500
 
 # --- UI toggle for Terminal Unsafe Mode ---
 def _compute_terminal_unsafe_status() -> dict:

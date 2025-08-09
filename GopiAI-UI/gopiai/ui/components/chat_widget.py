@@ -66,6 +66,11 @@ class ChatWidget(QWidget):
         self.current_model_id = None
         self.current_model_data = None
         
+        # Прикрепленные инструменты и агенты
+        self.attached_tools = []
+        self.attached_agents = []
+        self.attached_flow = None
+        
         logger.info("[CHAT] Инициализация ChatWidget начата")
         
         logger.info("[CHAT] Инициализация менеджера памяти")
@@ -215,6 +220,33 @@ class ChatWidget(QWidget):
             logger.info("✅ Вкладка персонализации инициализирована")
         except ImportError:
             logger.warning("⚠️ PersonalityTab недоступен")
+
+        # Вкладка инструментов
+        try:
+            from .tools_tab import ToolsTab
+            self.tools_tab = ToolsTab()
+            self.tab_widget.addTab(self.tools_tab, "Инструменты")
+            
+            # Подключаем сигнал для прикрепления инструментов
+            self.tools_tab.tools_attached.connect(self._on_tools_attached)
+            
+            logger.info("✅ Вкладка инструментов инициализирована")
+        except ImportError as e:
+            logger.warning(f"⚠️ ToolsTab недоступен: {e}")
+
+        # Вкладка агентов и флоу
+        try:
+            from .agents_tab import AgentsTab
+            self.agents_tab = AgentsTab()
+            self.tab_widget.addTab(self.agents_tab, "Агенты/Флоу")
+            
+            # Подключаем сигналы для прикрепления агентов и флоу
+            self.agents_tab.agents_attached.connect(self._on_agents_attached)
+            self.agents_tab.flow_attached.connect(self._on_flow_attached)
+            
+            logger.info("✅ Вкладка агентов/флоу инициализирована")
+        except ImportError as e:
+            logger.warning(f"⚠️ AgentsTab недоступен: {e}")
 
         self.main_layout.addWidget(self.tab_widget, 1)
 
@@ -1013,10 +1045,80 @@ class ChatWidget(QWidget):
     
     def switch_to_chat_tab(self):
         """Переключается на вкладку чата"""
-        # Находим индекс вкладки чата (первая вкладка)
-        for i in range(self.tab_widget.count()):
-            if self.tab_widget.tabText(i) == "Чат":
-                self.tab_widget.setCurrentIndex(i)
-                print("Переключились на вкладку чата")
-                return True
-        return False
+        self.tab_widget.setCurrentIndex(0)
+    
+    # === Обработчики сигналов для новых вкладок ===
+    
+    def _on_tools_attached(self, tools: list):
+        """Обработчик прикрепления инструментов"""
+        self.attached_tools = tools.copy()
+        logger.info(f"[TOOLS] Прикреплены инструменты: {tools}")
+    
+    def _on_agents_attached(self, agents: list):
+        """Обработчик прикрепления агентов"""
+        self.attached_agents = agents.copy()
+        logger.info(f"[AGENTS] Прикреплены агенты: {[a.get('name', a.get('id', '')) for a in agents]}")
+    
+    def _on_flow_attached(self, flow: dict):
+        """Обработчик прикрепления флоу"""
+        self.attached_flow = flow.copy() if flow else None
+        if self.attached_flow:
+            logger.info(f"[FLOW] Прикреплен флоу: {self.attached_flow.get('name', self.attached_flow.get('id', ''))}")
+        else:
+            logger.info("[FLOW] Флоу очищен")
+    
+    def send_message(self):
+        """Отправляет сообщение с учетом прикрепленных инструментов и агентов"""
+        message_text = self.input.toPlainText().strip()
+        if not message_text:
+            return
+        
+        # Очищаем поле ввода
+        self.input.clear()
+        
+        # Отображаем сообщение пользователя
+        self._append_message_with_style('user', message_text)
+        
+        # Формируем metadata с информацией о выбранной модели и прикрепленных элементах
+        metadata = {
+            'chat_history': self._get_chat_history(),
+            'attached_files': self.attached_files.copy() if self.attached_files else []
+        }
+        
+        # Добавляем информацию о выбранной модели
+        if self.current_provider and self.current_model_id:
+            metadata['preferred_provider'] = self.current_provider
+            metadata['preferred_model'] = self.current_model_id
+            if self.current_model_data:
+                metadata['model_info'] = self.current_model_data
+        
+        # Добавляем прикрепленные инструменты
+        if self.attached_tools:
+            metadata['force_tools'] = self.attached_tools.copy()
+            logger.info(f"[SEND] Отправляем с принудительными инструментами: {self.attached_tools}")
+        
+        # Добавляем прикрепленных агентов
+        if self.attached_agents:
+            agent_ids = [a.get('id', a.get('name', '')) for a in self.attached_agents]
+            metadata['force_agents'] = agent_ids
+            logger.info(f"[SEND] Отправляем с принудительными агентами: {agent_ids}")
+        
+        # Добавляем прикрепленный флоу
+        if self.attached_flow:
+            flow_id = self.attached_flow.get('id', self.attached_flow.get('name', ''))
+            metadata['force_flow'] = flow_id
+            logger.info(f"[SEND] Отправляем с принудительным флоу: {flow_id}")
+        
+        # Отправляем сообщение через асинхронный обработчик
+        try:
+            success = self.async_handler.send_message(message_text, metadata)
+            if success:
+                logger.info(f"[SEND] Сообщение отправлено успешно: {message_text[:50]}...")
+                # Очищаем прикрепленные файлы после отправки
+                self.attached_files.clear()
+            else:
+                logger.error("[SEND] Ошибка отправки сообщения")
+                self._append_message_with_style('error', 'Ошибка отправки сообщения')
+        except Exception as e:
+            logger.error(f"[SEND] Исключение при отправке: {e}")
+            self._append_message_with_style('error', f'Ошибка: {str(e)}')

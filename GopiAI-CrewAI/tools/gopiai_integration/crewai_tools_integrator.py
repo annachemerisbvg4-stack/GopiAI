@@ -40,7 +40,19 @@ class CrewAIToolsIntegrator:
     def _discover_tools(self):
         """Обнаруживает доступные CrewAI инструменты"""
         
-        # Приоритетные инструменты для интеграции
+        # Динамически формируем список инструментов, исходя из доступных ключей в окружении
+        has_brave = bool(os.environ.get("BRAVE_API_KEY"))
+        has_tavily = bool(os.environ.get("TAVILY_API_KEY"))
+        has_firecrawl = bool(os.environ.get("FIRECRAWL_API_KEY"))
+        has_github = bool(os.environ.get("GITHUB_TOKEN"))
+        has_exa = bool(os.environ.get("EXA_API_KEY"))
+        has_jina = bool(os.environ.get("JINA_API_KEY"))
+        has_apify = bool(os.environ.get("APIFY_API_TOKEN"))
+        has_composio = bool(os.environ.get("COMPOSIO_API_KEY"))
+        has_patronus = bool(os.environ.get("PATRONUS_API_KEY"))
+        has_qdrant = bool(os.environ.get("QDRANT_API_KEY"))
+
+        # Базовый набор (не требуют внешних ключей)
         priority_tools = {
             # Выполнение кода
             'code_interpreter': {
@@ -49,7 +61,7 @@ class CrewAIToolsIntegrator:
                 'category': 'code_execution',
                 'description': 'Выполнение Python кода в безопасной среде'
             },
-            
+
             # Веб-скрапинг (улучшенный)
             'selenium_scraping': {
                 'module': 'tools.crewai_toolkit.tools.selenium_scraping_tool.selenium_scraping_tool',
@@ -57,22 +69,7 @@ class CrewAIToolsIntegrator:
                 'category': 'web_scraping',
                 'description': 'Продвинутый веб-скрапинг с Selenium'
             },
-            
-            # Поиск в интернете
-            'serper_dev': {
-                'module': 'tools.crewai_toolkit.tools.serper_dev_tool.serper_dev_tool',
-                'class': 'SerperDevTool',
-                'category': 'web_search',
-                'description': 'Поиск в интернете через Serper API'
-            },
-            
-            'brave_search': {
-                'module': 'tools.crewai_toolkit.tools.brave_search_tool.brave_search_tool',
-                'class': 'BraveSearchTool',
-                'category': 'web_search',
-                'description': 'Поиск через Brave Search API'
-            },
-            
+
             # Файловые операции (улучшенные)
             'file_read': {
                 'module': 'tools.crewai_toolkit.tools.file_read_tool.file_read_tool',
@@ -80,21 +77,21 @@ class CrewAIToolsIntegrator:
                 'category': 'file_operations',
                 'description': 'Чтение файлов с поддержкой различных форматов'
             },
-            
+
             'file_writer': {
                 'module': 'tools.crewai_toolkit.tools.file_writer_tool.file_writer_tool',
                 'class': 'FileWriterTool',
                 'category': 'file_operations',
                 'description': 'Запись файлов с поддержкой различных форматов'
             },
-            
+
             'directory_read': {
                 'module': 'tools.crewai_toolkit.tools.directory_read_tool.directory_read_tool',
                 'class': 'DirectoryReadTool',
                 'category': 'file_operations',
                 'description': 'Чтение содержимого директорий'
             },
-            
+
             # Поиск в файлах
             'csv_search': {
                 'module': 'tools.crewai_toolkit.tools.csv_search_tool.csv_search_tool',
@@ -102,93 +99,165 @@ class CrewAIToolsIntegrator:
                 'category': 'file_search',
                 'description': 'Поиск в CSV файлах'
             },
-            
+
             'json_search': {
                 'module': 'tools.crewai_toolkit.tools.json_search_tool.json_search_tool',
                 'class': 'JSONSearchTool',
                 'category': 'file_search',
                 'description': 'Поиск в JSON файлах'
             },
-            
+
             'pdf_search': {
                 'module': 'tools.crewai_toolkit.tools.pdf_search_tool.pdf_search_tool',
                 'class': 'PDFSearchTool',
                 'category': 'file_search',
                 'description': 'Поиск в PDF файлах'
             },
-            
-            # Веб-скрапинг альтернативы
+
+            # Веб-скрапинг базовый
             'scrape_website': {
                 'module': 'tools.crewai_toolkit.tools.scrape_website_tool.scrape_website_tool',
                 'class': 'ScrapeWebsiteTool',
                 'category': 'web_scraping',
                 'description': 'Базовый веб-скрапинг сайтов'
             },
-            
-            'firecrawl_scrape': {
+        }
+
+        # Опциональные инструменты, зависящие от ключей
+        if has_firecrawl:
+            priority_tools['firecrawl_scrape'] = {
                 'module': 'tools.crewai_toolkit.tools.firecrawl_scrape_website_tool.firecrawl_scrape_website_tool',
                 'class': 'FirecrawlScrapeWebsiteTool',
                 'category': 'web_scraping',
                 'description': 'Веб-скрапинг через Firecrawl API'
-            },
-            
-            # GitHub интеграция (наша рабочая реализация)
-            'github_search': {
+            }
+
+        if has_brave:
+            priority_tools['brave_search'] = {
+                'module': 'tools.crewai_toolkit.tools.brave_search_tool.brave_search_tool',
+                'class': 'BraveSearchTool',
+                'category': 'web_search',
+                'description': 'Поиск через Brave Search API'
+            }
+
+        if has_tavily:
+            priority_tools['tavily_search'] = {
+                'module': 'tools.crewai_toolkit.tools.tavily_search_tool.tavily_search_tool',
+                'class': 'TavilySearchTool',
+                'category': 'web_search',
+                'description': 'Поиск через Tavily API (ориентация на RAG)'
+            }
+
+        if has_github:
+            priority_tools['github_search'] = {
                 'module': 'tools.gopiai_integration.github_integration_tool',
                 'class': 'GitHubIntegrationTool',
                 'category': 'development',
                 'description': 'Поиск в GitHub репозиториях, коде, issues (рабочая реализация)'
-            },
-            
-            # AI генерация
-            'dalle': {
-                'module': 'tools.crewai_toolkit.tools.dalle_tool.dalle_tool',
-                'class': 'DallETool',
-                'category': 'ai_generation',
-                'description': 'Генерация изображений с помощью DALL-E'
-            },
-            
-            'vision': {
-                'module': 'tools.crewai_toolkit.tools.vision_tool.vision_tool',
-                'class': 'VisionTool',
-                'category': 'ai_analysis',
-                'description': 'Анализ изображений с помощью AI'
             }
-        }
-        
+
+        # Поисковые/скрапинг инструменты сторонних провайдеров
+        if has_exa:
+            priority_tools['exa_search'] = {
+                'module': 'tools.crewai_toolkit.tools.exa_tools.exa_search_tool',
+                'class': 'ExaSearchTool',
+                'category': 'web_search',
+                'description': 'Поиск/извлечение через Exa API'
+            }
+
+        if has_jina:
+            priority_tools['jina_scrape'] = {
+                'module': 'tools.crewai_toolkit.tools.jina_scrape_website_tool.jina_scrape_website_tool',
+                'class': 'JinaScrapeWebsiteTool',
+                'category': 'web_scraping',
+                'description': 'Скрапинг через Jina AI Reader'
+            }
+
+        if has_apify:
+            priority_tools['apify_actors'] = {
+                'module': 'tools.crewai_toolkit.tools.apify_actors_tool.apify_actors_tool',
+                'class': 'ApifyActorsTool',
+                'category': 'web_scraping',
+                'description': 'Запуск акторов Apify'
+            }
+
+        if has_composio:
+            priority_tools['composio'] = {
+                'module': 'tools.crewai_toolkit.tools.composio_tool.composio_tool',
+                'class': 'ComposioTool',
+                'category': 'automation',
+                'description': 'Интеграции через Composio'
+            }
+
+        if has_patronus:
+            priority_tools['patronus_eval'] = {
+                'module': 'tools.crewai_toolkit.tools.patronus_eval_tool.patronus_eval_tool',
+                'class': 'PatronusEvalTool',
+                'category': 'evaluation',
+                'description': 'Оценка качества ответов Patronus'
+            }
+
+        if has_qdrant:
+            priority_tools['qdrant_search'] = {
+                'module': 'tools.crewai_toolkit.tools.qdrant_vector_search_tool.qdrant_search_tool',
+                'class': 'QdrantVectorSearchTool',
+                'category': 'rag',
+                'description': 'Векторный поиск в Qdrant'
+            }
+
         # Проверяем доступность каждого инструмента
         for tool_name, tool_info in priority_tools.items():
-            try:
-                # Пробуем импортировать модуль
-                module = importlib.import_module(tool_info['module'])
-                tool_class = getattr(module, tool_info['class'])
-                
+            base_module_path = tool_info['module']
+            # Кандидаты модулей: локальный путь, автоматически выведенный путь официального пакета, и корневой модуль
+            candidates = [base_module_path]
+            try_official = base_module_path.replace('tools.crewai_toolkit.tools.', 'crewai_tools.tools.')
+            if try_official != base_module_path:
+                candidates.append(try_official)
+            # Часто классы доступны прямо из корня crewai_tools
+            candidates.append('crewai_tools')
+
+            import_errors = []
+            resolved = False
+            chosen_module_path = None
+            chosen_class = None
+
+            for candidate in candidates:
+                try:
+                    module = importlib.import_module(candidate)
+                    tool_class = getattr(module, tool_info['class'])
+                    chosen_module_path = candidate
+                    chosen_class = tool_class
+                    resolved = True
+                    break
+                except Exception as e:
+                    import_errors.append(f"{candidate}: {e}")
+
+            if resolved:
                 self.available_tools[tool_name] = {
-                    'class': tool_class,
-                    'module_path': tool_info['module'],
+                    'class': chosen_class,
+                    'module_path': chosen_module_path,
                     'category': tool_info['category'],
                     'description': tool_info['description'],
                     'available': True
                 }
-                
+
                 # Добавляем в категории
                 category = tool_info['category']
                 if category not in self.tool_categories:
                     self.tool_categories[category] = []
                 self.tool_categories[category].append(tool_name)
-                
-                self.logger.debug(f"✅ Инструмент {tool_name} доступен")
-                
-            except Exception as e:
+
+                self.logger.debug(f"✅ Инструмент {tool_name} доступен (используется модуль: {chosen_module_path})")
+            else:
                 self.available_tools[tool_name] = {
                     'class': None,
-                    'module_path': tool_info['module'],
+                    'module_path': base_module_path,
                     'category': tool_info['category'],
                     'description': tool_info['description'],
                     'available': False,
-                    'error': str(e)
+                    'error': '\n'.join(import_errors)
                 }
-                self.logger.debug(f"❌ Инструмент {tool_name} недоступен: {e}")
+                self.logger.debug(f"❌ Инструмент {tool_name} недоступен. Причины:\n- " + "\n- ".join(import_errors))
     
     def get_available_tools(self) -> Dict[str, Dict]:
         """Возвращает список доступных инструментов"""
@@ -288,8 +357,11 @@ class CrewAIToolsIntegrator:
         task_lower = task_description.lower()
         
         if task_type == 'web_search':
-            if 'google' in task_lower or 'search' in task_lower:
-                return 'serper_dev' if 'serper_dev' in available_tools else available_tools[0]
+            # Приоритет: Brave -> Tavily -> первый доступный
+            if 'brave_search' in available_tools:
+                return 'brave_search'
+            if 'tavily_search' in available_tools:
+                return 'tavily_search'
             return available_tools[0]
         
         elif task_type == 'web_scraping':

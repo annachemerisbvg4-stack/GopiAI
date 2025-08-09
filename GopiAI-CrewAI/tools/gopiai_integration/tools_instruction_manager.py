@@ -44,7 +44,7 @@ class ToolsInstructionManager:
             # 💻 Основные инструменты (с CrewAI улучшениями)
             "execute_shell": "Выполнение команд терминала (через CodeInterpreterTool): ls, dir, git, npm, pip, docker, curl",
             "web_scraper": "Продвинутый веб-скрапинг (через SeleniumScrapingTool): динамические страницы, JavaScript",
-            "web_search": "Поиск в интернете (через SerperDevTool): Google, Bing, структурированные результаты",
+            "web_search": "Поиск в интернете (через Brave/Tavily): быстрые и дешевые SERP, структурированные результаты",
             "file_operations": "Улучшенные файловые операции (через FileReadTool/FileWriterTool): множество форматов",
             
             # 🌐 Веб и API
@@ -86,6 +86,7 @@ class ToolsInstructionManager:
         instructions = {
             "execute_shell": self._get_execute_shell_instructions(),
             "web_scraper": self._get_web_scraper_instructions(),
+            "web_search": self._get_web_search_instructions(),
             "api_client": self._get_api_client_instructions(),
             "url_analyzer": self._get_url_analyzer_instructions(),
             "browser_tools": self._get_browser_instructions(),
@@ -282,6 +283,55 @@ web_scraper.call_tool("web_scraper", {
 ## 🔥 АВТОМАТИЧЕСКОЕ ИСПОЛЬЗОВАНИЕ:
 Когда пользователь даёт URL и просит "проанализировать", "скачать", "извлечь данные" - 
 я АВТОМАТИЧЕСКИ использую этот инструмент!
+"""
+    
+    def _get_web_search_instructions(self) -> str:
+        """Детальные инструкции для web_search (Brave/Tavily)"""
+        return """
+# 🔎 Web Search (Brave/Tavily) - Подробные инструкции
+
+## Поддерживаемые провайдеры:
+- Brave Search API (переменная окружения: BRAVE_API_KEY)
+- Tavily API (переменная окружения: TAVILY_API_KEY)
+
+## Основные параметры запроса:
+- query (str, обязательно): поисковый запрос
+- top_k (int, опц., по умолчанию 5-10): сколько результатов вернуть
+- region / country (str, опц.): регион поиска (например, us, ru, de)
+- freshness / time_range (str, опц.): период свежести (например, d7, d30)
+- include_domains (list[str], опц.): приоритетные домены
+- exclude_domains (list[str], опц.): исключаемые домены
+- safe_search (bool/str, опц.): уровень безопасного поиска
+
+## Примеры использования:
+
+```python
+# Базовый поиск (автовыбор провайдера: Brave → Tavily → остальные)
+web_search.call_tool("web_search", {
+    "query": "python asyncio tutorial",
+    "top_k": 8
+})
+
+# Поиск с фильтрами доменов
+web_search.call_tool("web_search", {
+    "query": "fastapi background tasks",
+    "include_domains": ["fastapi.tiangolo.com", "stackoverflow.com"],
+    "top_k": 5
+})
+
+# Поиск с ограничением по свежести и региону
+web_search.call_tool("web_search", {
+    "query": "openai responses streaming chunking",
+    "freshness": "d30",
+    "region": "us",
+    "top_k": 10
+})
+```
+
+## Замечания:
+- Провайдер выбирается маршрутизатором инструментов: приоритет Brave → Tavily.
+- Если ключи отсутствуют, будет выбран первый доступный web_search инструмент.
+- Возвращай краткий структурированный список результатов (title, url, snippet).
 """
     
     def _get_api_client_instructions(self) -> str:
