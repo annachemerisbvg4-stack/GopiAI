@@ -193,3 +193,97 @@ class EnhancedBrowserWidget(QWidget):
         self.page_loaded.emit(self.current_url, self.current_title)
         
         logger.info(f"Page loaded: {self.current_title} ({self.current_url})")
+
+    # --- Методы управления браузером для интеграции с backend командами ---
+    def navigate(self, url: str) -> None:
+        """Перейти по адресу URL (alias к load_url)."""
+        self.load_url(url)
+
+    def execute_js(self, script: str, callback=None) -> None:
+        """Выполнить произвольный JavaScript на странице."""
+        try:
+            page: QWebEnginePage = self.browser.page()
+            page.runJavaScript(script, callback)
+            logger.debug(f"[BROWSER] Executed JS: {script[:120]}..." if len(script) > 120 else f"[BROWSER] Executed JS: {script}")
+        except Exception as e:
+            logger.error(f"[BROWSER] JS execution error: {e}")
+
+    def click(self, selector: str) -> None:
+        """Клик по элементу через CSS-селектор."""
+        if not selector:
+            return
+        js = (
+            "(function(){\n"
+            "  var el = document.querySelector(" + jsonSelector(selector) + ");\n"
+            "  if (el) { el.scrollIntoView({behavior:'instant',block:'center'}); el.click(); true } else { false }\n"
+            "})();"
+        )
+        self.execute_js(js)
+
+    def type_text(self, selector: str, text: str, clear: bool = False) -> None:
+        """Ввод текста в поле по CSS-селектору."""
+        if not selector:
+            return
+        safe_text = (text or "").replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"")
+        js = (
+            "(function(){\n"
+            "  var el = document.querySelector(" + jsonSelector(selector) + ");\n"
+            "  if (!el) return false;\n"
+            "  el.focus();\n"
+            + ("  el.value='';\n" if clear else "") +
+            f"  el.value = (el.value || '') + \"{safe_text}\";\n"+
+            "  el.dispatchEvent(new Event('input', {bubbles:true}));\n"
+            "  el.dispatchEvent(new Event('change', {bubbles:true}));\n"
+            "  return true;\n"
+            "})();"
+        )
+        self.execute_js(js)
+
+    def scroll_page(self, direction: str = "down", amount: int = 500) -> None:
+        """Прокрутка страницы. direction: up|down|to_top|to_bottom"""
+        direction = (direction or "down").lower()
+        if direction in ("to_top", "top"):
+            js = "window.scrollTo(0,0);"
+        elif direction in ("to_bottom", "bottom"):
+            js = "window.scrollTo(0, document.body.scrollHeight || document.documentElement.scrollHeight);"
+        else:
+            dy = abs(int(amount or 500)) * (-1 if direction == "up" else 1)
+            js = f"window.scrollBy(0, {dy});"
+        self.execute_js(js)
+
+    def apply_actions(self, actions):
+        """Выполняет список действий браузера, полученных из backend.
+        Ожидаемый формат элементов:
+          {"action": "navigate"|"click"|"type"|"scroll"|"execute_js", ...}
+        """
+        try:
+            if not actions:
+                return
+            if isinstance(actions, dict):
+                actions = [actions]
+
+            for idx, act in enumerate(actions):
+                if not isinstance(act, dict):
+                    continue
+                action = str(act.get("action", "")).lower()
+                logger.info(f"[BROWSER] Apply action #{idx+1}: {action} -> {act}")
+                if action == "navigate" and act.get("target"):
+                    self.navigate(str(act.get("target")))
+                elif action == "click" and act.get("selector"):
+                    self.click(str(act.get("selector")))
+                elif action == "type" and act.get("selector") is not None:
+                    self.type_text(str(act.get("selector")), str(act.get("text", "")), bool(act.get("clear", False)))
+                elif action == "scroll":
+                    self.scroll_page(str(act.get("direction", "down")), int(act.get("amount", 500)))
+                elif action in ("execute_js", "run_js") and act.get("script"):
+                    self.execute_js(str(act.get("script")))
+                else:
+                    logger.warning(f"[BROWSER] Неизвестное действие или недостаточно параметров: {act}")
+        except Exception as e:
+            logger.error(f"[BROWSER] Ошибка применения действий: {e}")
+
+
+# Вспомогательная функция для безопасного оборачивания селектора в JS-строку
+def jsonSelector(selector: str) -> str:
+    s = (selector or "").replace("\\", "\\\\").replace("\"", "\\\"")
+    return f'"{s}"'

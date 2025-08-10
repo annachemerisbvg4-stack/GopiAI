@@ -1,0 +1,10 @@
+{
+  "auto_update_enabled": true,
+  "stale_issue_days": 30,
+  "resolution_check_interval": 7,
+  "auto_resolve_threshold": 0.95,
+  "notification_settings": {
+    "email_enabled": false,
+    "slack_enabled": false
+  }
+}

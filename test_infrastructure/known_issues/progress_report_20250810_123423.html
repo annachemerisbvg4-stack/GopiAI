@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GopiAI Issue Progress Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .metric { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #007bff; }
+        .chart-container { width: 100%; height: 400px; margin: 20px 0; }
+        .progress-item { background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .trend-improving { border-left: 4px solid #28a745; }
+        .trend-declining { border-left: 4px solid #dc3545; }
+        .trend-stable { border-left: 4px solid #ffc107; }
+        .trend-stagnant { border-left: 4px solid #6c757d; }
+        .insight { background: #e3f2fd; padding: 10px; margin: 5px 0; border-radius: 5px; border-left: 3px solid #2196f3; }
+        .recommendation { background: #fff3e0; padding: 10px; margin: 5px 0; border-radius: 5px; border-left: 3px solid #ff9800; }
+        .milestone { background: #e8f5e8; padding: 8px; margin: 3px 0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Issue Progress Report</h1>
+            <p>Generated: 2025-08-10T12:34:23.467729</p>
+            <p>Tracking 1 active issues</p>
+        </div>
+        
+        <div class="metrics">
+            <div class="metric">
+                <h3>📈 Improving</h3>
+                <h2>0</h2>
+            </div>
+            <div class="metric">
+                <h3>📉 Declining</h3>
+                <h2>0</h2>
+            </div>
+            <div class="metric">
+                <h3>⏸️ Stagnant</h3>
+                <h2>0</h2>
+            </div>
+            <div class="metric">
+                <h3>🎯 Recent Milestones</h3>
+                <h2>0</h2>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="progressChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="trendChart"></canvas>
+        </div>
+        
+        <h3>📈 Current Progress</h3>
+        
+        <div class="progress-item">
+            <h4>TEST-001</h4>
+            <div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;">
+                <div style="background: #28a745; height: 100%; width: 0.0%; transition: width 0.3s;"></div>
+            </div>
+            <p>0.0% complete (0/0 tests passing)</p>
+            <p><em>Trend: stable</em></p>
+        </div>
+        
+        
+        <h3>🔍 Insights</h3>
+        <div class="insight">🔍 1 issues need attention (<20% progress)</div><div class="insight">🐌 Resolution velocity is low: 0.0 issues per week</div><div class="insight">⚠️ Quality score needs improvement: 0.42</div>
+        
+        <h3>💡 Recommendations</h3>
+        <div class="recommendation">🔧 Consider allocating more resources to issue resolution</div><div class="recommendation">⚡ Focus on improving resolution efficiency - consider process improvements</div>
+        
+        <h3>🏆 Recent Milestones</h3>
+        
+        
+        <h3>👥 Team Metrics</h3>
+        <div class="metrics">
+            <div class="metric">
+                <h4>Resolution Velocity</h4>
+                <h3>0.0/week</h3>
+            </div>
+            <div class="metric">
+                <h4>Quality Score</h4>
+                <h3>0.42</h3>
+            </div>
+            <div class="metric">
+                <h4>Efficiency Score</h4>
+                <h3>0.00</h3>
+            </div>
+            <div class="metric">
+                <h4>Avg Resolution Time</h4>
+                <h3>0.0 days</h3>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Progress Chart
+        const progressCtx = document.getElementById('progressChart').getContext('2d');
+        const progressData = [{"label": "TEST-001", "value": 0.0}];
+        
+        new Chart(progressCtx, {
+            type: 'bar',
+            data: {
+                labels: progressData.map(d => d.label),
+                datasets: [{
+                    label: 'Resolution Progress (%)',
+                    data: progressData.map(d => d.value),
+                    backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Issue Resolution Progress'
+                    }
+                }
+            }
+        });
+        
+        // Trend Chart
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        const trendSummary = {"improving": 0, "declining": 0, "stable": 0, "stagnant": 0};
+        
+        new Chart(trendCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(trendSummary),
+                datasets: [{
+                    data: Object.values(trendSummary),
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',   // improving
+                        'rgba(220, 53, 69, 0.8)',   // declining
+                        'rgba(255, 193, 7, 0.8)',   // stable
+                        'rgba(108, 117, 125, 0.8)'  // stagnant
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Issue Trend Distribution'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

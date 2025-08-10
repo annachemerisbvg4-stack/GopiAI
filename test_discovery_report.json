@@ -1,21 +1,21 @@
 {
   "summary": {
-    "total_modules": 35,
+    "total_modules": 41,
     "total_suites": 6,
-    "total_tests": 541,
+    "total_tests": 675,
     "by_category": {
       "unit": 11,
       "integration": 11,
-      "ui": 12,
+      "ui": 18,
       "e2e": 1
     },
     "by_environment": {
-      "gopiai_env": 19,
+      "gopiai_env": 25,
       "crewai_env": 16
     },
     "by_module": {
       "GopiAI-Core": 5,
-      "GopiAI-UI": 12,
+      "GopiAI-UI": 18,
       "GopiAI-CrewAI": 16,
       "GopiAI-Assets": 2
     }
@@ -288,10 +288,15 @@
       "test_functions": [
         "test_complete_conversation_flow",
         "test_model_switching_scenario",
-        "test_memory_persistence_scenario"
+        "test_memory_persistence_scenario",
+        "test_service_recovery_scenario",
+        "test_multiple_users_scenario"
       ],
       "dependencies": [
-        "pytest"
+        "pytest",
+        "sys",
+        "pathlib",
+        "tests.e2e.test_complete_scenarios"
       ],
       "markers": [],
       "estimated_duration": 0.0,
@@ -317,6 +322,46 @@
       "markers": [],
       "estimated_duration": 0.0,
       "requires_services": []
+    },
+    {
+      "file_path": "GopiAI-UI\\tests\\security\\test_ui_security.py",
+      "module_name": "GopiAI-UI",
+      "category": "ui",
+      "environment": "gopiai_env",
+      "test_functions": [
+        "test_message_input_sanitization",
+        "test_text_area_input_validation",
+        "test_clipboard_security",
+        "test_password_field_masking",
+        "test_api_key_display_masking",
+        "test_sensitive_data_in_window_title",
+        "test_session_timeout_handling",
+        "test_auto_logout_on_inactivity",
+        "test_secure_credential_storage",
+        "test_file_dialog_path_validation",
+        "test_file_type_validation",
+        "test_temporary_file_cleanup",
+        "test_drag_drop_security"
+      ],
+      "dependencies": [
+        "pytest",
+        "os",
+        "tempfile",
+        "json",
+        "pathlib",
+        "unittest.mock",
+        "PySide6.QtCore",
+        "PySide6.QtWidgets",
+        "PySide6.QtTest",
+        "time",
+        "time"
+      ],
+      "markers": [],
+      "estimated_duration": 0.0,
+      "requires_services": [
+        "crewai_server",
+        "display"
+      ]
     },
     {
       "file_path": "GopiAI-UI\\tests\\ui\\test_chat_widget.py",
@@ -349,6 +394,57 @@
       "estimated_duration": 0.0,
       "requires_services": [
         "crewai_server",
+        "display"
+      ]
+    },
+    {
+      "file_path": "GopiAI-UI\\tests\\ui\\test_file_operations_ui.py",
+      "module_name": "GopiAI-UI",
+      "category": "ui",
+      "environment": "gopiai_env",
+      "test_functions": [
+        "test_open_file_dialog",
+        "test_save_file_dialog",
+        "test_directory_selection_dialog",
+        "test_file_dialog_cancellation",
+        "test_drag_enter_event",
+        "test_drop_event_single_file",
+        "test_drop_event_multiple_files",
+        "test_drop_event_invalid_files",
+        "test_drag_and_drop_with_chat_widget",
+        "test_import_conversation_from_file",
+        "test_export_conversation_to_file",
+        "test_export_conversation_as_markdown",
+        "test_export_conversation_as_pdf",
+        "test_bulk_export_conversations",
+        "test_attach_text_file",
+        "test_attach_image_file",
+        "test_attach_code_file",
+        "test_attach_multiple_files",
+        "test_remove_file_attachment",
+        "test_list_attachments",
+        "test_file_not_found_error",
+        "test_permission_denied_error",
+        "test_file_too_large_error",
+        "test_unsupported_file_type_error",
+        "test_file_upload_progress",
+        "test_bulk_export_progress",
+        "test_file_processing_progress",
+        "test_file_operations_with_conversation_management",
+        "test_file_attachment_with_message_sending"
+      ],
+      "dependencies": [
+        "pytest",
+        "sys",
+        "os",
+        "pathlib",
+        "unittest.mock",
+        "ui_fixtures",
+        "fixtures"
+      ],
+      "markers": [],
+      "estimated_duration": 0.0,
+      "requires_services": [
         "display"
       ]
     },
@@ -404,11 +500,204 @@
       "module_name": "GopiAI-UI",
       "category": "ui",
       "environment": "gopiai_env",
-      "test_functions": [],
-      "dependencies": [],
+      "test_functions": [
+        "test_send_simple_message",
+        "test_send_empty_message_handling",
+        "test_send_long_message",
+        "test_send_message_with_special_characters",
+        "test_message_sending_with_different_models",
+        "test_message_sending_error_handling",
+        "test_message_sending_with_network_timeout",
+        "test_rapid_message_sending",
+        "test_message_input_keyboard_shortcuts",
+        "test_message_input_text_formatting",
+        "test_message_history_update_after_sending",
+        "test_receive_ai_response",
+        "test_receive_streaming_response",
+        "test_receive_error_response",
+        "test_receive_long_response",
+        "test_receive_response_with_code_blocks",
+        "test_message_sending_with_main_window",
+        "test_message_sending_with_model_switching",
+        "test_message_sending_with_file_attachment",
+        "test_full_conversation_flow",
+        "test_message_sending_response_time",
+        "test_large_message_handling_performance"
+      ],
+      "dependencies": [
+        "pytest",
+        "sys",
+        "os",
+        "pathlib",
+        "unittest.mock",
+        "asyncio",
+        "ui_fixtures",
+        "fixtures",
+        "time",
+        "unittest.mock",
+        "unittest.mock",
+        "unittest.mock",
+        "unittest.mock",
+        "unittest.mock",
+        "unittest.mock",
+        "unittest.mock"
+      ],
       "markers": [],
       "estimated_duration": 0.0,
-      "requires_services": []
+      "requires_services": [
+        "crewai_server",
+        "display"
+      ]
+    },
+    {
+      "file_path": "GopiAI-UI\\tests\\ui\\test_model_switching_ui.py",
+      "module_name": "GopiAI-UI",
+      "category": "ui",
+      "environment": "gopiai_env",
+      "test_functions": [
+        "test_model_selector_initialization",
+        "test_model_selection_change",
+        "test_model_data_retrieval",
+        "test_add_new_model",
+        "test_clear_models",
+        "test_model_selector_with_invalid_model",
+        "test_model_switching_with_chat_widget",
+        "test_model_switching_preserves_conversation",
+        "test_model_switching_updates_ui_indicators",
+        "test_model_switching_with_settings_persistence",
+        "test_model_availability_check",
+        "test_unavailable_model_handling",
+        "test_model_status_indicators",
+        "test_model_parameters_configuration",
+        "test_model_provider_configuration",
+        "test_custom_model_addition",
+        "test_model_switching_speed",
+        "test_model_list_loading_performance",
+        "test_model_switching_shortcuts",
+        "test_model_switching_dropdown_navigation",
+        "test_complete_model_switching_workflow",
+        "test_model_switching_with_conversation_context"
+      ],
+      "dependencies": [
+        "pytest",
+        "sys",
+        "os",
+        "pathlib",
+        "unittest.mock",
+        "ui_fixtures",
+        "fixtures",
+        "time"
+      ],
+      "markers": [],
+      "estimated_duration": 0.0,
+      "requires_services": [
+        "crewai_server",
+        "display"
+      ]
+    },
+    {
+      "file_path": "GopiAI-UI\\tests\\ui\\test_runner_ui.py",
+      "module_name": "GopiAI-UI",
+      "category": "ui",
+      "environment": "gopiai_env",
+      "test_functions": [],
+      "dependencies": [
+        "pytest",
+        "sys",
+        "os",
+        "pathlib",
+        "time",
+        "typing",
+        "test_config",
+        "fixtures",
+        "argparse",
+        "json"
+      ],
+      "markers": [],
+      "estimated_duration": 0.0,
+      "requires_services": [
+        "display"
+      ]
+    },
+    {
+      "file_path": "GopiAI-UI\\tests\\ui\\test_settings_ui.py",
+      "module_name": "GopiAI-UI",
+      "category": "ui",
+      "environment": "gopiai_env",
+      "test_functions": [
+        "test_settings_dialog_initialization",
+        "test_settings_dialog_show_hide",
+        "test_settings_dialog_accept_reject",
+        "test_settings_retrieval",
+        "test_settings_modification",
+        "test_theme_selection",
+        "test_theme_change_through_settings",
+        "test_theme_preview",
+        "test_custom_theme_colors",
+        "test_font_family_selection",
+        "test_font_size_adjustment",
+        "test_font_preview",
+        "test_font_settings_application",
+        "test_api_key_input",
+        "test_multiple_api_keys",
+        "test_api_key_validation",
+        "test_api_key_masking",
+        "test_default_model_selection",
+        "test_model_parameters_configuration",
+        "test_model_availability_settings",
+        "test_auto_save_setting",
+        "test_notification_settings",
+        "test_conversation_settings",
+        "test_privacy_settings",
+        "test_save_settings",
+        "test_load_settings",
+        "test_reset_settings",
+        "test_export_settings",
+        "test_import_settings",
+        "test_settings_integration_with_main_window",
+        "test_settings_application_to_ui",
+        "test_settings_with_model_selector",
+        "test_settings_dialog_shortcuts"
+      ],
+      "dependencies": [
+        "pytest",
+        "sys",
+        "os",
+        "pathlib",
+        "unittest.mock",
+        "ui_fixtures",
+        "fixtures"
+      ],
+      "markers": [],
+      "estimated_duration": 0.0,
+      "requires_services": [
+        "crewai_server",
+        "display"
+      ]
+    },
+    {
+      "file_path": "GopiAI-UI\\tests\\ui\\test_simple_ui.py",
+      "module_name": "GopiAI-UI",
+      "category": "ui",
+      "environment": "gopiai_env",
+      "test_functions": [
+        "test_basic_ui_setup",
+        "test_mock_functionality"
+      ],
+      "dependencies": [
+        "pytest",
+        "sys",
+        "os",
+        "pathlib",
+        "ui_fixtures",
+        "unittest.mock",
+        "unittest.mock"
+      ],
+      "markers": [],
+      "estimated_duration": 0.0,
+      "requires_services": [
+        "display"
+      ]
     },
     {
       "file_path": "GopiAI-UI\\tests\\unit\\test_main_window.py",
@@ -1043,16 +1332,36 @@
       "category": "integration",
       "environment": "crewai_env",
       "test_functions": [
-        "test_input_validation",
-        "test_authentication_security",
-        "test_rate_limiting",
-        "test_api_key_protection",
+        "test_sql_injection_protection",
+        "test_xss_protection",
+        "test_csrf_protection",
+        "test_input_validation_and_sanitization",
+        "test_rate_limiting_protection",
+        "test_api_key_not_in_logs",
+        "test_api_key_not_in_responses",
         "test_environment_variable_security",
-        "test_file_access_security",
-        "test_directory_traversal_protection"
+        "test_secret_masking_in_debug_output",
+        "test_session_token_validation",
+        "test_session_hijacking_protection",
+        "test_authentication_bypass_attempts",
+        "test_directory_traversal_protection",
+        "test_file_access_permissions",
+        "test_file_upload_security",
+        "test_temporary_file_security",
+        "test_debug_mode_security",
+        "test_cors_configuration"
       ],
       "dependencies": [
-        "pytest"
+        "pytest",
+        "requests",
+        "json",
+        "os",
+        "tempfile",
+        "logging",
+        "re",
+        "pathlib",
+        "unittest.mock",
+        "typing"
       ],
       "markers": [],
       "estimated_duration": 0.0,
@@ -1355,9 +1664,15 @@
       "modules": [
         "GopiAI-UI\\tests\\e2e\\test_user_scenarios.py",
         "GopiAI-UI\\tests\\performance\\test_ui_performance.py",
+        "GopiAI-UI\\tests\\security\\test_ui_security.py",
         "GopiAI-UI\\tests\\ui\\test_chat_widget.py",
+        "GopiAI-UI\\tests\\ui\\test_file_operations_ui.py",
         "GopiAI-UI\\tests\\ui\\test_main_window_ui.py",
         "GopiAI-UI\\tests\\ui\\test_message_sending_ui.py",
+        "GopiAI-UI\\tests\\ui\\test_model_switching_ui.py",
+        "GopiAI-UI\\tests\\ui\\test_runner_ui.py",
+        "GopiAI-UI\\tests\\ui\\test_settings_ui.py",
+        "GopiAI-UI\\tests\\ui\\test_simple_ui.py",
         "GopiAI-UI\\tests\\unit\\test_main_window.py",
         "GopiAI-UI\\tests\\unit\\test_model_selector.py",
         "GopiAI-UI\\tests\\unit\\test_notification_system.py",
@@ -1369,10 +1684,10 @@
       "setup_requirements": [
         "gopiai_env",
         "memory_system",
-        "display",
-        "crewai_server"
+        "crewai_server",
+        "display"
       ],
-      "total_tests": 174,
+      "total_tests": 297,
       "estimated_duration": 0.0
     },
     {
@@ -1388,8 +1703,8 @@
         "GopiAI-CrewAI\\tests\\unit\\test_state_manager.py"
       ],
       "setup_requirements": [
-        "crewai_env",
-        "crewai_server"
+        "crewai_server",
+        "crewai_env"
       ],
       "total_tests": 63,
       "estimated_duration": 0.0
@@ -1402,8 +1717,8 @@
         "GopiAI-CrewAI\\tests\\e2e\\test_terminal_tool.py"
       ],
       "setup_requirements": [
-        "crewai_env",
-        "crewai_server"
+        "crewai_server",
+        "crewai_env"
       ],
       "total_tests": 2,
       "estimated_duration": 0.0
@@ -1424,11 +1739,11 @@
         "GopiAI-CrewAI\\tests\\unit\\test_api_server.py"
       ],
       "setup_requirements": [
-        "crewai_env",
         "memory_system",
-        "crewai_server"
+        "crewai_server",
+        "crewai_env"
       ],
-      "total_tests": 136,
+      "total_tests": 147,
       "estimated_duration": 0.0
     }
   ]

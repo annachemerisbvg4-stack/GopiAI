@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-08-10T12:38:53.824955",
+  "total_resolution_events": 0,
+  "auto_resolved_count": 0,
+  "manual_resolved_count": 0,
+  "recent_activity": 0,
+  "average_confidence_score": 0.0,
+  "average_resolution_percentage": 0.0,
+  "monitoring_config": {
+    "resolution_threshold": 95.0,
+    "confidence_threshold": 0.8,
+    "verification_runs": 3,
+    "monitoring_interval": 300,
+    "false_positive_protection": true,
+    "notification_enabled": true,
+    "auto_resolve_enabled": true
+  },
+  "recent_events": [],
+  "recommendations": [
+    "No resolution events yet - system is ready to detect resolutions"
+  ]
+}

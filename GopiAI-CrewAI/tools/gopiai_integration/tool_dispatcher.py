@@ -215,6 +215,160 @@ class ToolDispatcher:
             mode=intent_match.mode,
             context=context or {}
         )
+
+    def dispatch_agent_call(self,
+                            agent_name: str,
+                            params: Dict[str, Any] = None,
+                            user_text: str = "",
+                            mode: IntentMode = IntentMode.AUTO,
+                            context: Dict[str, Any] = None) -> DispatchResponse:
+        """
+        Диспетчеризация вызова агента (через SmartDelegator/AgentTemplateSystem).
+        Возвращает честные ошибки, если агент не найден или не доступен.
+        """
+        start_time = time.time()
+        params = params or {}
+        context = context or {}
+
+        # Формируем псевдо-вызов для логирования/статистики
+        tool_call = ToolCall(
+            tool_name=agent_name,
+            original_name=agent_name,
+            mode=mode,
+            params=params,
+            context=context,
+            timestamp=start_time,
+            user_text=user_text
+        )
+        self._update_stats(tool_call)
+
+        self.logger.info(f"👤 Диспетчеризация агента: {agent_name} (режим: {mode.value})")
+        self.logger.debug(f"📝 Параметры агента: {json.dumps(params, ensure_ascii=False, indent=2)}")
+
+        if not self.smart_delegator:
+            error_msg = "SmartDelegator не инициализирован"
+            self.logger.error(f"❌ {error_msg}")
+            return DispatchResponse(
+                result=DispatchResult.EXECUTION_ERROR,
+                tool_call=tool_call,
+                response_data=None,
+                error_message=error_msg,
+                execution_time=time.time() - start_time,
+                suggestions=[]
+            )
+
+        # Проверяем доступность агента
+        try:
+            if (not getattr(self.smart_delegator, "_is_agent_available", None)) or \
+               (not self.smart_delegator._is_agent_available(agent_name)):
+                error_msg = f"Агент '{agent_name}' не найден или недоступен"
+                self.logger.warning(f"❌ {error_msg}")
+                return DispatchResponse(
+                    result=DispatchResult.TOOL_NOT_FOUND,
+                    tool_call=tool_call,
+                    response_data=None,
+                    error_message=error_msg,
+                    execution_time=time.time() - start_time,
+                    suggestions=[]
+                )
+        except Exception as e:
+            error_msg = f"Ошибка проверки доступности агента: {str(e)}"
+            self.logger.error(f"❌ {error_msg}")
+            return DispatchResponse(
+                result=DispatchResult.EXECUTION_ERROR,
+                tool_call=tool_call,
+                response_data=None,
+                error_message=error_msg,
+                execution_time=time.time() - start_time,
+                suggestions=[]
+            )
+
+        # Выполнение агента
+        try:
+            result = self.smart_delegator._call_agent(agent_name, params, context)
+            return DispatchResponse(
+                result=DispatchResult.SUCCESS,
+                tool_call=tool_call,
+                response_data=result,
+                error_message=None,
+                execution_time=time.time() - start_time,
+                suggestions=[]
+            )
+        except Exception as e:
+            error_msg = f"Ошибка выполнения агента {agent_name}: {str(e)}"
+            self.logger.error(f"❌ {error_msg}")
+            self.logger.debug("🔍 Трассировка ошибки:", exc_info=True)
+            return DispatchResponse(
+                result=DispatchResult.EXECUTION_ERROR,
+                tool_call=tool_call,
+                response_data=None,
+                error_message=error_msg,
+                execution_time=time.time() - start_time,
+                suggestions=[]
+            )
+
+    def dispatch_flow_call(self,
+                           flow_name: str,
+                           params: Dict[str, Any] = None,
+                           user_text: str = "",
+                           mode: IntentMode = IntentMode.AUTO,
+                           context: Dict[str, Any] = None) -> DispatchResponse:
+        """
+        Диспетчеризация вызова флоу (Crew/Workflow) через SmartDelegator.
+        Требует валидных конфигураций агентов и задач внутри params.
+        """
+        start_time = time.time()
+        params = params or {}
+        context = context or {}
+
+        tool_call = ToolCall(
+            tool_name=flow_name,
+            original_name=flow_name,
+            mode=mode,
+            params=params,
+            context=context,
+            timestamp=start_time,
+            user_text=user_text
+        )
+        self._update_stats(tool_call)
+
+        self.logger.info(f"🔁 Диспетчеризация флоу: {flow_name} (режим: {mode.value})")
+        self.logger.debug(f"📝 Параметры флоу: {json.dumps(params, ensure_ascii=False, indent=2)}")
+
+        if not self.smart_delegator:
+            error_msg = "SmartDelegator не инициализирован"
+            self.logger.error(f"❌ {error_msg}")
+            return DispatchResponse(
+                result=DispatchResult.EXECUTION_ERROR,
+                tool_call=tool_call,
+                response_data=None,
+                error_message=error_msg,
+                execution_time=time.time() - start_time,
+                suggestions=[]
+            )
+
+        try:
+            result = self.smart_delegator._call_flow(flow_name, params, context)
+            return DispatchResponse(
+                result=DispatchResult.SUCCESS,
+                tool_call=tool_call,
+                response_data=result,
+                error_message=None,
+                execution_time=time.time() - start_time,
+                suggestions=[]
+            )
+        except Exception as e:
+            error_msg = f"Ошибка выполнения флоу {flow_name}: {str(e)}"
+            self.logger.error(f"❌ {error_msg}")
+            self.logger.debug("🔍 Трассировка ошибки:", exc_info=True)
+            return DispatchResponse(
+                result=DispatchResult.EXECUTION_ERROR,
+                tool_call=tool_call,
+                response_data=None,
+                error_message=error_msg,
+                execution_time=time.time() - start_time,
+                suggestions=[]
+            )
     
     def suggest_tools(self, user_text: str, max_suggestions: int = 3) -> List[Tuple[str, float, Dict[str, Any]]]:
         """

@@ -1,0 +1,9 @@
+{
+  "resolution_threshold": 95.0,
+  "confidence_threshold": 0.8,
+  "verification_runs": 3,
+  "monitoring_interval": 300,
+  "false_positive_protection": true,
+  "notification_enabled": true,
+  "auto_resolve_enabled": true
+}

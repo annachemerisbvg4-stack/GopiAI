@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-08-10T12:34:34.159060",
+  "total_issues": 1,
+  "issues_by_status": {
+    "open": 1
+  },
+  "issues_by_priority": {
+    "high": 1
+  },
+  "resolution_progress": [
+    {
+      "issue_id": "TEST-001",
+      "total_affected_tests": 0,
+      "passing_tests": 0,
+      "failing_tests": 0,
+      "skipped_tests": 0,
+      "resolution_percentage": 0.0,
+      "last_check": "2025-08-10T12:34:34.147223",
+      "trend": "stable"
+    }
+  ],
+  "recently_resolved": [],
+  "stale_issues": [],
+  "recommendations": []
+}

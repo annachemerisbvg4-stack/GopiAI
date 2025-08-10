@@ -40,6 +40,7 @@ from .chat_async_handler import ChatAsyncHandler
 # from .optimized_chat_widget import OptimizedChatWidget  # Модуль не найден, закомментировано
 from .terminal_widget import TerminalWidget
 from gopiai.ui.utils.icon_helpers import create_icon_button
+from .enhanced_browser_widget import EnhancedBrowserWidget
 
 class ChatWidget(QWidget):
     
@@ -70,6 +71,8 @@ class ChatWidget(QWidget):
         self.attached_tools = []
         self.attached_agents = []
         self.attached_flow = None
+        # Виджет браузера будет создан лениво
+        self.browser_widget = None
         
         logger.info("[CHAT] Инициализация ChatWidget начата")
         
@@ -301,6 +304,78 @@ class ChatWidget(QWidget):
         self._setup_action_buttons(bottom_layout)
         
         self.main_layout.addWidget(bottom_container)
+
+    def _ensure_browser_tab(self):
+        """Ленивая инициализация вкладки браузера и переключение на неё."""
+        try:
+            if self.browser_widget is None:
+                self.browser_widget = EnhancedBrowserWidget(self)
+                self.browser_widget.page_loaded.connect(self._on_browser_page_loaded)
+                self.tab_widget.addTab(self.browser_widget, "Браузер")
+                logger.info("[BROWSER] Вкладка браузера создана")
+            # Переключаемся на вкладку браузера
+            for i in range(self.tab_widget.count()):
+                if self.tab_widget.widget(i) is self.browser_widget:
+                    self.tab_widget.setCurrentIndex(i)
+                    break
+            return True
+        except Exception as e:
+            logger.error(f"[BROWSER] Ошибка создания вкладки браузера: {e}")
+            self._append_message_with_style('error', f'Не удалось открыть браузер: {e}')
+            return False
+
+    def _on_browser_page_loaded(self, url: str, title: str):
+        """Отображает статус загрузки страницы браузера в чате."""
+        try:
+            self._append_message_with_style('system', f"Браузер загрузил страницу: {title}\n{url}")
+        except Exception as e:
+            logger.debug(f"[BROWSER] _on_browser_page_loaded error: {e}")
+
+    def _apply_browser_actions_from_response(self, response: dict) -> None:
+        """Извлекает и выполняет команды браузера из ответа сервера.
+
+        Поддерживаются расположения:
+        - response['browser_actions']
+        - response['metadata']['browser_actions']
+        - response['result']['browser_actions']
+        - response['tool_result']['browser_actions']
+        Если найдено, гарантирует открытую вкладку браузера и вызывает
+        EnhancedBrowserWidget.apply_actions(...).
+        """
+        try:
+            if not isinstance(response, dict):
+                return
+            candidate_paths = [
+                (response, 'browser_actions'),
+                (response.get('metadata', {}) if isinstance(response.get('metadata', {}), dict) else {}, 'browser_actions'),
+                (response.get('result', {}) if isinstance(response.get('result', {}), dict) else {}, 'browser_actions'),
+                (response.get('tool_result', {}) if isinstance(response.get('tool_result', {}), dict) else {}, 'browser_actions'),
+            ]
+            actions = None
+            for container, key in candidate_paths:
+                if key in container and container[key]:
+                    actions = container[key]
+                    break
+            # также поддержим вариант, когда инструменты возвращают список действий по ключу 'actions'
+            if actions is None and isinstance(response.get('tool_result'), dict):
+                maybe = response['tool_result'].get('actions')
+                if maybe:
+                    actions = maybe
+            if not actions:
+                return
+            # Гарантируем открытую вкладку браузера
+            if not self._ensure_browser_tab():
+                logger.error("[BROWSER] Не удалось открыть вкладку браузера для применения действий")
+                return
+            # Применяем действия
+            try:
+                self.browser_widget.apply_actions(actions)
+                self._append_message_with_style('system', 'Выполняю команды в браузере...')
+            except Exception as e:
+                logger.error(f"[BROWSER] Ошибка выполнения действий браузера: {e}")
+                self._append_message_with_style('error', f"Ошибка выполнения действий браузера: {e}")
+        except Exception as e:
+            logger.debug(f"[BROWSER] _apply_browser_actions_from_response error: {e}")
 
     def resizeEvent(self, event: QResizeEvent):
         """Обрабатывает изменение размера виджета"""
@@ -745,6 +820,11 @@ class ChatWidget(QWidget):
             else:
                 # Извлекаем текст ответа из словаря
                 full_message = response.get('response', str(response))
+            # Попытка применить команды браузера, если они есть в ответе
+            try:
+                self._apply_browser_actions_from_response(response)
+            except Exception as e:
+                logger.debug(f"[BROWSER] Ошибка при попытке применить действия из ответа: {e}")
         else:
             full_message = self._clean_response_message(str(response))
         
@@ -1068,6 +1148,24 @@ class ChatWidget(QWidget):
         
         # Отображаем сообщение пользователя
         self._append_message_with_style('user', message_text)
+
+        # Перехват локальной команды открытия браузера
+        try:
+            lower = message_text.lower()
+            if any(phrase in lower for phrase in ["открой браузер", "открыть браузер", "open browser", "open the browser"]):
+                if self._ensure_browser_tab():
+                    # Опционально: попытка открыть домашнюю страницу
+                    try:
+                        self.browser_widget.load_url("about:blank")
+                    except Exception:
+                        pass
+                    self._append_message_with_style('system', 'Открыл встроенный браузер. Готов к навигации!')
+                # Разблокировать кнопку и завершить без отправки на backend
+                if hasattr(self, 'send_btn') and self.send_btn is not None:
+                    self.send_btn.setEnabled(True)
+                return
+        except Exception as e:
+            logger.debug(f"[CHAT] Ошибка при обработке команды открытия браузера: {e}")
         
         # Индикатор загрузки
         self._show_loading_indicator()

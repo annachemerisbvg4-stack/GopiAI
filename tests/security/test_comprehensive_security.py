@@ -41,8 +41,14 @@ class TestSystemWideSecurity:
         
         for ext in code_extensions:
             for code_file in project_root.rglob(f'*{ext}'):
-                # Skip test files and virtual environments
-                if any(skip in str(code_file) for skip in ['test_', '_test', 'env/', '__pycache__', '.git']):
+                # Skip test files, virtual environments, and third-party libraries
+                skip_patterns = [
+                    'test_', '_test', 'env/', '__pycache__', '.git',
+                    'site-packages/', 'node_modules/', 'venv/', 'env\\',
+                    'Lib\\site-packages\\', 'Scripts\\', 'Include\\',
+                    '.pytest_cache', 'dist/', 'build/'
+                ]
+                if any(skip in str(code_file) for skip in skip_patterns):
                     continue
                 
                 try:

@@ -1,0 +1,7 @@
+test_known_issues_system.py::test_basic_functionality
+test_known_issues_system.py::test_automatic_resolution
+test_known_issues_system.py::test_progress_reporting
+test_known_issues_system.py::test_integration_features
+test_known_issues_system.py::test_workflow_simulation
+test_known_issues_system.py::test_dashboard_generation
+tests\performance\test_ui_performance.py::test_chat_widget_message_performance

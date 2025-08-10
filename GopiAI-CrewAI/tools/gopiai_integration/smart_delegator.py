@@ -53,6 +53,7 @@ from .response_formatter import ResponseFormatter
 from .openrouter_client import get_openrouter_client
 from .model_config_manager import get_model_config_manager, ModelProvider
 from .tool_dispatcher import get_tool_dispatcher, ToolDispatcher, IntentMode
+from .agent_templates import AgentTemplateSystem
 
 # Инициализируем логгер перед использованием
 logger = logging.getLogger(__name__)
@@ -114,6 +115,14 @@ class SmartDelegator:
         except Exception as e:
             logger.warning(f"[WARNING] Не удалось инициализировать ToolDispatcher: {str(e)}")
             self.tool_dispatcher = None
+
+        # Инициализируем систему шаблонов агентов/флоу
+        try:
+            self.agent_templates = AgentTemplateSystem(verbose=False)
+            logger.info("[OK] AgentTemplateSystem инициализирован")
+        except Exception as e:
+            self.agent_templates = None
+            logger.warning(f"[WARNING] Не удалось инициализировать AgentTemplateSystem: {str(e)}")
         
         # Инициализируем менеджер конфигураций моделей
         try:
@@ -376,6 +385,135 @@ class SmartDelegator:
         
         # 7. Возвращаем отформатированный результат
         return raw_response
+
+    # -------------------------
+    # Agent/Flow integration
+    # -------------------------
+    def _is_agent_available(self, agent_name: str) -> bool:
+        """Проверяет, доступен ли агент-шаблон."""
+        try:
+            if not self.agent_templates:
+                return False
+            return agent_name in self.agent_templates.list_available_templates()
+        except Exception:
+            return False
+
+    def _call_agent(self, agent_name: str, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Создает и (опционально) запускает агента по шаблону.
+        params:
+          - task: описание задачи (опционально)
+          - run: bool — запустить ли задачу (по умолчанию False)
+          - agent_kwargs: dict — доп. параметры агента
+        """
+        if not self.agent_templates:
+            raise RuntimeError("AgentTemplateSystem недоступен")
+
+        agent_kwargs = params.get("agent_kwargs", {})
+
+        # Получаем текущий LLM (проксируем конфиг через model_config_manager при наличии)
+        llm = None
+        try:
+            if self.model_config_manager:
+                current = self.model_config_manager.get_current_llm()
+                llm = current
+        except Exception as e:
+            logger.warning(f"[AGENT] Не удалось получить текущий LLM: {e}")
+
+        agent = self.agent_templates.create_agent_from_template(agent_name, llm, **agent_kwargs)
+        if not agent:
+            raise RuntimeError(f"Не удалось создать агента из шаблона: {agent_name}")
+
+        task_desc = params.get("task")
+        should_run = bool(params.get("run", False))
+
+        # Если нет задачи — возвращаем сведения об агенте
+        if not task_desc or not should_run:
+            return {
+                "agent": str(agent),
+                "created": True,
+                "ran": False
+            }
+
+        # Иначе создаем простую Crew с одной задачей
+        try:
+            from .base.base_agent import Task, Crew
+            task = Task(description=task_desc, agent=agent)
+            crew = Crew(agents=[agent], tasks=[task], verbose=True, name=f"crew_{agent_name}")
+            result = crew.kickoff()
+            return {
+                "agent": str(agent),
+                "created": True,
+                "ran": True,
+                "result": result
+            }
+        except Exception as e:
+            raise RuntimeError(f"Ошибка выполнения агента: {e}")
+
+    def _call_flow(self, flow_name: str, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Создает и (опционально) запускает Crew (флоу) по указанной конфигурации.
+        params:
+          - agent_configs: List[dict] — список конфигураций агентов для шаблонов
+          - tasks: List[dict] — список задач { description: str, agent_index|agent_name }
+          - run: bool — запускать ли сразу (по умолчанию False)
+        """
+        if not self.agent_templates:
+            raise RuntimeError("AgentTemplateSystem недоступен")
+
+        agent_configs = params.get("agent_configs") or []
+        tasks_cfg = params.get("tasks") or []
+        should_run = bool(params.get("run", False))
+
+        # Получаем LLM
+        llm = None
+        try:
+            if self.model_config_manager:
+                llm = self.model_config_manager.get_current_llm()
+        except Exception as e:
+            logger.warning(f"[FLOW] Не удалось получить текущий LLM: {e}")
+
+        # Сконструируем Task объекты, если переданы только описания — agent будет назначен crewai по умолчанию
+        try:
+            from .base.base_agent import Task
+            task_objs = []
+            for t in tasks_cfg:
+                if isinstance(t, dict):
+                    desc = t.get("description") or t.get("desc") or str(t)
+                else:
+                    desc = str(t)
+                task_objs.append(Task(description=desc))
+        except Exception as e:
+            raise RuntimeError(f"Ошибка подготовки задач флоу: {e}")
+
+        crew = self.agent_templates.create_crew_from_templates(
+            name=flow_name,
+            llm=llm,
+            agent_configs=agent_configs,
+            tasks=task_objs
+        )
+        if not crew:
+            raise RuntimeError("Не удалось создать Crew (флоу)")
+
+        if not should_run:
+            return {
+                "flow": flow_name,
+                "created": True,
+                "ran": False,
+                "agents": len(getattr(crew, 'agents', [])),
+                "tasks": len(getattr(crew, 'tasks', []))
+            }
+
+        try:
+            result = crew.kickoff()
+            return {
+                "flow": flow_name,
+                "created": True,
+                "ran": True,
+                "result": result
+            }
+        except Exception as e:
+            raise RuntimeError(f"Ошибка выполнения флоу: {e}")
 
     def _format_prompt(self, user_message: str, rag_context: Optional[str], chat_history: List[Dict], metadata: Dict) -> List[Dict]:
         """Формирует итоговый список сообщений для LLM."""
@@ -944,9 +1082,11 @@ class SmartDelegator:
                 
                 # Специальная обработка для OpenRouter моделей
                 if current_config.provider == ModelProvider.OPENROUTER:
-                    return self._make_openrouter_request(messages, model_id)
+                    logger.info("[LLM] OpenRouter provider выбран, используем унифицированный OpenRouter-путь")
+                    # Не делаем ранний return — продолжим до секции is_openrouter
                 elif current_config.provider == ModelProvider.GEMINI:
                     return self._make_gemini_request(messages, model_id)
+            
             # Если нет выбранной модели, используем систему ротации
             else:
                 # Выбор модели с использованием ротации (только если нет выбранной модели)

@@ -1,0 +1,48 @@
+{
+  "timestamp": "2025-08-10T12:33:39.182771",
+  "summary": {
+    "total_active_issues": 1,
+    "issues_improving": 0,
+    "issues_declining": 0,
+    "issues_stagnant": 0,
+    "recent_milestones": 0
+  },
+  "current_progress": [
+    {
+      "issue_id": "TEST-001",
+      "total_affected_tests": 0,
+      "passing_tests": 0,
+      "failing_tests": 0,
+      "skipped_tests": 0,
+      "resolution_percentage": 0.0,
+      "last_check": "2025-08-10T12:33:39.136016",
+      "trend": "stable"
+    }
+  ],
+  "trends": [],
+  "milestones": [],
+  "team_metrics": {
+    "total_issues": 1,
+    "active_issues": 1,
+    "resolved_issues": 0,
+    "average_resolution_time": 0.0,
+    "resolution_velocity": 0.0,
+    "quality_score": 0.42000000000000004,
+    "efficiency_score": 0.0,
+    "trend_summary": {
+      "improving": 0,
+      "declining": 0,
+      "stable": 0,
+      "stagnant": 0
+    }
+  },
+  "insights": [
+    "\ud83d\udd0d 1 issues need attention (<20% progress)",
+    "\ud83d\udc0c Resolution velocity is low: 0.0 issues per week",
+    "\u26a0\ufe0f Quality score needs improvement: 0.42"
+  ],
+  "recommendations": [
+    "\ud83d\udd27 Consider allocating more resources to issue resolution",
+    "\u26a1 Focus on improving resolution efficiency - consider process improvements"
+  ]
+}

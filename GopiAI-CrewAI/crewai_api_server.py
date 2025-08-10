@@ -625,6 +625,19 @@ def get_tools():
         logger.error(f"Error getting tools: {e}")
         return jsonify({"error": str(e)}), 500
 
+
+# --- API aliases (to satisfy UI expecting /api/* endpoints) ---
+@app.route('/api/settings/terminal_unsafe', methods=['GET'])
+def api_get_terminal_unsafe():
+    """Alias for GET /settings/terminal_unsafe (UI expects /api prefix)."""
+    return get_terminal_unsafe()
+
+
+@app.route('/api/settings/terminal_unsafe', methods=['POST'])
+def api_set_terminal_unsafe():
+    """Alias for POST /settings/terminal_unsafe (UI expects /api prefix)."""
+    return set_terminal_unsafe()
+
 @app.route('/api/tools/toggle', methods=['POST'])
 def toggle_tool():
     """Переключить состояние инструмента (включен/выключен)"""
@@ -693,33 +706,34 @@ def set_tool_key():
 
 @app.route('/api/agents', methods=['GET'])
 def get_agents():
-    """Получить список доступных CrewAI агентов и флоу"""
+    """Получить список доступных агент-шаблонов (и флоу, если появятся)"""
     try:
-        # Пока возвращаем заглушку - в будущем интегрируем с SmartDelegator
-        # для получения реального списка агентов и флоу
-        agents = [
-            {
-                "id": "research_agent",
-                "name": "Research Agent",
-                "description": "Агент для исследовательских задач",
+        from tools.gopiai_integration.agent_templates import AgentTemplateSystem
+        ats = AgentTemplateSystem(verbose=False)
+        template_names = ats.list_available_templates()
+
+        agents = []
+        get_info = getattr(ats, "get_template_info", None)
+        for name in template_names:
+            info = get_info(name) if callable(get_info) else {}
+            agents.append({
+                "id": name,
+                "name": info.get("role", name),
+                "description": info.get("goal", info.get("backstory", "")) or "",
                 "type": "agent"
-            },
+            })
+
+        # В будущем сюда можно добавить реальные флоу
+        flows = [
             {
-                "id": "coding_agent",
-                "name": "Coding Agent", 
-                "description": "Агент для программирования",
-                "type": "agent"
-            },
-            {
-                "id": "analysis_flow",
-                "name": "Analysis Flow",
-                "description": "Флоу для комплексного анализа",
+                "id": "simple_flow",
+                "name": "Simple Flow",
+                "description": "Простой флоу с одним агентом",
                 "type": "flow"
             }
         ]
-        
-        return jsonify({"agents": agents})
-    
+
+        return jsonify({"agents": agents, "flows": flows})
     except Exception as e:
         logger.error(f"Error getting agents: {e}")
         return jsonify({"error": str(e)}), 500
