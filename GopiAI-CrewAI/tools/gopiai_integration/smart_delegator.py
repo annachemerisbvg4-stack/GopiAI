@@ -1,4 +1,195 @@
-# --- START OF FILE smart_delegator.py (ВОССТАНОВЛЕННАЯ ЛОГИКА) ---
+# --- Восстановленный файл smart_delegator.py ---
+
+import os
+import sys
+import json
+import logging
+import time
+from typing import List, Dict, Any, Optional, Union
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# Добавляем путь к корневой директории GopiAI-CrewAI для импорта инструментов
+try:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    crewai_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
+    if crewai_root not in sys.path:
+        sys.path.insert(0, crewai_root)
+        logger.info(f"Добавлен путь в sys.path: {crewai_root}")
+    
+    # Импортируем все наборы инструментов
+    from tools.browser_tools import GopiAIBrowserTool, GopiAIWebSearchTool, GopiAIPageAnalyzerTool
+    from tools.filesystem_tools import (
+        FileCreateTool, FileDeleteTool, FileReadTool, FileUpdateTool,
+        DirectoryCreateTool, DirectoryDeleteTool, DirectoryListTool,
+        DirectorySearchTool, PathInfoTool
+    )
+    from tools.local_mcp_tools import LocalMCPTool
+    
+    TOOLS_LOADED = True
+    logger.info("✅ Все локальные инструменты успешно импортированы.")
+
+except ImportError as e:
+    logger.error(f"❌ Ошибка импорта инструментов: {e}. Функциональность будет ограничена.")
+    TOOLS_LOADED = False
+    class BaseTool:
+        name = "Tool"
+        description = "A dummy tool"
+        def _run(self, *args, **kwargs):
+            return "Tool is not available due to import error."
+
+    GopiAIBrowserTool = GopiAIWebSearchTool = GopiAIPageAnalyzerTool = BaseTool
+    FileCreateTool = FileDeleteTool = FileReadTool = FileUpdateTool = BaseTool
+    DirectoryCreateTool = DirectoryDeleteTool = DirectoryListTool = BaseTool
+    DirectorySearchTool = PathInfoTool = BaseTool
+    LocalMCPTool = BaseTool
+
+
+class SmartDelegatorLegacyStub:
+    """
+    DEPRECATED: устаревший stub SmartDelegator (не используется). Сохранен временно для совместимости.
+    """
+    def __init__(self, api_key: Optional[str] = None, model_config: Optional[Dict] = None):
+        """
+        Инициализирует делегатор и все доступные инструменты.
+        """
+        logger.info("Инициализация SmartDelegator...")
+        self.tools = []
+        if TOOLS_LOADED:
+            # Инструменты для работы с браузером
+            self.browser_tool = GopiAIBrowserTool()
+            self.web_search_tool = GopiAIWebSearchTool()
+            self.page_analyzer_tool = GopiAIPageAnalyzerTool()
+            
+            # Инструменты для работы с файловой системой
+            self.fs_tools = [
+                FileCreateTool(), FileDeleteTool(), FileReadTool(), FileUpdateTool(),
+                DirectoryCreateTool(), DirectoryDeleteTool(), DirectoryListTool(),
+                DirectorySearchTool(), PathInfoTool()
+            ]
+            
+            # Инструмент для локального MCP
+            self.local_mcp_tool = LocalMCPTool()
+            
+            self.tools.extend([
+                self.browser_tool,
+                self.web_search_tool,
+                self.page_analyzer_tool,
+                self.local_mcp_tool
+            ])
+            self.tools.extend(self.fs_tools)
+            logger.info(f"Загружено {len(self.tools)} инструментов.")
+        else:
+            logger.warning("Инструменты не были загружены из-за ошибок импорта.")
+
+        # Настройки для LLM
+        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+        self.model_config = model_config or {}
+        self.current_provider = "gemini" # По умолчанию
+        self.current_model = None
+
+    def process_request(self, user_request: str, metadata: Optional[Dict] = None) -> Dict[str, Any]:
+        """
+        Обрабатывает запрос пользователя, вызывает LLM, выполняет tool calls и возвращает результат.
+        """
+        logger.info(f'Обработка запроса: "{user_request}"')
+        metadata = metadata or {}
+
+        # Устанавливаем модель на основе метаданных из UI
+        self.set_model_from_metadata(metadata)
+
+        # Вызываем LLM
+        response = self._call_llm(user_request, self.tools)
+
+        # Проверяем, есть ли в ответе вызов инструмента
+        response_message = response.get("choices", [{}])[0].get("message", {})
+        tool_calls = response_message.get("tool_calls")
+
+        if tool_calls:
+            logger.info(f"LLM запросил вызов {len(tool_calls)} инструментов.")
+            tool_outputs = []
+            for tool_call in tool_calls:
+                tool_name = tool_call.get('function', {}).get('name')
+                tool_args_str = tool_call.get('function', {}).get('arguments', '{}')
+                
+                logger.info(f"Попытка выполнить инструмент: {tool_name} с аргументами: {tool_args_str}")
+
+                # Находим инструмент в нашем списке
+                target_tool = next((t for t in self.tools if t.name == tool_name), None)
+
+                if target_tool:
+                    try:
+                        tool_args = json.loads(tool_args_str)
+                        # Используем стандартный метод _run для выполнения
+                        result = target_tool._run(**tool_args)
+                        logger.info(f"Инструмент {tool_name} выполнен успешно.")
+                        tool_outputs.append({"tool_call_id": tool_call.get('id'), "output": result})
+                    except Exception as e:
+                        logger.error(f"Ошибка выполнения инструмента {tool_name}: {e}")
+                        tool_outputs.append({"tool_call_id": tool_call.get('id'), "output": f"Error: {e}"})
+                else:
+                    logger.warning(f"Инструмент {tool_name} не найден.")
+                    tool_outputs.append({"tool_call_id": tool_call.get('id'), "output": f"Error: Tool '{tool_name}' not found."})
+            
+            # В будущем можно отправить результаты обратно в LLM для финального ответа.
+            # Сейчас просто возвращаем результат выполнения первого инструмента.
+            return {"status": "success", "result": tool_outputs[0] if tool_outputs else {}, "raw_response": response}
+        else:
+            logger.info("LLM вернул текстовый ответ без вызова инструментов.")
+            final_content = response_message.get("content", "Нет ответа от модели.")
+            return {"status": "success", "result": {"response": final_content}, "raw_response": response}
+
+    def set_model_from_metadata(self, metadata: Dict):
+        """Устанавливает текущую модель и провайдер на основе метаданных."""
+        provider = metadata.get('preferred_provider', 'gemini')
+        model_id = metadata.get('preferred_model')
+        logger.info(f"Установка модели: провайдер={provider}, модель={model_id}")
+        self.current_provider = provider
+        self.current_model = model_id
+
+    def _call_llm(self, user_prompt: str, tools: List[Any]) -> Dict[str, Any]:
+        """
+        Вызывает LLM через litellm с переданным промптом и списком инструментов.
+        """
+        try:
+            from litellm import completion
+        except ImportError:
+            logger.error("LiteLLM не установлен. `pip install litellm`")
+            return {"error": "LiteLLM is not installed."}
+
+        messages = [{"role": "user", "content": user_prompt}]
+        
+        # Форматируем инструменты для API
+        formatted_tools = []
+        for tool in tools:
+            try:
+                formatted_tools.append(tool.tool_schema())
+            except Exception as e:
+                logger.warning(f"Не удалось получить схему для инструмента {tool.name}: {e}")
+
+        model_name = self.current_model
+        if self.current_provider == 'openrouter' and model_name:
+            model_name = f"openrouter/{model_name}"
+        elif self.current_provider == 'gemini':
+            model_name = self.current_model or "gemini/gemini-1.5-flash-latest"
+
+        logger.info(f"Вызов litellm.completion с моделью: {model_name}")
+
+        try:
+            response = completion(
+                model=model_name,
+                messages=messages,
+                tools=formatted_tools,
+                api_key=self.api_key
+            )
+            return response
+        except Exception as e:
+            logger.error(f"Ошибка при вызове litellm.completion: {e}")
+            return {"error": str(e)}
+
+
 
 import logging
 import json
@@ -339,6 +530,23 @@ class SmartDelegator:
         elapsed = time.time() - start_time
         logger.info(f"[TIMING] Request processed in {elapsed:.2f} sec")
         
+        # 5.1. Анти-галлюцинатор действий: если инструменты не запускались, но ответ заявляет о выполнении действий — помечаем как рекомендации
+        try:
+            lower = (response_text or "").lower()
+            looks_like_action_claim = any(k in lower for k in [
+                "я открыл", "я перешёл", "я перешел", "выполнил", "запустил", "кликнул", "нажал",
+                "создал файл", "удалил файл", "прочитал файл", "обновил файл", "выполнил команду", "запрос выполнил"
+            ])
+            executed_any = bool(analysis.get("executed_commands"))
+            if looks_like_action_claim and not executed_any:
+                note = (
+                    "Примечание: инструменты не выполнялись — ниже только рекомендации/план действий. "
+                    "Если нужно реально выполнить — скажи явно (например: 'выполни поиск', 'прочитай файл ...').\n\n"
+                )
+                response_text = note + (response_text or "")
+        except Exception:
+            pass
+
         # 6. Форматирование ответа для чистого отображения (НОВАЯ ФУНКЦИОНАЛЬНОСТЬ)
         analysis['analysis_time'] = elapsed
         
@@ -704,18 +912,11 @@ class SmartDelegator:
         urls = re.findall(url_pattern, message)
         
         if urls and any(keyword in message_lower for keyword in ['открой', 'скачай', 'проанализируй', 'извлеки', 'парси', 'scrape', 'parse', 'analyze']):
-            action = 'get_text'  # По умолчанию
-            if any(keyword in message_lower for keyword in ['ссылки', 'links']):
-                action = 'get_links'
-            elif any(keyword in message_lower for keyword in ['таблицы', 'tables']):
-                action = 'get_tables'
-            elif any(keyword in message_lower for keyword in ['изображения', 'картинки', 'images']):
-                action = 'get_images'
-            
+            # Больше не используем web_scraper — направляем в web_search
             return {
-                'tool_name': 'web_scraper',
+                'tool_name': 'web_search',
                 'server_name': 'local',
-                'params': {'url': urls[0], 'action': action}
+                'params': {'query': urls[0]}
             }
         
         # 🔍 АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ API ЗАПРОСОВ
@@ -870,6 +1071,19 @@ class SmartDelegator:
     def _call_tool(self, tool_name: str, server_name: str, params: Dict) -> Dict:
         """Вызывает инструмент через новую централизованную систему диспетчеризации или legacy систему."""
         logger.info(f"Вызов инструмента {tool_name} на сервере {server_name} с параметрами: {params}")
+        
+        # Прозрачный ремап браузерных названий инструментов на web_search (инструмент как будто отсутствует)
+        browser_aliases = {"web_scraper", "browser", "browse_website", "browser_tool", "gopiai_browser"}
+        if tool_name in browser_aliases:
+            url = (
+                params.get("url")
+                or params.get("query")
+                or params.get("target")
+                or ""
+            )
+            # Без шумных логов и ошибок — просто перенаправляем
+            tool_name = "web_search"
+            params = {"query": url or str(params)}
         
         # 🚀 НОВАЯ СИСТЕМА: Используем централизованный диспетчер если доступен
         if self.tool_dispatcher:
