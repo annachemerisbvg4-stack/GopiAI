@@ -1,83 +1,121 @@
-# GOPI AI MODULES
+# GopiAI
 
-Коллекция модулей искусственного интеллекта для проекта GopiAI.
+A comprehensive collection of artificial intelligence modules for the GopiAI project, featuring multi-agent coordination, intelligent UI components, and advanced LLM provider management.
 
-## Структура проекта
+> 🚀 **Quick Start**: New to GopiAI? Check out our [Quick Start Guide](QUICK_START.md) to get up and running quickly!
 
+## Table of Contents
+
+- [Project Structure](#project-structure)
+- [Core Modules](#core-modules)
+- [Features](#features)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Documentation](#documentation)
+- [Task Status](#task-status)
+- [License](#license)
+
+## Project Structure
+
+```text
+GopiAI/
+├── GopiAI-CrewAI/          # Main CrewAI integration module
+├── GopiAI-UI/              # User interface components
+├── GopiAI-Assets/          # Project assets and resources
+├── 02_DOCUMENTATION/       # Project documentation
+├── 03_UTILITIES/           # Utility scripts and tools
+├── rag_memory_system/      # RAG memory system implementation
+├── test_infrastructure/    # Testing framework and utilities
+├── tests/                  # Test suites
+└── requirements.txt        # Project dependencies
 ```
-GOPI_AI_MODULES/
-├── GopiAI-CrewAI/          # Основной модуль CrewAI интеграции
-├── GopiAI-UI/              # Пользовательский интерфейс
-├── GopiAI-Core/            # Ядро системы
-├── GopiAI-Widgets/         # Виджеты Qt
-├── 02_DOCUMENTATION/       # Документация проекта
-├── 03_UTILITIES/           # Вспомогательные утилиты
-└── requirements.txt        # Зависимости проекта
-```
 
-## Основные модули
+## Features
+
+- 🤖 **Multi-Agent Coordination**: Seamless integration with CrewAI for intelligent agent orchestration
+- 🔄 **Smart LLM Switching**: Automatic provider rotation with rate limit handling
+- 🎨 **Modern UI**: Qt-based interface with responsive design
+- 🧠 **RAG Memory**: Advanced retrieval-augmented generation for context awareness
+- 🧪 **Comprehensive Testing**: Automated test suites with continuous validation
+- 📊 **Real-time Monitoring**: Live status tracking and performance metrics
+
+## Core Modules
 
 ### 1. GopiAI-CrewAI
-Модуль интеграции с CrewAI для координации агентов и задач.
+CrewAI integration module for coordinating agents and tasks.
 
-**Ключевые файлы:**
-- `llm_rotation_config_fixed.py` - Улучшенная система переключения провайдеров LLM
-- `crewai_api_server.py` - REST API сервер для синхронизации состояния
-- `state_manager.py` - Управление состоянием приложения
-- `model_selector_widget.py` - Виджет выбора модели в UI
+**Key Files:**
+- [`llm_rotation_config.py`](GopiAI-CrewAI/llm_rotation_config.py) - Enhanced LLM provider switching system
+- [`crewai_api_server.py`](GopiAI-CrewAI/crewai_api_server.py) - REST API server for state synchronization
+- [`state_manager.py`](GopiAI-CrewAI/state_manager.py) - Application state management
+- [`model_selector_widget.py`](GopiAI-UI/gopiai/ui/components/model_selector_widget.py) - Model selection UI widget
 
-**Новости:** Успешно реализована улучшенная система переключения провайдеров LLM! 
-- ✅ Стабильная синхронизация состояния между UI и Backend
-- ✅ Мягкий черный список для моделей с превышением лимитов
-- ✅ Надежный цикл API ключей без дубликатов
-- ✅ Автоматические тесты для предотвращения регрессий
+**Latest Updates:** Successfully implemented enhanced LLM provider switching system! 
+- ✅ Stable state synchronization between UI and Backend
+- ✅ Soft blacklist for models exceeding rate limits
+- ✅ Reliable API key rotation without duplicates
+- ✅ Automated tests to prevent regressions
 
 ### 2. GopiAI-UI
-Пользовательский интерфейс на базе Qt для взаимодействия с системой.
+Qt-based user interface for system interaction and visualization.
 
-### 3. GopiAI-Core
-Ядро системы с основными алгоритмами и логикой.
+### 3. RAG Memory System
+Advanced retrieval-augmented generation system for intelligent memory management.
 
-### 4. GopiAI-Widgets
-Коллекция виджетов Qt для различных функций системы.
+### 4. Testing Infrastructure
+Comprehensive testing framework with automated validation and reporting.
 
-## Установка
+## Installation
 
 ```bash
-# Установка зависимостей
+# Install dependencies
 pip install -r requirements.txt
 
-# Для работы с REST API сервером
+# For REST API server functionality
 pip install fastapi uvicorn requests
 ```
 
-## Запуск
+## Getting Started
 
-### Запуск REST API сервера
+### Starting the REST API Server
 ```bash
 cd GopiAI-CrewAI
 python crewai_api_server.py
 ```
 
-### Запуск тестов
+### Running Tests
 ```bash
 cd GopiAI-CrewAI
 python run_all_tests.py
 ```
 
-## Документация
+### Basic Usage Example
+```python
+# Example: Using the CrewAI integration
+from GopiAI-CrewAI.crewai_api_server import CrewAIServer
+from GopiAI-CrewAI.state_manager import StateManager
 
-Подробная документация доступна в директории `02_DOCUMENTATION/`:
-- `MODEL_SWITCHING_README.md` - Документация по системе переключения провайдеров
-- `MODEL_SWITCHING_FINAL_REPORT.md` - Финальный отчет о реализации
-- `CREWAI_INTEGRATION_PLAN.md` - План интеграции с CrewAI
+# Initialize the system
+server = CrewAIServer()
+state_manager = StateManager()
 
-## Статус задач
+# Start coordinating AI agents
+server.start()
+```
 
-Проект использует Agentic Control Framework (ACF) для управления задачами. Текущий статус задач можно посмотреть в ACF инструментах.
+## Documentation
 
-**Последняя реализация:** Улучшенная система переключения провайдеров LLM (Задача #74 - ВЫПОЛНЕНО)
+Comprehensive documentation is available in the [`02_DOCUMENTATION/`](02_DOCUMENTATION/) directory:
+- [`MODEL_SWITCHING_README.md`](GopiAI-CrewAI/MODEL_SWITCHING_README.md) - Provider switching system documentation
+- [`MODEL_SWITCHING_FINAL_REPORT.md`](GopiAI-CrewAI/MODEL_SWITCHING_FINAL_REPORT.md) - Implementation final report
+- [`CREWAI_INTEGRATION_PLAN.md`](02_DOCUMENTATION/CREWAI_INTEGRATION_PLAN.md) - CrewAI integration plan
 
-## Лицензия
+## Task Status
 
-MIT License - см. файл LICENSE для подробностей.
+The project uses the Agentic Control Framework (ACF) for task management. Current task status can be viewed in the ACF tools.
+
+**Latest Implementation:** Enhanced LLM provider switching system (Task #74 - COMPLETED)
+
+## License
+
+MIT License - see the LICENSE file for details.
