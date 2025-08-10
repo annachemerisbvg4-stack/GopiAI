@@ -1,6 +1,10 @@
 """
 🌐 GopiAI Browser Tool для CrewAI
 Интеграция CrewAI агентов с браузер-системой GopiAI
+
+ВНИМАНИЕ: Браузерная автоматизация отключена по решению команды.
+Этот модуль оставлен для возможного использования в будущем.
+Используйте только функции просмотра веб-страниц через requests.
 """
 
 import os
@@ -14,27 +18,29 @@ from bs4 import BeautifulSoup
 import base64
 from pathlib import Path
 
+# ОТКЛЮЧЕНО: Браузерная автоматизация
 # Попытка импорта Selenium
-try:
-    from selenium import webdriver
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.common.keys import Keys
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.webdriver.chrome.options import Options as ChromeOptions
-    from selenium.webdriver.firefox.options import Options as FirefoxOptions
-    from selenium.webdriver.edge.options import Options as EdgeOptions
-    from selenium.common.exceptions import TimeoutException, NoSuchElementException
-    SELENIUM_AVAILABLE = True
-except ImportError:
-    SELENIUM_AVAILABLE = False
+# try:
+#     from selenium import webdriver
+#     from selenium.webdriver.common.by import By
+#     from selenium.webdriver.common.keys import Keys
+#     from selenium.webdriver.support.ui import WebDriverWait
+#     from selenium.webdriver.support import expected_conditions as EC
+#     from selenium.webdriver.chrome.options import Options as ChromeOptions
+#     from selenium.webdriver.firefox.options import Options as FirefoxOptions
+#     from selenium.webdriver.edge.options import Options as EdgeOptions
+#     from selenium.common.exceptions import TimeoutException, NoSuchElementException
+#     SELENIUM_AVAILABLE = True
+# except ImportError:
+SELENIUM_AVAILABLE = False
 
+# ОТКЛЮЧЕНО: Браузерная автоматизация
 # Попытка импорта Playwright
-try:
-    from playwright.sync_api import sync_playwright, Browser, Page
-    PLAYWRIGHT_AVAILABLE = True
-except ImportError:
-    PLAYWRIGHT_AVAILABLE = False
+# try:
+#     from playwright.sync_api import sync_playwright, Browser, Page
+#     PLAYWRIGHT_AVAILABLE = True
+# except ImportError:
+PLAYWRIGHT_AVAILABLE = False
 
 # Импортируем базовый класс
 from .base import GopiAIBaseTool
@@ -92,194 +98,203 @@ class GopiAIBrowserTool(BaseTool):
     def _run(self, action: str, target: str, data: str = "", wait_seconds: int = 3, 
              browser_type: str = "auto", headless: bool = True) -> str:
         """
-        Выполнение браузерного действия с автоматическим выбором движка
+        Выполнение браузерного действия - ТОЛЬКО requests (автоматизация отключена)
         """
         try:
+            # ОТКЛЮЧЕНО: Браузерная автоматизация
             # Определяем лучший доступный браузерный движок
-            if browser_type == "auto":
-                if PLAYWRIGHT_AVAILABLE:
-                    browser_type = "playwright"
-                elif SELENIUM_AVAILABLE:
-                    browser_type = "selenium"
-                else:
-                    browser_type = "requests"
+            # if browser_type == "auto":
+            #     if PLAYWRIGHT_AVAILABLE:
+            #         browser_type = "playwright"
+            #     elif SELENIUM_AVAILABLE:
+            #         browser_type = "selenium"
+            #     else:
+            #         browser_type = "requests"
             
-            # Выполняем действие в зависимости от выбранного движка
-            if browser_type == "playwright" and PLAYWRIGHT_AVAILABLE:
-                return self._run_playwright(action, target, data, wait_seconds, headless)
-            elif browser_type == "selenium" and SELENIUM_AVAILABLE:
-                return self._run_selenium(action, target, data, wait_seconds, headless)
-            else:
-                return self._run_requests(action, target, data, wait_seconds)
+            # ПРИНУДИТЕЛЬНО используем только requests
+            browser_type = "requests"
+            
+            # Выполняем действие только через requests
+            # ОТКЛЮЧЕНО: Браузерная автоматизация
+            # if browser_type == "playwright" and PLAYWRIGHT_AVAILABLE:
+            #     return self._run_playwright(action, target, data, wait_seconds, headless)
+            # elif browser_type == "selenium" and SELENIUM_AVAILABLE:
+            #     return self._run_selenium(action, target, data, wait_seconds, headless)
+            # else:
+            return self._run_requests(action, target, data, wait_seconds)
                 
         except Exception as e:
             self.logger.error(f"Ошибка браузерного действия: {e}")
             return f"❌ Ошибка браузерного действия: {str(e)}"
     
+    # ОТКЛЮЧЕНО: Браузерная автоматизация
     def _run_playwright(self, action: str, target: str, data: str, wait_seconds: int, headless: bool) -> str:
-        """Выполнение действий через Playwright"""
-        try:
-            # Инициализируем Playwright если нужно
-            if not self._playwright_browser:
-                self._init_playwright(headless)
-            
-            page = self._playwright_page
-            
-            if action == "open" or action == "navigate":
-                # Если target не указан, открываем Google
-                if not target or target == "":
-                    target = "https://www.google.com"
-                # Если target не содержит протокол, добавляем https://
-                elif not target.startswith(('http://', 'https://')):
-                    target = f"https://{target}"
-                
-                page.goto(target, wait_until="networkidle")
-                self._last_url = target
-                return f"✅ Браузер открыт на {target} (Playwright)"
-            
-            elif action == "click":
-                page.click(target)
-                page.wait_for_timeout(wait_seconds * 1000)
-                return f"✅ Клик по элементу '{target}' выполнен (Playwright)"
-            
-            elif action == "type":
-                page.fill(target, data)
-                page.wait_for_timeout(wait_seconds * 1000)
-                return f"✅ Ввод '{data}' в элемент '{target}' выполнен (Playwright)"
-            
-            elif action == "extract":
-                if target.lower() == "page":
-                    text = page.inner_text("body")
-                    return f"✅ Извлечен текст страницы ({len(text)} символов):\n{text[:2000]}..."
-                else:
-                    elements = page.query_selector_all(target)
-                    if not elements:
-                        return f"❌ Элементы '{target}' не найдены"
-                    texts = [elem.inner_text() for elem in elements[:10]]
-                    return f"✅ Извлечено {len(texts)} элементов:\n" + "\n".join(texts)
-            
-            elif action == "screenshot":
-                screenshot_path = Path(target) if target else Path("screenshot.png")
-                page.screenshot(path=str(screenshot_path))
-                return f"✅ Скриншот сохранен: {screenshot_path} (Playwright)"
-            
-            elif action == "scroll":
-                if target.lower() == "down":
-                    page.evaluate("window.scrollBy(0, window.innerHeight)")
-                elif target.lower() == "up":
-                    page.evaluate("window.scrollBy(0, -window.innerHeight)")
-                elif target.lower() == "top":
-                    page.evaluate("window.scrollTo(0, 0)")
-                elif target.lower() == "bottom":
-                    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                else:
-                    page.locator(target).scroll_into_view_if_needed()
-                return f"✅ Прокрутка выполнена: {target} (Playwright)"
-            
-            elif action == "execute_js":
-                result = page.evaluate(data)
-                return f"✅ JavaScript выполнен. Результат: {result} (Playwright)"
-            
-            elif action == "get_cookies":
-                cookies = page.context.cookies()
-                return f"✅ Получено {len(cookies)} cookies: {cookies} (Playwright)"
-            
-            elif action == "wait":
-                page.wait_for_timeout(wait_seconds * 1000)
-                return f"✅ Ожидание {wait_seconds} секунд выполнено (Playwright)"
-            
-            else:
-                return f"❌ Неизвестное действие для Playwright: {action}"
-                
-        except Exception as e:
-            return f"❌ Ошибка Playwright: {str(e)}"
+        """ОТКЛЮЧЕНО: Выполнение действий через Playwright"""
+        return "❌ Браузерная автоматизация отключена. Используйте только просмотр веб-страниц."
+        # try:
+        #     # Инициализируем Playwright если нужно
+        #     if not self._playwright_browser:
+        #         self._init_playwright(headless)
+        #     
+        #     page = self._playwright_page
+        #     
+        #     if action == "open" or action == "navigate":
+        #         # Если target не указан, открываем Google
+        #         if not target or target == "":
+        #             target = "https://www.google.com"
+        #         # Если target не содержит протокол, добавляем https://
+        #         elif not target.startswith(('http://', 'https://')):
+        #             target = f"https://{target}"
+        #         
+        #         page.goto(target, wait_until="networkidle")
+        #         self._last_url = target
+        #         return f"✅ Браузер открыт на {target} (Playwright)"
+        #     
+        #     elif action == "click":
+        #         page.click(target)
+        #         page.wait_for_timeout(wait_seconds * 1000)
+        #         return f"✅ Клик по элементу '{target}' выполнен (Playwright)"
+        #     
+        #     elif action == "type":
+        #         page.fill(target, data)
+        #         page.wait_for_timeout(wait_seconds * 1000)
+        #         return f"✅ Ввод '{data}' в элемент '{target}' выполнен (Playwright)"
+        #     
+        #     elif action == "extract":
+        #         if target.lower() == "page":
+        #             text = page.inner_text("body")
+        #             return f"✅ Извлечен текст страницы ({len(text)} символов):\n{text[:2000]}..."
+        #         else:
+        #             elements = page.query_selector_all(target)
+        #             if not elements:
+        #                 return f"❌ Элементы '{target}' не найдены"
+        #             texts = [elem.inner_text() for elem in elements[:10]]
+        #             return f"✅ Извлечено {len(texts)} элементов:\n" + "\n".join(texts)
+        #     
+        #     elif action == "screenshot":
+        #         screenshot_path = Path(target) if target else Path("screenshot.png")
+        #         page.screenshot(path=str(screenshot_path))
+        #         return f"✅ Скриншот сохранен: {screenshot_path} (Playwright)"
+        #     
+        #     elif action == "scroll":
+        #         if target.lower() == "down":
+        #             page.evaluate("window.scrollBy(0, window.innerHeight)")
+        #         elif target.lower() == "up":
+        #             page.evaluate("window.scrollBy(0, -window.innerHeight)")
+        #         elif target.lower() == "top":
+        #             page.evaluate("window.scrollTo(0, 0)")
+        #         elif target.lower() == "bottom":
+        #             page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        #         else:
+        #             page.locator(target).scroll_into_view_if_needed()
+        #         return f"✅ Прокрутка выполнена: {target} (Playwright)"
+        #     
+        #     elif action == "execute_js":
+        #         result = page.evaluate(data)
+        #         return f"✅ JavaScript выполнен. Результат: {result} (Playwright)"
+        #     
+        #     elif action == "get_cookies":
+        #         cookies = page.context.cookies()
+        #         return f"✅ Получено {len(cookies)} cookies: {cookies} (Playwright)"
+        #     
+        #     elif action == "wait":
+        #         page.wait_for_timeout(wait_seconds * 1000)
+        #         return f"✅ Ожидание {wait_seconds} секунд выполнено (Playwright)"
+        #     
+        #     else:
+        #         return f"❌ Неизвестное действие для Playwright: {action}"
+        #         
+        # except Exception as e:
+        #     return f"❌ Ошибка Playwright: {str(e)}"
     
+    # ОТКЛЮЧЕНО: Браузерная автоматизация
     def _run_selenium(self, action: str, target: str, data: str, wait_seconds: int, headless: bool) -> str:
-        """Выполнение действий через Selenium"""
-        try:
-            # Инициализируем Selenium если нужно
-            if not self._selenium_driver:
-                self._init_selenium(headless)
-            
-            driver = self._selenium_driver
-            wait = WebDriverWait(driver, 10)
-            
-            if action == "open" or action == "navigate":
-                # Если target не указан, открываем Google
-                if not target or target == "":
-                    target = "https://www.google.com"
-                # Если target не содержит протокол, добавляем https://
-                elif not target.startswith(('http://', 'https://')):
-                    target = f"https://{target}"
-                
-                driver.get(target)
-                self._last_url = target
-                return f"✅ Браузер открыт на {target} (Selenium)"
-            
-            elif action == "click":
-                element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, target)))
-                element.click()
-                time.sleep(wait_seconds)
-                return f"✅ Клик по элементу '{target}' выполнен (Selenium)"
-            
-            elif action == "type":
-                element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, target)))
-                element.clear()
-                element.send_keys(data)
-                time.sleep(wait_seconds)
-                return f"✅ Ввод '{data}' в элемент '{target}' выполнен (Selenium)"
-            
-            elif action == "extract":
-                if target.lower() == "page":
-                    text = driver.find_element(By.TAG_NAME, "body").text
-                    return f"✅ Извлечен текст страницы ({len(text)} символов):\n{text[:2000]}..."
-                else:
-                    elements = driver.find_elements(By.CSS_SELECTOR, target)
-                    if not elements:
-                        return f"❌ Элементы '{target}' не найдены"
-                    texts = [elem.text for elem in elements[:10]]
-                    return f"✅ Извлечено {len(texts)} элементов:\n" + "\n".join(texts)
-            
-            elif action == "screenshot":
-                screenshot_path = target if target else "screenshot.png"
-                driver.save_screenshot(screenshot_path)
-                return f"✅ Скриншот сохранен: {screenshot_path} (Selenium)"
-            
-            elif action == "scroll":
-                if target.lower() == "down":
-                    driver.execute_script("window.scrollBy(0, window.innerHeight);")
-                elif target.lower() == "up":
-                    driver.execute_script("window.scrollBy(0, -window.innerHeight);")
-                elif target.lower() == "top":
-                    driver.execute_script("window.scrollTo(0, 0);")
-                elif target.lower() == "bottom":
-                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                else:
-                    element = driver.find_element(By.CSS_SELECTOR, target)
-                    driver.execute_script("arguments[0].scrollIntoView();", element)
-                return f"✅ Прокрутка выполнена: {target} (Selenium)"
-            
-            elif action == "execute_js":
-                result = driver.execute_script(data)
-                return f"✅ JavaScript выполнен. Результат: {result} (Selenium)"
-            
-            elif action == "get_cookies":
-                cookies = driver.get_cookies()
-                return f"✅ Получено {len(cookies)} cookies: {cookies} (Selenium)"
-            
-            elif action == "wait":
-                time.sleep(wait_seconds)
-                return f"✅ Ожидание {wait_seconds} секунд выполнено (Selenium)"
-            
-            else:
-                return f"❌ Неизвестное действие для Selenium: {action}"
-                
-        except TimeoutException:
-            return f"❌ Таймаут при поиске элемента '{target}' (Selenium)"
-        except NoSuchElementException:
-            return f"❌ Элемент '{target}' не найден (Selenium)"
-        except Exception as e:
-            return f"❌ Ошибка Selenium: {str(e)}"
+        """ОТКЛЮЧЕНО: Выполнение действий через Selenium"""
+        return "❌ Браузерная автоматизация отключена. Используйте только просмотр веб-страниц."
+        # try:
+        #     # Инициализируем Selenium если нужно
+        #     if not self._selenium_driver:
+        #         self._init_selenium(headless)
+        #     
+        #     driver = self._selenium_driver
+        #     wait = WebDriverWait(driver, 10)
+        #     
+        #     if action == "open" or action == "navigate":
+        #         # Если target не указан, открываем Google
+        #         if not target or target == "":
+        #             target = "https://www.google.com"
+        #         # Если target не содержит протокол, добавляем https://
+        #         elif not target.startswith(('http://', 'https://')):
+        #             target = f"https://{target}"
+        #         
+        #         driver.get(target)
+        #         self._last_url = target
+        #         return f"✅ Браузер открыт на {target} (Selenium)"
+        #     
+        #     elif action == "click":
+        #         element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, target)))
+        #         element.click()
+        #         time.sleep(wait_seconds)
+        #         return f"✅ Клик по элементу '{target}' выполнен (Selenium)"
+        #     
+        #     elif action == "type":
+        #         element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, target)))
+        #         element.clear()
+        #         element.send_keys(data)
+        #         time.sleep(wait_seconds)
+        #         return f"✅ Ввод '{data}' в элемент '{target}' выполнен (Selenium)"
+        #     
+        #     elif action == "extract":
+        #         if target.lower() == "page":
+        #             text = driver.find_element(By.TAG_NAME, "body").text
+        #             return f"✅ Извлечен текст страницы ({len(text)} символов):\n{text[:2000]}..."
+        #         else:
+        #             elements = driver.find_elements(By.CSS_SELECTOR, target)
+        #             if not elements:
+        #                 return f"❌ Элементы '{target}' не найдены"
+        #             texts = [elem.text for elem in elements[:10]]
+        #             return f"✅ Извлечено {len(texts)} элементов:\n" + "\n".join(texts)
+        #     
+        #     elif action == "screenshot":
+        #         screenshot_path = target if target else "screenshot.png"
+        #         driver.save_screenshot(screenshot_path)
+        #         return f"✅ Скриншот сохранен: {screenshot_path} (Selenium)"
+        #     
+        #     elif action == "scroll":
+        #         if target.lower() == "down":
+        #             driver.execute_script("window.scrollBy(0, window.innerHeight);")
+        #         elif target.lower() == "up":
+        #             driver.execute_script("window.scrollBy(0, -window.innerHeight);")
+        #         elif target.lower() == "top":
+        #             driver.execute_script("window.scrollTo(0, 0);")
+        #         elif target.lower() == "bottom":
+        #             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        #         else:
+        #             element = driver.find_element(By.CSS_SELECTOR, target)
+        #             driver.execute_script("arguments[0].scrollIntoView();", element)
+        #         return f"✅ Прокрутка выполнена: {target} (Selenium)"
+        #     
+        #     elif action == "execute_js":
+        #         result = driver.execute_script(data)
+        #         return f"✅ JavaScript выполнен. Результат: {result} (Selenium)"
+        #     
+        #     elif action == "get_cookies":
+        #         cookies = driver.get_cookies()
+        #         return f"✅ Получено {len(cookies)} cookies: {cookies} (Selenium)"
+        #     
+        #     elif action == "wait":
+        #         time.sleep(wait_seconds)
+        #         return f"✅ Ожидание {wait_seconds} секунд выполнено (Selenium)"
+        #     
+        #     else:
+        #         return f"❌ Неизвестное действие для Selenium: {action}"
+        #         
+        # except TimeoutException:
+        #     return f"❌ Таймаут при поиске элемента '{target}' (Selenium)"
+        # except NoSuchElementException:
+        #     return f"❌ Элемент '{target}' не найден (Selenium)"
+        # except Exception as e:
+        #     return f"❌ Ошибка Selenium: {str(e)}"
     
     def _run_requests(self, action: str, target: str, data: str, wait_seconds: int) -> str:
         """Выполнение действий через requests (ограниченная функциональность)"""
