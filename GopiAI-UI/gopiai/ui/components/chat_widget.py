@@ -583,55 +583,48 @@ class ChatWidget(QWidget):
             
         return ''.join(chunks)
 
-    def send_message(self):
-        """Отправляет сообщение"""
-        logger.debug("[CHAT] Вызван метод send_message")
-        
-        text = self.input.toPlainText().strip()
-        if not text:
-            return
-            
-        # Очищаем поле ввода и блокируем кнопку
-        self.input.clear()
-        self.send_btn.setEnabled(False)
-        
-        # Добавляем сообщение пользователя
-        self._append_message_with_style("user", text)
-        
-        # Добавляем индикатор загрузки
-        self._show_loading_indicator()
-        
-        # Сохраняем в память, если сессия инициализирована
-        if self.session_id:
-            self.memory_manager.add_message(self.session_id, "user", text)
-        else:
-            logger.warning("[CHAT] Session not initialized, message not saved")
+    def _scroll_history_to_end(self):
+        """Прокручивает окно истории чата к концу безопасно."""
+        try:
+            if hasattr(self, 'history') and self.history is not None:
+                cursor = self.history.textCursor()
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                self.history.setTextCursor(cursor)
+                self.history.ensureCursorVisible()
+        except Exception as e:
+            logger.debug(f"[CHAT] _scroll_history_to_end error: {e}")
 
-        # Запускаем асинхронную обработку
-        message_data = {
-            "message": text,
-            "metadata": {
-                "session_id": self.session_id,
-                "current_tool": self.current_tool,
-                "attachments": self.attached_files,
-                # Добавляем информацию о выбранной модели
-                "model_provider": self.current_provider,
-                "model_id": self.current_model_id,
-                "model_data": self.current_model_data
-            }
-        }
-        
-        # Логируем информацию о выбранной модели
-        logger.info(f"[CHAT] Отправка сообщения с провайдером: {self.current_provider}")
-        if self.current_model_id:
-            logger.info(f"[CHAT] Выбранная модель: {self.current_model_id}")
-        # Извлекаем текст сообщения и метаданные для ImprovedAsyncChatHandler
-        message_text = message_data.get("message", "")
-        metadata = message_data.get("metadata", {})
-        
-        # Вызываем правильный метод
-        self.async_handler.send_message(message_text, metadata)
-        self.attached_files = []
+    def _get_chat_history(self, limit: int = 50):
+        """Возвращает последние сообщения текущей сессии в формате списка словарей.
+
+        Каждый элемент: { 'role': 'user'|'assistant'|'system', 'content': str, 'timestamp': str }
+        Используется при отправке сообщения для передачи контекста в backend.
+        """
+        try:
+            if not getattr(self, 'session_id', None):
+                return []
+            if not hasattr(self, 'memory_manager') or self.memory_manager is None:
+                return []
+            msgs = self.memory_manager.get_session_messages(self.session_id, limit=limit)
+            history = []
+            for m in msgs:
+                history.append({
+                    'role': m.get('role', ''),
+                    'content': m.get('content', ''),
+                    'timestamp': m.get('timestamp', '')
+                })
+            return history
+        except Exception as e:
+            logger.warning(f"[CHAT] Не удалось получить историю чата: {e}")
+            return []
+
+    def _send_message_basic_wrapper(self):
+        """Обертка для совместимости: вызывает основной send_message ниже."""
+        try:
+            return self.send_message()
+        except Exception as e:
+            logger.error(f"[CHAT] Ошибка в _send_message_basic_wrapper: {e}")
+            raise
 
     def _show_loading_indicator(self):
         """Показывает индикатор загрузки с анимацией"""
@@ -1062,57 +1055,76 @@ class ChatWidget(QWidget):
             logger.info("[FLOW] Флоу очищен")
     
     def send_message(self):
-        """Отправляет сообщение с учетом прикрепленных инструментов и агентов"""
+        """Отправляет сообщение с учетом прикрепленных инструментов и агентов (унифицировано)."""
+        logger.debug("[CHAT] Вызван метод send_message (unified)")
         message_text = self.input.toPlainText().strip()
         if not message_text:
             return
         
-        # Очищаем поле ввода
+        # Очищаем поле ввода и блокируем кнопку отправки
         self.input.clear()
+        if hasattr(self, 'send_btn') and self.send_btn is not None:
+            self.send_btn.setEnabled(False)
         
         # Отображаем сообщение пользователя
         self._append_message_with_style('user', message_text)
         
-        # Формируем metadata с информацией о выбранной модели и прикрепленных элементах
+        # Индикатор загрузки
+        self._show_loading_indicator()
+        
+        # Сохраняем в память
+        if getattr(self, 'session_id', None):
+            try:
+                self.memory_manager.add_message(self.session_id, 'user', message_text)
+            except Exception as e:
+                logger.warning(f"[CHAT] Не удалось сохранить сообщение пользователя в память: {e}")
+        else:
+            logger.warning("[CHAT] Session not initialized, message not saved")
+        
+        # Полное metadata
         metadata = {
+            'session_id': self.session_id,
+            'current_tool': self.current_tool,
             'chat_history': self._get_chat_history(),
-            'attached_files': self.attached_files.copy() if self.attached_files else []
+            'attachments': self.attached_files.copy() if self.attached_files else [],
+            'attached_files': self.attached_files.copy() if self.attached_files else [],
+            'model_provider': self.current_provider,
+            'model_id': self.current_model_id,
+            'model_data': self.current_model_data,
         }
-        
-        # Добавляем информацию о выбранной модели
-        if self.current_provider and self.current_model_id:
+        # Дублируем для backend, ожидающего preferred_*
+        if self.current_provider:
             metadata['preferred_provider'] = self.current_provider
+        if self.current_model_id:
             metadata['preferred_model'] = self.current_model_id
-            if self.current_model_data:
-                metadata['model_info'] = self.current_model_data
+        if self.current_model_data:
+            metadata['model_info'] = self.current_model_data
         
-        # Добавляем прикрепленные инструменты
         if self.attached_tools:
             metadata['force_tools'] = self.attached_tools.copy()
-            logger.info(f"[SEND] Отправляем с принудительными инструментами: {self.attached_tools}")
-        
-        # Добавляем прикрепленных агентов
+            logger.info(f"[SEND] Принудительные инструменты: {self.attached_tools}")
         if self.attached_agents:
             agent_ids = [a.get('id', a.get('name', '')) for a in self.attached_agents]
             metadata['force_agents'] = agent_ids
-            logger.info(f"[SEND] Отправляем с принудительными агентами: {agent_ids}")
-        
-        # Добавляем прикрепленный флоу
+            logger.info(f"[SEND] Принудительные агенты: {agent_ids}")
         if self.attached_flow:
             flow_id = self.attached_flow.get('id', self.attached_flow.get('name', ''))
             metadata['force_flow'] = flow_id
-            logger.info(f"[SEND] Отправляем с принудительным флоу: {flow_id}")
+            logger.info(f"[SEND] Принудительный флоу: {flow_id}")
         
         # Отправляем сообщение через асинхронный обработчик
         try:
             success = self.async_handler.send_message(message_text, metadata)
             if success:
                 logger.info(f"[SEND] Сообщение отправлено успешно: {message_text[:50]}...")
-                # Очищаем прикрепленные файлы после отправки
                 self.attached_files.clear()
             else:
                 logger.error("[SEND] Ошибка отправки сообщения")
                 self._append_message_with_style('error', 'Ошибка отправки сообщения')
+                if hasattr(self, 'send_btn') and self.send_btn is not None:
+                    self.send_btn.setEnabled(True)
         except Exception as e:
             logger.error(f"[SEND] Исключение при отправке: {e}")
             self._append_message_with_style('error', f'Ошибка: {str(e)}')
+            if hasattr(self, 'send_btn') and self.send_btn is not None:
+                self.send_btn.setEnabled(True)

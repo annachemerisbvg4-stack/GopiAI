@@ -8,6 +8,7 @@ import json
 import os
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from .tool_aliases import get_tool_alias_manager
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,7 @@ class ToolsInstructionManager:
         self.logger = logging.getLogger(__name__)
         self._tools_cache = {}
         self._last_update = None
+        self.alias_manager = get_tool_alias_manager()
         
         # Определяем пути к файлам
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -30,22 +32,26 @@ class ToolsInstructionManager:
         # Создаем директорию для инструкций если её нет
         os.makedirs(self.instructions_dir, exist_ok=True)
         
-        self.logger.info("✅ ToolsInstructionManager инициализирован")
+        self.logger.info("✅ ToolsInstructionManager инициализирован с поддержкой алиасов")
     
     def get_tools_summary(self) -> Dict[str, str]:
         """
         Возвращает краткий список доступных инструментов для системного промпта.
         Используется для первоначального ознакомления ИИ с доступными инструментами.
+        Включает все канонические инструменты из системы алиасов.
         
         Returns:
             Dict[str, str]: Словарь {tool_name: brief_description}
         """
-        return {
+        # Базовый набор инструментов
+        base_tools = {
             # 💻 Основные инструменты (с CrewAI улучшениями)
             "execute_shell": "Выполнение команд терминала (через CodeInterpreterTool): ls, dir, git, npm, pip, docker, curl",
             "web_scraper": "Продвинутый веб-скрапинг (через SeleniumScrapingTool): динамические страницы, JavaScript",
             "web_search": "Поиск в интернете (через Brave/Tavily): быстрые и дешевые SERP, структурированные результаты",
             "file_operations": "Улучшенные файловые операции (через FileReadTool/FileWriterTool): множество форматов",
+            # Алиас для обратной совместимости
+            "filesystem_tools": "Алиас file_operations: чтение/запись файлов, список директорий",
             
             # 🌐 Веб и API
             "api_client": "HTTP API клиент: GET, POST, PUT, DELETE запросы к любым API",
@@ -69,8 +75,28 @@ class ToolsInstructionManager:
             "system_info": "Информация о системе: ОС, архитектура, ресурсы",
             "process_manager": "Управление процессами: запуск, остановка, мониторинг",
             "time_helper": "Работа со временем: текущее время, форматирование, timestamp",
-            "project_helper": "Управление проектом GopiAI: статус, здоровье системы, логи"
+            "project_helper": "Управление проектом GopiAI: статус, здоровье системы, логи",
+            
+            # 🔧 Дополнительные CrewAI инструменты
+            "file_writer": "Запись в файлы (через FileWriteTool): создание, сохранение файлов",
+            "directory_search": "Поиск в директориях (через DirectorySearchTool): поиск файлов по имени",
+            "txt_search": "Поиск в текстовых файлах (через TXTSearchTool): grep-подобный поиск",
+            "mdx_search": "Поиск в Markdown файлах (через MDXSearchTool): поиск в документации",
+            "docx_search": "Поиск в Word документах (через DOCXSearchTool): поиск в .docx файлах",
+            "xml_search": "Поиск в XML файлах (через XMLSearchTool): парсинг и поиск в XML",
+            "youtube_channel_search": "Поиск каналов YouTube (через YoutubeChannelSearchTool)",
+            "youtube_video_search": "Поиск видео YouTube (через YoutubeVideoSearchTool)",
+            "scrape_website": "Базовый веб-скрапинг (через ScrapeWebsiteTool): простое извлечение контента"
         }
+        
+        # Добавляем алиасы для обратной совместимости
+        canonical_tools = self.alias_manager.get_canonical_tools()
+        for tool in canonical_tools:
+            if tool not in base_tools:
+                # Для неизвестных канонических инструментов добавляем базовое описание
+                base_tools[tool] = f"Инструмент {tool} (доступен через систему алиасов)"
+        
+        return base_tools
     
     def get_tool_detailed_instructions(self, tool_name: str) -> Optional[str]:
         """
@@ -83,6 +109,15 @@ class ToolsInstructionManager:
         Returns:
             Optional[str]: Детальные инструкции или None если инструмент не найден
         """
+        # Нормализация через систему алиасов
+        normalized = self.alias_manager.normalize_tool_name(tool_name)
+        if not normalized:
+            # Если алиас не найден, пробуем старую систему для обратной совместимости
+            if tool_name in {"filesystem_tools", "filesystem", "fs_tools"}:
+                normalized = "file_operations"
+            else:
+                normalized = tool_name
+
         instructions = {
             "execute_shell": self._get_execute_shell_instructions(),
             "web_scraper": self._get_web_scraper_instructions(),
@@ -97,11 +132,19 @@ class ToolsInstructionManager:
             "project_helper": self._get_project_helper_instructions()
         }
         
-        if tool_name in instructions:
-            self.logger.info(f"📖 Загружены детальные инструкции для {tool_name}")
-            return instructions[tool_name]
+        if normalized in instructions:
+            if normalized != tool_name:
+                self.logger.info(f"📖 Используем инструкции {normalized} для алиаса {tool_name}")
+            else:
+                self.logger.info(f"📖 Загружены детальные инструкции для {tool_name}")
+            return instructions[normalized]
         
-        self.logger.warning(f"⚠️ Инструкции для {tool_name} не найдены")
+        # Если инструкции не найдены, предлагаем альтернативы
+        suggestions = self.alias_manager.get_suggestions(tool_name)
+        if suggestions:
+            self.logger.warning(f"⚠️ Инструкции для {tool_name} не найдены. Возможные варианты: {', '.join(suggestions)}")
+        else:
+            self.logger.warning(f"⚠️ Инструкции для {tool_name} не найдены")
         return None
     
     def _get_execute_shell_instructions(self) -> str:

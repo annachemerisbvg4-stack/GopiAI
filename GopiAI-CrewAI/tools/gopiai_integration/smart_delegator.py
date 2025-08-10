@@ -52,6 +52,7 @@ from .local_mcp_tools import get_local_mcp_tools
 from .response_formatter import ResponseFormatter
 from .openrouter_client import get_openrouter_client
 from .model_config_manager import get_model_config_manager, ModelProvider
+from .tool_dispatcher import get_tool_dispatcher, ToolDispatcher, IntentMode
 
 # Инициализируем логгер перед использованием
 logger = logging.getLogger(__name__)
@@ -98,13 +99,21 @@ class SmartDelegator:
         self.command_executor = None
         logger.info("[INFO] CommandExecutor отключён: используется современная система tool_calls")
         
-        # Инициализируем форматировщик ответов для чистого отображения
+        # Инициализируем форматтер ответов
         try:
             self.response_formatter = ResponseFormatter()
-            logger.info("[OK] ResponseFormatter инициализирован для фильтрации JSON и HTML")
+            logger.info("[OK] ResponseFormatter инициализирован")
         except Exception as e:
-            self.response_formatter = None
             logger.warning(f"[WARNING] Не удалось инициализировать ResponseFormatter: {str(e)}")
+            self.response_formatter = None
+        
+        # Инициализируем централизованный диспетчер инструментов
+        try:
+            self.tool_dispatcher: ToolDispatcher = get_tool_dispatcher(self)
+            logger.info("[OK] ToolDispatcher инициализирован с централизованной маршрутизацией")
+        except Exception as e:
+            logger.warning(f"[WARNING] Не удалось инициализировать ToolDispatcher: {str(e)}")
+            self.tool_dispatcher = None
         
         # Инициализируем менеджер конфигураций моделей
         try:
@@ -112,7 +121,6 @@ class SmartDelegator:
             logger.info("[OK] ModelConfigurationManager инициализирован")
         except Exception as e:
             self.model_config_manager = None
-            logger.warning(f"[WARNING] Не удалось инициализировать ModelConfigurationManager: {str(e)}")
         
         # Инициализируем OpenRouter клиент
         try:
@@ -213,34 +221,67 @@ class SmartDelegator:
         # 3. Проверяем наличие запроса на вызов MCP инструмента
         tool_request = self._check_for_tool_request(message, metadata)
         
-        if tool_request and self.local_tools_available:
-            logger.info(f"Обнаружен запрос на использование инструмента: {tool_request['tool_name']} (сервер: {tool_request['server_name']})")
-            
-            # Вызываем MCP инструмент
+        if tool_request:
+            logger.info(f"[TOOL-REQUEST] Обнаружен запрос на инструмент: {tool_request['tool_name']}")
             try:
-                tool_response = self._call_tool(
-                    tool_request['tool_name'], 
-                    tool_request['server_name'],
-                    tool_request['params']
-                )
+                # Проверяем, есть ли готовый результат от диспетчера
+                if 'dispatch_response' in tool_request:
+                    dispatch_response = tool_request['dispatch_response']
+                    tool_response = dispatch_response.response_data
+                    logger.info(f"✅ Используем результат диспетчера для {tool_request['tool_name']}")
+                else:
+                    # Fallback на старую систему
+                    tool_response = self._call_tool(
+                        tool_request['tool_name'], 
+                        tool_request['server_name'], 
+                        tool_request['params']
+                    )
                 
-                # Формируем ответ с результатами инструмента
+                # Проверяем, не является ли ответ ошибкой
+                if isinstance(tool_response, dict) and tool_response.get('error'):
+                    # Возвращаем честную ошибку пользователю
+                    return {
+                        'response': tool_response['message'],
+                        'tool_used': tool_request['tool_name'],
+                        'tool_error': True
+                    }
+                
+                # Форматируем промпт с результатами инструмента
                 messages = self._format_prompt_with_tool_result(
-                    message, 
-                    rag_context, 
-                    metadata.get("chat_history", []),
-                    tool_request,
-                    tool_response,
-                    metadata
+                    message, rag_context, metadata.get("chat_history", []), tool_request, tool_response, metadata
                 )
                 
-                # Вызываем LLM для формирования итогового ответа
-                response_text = self._call_llm(messages)
+                # Вызываем LLM с результатами инструмента
+                response = self._call_llm(messages)
+                
+                return {
+                    'response': response,
+                    'tool_used': tool_request['tool_name'],
+                    'tool_response': tool_response
+                }
                 
             except Exception as e:
-                logger.error(f"Ошибка при вызове MCP инструмента: {str(e)}")
-                traceback.print_exc()
-                response_text = f"Извините, произошла ошибка при использовании инструмента {tool_request['tool_name']}: {str(e)}"
+                logger.error(f"[TOOL-ERROR] Ошибка выполнения инструмента {tool_request['tool_name']}: {str(e)}")
+                # Возвращаем честную ошибку вместо продолжения без инструмента
+                if self.tool_dispatcher:
+                    error_response = self.tool_dispatcher.create_honest_error_response(
+                        tool_request['tool_name'], str(e)
+                    )
+                    return {
+                        'response': error_response,
+                        'tool_used': tool_request['tool_name'],
+                        'tool_error': True
+                    }
+                else:
+                    # Legacy обработка ошибок
+                    error_message = f"⚠️ Не удалось выполнить инструмент {tool_request['tool_name']}: {str(e)}"
+                    messages = self._format_prompt(f"{error_message}\n\n{message}", rag_context, metadata.get("chat_history", []), metadata)
+                    response = self._call_llm(messages)
+                    return {
+                        'response': response,
+                        'tool_used': tool_request['tool_name'],
+                        'tool_error': True
+                    }
         else:
             # 3. Обычное формирование промпта без инструментов
             messages = self._format_prompt(message, rag_context, metadata.get("chat_history", []), metadata)
@@ -415,7 +456,40 @@ class SmartDelegator:
         return messages
 
     def _check_for_tool_request(self, message: str, metadata: Dict) -> Optional[Dict]:
-        """Проверяет, содержит ли сообщение запрос на использование MCP инструмента."""
+        """Проверяет, содержит ли сообщение запрос на использование инструмента через новую систему диспетчеризации."""
+        # 🚀 НОВАЯ СИСТЕМА: Используем централизованный диспетчер
+        if self.tool_dispatcher:
+            try:
+                # Проверяем принудительный выбор инструмента в метаданных
+                forced_tool = None
+                if metadata and isinstance(metadata, dict):
+                    tool_info = metadata.get('tool', None)
+                    if tool_info and isinstance(tool_info, dict):
+                        forced_tool = tool_info.get('name', '') or tool_info.get('tool_id', '')
+                
+                # Используем диспетчер для анализа намерений
+                dispatch_response = self.tool_dispatcher.dispatch_by_intent(
+                    user_text=message,
+                    forced_tool=forced_tool,
+                    context={'metadata': metadata},
+                    min_confidence=0.5
+                )
+                
+                if dispatch_response and dispatch_response.result.value == 'success':
+                    return {
+                        'tool_name': dispatch_response.tool_call.tool_name,
+                        'server_name': 'local',  # Диспетчер управляет маршрутизацией
+                        'params': dispatch_response.tool_call.params,
+                        'dispatch_response': dispatch_response  # Сохраняем для логирования
+                    }
+                elif dispatch_response and dispatch_response.result.value != 'success':
+                    # Логируем ошибку диспетчеризации
+                    self.logger.warning(f"🚫 Диспетчер не смог выполнить: {dispatch_response.error_message}")
+                    
+            except Exception as e:
+                self.logger.error(f"❌ Ошибка в новой системе диспетчеризации: {e}")
+        
+        # 🔄 FALLBACK: Старая система для обратной совместимости
         # Проверяем явный запрос в метаданных
         if metadata and isinstance(metadata, dict):
             tool_info = metadata.get('tool', None)
@@ -473,6 +547,17 @@ class SmartDelegator:
                     'tool_name': 'execute_shell',
                     'server_name': 'local',
                     'params': {'command': message.strip()}
+                }
+        
+        # 🇷🇺 LEGACY FALLBACK: Авто-детекция файловых намерений (сохранено для совместимости)
+        # Новая система диспетчеризации должна это обрабатывать автоматически
+        if not self.tool_dispatcher:  # Только если диспетчер недоступен
+            fs_intent = self._detect_filesystem_intent(message)
+            if fs_intent:
+                return {
+                    'tool_name': 'execute_shell',
+                    'server_name': 'local',
+                    'params': {'command': fs_intent}
                 }
         
         # 🌐 АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ WEB-ЗАПРОСОВ
@@ -581,10 +666,99 @@ class SmartDelegator:
                 }
         
         return None
+
+    def _detect_filesystem_intent(self, message: str) -> Optional[str]:
+        """
+        Определяет намерения работы с файловой системой из естественного языка (RU/EN)
+        и строит безопасную команду для просмотра содержимого директории.
+
+        Возвращает строку команды (например, 'dir C:\\Users\\crazy' или 'ls -la /tmp')
+        или None, если намерение не распознано.
+        """
+        try:
+            text = message.strip()
+            low = text.lower()
+            # Ключевые фразы для запроса списка/содержимого
+            ru_triggers = [
+                'зайди в', 'перейди в', 'открой папку', 'покажи содержимое',
+                'список файлов', 'что в папке', 'что находится в', 'дай список'
+            ]
+            en_triggers = [
+                'list folder', 'show contents', 'what is in', 'open folder', 'go to'
+            ]
+
+            has_trigger = any(t in low for t in ru_triggers + en_triggers)
+
+            # Ищем пути (Windows/Unix)
+            path_patterns = [
+                r'[a-zA-Z]:\\\\?[^\n\r]*',       # Windows, допускаем пробелы и подкаталоги
+                r'[a-zA-Z]:\\[^\n\r]*',            # Windows обычный
+                r'/[^\n\r]*',                        # Unix абсолютные
+            ]
+            import re as _re
+            found_path = None
+            for pat in path_patterns:
+                m = _re.search(pat, text)
+                if m:
+                    found_path = m.group(0).strip().strip('"')
+                    break
+
+            # Если нет явного триггера, но есть путь и слова "список/содержимое"
+            if not has_trigger and found_path:
+                if any(k in low for k in ['список', 'содержим', 'list', 'contents']):
+                    has_trigger = True
+
+            if not has_trigger:
+                return None
+
+            # Построим команду под ОС сервера
+            is_windows_path = bool(_re.match(r'^[a-zA-Z]:\\', found_path or ''))
+            if found_path:
+                if is_windows_path:
+                    # Экранируем обратные слеши для безопасной передачи
+                    safe_path = found_path.replace('\\', '\\\\')
+                    return f'dir "{safe_path}"'
+                else:
+                    return f'ls -la "{found_path}"'
+
+            # Если путь не нашли, но просили "покажи текущую" – просто вывести список
+            # По умолчанию для Windows/Unix
+            if os.name == 'nt':
+                return 'dir'
+            return 'ls -la'
+        except Exception:
+            return None
         
     def _call_tool(self, tool_name: str, server_name: str, params: Dict) -> Dict:
-        """Вызывает инструмент через многоуровневую систему: CrewAI -> Local MCP -> External MCP."""
+        """Вызывает инструмент через новую централизованную систему диспетчеризации или legacy систему."""
         logger.info(f"Вызов инструмента {tool_name} на сервере {server_name} с параметрами: {params}")
+        
+        # 🚀 НОВАЯ СИСТЕМА: Используем централизованный диспетчер если доступен
+        if self.tool_dispatcher:
+            try:
+                dispatch_response = self.tool_dispatcher.dispatch_tool_call(
+                    tool_name=tool_name,
+                    params=params,
+                    user_text="",  # Уже обработано в _check_for_tool_request
+                    mode=IntentMode.AUTO,
+                    context={'server_name': server_name}
+                )
+                
+                if dispatch_response.result.value == 'success':
+                    logger.info(f"✅ Диспетчер успешно выполнил {tool_name}")
+                    return dispatch_response.response_data
+                else:
+                    # Возвращаем честную ошибку вместо галлюцинации
+                    error_msg = self.tool_dispatcher.create_honest_error_response(
+                        tool_name, dispatch_response.error_message or "Неизвестная ошибка"
+                    )
+                    return {'error': True, 'message': error_msg}
+                    
+            except Exception as e:
+                logger.error(f"❌ Ошибка в диспетчере для {tool_name}: {e}")
+                # Продолжаем с legacy системой
+        
+        # 🔄 LEGACY СИСТЕМА: Старая многоуровневая система (fallback)
         
         # 🔥 УРОВЕНЬ 1: CrewAI Toolkit инструменты (приоритет)
         if self.crewai_tools_available and self.crewai_tools:
@@ -739,6 +913,7 @@ class SmartDelegator:
         logger.info("[CRITICAL-DEBUG] НАЧАЛО _call_llm")
         logger.info(f"[CRITICAL-DEBUG] messages_count: {len(messages)}")
         logger.info(f"[CRITICAL-DEBUG] model_config_manager: {self.model_config_manager is not None}")
+        logger.info(f"[CRITICAL-DEBUG] tool_dispatcher: {self.tool_dispatcher is not None}")
         
         # Инициализируем estimated_tokens в начале метода для использования в блоке except
         estimated_tokens = 0
@@ -766,6 +941,13 @@ class SmartDelegator:
                 model_id = current_config.model_id
                 logger.info(f"[LLM] Используем выбранную пользователем модель: {model_id} ({current_config.display_name})")
                 logger.info(f"[LLM] Провайдер: {current_config.provider.value}")
+                
+                # Специальная обработка для OpenRouter моделей
+                if current_config.provider == ModelProvider.OPENROUTER:
+                    return self._make_openrouter_request(messages, model_id)
+                elif current_config.provider == ModelProvider.GEMINI:
+                    return self._make_gemini_request(messages, model_id)
+            # Если нет выбранной модели, используем систему ротации
             else:
                 # Выбор модели с использованием ротации (только если нет выбранной модели)
                 has_image = any(
