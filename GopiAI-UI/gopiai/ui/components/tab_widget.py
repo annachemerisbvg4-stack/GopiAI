@@ -1316,6 +1316,29 @@ class TabDocumentWidget(QWidget):
             return current_widget
         return None
 
+    def get_browser_widget(self) -> Optional[QWidget]:
+        """Находит и возвращает виджет браузера, если он открыт.
+
+        Returns:
+            Виджет браузера (EnhancedBrowserWidget) или None, если не найден.
+        """
+        try:
+            # Импортируем здесь, чтобы избежать циклических зависимостей
+            from gopiai.ui.components.enhanced_browser_widget import EnhancedBrowserWidget
+            for i in range(self.tabs.count()):
+                widget = self.tabs.widget(i)
+                # Проверяем как сам виджет, так и его дочерние элементы, если он контейнер
+                if isinstance(widget, EnhancedBrowserWidget):
+                    return widget
+                # Случай, когда браузер внутри другого виджета (например, контейнера с адресной строкой)
+                browser_child = widget.findChild(EnhancedBrowserWidget)
+                if browser_child:
+                    return browser_child
+            return None
+        except Exception as e:
+            logger.error(f"Ошибка поиска виджета браузера: {e}")
+            return None
+
     def get_current_text(self):
         """Получение текста из текущей вкладки"""
         editor = self.get_current_editor()

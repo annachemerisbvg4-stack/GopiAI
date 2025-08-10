@@ -95,13 +95,29 @@ class TestDocumentationGenerator:
         """Discover all test files in the project."""
         test_files = []
         
-        for pattern in self.test_patterns:
-            test_files.extend(self.root_path.rglob(pattern))
+        # Only look in specific project directories, not virtual environments
+        project_dirs = [
+            "GopiAI-Core/tests",
+            "GopiAI-UI/tests", 
+            "GopiAI-CrewAI/tests",
+            "GopiAI-Assets/tests",
+            "tests",
+            "test_infrastructure"
+        ]
+        
+        for project_dir in project_dirs:
+            project_path = self.root_path / project_dir
+            if project_path.exists():
+                for pattern in self.test_patterns:
+                    test_files.extend(project_path.rglob(pattern))
         
         # Filter out __pycache__ and other unwanted directories
         filtered_files = []
         for file_path in test_files:
-            if "__pycache__" not in str(file_path) and file_path.is_file():
+            path_str = str(file_path)
+            if ("__pycache__" not in path_str and 
+                file_path.is_file() and
+                not any(env in path_str for env in ["_env", "site-packages", "node_modules"])):
                 filtered_files.append(file_path)
         
         return sorted(filtered_files)

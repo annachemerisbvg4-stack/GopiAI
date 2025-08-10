@@ -21,7 +21,7 @@ try:
     Ansi2HTMLConverter = _ExternalAnsi2HTMLConverter  # type: ignore[assignment]
     ANSI2HTML_AVAILABLE = True
 except ImportError:
-    print("⚠️ ansi2html недоступен, используем fallback")
+    print("[WARNING] ansi2html module not found, using fallback implementation.")
     ANSI2HTML_AVAILABLE = False
 
     class Ansi2HTMLConverter:

@@ -320,11 +320,17 @@ class ChatWidget(QWidget):
                 self.browser_widget.page_loaded.connect(self._on_browser_page_loaded)
                 logger.info("[BROWSER] Виджет браузера создан")
             
-            # Добавляем браузер в основную область с редакторами
-            tab_document = main_window.tab_document
-            tab_document.add_tab(self.browser_widget, "🌐 Браузер", closable=True)
-            tab_document.set_current_tab(self.browser_widget)
-            logger.info("[BROWSER] Вкладка браузера добавлена в основную область")
+            # Используем существующий метод для добавления вкладки браузера
+            main_window.tab_document.add_browser_tab(title="🌐 Браузер")
+            # Находим виджет браузера, чтобы передать ему команды
+            self.browser_widget = main_window.tab_document.get_browser_widget()
+            if self.browser_widget:
+                # Подключаем сигнал только если виджет был успешно получен
+                self.browser_widget.page_loaded.connect(self._on_browser_page_loaded)
+                logger.info("[BROWSER] Вкладка браузера добавлена/активирована через TabDocumentWidget")
+            else:
+                logger.error("[BROWSER] Не удалось получить виджет браузера после его создания")
+                return False
             return True
         except Exception as e:
             logger.error(f"[BROWSER] Ошибка создания вкладки браузера: {e}")

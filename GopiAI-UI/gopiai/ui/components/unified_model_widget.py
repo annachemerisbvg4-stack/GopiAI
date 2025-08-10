@@ -45,16 +45,16 @@ try:
     
     if tools_path and tools_path not in sys.path:
         sys.path.append(tools_path)
-        print(f"✅ Добавлен путь к tools: {tools_path}")
+        print(f"[INFO] Successfully loaded tools from: {tools_path}")
     
     # Импортируем ModelProvider
     # Импортируем ModelProvider, но не привязываем локальный тип напрямую, чтобы не конфликтовать с фолбэком
     from gopiai_integration.model_config_manager import ModelProvider as ExternalModelProvider
     ModelProvider = ExternalModelProvider  # type: ignore[assignment]
     MODEL_PROVIDER_AVAILABLE = True
-    print(f"✅ ModelProvider импортирован успешно: {list(ModelProvider)}")
+    print(f"[INFO] ModelProvider imported successfully: {list(ModelProvider)}")
 except Exception as e:
-    print(f"⚠️ Не удалось добавить backend путь или импортировать ModelProvider: {e}")
+    print(f"[WARNING] Could not import ModelProvider from backend, using fallback. Error: {e}")
     # Создаем fallback enum, совпадающий по имени с ожидаемым
     from enum import Enum
     class ModelProvider(Enum):  # type: ignore[no-redef]
