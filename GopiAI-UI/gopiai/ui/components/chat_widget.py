@@ -306,23 +306,43 @@ class ChatWidget(QWidget):
         self.main_layout.addWidget(bottom_container)
 
     def _ensure_browser_tab(self):
-        """Ленивая инициализация вкладки браузера и переключение на неё."""
+        """Ленивая инициализация вкладки браузера в основной области с редакторами."""
         try:
+            # Получаем главное окно через parent chain
+            main_window = self._get_main_window()
+            if not main_window or not hasattr(main_window, 'tab_document'):
+                logger.error("[BROWSER] Главное окно или tab_document не найдены")
+                self._append_message_with_style('error', 'Не удалось найти область редакторов для браузера')
+                return False
+                
             if self.browser_widget is None:
-                self.browser_widget = EnhancedBrowserWidget(self)
+                self.browser_widget = EnhancedBrowserWidget()
                 self.browser_widget.page_loaded.connect(self._on_browser_page_loaded)
-                self.tab_widget.addTab(self.browser_widget, "Браузер")
-                logger.info("[BROWSER] Вкладка браузера создана")
-            # Переключаемся на вкладку браузера
-            for i in range(self.tab_widget.count()):
-                if self.tab_widget.widget(i) is self.browser_widget:
-                    self.tab_widget.setCurrentIndex(i)
-                    break
+                logger.info("[BROWSER] Виджет браузера создан")
+            
+            # Добавляем браузер в основную область с редакторами
+            tab_document = main_window.tab_document
+            tab_document.add_tab(self.browser_widget, "🌐 Браузер", closable=True)
+            tab_document.set_current_tab(self.browser_widget)
+            logger.info("[BROWSER] Вкладка браузера добавлена в основную область")
             return True
         except Exception as e:
             logger.error(f"[BROWSER] Ошибка создания вкладки браузера: {e}")
             self._append_message_with_style('error', f'Не удалось открыть браузер: {e}')
             return False
+            
+    def _get_main_window(self):
+        """Получает ссылку на главное окно через parent chain."""
+        try:
+            parent = self.parent()
+            while parent:
+                if hasattr(parent, 'tab_document'):
+                    return parent
+                parent = parent.parent()
+            return None
+        except Exception as e:
+            logger.debug(f"[BROWSER] Ошибка поиска главного окна: {e}")
+            return None
 
     def _on_browser_page_loaded(self, url: str, title: str):
         """Отображает статус загрузки страницы браузера в чате."""
