@@ -7,8 +7,9 @@ and unhandled exceptions in Python files.
 """
 
 import ast
+import re
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Set, Optional, Tuple, Any
 from dataclasses import dataclass
 import logging
 from collections import defaultdict
@@ -673,6 +674,7 @@ class ExceptionAnalyzer(ast.NodeVisitor):
 if __name__ == "__main__":
     # Test the ConflictAnalyzer
     import sys
+    import logging
     from project_cleanup_analyzer import AnalysisConfig
     
     # Set up logging
@@ -709,7 +711,7 @@ if __name__ == "__main__":
         
         # Print conflict summary
         summary = analyzer.get_conflict_summary()
-        print("\nCONFLICT ANALYSIS SUMMARY:")
+        print(f"\nCONFLICT ANALYSIS SUMMARY:")
         print(f"  Global variables analyzed: {summary['global_variables']}")
         print(f"  Threading issues found: {summary['threading_issues']}")
         print(f"  Resource issues found: {summary['resource_issues']}")

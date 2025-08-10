@@ -3,8 +3,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Exclude local utilities folder from VCS
-/03_UTILITIES/
+# Exclude local utilities folder from VCS except specific tools
+/03_UTILITIES/*
+!/03_UTILITIES/fix_unused_imports.py
+!/03_UTILITIES/find_duplicate_files.py
+!/03_UTILITIES/project_analyzer/
+/03_UTILITIES/project_analyzer/*
+!/03_UTILITIES/project_analyzer/core/
+/03_UTILITIES/project_analyzer/core/*
+!/03_UTILITIES/project_analyzer/core/conflict_analyzer.py
 # C extensions
 *.so
 
