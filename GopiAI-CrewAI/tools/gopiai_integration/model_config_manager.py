@@ -277,65 +277,113 @@ class ModelConfigurationManager:
         
         return self.get_default_configuration()
     
-    def set_current_configuration(self, provider: ModelProvider, model_id: str) -> bool:
+    def set_current_configuration(self, provider: Union[ModelProvider, str], model_id: str) -> bool:
         """
         Устанавливает текущую конфигурацию
         
         Args:
-            provider: Провайдер модели
+            provider: Провайдер модели (ModelProvider или строка)
             model_id: ID модели
             
         Returns:
             True, если конфигурация была установлена
         """
+        # Преобразуем строку в ModelProvider, если необходимо
+        if isinstance(provider, str):
+            try:
+                provider = ModelProvider(provider)
+            except ValueError:
+                logger.warning(f"⚠️ Неизвестный провайдер: {provider}")
+                return False
+        
         config_key = f"{provider.value}_{model_id}"
         
         if config_key in self._configurations:
             config = self._configurations[config_key]
             
+            # Устанавливаем конфигурацию даже если API ключ не доступен
+            # Это позволит переключаться между моделями даже если ключи не настроены
+            self._current_provider = provider
+            self._current_model_id = model_id
+            self._save_configurations()
+            
             if config.is_available():
+                logger.info(f"🎯 Установлена текущая конфигурация: {config.display_name}")
+            else:
+                logger.warning(f"⚠️ Установлена конфигурация, но API ключ недоступен: {config.display_name}")
+            
+            return True
+        else:
+            # Если конфигурация не найдена, создаем новую
+            try:
+                # Определяем API ключ на основе провайдера
+                api_key_env = "OPENROUTER_API_KEY" if provider == ModelProvider.OPENROUTER else "GEMINI_API_KEY"
+                
+                # Создаем новую конфигурацию
+                new_config = ModelConfiguration(
+                    provider=provider,
+                    model_id=model_id,
+                    display_name=f"{provider.value}/{model_id}",
+                    api_key_env=api_key_env,
+                    is_default=False
+                )
+                
+                # Добавляем конфигурацию
+                self.add_configuration(new_config)
+                
+                # Устанавливаем как текущую
                 self._current_provider = provider
                 self._current_model_id = model_id
                 self._save_configurations()
                 
-                logger.info(f"🎯 Установлена текущая конфигурация: {config.display_name}")
+                logger.info(f"✅ Создана и установлена новая конфигурация: {provider.value}/{model_id}")
                 return True
-            else:
-                logger.warning(f"⚠️ Конфигурация недоступна (нет API ключа): {config.display_name}")
+            except Exception as e:
+                logger.warning(f"⚠️ Не удалось создать конфигурацию: {provider.value}/{model_id}: {e}")
                 return False
-        else:
-            logger.warning(f"⚠️ Конфигурация не найдена: {provider.value}/{model_id}")
-            return False
     
-    def switch_to_provider(self, provider: ModelProvider) -> bool:
+    def switch_to_provider(self, provider: Union[ModelProvider, str]) -> bool:
         """
         Переключается на указанного провайдера
         
         Args:
-            provider: Провайдер для переключения
+            provider: Провайдер для переключения (ModelProvider или строка)
             
         Returns:
             True, если переключение успешно
         """
-        available_configs = [
-            config for config in self.get_configurations_by_provider(provider)
-            if config.is_available()
-        ]
+        # Преобразуем строку в ModelProvider, если необходимо
+        if isinstance(provider, str):
+            try:
+                provider = ModelProvider(provider)
+            except ValueError:
+                logger.warning(f"⚠️ Неизвестный провайдер: {provider}")
+                return False
         
-        if available_configs:
-            # Берем первую доступную конфигурацию или конфигурацию по умолчанию
+        # Получаем все конфигурации для провайдера (даже если API ключ не доступен)
+        # Это позволит переключаться между провайдерами даже если ключи не настроены
+        all_configs = self.get_configurations_by_provider(provider)
+        
+        if all_configs:
+            # Берем первую конфигурацию или конфигурацию по умолчанию
             target_config = None
-            for config in available_configs:
+            for config in all_configs:
                 if config.is_default:
                     target_config = config
                     break
             
             if not target_config:
-                target_config = available_configs[0]
+                target_config = all_configs[0]
             
-            return self.set_current_configuration(target_config.provider, target_config.model_id)
+            # Устанавливаем текущий провайдер и модель, даже если API ключ не доступен
+            self._current_provider = provider
+            self._current_model_id = target_config.model_id
+            self._save_configurations()
+            
+            logger.info(f"🔄 Переключение на провайдера {provider.value}, модель: {target_config.model_id}")
+            return True
         else:
-            logger.warning(f"⚠️ Нет доступных конфигураций для провайдера {provider.value}")
+            logger.warning(f"⚠️ Нет конфигураций для провайдера {provider.value}")
             return False
     
     def _switch_to_default(self):

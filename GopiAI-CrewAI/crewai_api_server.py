@@ -558,6 +558,27 @@ def update_provider_model_state():
         # Обновляем состояние
         save_state(provider, model_id)
         
+        # Обновляем текущий провайдер в UsageTracker
+        try:
+            from llm_rotation_config import usage_tracker
+            if usage_tracker:
+                usage_tracker.set_current_provider(provider)
+                logger.info(f"✅ UsageTracker успешно обновлен с провайдером: {provider}")
+        except Exception as e:
+            logger.warning(f"⚠️ Не удалось обновить UsageTracker: {e}")
+        
+        # Обновляем текущую модель в ModelConfigManager
+        try:
+            from tools.gopiai_integration.model_config_manager import get_model_config_manager
+            mcm = get_model_config_manager()
+            if mcm:
+                mcm.switch_to_provider(provider)
+                if model_id:
+                    mcm.set_current_configuration(provider, model_id)
+                logger.info(f"✅ ModelConfigManager успешно обновлен: provider={provider}, model_id={model_id}")
+        except Exception as e:
+            logger.warning(f"⚠️ Не удалось обновить ModelConfigManager: {e}")
+        
         return jsonify({
             "status": "success",
             "message": f"State updated: provider={provider}, model_id={model_id}",
