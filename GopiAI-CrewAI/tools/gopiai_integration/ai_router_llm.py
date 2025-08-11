@@ -41,6 +41,7 @@ class AIRouterLLM(BaseLLM):
     """
     logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     model_configs: dict = Field(default_factory=dict)
+    model_config_manager: Optional[Any] = Field(default=None)
     def __init__(self, model_config_manager=None, **kwargs):
         super().__init__(**kwargs)
         self.model_configs = {m['id']: m for m in LLM_MODELS_CONFIG}

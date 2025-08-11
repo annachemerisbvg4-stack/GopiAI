@@ -26,7 +26,9 @@ else:
     EmbeddingsType = Any
 
 # Путь к интерпретатору txtai_env и воркеру
-TXTAI_PYTHON = Path(r"c:/Users/crazy/GOPI_AI_MODULES/txtai_env/Scripts/python.exe")
+# Используем текущий Python интерпретатор вместо Windows-специфичного пути
+import sys
+TXTAI_PYTHON = Path(sys.executable)
 WORKER_PATH = Path(__file__).with_name("rag_worker.py")
 
 class _WorkerProc:
@@ -53,9 +55,17 @@ class _WorkerProc:
                 text=True, encoding="utf-8", bufsize=1, cwd=str(self.worker_script.parent)
             )
             # ждём первую готовность
-            line = self._readline(timeout=5.0)
+            line = self._readline(timeout=10.0)
             if not line:
                 logger.error("RAG worker didn't send ready line")
+                # Попробуем прочитать stderr для диагностики
+                if self.proc.stderr:
+                    try:
+                        stderr_output = self.proc.stderr.read()
+                        if stderr_output:
+                            logger.error(f"RAG worker stderr: {stderr_output}")
+                    except Exception:
+                        pass
                 return False
             logger.info(f"RAG worker started: {line.strip()}")
             return True
@@ -194,6 +204,19 @@ class RAGSystem:
             logger.error(f"get_context failed: {resp}")
             return "No relevant context found in memory."
         return resp.get("data") or "No relevant context found in memory."
+    
+    def get_document_count(self) -> int:
+        """Получает количество индексированных документов от воркера."""
+        try:
+            resp = self.worker.request({"cmd": "count"}, timeout=10.0)
+            if resp.get("ok"):
+                return resp.get("data", 0)
+            else:
+                logger.warning(f"Failed to get document count: {resp}")
+                return 0
+        except Exception as e:
+            logger.warning(f"Error getting document count: {e}")
+            return 0
 
 # --- Singleton Instance ---
 _rag_system_instance: Optional[RAGSystem] = None

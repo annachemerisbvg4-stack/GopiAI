@@ -42,7 +42,7 @@ try:
     TXT_AVAILABLE = True
 except Exception as e:
     TXT_AVAILABLE = False
-    jprint({"ok": False, "error": f"txtai import failed: {e}"})
+    # Не выходим сразу, а продолжаем работу в режиме заглушки
 
 class RAGEngine:
     def __init__(self) -> None:
@@ -176,6 +176,14 @@ class RAGEngine:
         for t in s.get("data", []):
             lines.append(f"- {t}")
         return {"ok": True, "data": "\n".join(lines)}
+    
+    def get_count(self) -> Dict[str, Any]:
+        """Возвращает количество индексированных документов."""
+        try:
+            count = self._safe_count()
+            return {"ok": True, "data": count}
+        except Exception as e:
+            return {"ok": False, "error": f"count failed: {e}", "trace": traceback.format_exc()}
 
 ENGINE = RAGEngine()
 
@@ -194,11 +202,16 @@ def handle(req: Dict[str, Any]) -> Dict[str, Any]:
         return ENGINE.search(req.get("query", ""), int(req.get("limit", 3)))
     if cmd == "get_context":
         return ENGINE.get_context(req.get("query", ""), int(req.get("limit", 3)))
+    if cmd == "count":
+        return ENGINE.get_count()
     return {"ok": False, "error": f"unknown cmd: {cmd}"}
 
 def main():
-    # Inform readiness
-    jprint({"ok": True, "event": "worker_started", "pid": os.getpid()})
+    # Inform readiness - всегда отправляем ready line, даже если txtai недоступен
+    if TXT_AVAILABLE:
+        jprint({"ok": True, "event": "worker_started", "pid": os.getpid(), "txtai_available": True})
+    else:
+        jprint({"ok": True, "event": "worker_started", "pid": os.getpid(), "txtai_available": False, "warning": "txtai not available, RAG disabled"})
     for line in sys.stdin:
         line = line.strip()
         if not line:
