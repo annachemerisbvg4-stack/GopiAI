@@ -113,8 +113,10 @@ class ToolsInstructionManager:
         normalized = self.alias_manager.normalize_tool_name(tool_name)
         if not normalized:
             # Если алиас не найден, пробуем старую систему для обратной совместимости
-            if tool_name in {"filesystem_tools", "filesystem", "fs_tools"}:
+            # Обработка алиасов для filesystem_tools
+            if tool_name in {"filesystem_tools", "filesystem", "fs_tools", "file_tools", "file_manager", "file_handler"}:
                 normalized = "file_operations"
+                self.logger.info(f"📖 Алиас {tool_name} нормализован в file_operations")
             else:
                 normalized = tool_name
 

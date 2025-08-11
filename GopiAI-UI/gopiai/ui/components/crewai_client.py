@@ -222,17 +222,25 @@ class CrewAIClient:
         if EMOTIONAL_CLASSIFIER_AVAILABLE and AIRouterLLM and EmotionalClassifier:
             try:
                 # Создаем AI Router для эмоционального классификатора
-                from gopiai_integration.model_config_manager import get_model_config_manager
-                model_config_manager = get_model_config_manager()
+                model_config_manager = None
+                try:
+                    from gopiai_integration.model_config_manager import get_model_config_manager
+                    model_config_manager = get_model_config_manager()
+                    logger.info("[INIT] ✅ ModelConfigManager успешно получен")
+                except Exception as mcm_error:
+                    logger.warning(f"[INIT] ⚠️ Не удалось получить ModelConfigManager: {mcm_error}")
+                    logger.info("[INIT] ℹ️ Будет использована заглушка ModelConfigManager")
                 
-                # Проверяем, что model_config_manager успешно инициализирован
-                if model_config_manager:
-                    # Создаем экземпляр AIRouterLLM с явной передачей model_config_manager
-                    ai_router = AIRouterLLM(model_config_manager=model_config_manager)
+                # Создаем экземпляр AIRouterLLM с явной передачей model_config_manager
+                # AIRouterLLM сам создаст заглушку, если model_config_manager=None
+                ai_router = AIRouterLLM(model_config_manager=model_config_manager)
+                
+                # Проверяем, что model_config_manager успешно инициализирован в ai_router
+                if hasattr(ai_router, 'model_config_manager') and ai_router.model_config_manager is not None:
                     self.emotional_classifier = EmotionalClassifier(ai_router)
                     logger.info("[INIT] ✅ Эмоциональный классификатор инициализирован с AI Router")
                 else:
-                    logger.error("[INIT] ❌ ModelConfigManager не инициализирован")
+                    logger.error("[INIT] ❌ model_config_manager не инициализирован в AIRouterLLM")
                     self.emotional_classifier = None
             except Exception as e:
                 logger.error(f"[INIT] ❌ Ошибка инициализации эмоционального классификатора: {e}")
