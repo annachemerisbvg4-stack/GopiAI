@@ -67,6 +67,14 @@ class EmotionalClassifier:
         self.ai_router = ai_router
         self.logger = logging.getLogger(__name__)
         
+        # Проверяем наличие model_config_manager в ai_router
+        if hasattr(self.ai_router, 'model_config_manager'):
+            self.logger.info("✅ EmotionalClassifier: model_config_manager найден в ai_router")
+        else:
+            self.logger.error("❌ Ошибка инициализации эмоционального классификатора: \"AIRouterLLM\" object has no field \"model_config_manager\"")
+            # Создаем пустой атрибут, чтобы избежать ошибок при обращении
+            setattr(self.ai_router, 'model_config_manager', None)
+        
         # Критерии для различных типов эмоций
         self.emotion_criteria = {
             EmotionalState.POSITIVE: {
@@ -211,6 +219,11 @@ class EmotionalClassifier:
             Dict: Результат AI анализа
         """
         try:
+            # Проверяем, что ai_router доступен и имеет метод _generate
+            if not hasattr(self.ai_router, '_generate'):
+                self.logger.error("❌ ai_router не имеет метода _generate")
+                return {"primary_emotion": "neutral", "confidence": 0.5}
+                
             # Формируем контекст диалога
             conversation_context = self._format_conversation_for_analysis(conversation_history, current_message)
             
@@ -249,9 +262,15 @@ class EmotionalClassifier:
 }}
 """
             
-            # Отправляем запрос к AI
-            result = self.ai_router._generate(prompts=[analysis_prompt])
-            response_text = result.generations[0][0].text
+            # Отправляем запрос к AI с обработкой ошибок
+            try:
+                result = self.ai_router._generate(prompts=[analysis_prompt])
+                if not result or not hasattr(result, 'generations') or not result.generations:
+                    raise ValueError("Некорректный результат от AI")
+                response_text = result.generations[0][0].text
+            except Exception as ai_error:
+                self.logger.error(f"❌ Ошибка при вызове AI: {ai_error}")
+                return {"primary_emotion": "neutral", "confidence": 0.5}
             
             # Парсим JSON ответ
             try:

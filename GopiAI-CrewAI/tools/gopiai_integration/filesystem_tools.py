@@ -22,7 +22,14 @@ class GopiAIFileSystemTool(BaseTool):
 
     def _run(self, action: str, path: str = "", data: str = "", **kwargs):
         try:
-            if action == "read":
+            # Добавляем прямую поддержку метода list_directory для обратной совместимости
+            if action == "list_directory":
+                if os.path.isdir(path):
+                    files = os.listdir(path)
+                    return f"Directory {path}\n" + "\n".join(files) if files else "No files found."
+                else:
+                    return f"Путь '{path}' не является директорией."
+            elif action == "read":
                 with open(path, "r", encoding="utf-8") as f:
                     return f.read()
             elif action == "write":
@@ -36,9 +43,10 @@ class GopiAIFileSystemTool(BaseTool):
             elif action == "delete":
                 os.remove(path)
                 return f"Файл '{path}' удалён."
-            elif action == "list":
+            elif action == "list" or action == "list_directory":
                 if os.path.isdir(path):
-                    return os.listdir(path)
+                    files = os.listdir(path)
+                    return f"Directory {path}\n" + "\n".join(files) if files else "No files found."
                 else:
                     return f"Путь '{path}' не является директорией."
             elif action == "exists":

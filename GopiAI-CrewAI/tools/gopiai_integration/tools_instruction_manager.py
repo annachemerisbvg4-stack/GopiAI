@@ -54,7 +54,7 @@ class ToolsInstructionManager:
             # 🌐 Веб и API
             "api_client": "HTTP API клиент: GET, POST, PUT, DELETE запросы к любым API",
             "url_analyzer": "Анализ веб-ресурсов: проверка статуса, заголовков, robots.txt, sitemap",
-            "browser_tools": "Автоматизация браузера: навигация, клики, ввод, скриншоты, JavaScript",
+            # "browser_tools": "Автоматизация браузера: навигация, клики, ввод, скриншоты, JavaScript", # Удалено
             
             # 🔍 Поиск в файлах (CrewAI инструменты)
             "csv_search": "Поиск в CSV файлах (через CSVSearchTool): структурированные данные",
@@ -124,7 +124,7 @@ class ToolsInstructionManager:
             "web_search": self._get_web_search_instructions(),
             "api_client": self._get_api_client_instructions(),
             "url_analyzer": self._get_url_analyzer_instructions(),
-            "browser_tools": self._get_browser_instructions(),
+            # "browser_tools": self._get_browser_instructions(), # Удалено
             "file_operations": self._get_file_operations_instructions(),
             "system_info": self._get_system_info_instructions(),
             "process_manager": self._get_process_manager_instructions(),
@@ -721,9 +721,9 @@ performance = local_mcp_tools.call_tool("url_analyzer", {
 """
     
     def _get_browser_instructions(self) -> str:
-        """Детальные инструкции для browser_tools"""
+        """Детальные инструкции для browser_tools - УДАЛЕНО"""
         return """
-# 🌐 Browser Tools - Подробные инструкции
+# 🌐 Browser Tools - УДАЛЕНО ИЗ ПРОЕКТА
 
 ## Основные возможности:
 - **Автоматический выбор движка**: Playwright → Selenium → requests
