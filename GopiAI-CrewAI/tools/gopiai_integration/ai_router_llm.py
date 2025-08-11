@@ -52,16 +52,25 @@ class AIRouterLLM(BaseLLM):
                 self.logger.info("✅ AIRouterLLM инициализирован с переданным ModelConfigurationManager")
             else:
                 # Иначе получаем его стандартным способом
-                self.model_config_manager = get_model_config_manager()
-                self.logger.info("✅ AIRouterLLM инициализирован с ModelConfigurationManager (SSOT)")
+                try:
+                    self.model_config_manager = get_model_config_manager()
+                    self.logger.info("✅ AIRouterLLM инициализирован с ModelConfigurationManager (SSOT)")
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Не удалось получить ModelConfigurationManager: {e}")
+                    self.model_config_manager = None
         except Exception as e:
-            # Создаем пустой объект model_config_manager, чтобы избежать ошибок при обращении
+            self.logger.warning(f"⚠️ ModelConfigurationManager недоступен: {e}")
+            self.model_config_manager = None
+            
+        # Если model_config_manager все еще None, создаем заглушку
+        if self.model_config_manager is None:
             from types import SimpleNamespace
             self.model_config_manager = SimpleNamespace()
             # Добавляем минимальные необходимые методы и атрибуты
             self.model_config_manager.get_model_config = lambda model_id: None
             self.model_config_manager.get_all_models = lambda: []
-            self.logger.warning(f"⚠️ ModelConfigurationManager недоступен: {e}. Создан заглушка.")
+            self.logger.warning("⚠️ Создана заглушка для ModelConfigurationManager")
+            
         self.logger.info("✅ AIRouterLLM инициализирован с улучшенной системой ротации")
     def _is_quota_error(self, error):
         """Детектирует все типы ошибок лимитов и квот"""

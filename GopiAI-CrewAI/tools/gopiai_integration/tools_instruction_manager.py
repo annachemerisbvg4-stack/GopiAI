@@ -450,6 +450,19 @@ api_client.call_tool("api_client", {
     
     def _get_file_operations_instructions(self) -> str:
         """Детальные инструкции для filesystem_tools"""
+        # Пытаемся загрузить инструкции из файла
+        file_path = os.path.join(self.instructions_dir, "file_operations.md")
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                self.logger.info(f"📖 Загружены инструкции file_operations из файла: {file_path}")
+                return content
+            except Exception as e:
+                self.logger.warning(f"⚠️ Ошибка при чтении файла инструкций {file_path}: {e}")
+        
+        # Если файл не найден или произошла ошибка, используем встроенные инструкции
+        self.logger.info("📖 Используем встроенные инструкции для file_operations")
         return """
 # 📁 Filesystem Tools - Подробные инструкции
 
