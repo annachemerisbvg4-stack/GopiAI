@@ -4765,5 +4765,103 @@
     "role": "assistant",
     "content": "Пустой ответ от OpenRouter модели",
     "timestamp": "2025-08-11T07:43:53.766963"
+  },
+  {
+    "id": "ae61d0b0-4f07-4dcd-86a9-56a322d30cf8",
+    "session_id": "session_1754893600",
+    "role": "user",
+    "content": "можешь, пожалуйста, создать тестовую папку в C:\\Users\\crazy ? просто пустую папку с названием TEST007",
+    "timestamp": "2025-08-11T11:59:11.641385"
+  },
+  {
+    "id": "2ffc442e-2407-4cde-bb53-b4bb92a85439",
+    "session_id": "session_1754893600",
+    "role": "assistant",
+    "content": "Пустой ответ от OpenRouter модели",
+    "timestamp": "2025-08-11T11:59:15.432196"
+  },
+  {
+    "id": "9e0220f5-4127-4a97-9d05-21b06a9744d5",
+    "session_id": "session_1754893600",
+    "role": "user",
+    "content": "??",
+    "timestamp": "2025-08-11T11:59:40.373982"
+  },
+  {
+    "id": "ba796ca7-a115-4b46-b5ab-fa58bf78d6ad",
+    "session_id": "session_1754893600",
+    "role": "assistant",
+    "content": "Пустой ответ от OpenRouter модели",
+    "timestamp": "2025-08-11T11:59:43.779106"
+  },
+  {
+    "id": "bfb67108-8eb7-4377-9825-cd7a1b8fe762",
+    "session_id": "session_1754893600",
+    "role": "user",
+    "content": "зая ауууууу",
+    "timestamp": "2025-08-11T12:00:29.679152"
+  },
+  {
+    "id": "075bc242-1311-4203-be31-d677193a2c04",
+    "session_id": "session_1754893600",
+    "role": "assistant",
+    "content": "Прости, Анютка, задумалась. Сейчас сделаю.\n```tool_code\nfile_operations.create_directory(path='C:\\\\Users\\\\crazy\\\\TEST007')\n```",
+    "timestamp": "2025-08-11T12:00:35.876772"
+  },
+  {
+    "id": "a04be83f-26a0-40cc-b1e3-130f52aeda5b",
+    "session_id": "session_1754893600",
+    "role": "user",
+    "content": "не получилось... давай еще инструменты проверим - можешь помочь?",
+    "timestamp": "2025-08-11T12:02:21.064068"
+  },
+  {
+    "id": "4b89a4c1-ed3f-4680-948a-9e609d14c219",
+    "session_id": "session_1754893600",
+    "role": "assistant",
+    "content": "Конечно, Анютка, давай проверим инструменты. Что именно ты хочешь проверить? Может, попробуем создать файл в этой папке, чтобы убедиться, что у меня есть доступ? Или ты хочешь проверить какой-то конкретный инструмент? Говори, что нужно, я все сделаю.",
+    "timestamp": "2025-08-11T12:02:28.116799"
+  },
+  {
+    "id": "9d178728-9476-4f12-ae3a-b2fb1ccf1b58",
+    "session_id": "session_1754893600",
+    "role": "user",
+    "content": "посмотри содержимое C:\\Users\\crazy и покажи мне",
+    "timestamp": "2025-08-11T12:03:10.104575"
+  },
+  {
+    "id": "5243aa1e-0e9c-4426-9590-f95382212de2",
+    "session_id": "session_1754893600",
+    "role": "assistant",
+    "content": "```tool_code\nexecute_shell.run(commands=['dir C:\\\\Users\\\\crazy'])\n```",
+    "timestamp": "2025-08-11T12:03:17.183273"
+  },
+  {
+    "id": "4e4f3861-3bf1-431c-8d12-1e5f45190939",
+    "session_id": "session_1754893600",
+    "role": "user",
+    "content": "тоже не получается?",
+    "timestamp": "2025-08-11T12:03:31.097999"
+  },
+  {
+    "id": "4f446f3d-af45-4cef-84df-f7e38bb5fae9",
+    "session_id": "session_1754893600",
+    "role": "assistant",
+    "content": "Анютка, прости, что-то пошло не так. Давай попробуем по-другому. Вместо `dir`, попробуем `ls`. Может быть, это поможет.\n```tool_code\nexecute_shell.run(commands=['ls C:\\\\Users\\\\crazy'])\n```",
+    "timestamp": "2025-08-11T12:03:38.187409"
+  },
+  {
+    "id": "7570a259-c681-4562-a571-e26f2ae7c736",
+    "session_id": "session_1754893600",
+    "role": "user",
+    "content": "хорошо",
+    "timestamp": "2025-08-11T12:03:47.631273"
+  },
+  {
+    "id": "0693bec9-b140-4795-a77b-af03dfbff250",
+    "session_id": "session_1754893600",
+    "role": "assistant",
+    "content": "Пустой ответ от OpenRouter модели",
+    "timestamp": "2025-08-11T12:03:53.038993"
   }
 ]
