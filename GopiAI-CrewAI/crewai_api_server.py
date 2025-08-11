@@ -540,13 +540,13 @@ def update_provider_model_state():
             return jsonify({"error": "Missing JSON data"}), 400
             
         provider = data.get("provider")
-        model_id = data.get("model_id")
+        model_id = data.get("model_id", "")
         
-        if not provider or not model_id:
-            return jsonify({"error": "Both 'provider' and 'model_id' are required"}), 400
+        if not provider:
+            return jsonify({"error": "The 'provider' field is required"}), 400
         
         # Обновляем состояние
-        update_state(provider, model_id)
+        save_state(provider, model_id)
         
         return jsonify({
             "status": "success",

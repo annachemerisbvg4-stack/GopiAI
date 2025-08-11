@@ -41,13 +41,19 @@ class AIRouterLLM(BaseLLM):
     """
     logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     model_configs: dict = Field(default_factory=dict)
-    def __init__(self, **kwargs):
+    def __init__(self, model_config_manager=None, **kwargs):
         super().__init__(**kwargs)
         self.model_configs = {m['id']: m for m in LLM_MODELS_CONFIG}
         # Инициализируем менеджер конфигураций как single source of truth
         try:
-            self.model_config_manager = get_model_config_manager()
-            self.logger.info("✅ AIRouterLLM инициализирован с ModelConfigurationManager (SSOT)")
+            # Используем переданный model_config_manager, если он есть
+            if model_config_manager is not None:
+                self.model_config_manager = model_config_manager
+                self.logger.info("✅ AIRouterLLM инициализирован с переданным ModelConfigurationManager")
+            else:
+                # Иначе получаем его стандартным способом
+                self.model_config_manager = get_model_config_manager()
+                self.logger.info("✅ AIRouterLLM инициализирован с ModelConfigurationManager (SSOT)")
         except Exception as e:
             # Создаем пустой объект model_config_manager, чтобы избежать ошибок при обращении
             from types import SimpleNamespace
