@@ -68,12 +68,24 @@ class EmotionalClassifier:
         self.logger = logging.getLogger(__name__)
         
         # Проверяем наличие model_config_manager в ai_router
-        if hasattr(self.ai_router, 'model_config_manager'):
+        if hasattr(self.ai_router, 'model_config_manager') and self.ai_router.model_config_manager is not None:
             self.logger.info("✅ EmotionalClassifier: model_config_manager найден в ai_router")
         else:
-            self.logger.error("❌ Ошибка инициализации эмоционального классификатора: \"AIRouterLLM\" object has no field \"model_config_manager\"")
-            # Создаем пустой атрибут, чтобы избежать ошибок при обращении
-            setattr(self.ai_router, 'model_config_manager', None)
+            self.logger.error("❌ Ошибка инициализации эмоционального классификатора: \"AIRouterLLM\" object has no field \"model_config_manager\" или атрибут равен None")
+            # Создаем заглушку для model_config_manager, если его нет или он None
+            from types import SimpleNamespace
+            stub_manager = SimpleNamespace()
+            # Добавляем минимальные необходимые методы и атрибуты
+            stub_manager.get_model_config = lambda model_id: None
+            stub_manager.get_all_models = lambda: []
+            stub_manager.get_current_configuration = lambda: None
+            stub_manager.get_provider_status = lambda: {"gemini": {"is_current": True}}
+            stub_manager.set_current_configuration = lambda provider, model_id: False
+            stub_manager.switch_to_provider = lambda provider: False
+            
+            # Устанавливаем заглушку
+            setattr(self.ai_router, 'model_config_manager', stub_manager)
+            self.logger.warning("⚠️ Создана заглушка для model_config_manager в EmotionalClassifier")
         
         # Критерии для различных типов эмоций
         self.emotion_criteria = {
