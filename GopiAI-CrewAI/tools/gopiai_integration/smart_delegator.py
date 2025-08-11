@@ -20,13 +20,20 @@ try:
         logger.info(f"Добавлен путь в sys.path: {crewai_root}")
     
     # Импортируем все наборы инструментов
-    from tools.browser_tools import GopiAIBrowserTool, GopiAIWebSearchTool, GopiAIPageAnalyzerTool
-    from tools.filesystem_tools import (
-        FileCreateTool, FileDeleteTool, FileReadTool, FileUpdateTool,
-        DirectoryCreateTool, DirectoryDeleteTool, DirectoryListTool,
-        DirectorySearchTool, PathInfoTool
-    )
-    from tools.local_mcp_tools import LocalMCPTool
+    # Браузерные инструменты удалены из проекта
+    
+    # Импорт инструментов файловой системы
+    try:
+        from tools.gopiai_integration.filesystem_tools import GopiAIFileSystemTool
+    except ImportError as e:
+        logger.error(f"Ошибка импорта filesystem_tools: {e}")
+        GopiAIFileSystemTool = None
+    
+    try:
+        from tools.gopiai_integration.local_mcp_tools import LocalMCPTool
+    except ImportError as e:
+        logger.error(f"Ошибка импорта local_mcp_tools: {e}")
+        LocalMCPTool = None
     
     TOOLS_LOADED = True
     logger.info("✅ Все локальные инструменты успешно импортированы.")

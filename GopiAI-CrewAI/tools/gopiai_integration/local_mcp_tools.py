@@ -220,18 +220,19 @@ class LocalMCPTools:
                     "required": ["session_id"]
                 }
             },
-            "browser_tools": {
-                "name": "browser_tools",
-                "description": "Управление браузером: открытие страниц, навигация, взаимодействие с элементами",
+            # browser_tools удалены из проекта
+            "web_scraper": {
+                "name": "web_scraper",
+                "description": "Извлечение данных с веб-страниц: текст, ссылки, таблицы, изображения",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "action": {
                             "type": "string",
-                            "enum": ["open", "navigate", "click", "type", "extract", "screenshot", "scroll", "wait", "execute_js"],
-                            "description": "Действие браузера"
+                            "enum": ["get_text", "get_links", "get_images", "get_tables", "custom_selector"],
+                            "description": "Тип извлекаемых данных"
                         },
-                        "target": {
+                        "url": {
                             "type": "string",
                             "description": "URL, CSS селектор или другой идентификатор"
                         },
@@ -278,8 +279,7 @@ class LocalMCPTools:
                 return self._execute_shell(parameters)
             elif tool_name == "export_to_drive":
                 return self._export_to_drive(parameters)
-            elif tool_name == "browser_tools":
-                return self._browser_tools(parameters)
+            # browser_tools удалены из проекта
             else:
                 return {"error": f"Неизвестный инструмент: {tool_name}"}
                 
@@ -930,42 +930,13 @@ class LocalMCPTools:
         return {'success': True, 'file_id': file.get('id')}
 
     def _browser_tools(self, parameters: Dict) -> Dict:
-        """Выполнение браузерных операций"""
-        try:
-            # Импортируем browser_tools
-            from .browser_tools import GopiAIBrowserTool
-            
-            # Создаем экземпляр браузерного инструмента
-            browser_tool = GopiAIBrowserTool()
-            
-            # Извлекаем параметры
-            action = parameters.get('action', 'open')
-            target = parameters.get('target', '')
-            data = parameters.get('data', '')
-            wait_seconds = parameters.get('wait_seconds', 3)
-            
-            # Выполняем действие
-            result = browser_tool._run(
-                action=action,
-                target=target,
-                data=data,
-                wait_seconds=wait_seconds
-            )
-            
-            return {
-                'success': True,
-                'result': result,
-                'action': action,
-                'target': target
-            }
-            
-        except Exception as e:
-            logger.error(f"Ошибка в browser_tools: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'action': parameters.get('action', 'unknown')
-            }
+        """Выполнение браузерных операций - УДАЛЕНО"""
+        logger.error("browser_tools удалены из проекта")
+        return {
+            'success': False,
+            'error': "browser_tools удалены из проекта. Используйте web_scraper вместо этого.",
+            'action': parameters.get('action', 'unknown')
+        }
 
 
 # Глобальный экземпляр
