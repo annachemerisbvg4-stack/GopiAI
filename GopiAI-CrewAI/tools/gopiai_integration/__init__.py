@@ -27,7 +27,7 @@ from .memory_tools import GopiAIMemoryTool
 from .communication_tools import GopiAICommunicationTool
 
 # ОТКЛЮЧЕННЫЕ ИНСТРУМЕНТЫ (оставлены для совместимости)
-# from .browser_tools import GopiAIBrowserTool  # ОТКЛЮЧЕНО
+# browser_tools удалены из проекта
 # from .ai_router_tools import GopiAIRouterTool  # ОТКЛЮЧЕНО
 
 __all__ = [
