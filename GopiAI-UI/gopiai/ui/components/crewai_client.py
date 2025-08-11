@@ -67,6 +67,7 @@ try:
         # Пытаемся импортировать как пакет с sys.path
         from gopiai_integration.emotional_classifier import EmotionalClassifier as _EmotionalClassifier, EmotionalState as _EmotionalState
         from gopiai_integration.ai_router_llm import AIRouterLLM as _AIRouterLLM
+        from gopiai_integration.model_config_manager import get_model_config_manager
         EmotionalClassifier = _EmotionalClassifier
         EmotionalState = _EmotionalState
         AIRouterLLM = _AIRouterLLM
@@ -78,19 +79,25 @@ try:
             import importlib.util
             ec_path = str((Path(project_root) / 'GopiAI-CrewAI' / 'tools' / 'gopiai_integration' / 'emotional_classifier.py').resolve())
             ar_path = str((Path(project_root) / 'GopiAI-CrewAI' / 'tools' / 'gopiai_integration' / 'ai_router_llm.py').resolve())
+            mcm_path = str((Path(project_root) / 'GopiAI-CrewAI' / 'tools' / 'gopiai_integration' / 'model_config_manager.py').resolve())
             spec_ec = importlib.util.spec_from_file_location("gopiai_integration.emotional_classifier", ec_path)
             spec_ar = importlib.util.spec_from_file_location("gopiai_integration.ai_router_llm", ar_path)
-            if spec_ec and spec_ar and spec_ec.loader and spec_ar.loader:
+            spec_mcm = importlib.util.spec_from_file_location("gopiai_integration.model_config_manager", mcm_path)
+            if spec_ec and spec_ar and spec_mcm and spec_ec.loader and spec_ar.loader and spec_mcm.loader:
                 ec_module = importlib.util.module_from_spec(spec_ec)
                 ar_module = importlib.util.module_from_spec(spec_ar)
+                mcm_module = importlib.util.module_from_spec(spec_mcm)
                 sys.modules["gopiai_integration.emotional_classifier"] = ec_module
                 sys.modules["gopiai_integration.ai_router_llm"] = ar_module
+                sys.modules["gopiai_integration.model_config_manager"] = mcm_module
                 spec_ec.loader.exec_module(ec_module)
                 spec_ar.loader.exec_module(ar_module)
+                spec_mcm.loader.exec_module(mcm_module)
                 EmotionalClassifier = getattr(ec_module, "EmotionalClassifier", None)
                 EmotionalState = getattr(ec_module, "EmotionalState", None)
                 AIRouterLLM = getattr(ar_module, "AIRouterLLM", None)
-                if EmotionalClassifier and EmotionalState and AIRouterLLM:
+                get_model_config_manager = getattr(mcm_module, "get_model_config_manager", None)
+                if EmotionalClassifier and EmotionalState and AIRouterLLM and get_model_config_manager:
                     EMOTIONAL_CLASSIFIER_AVAILABLE = True
                     logger.debug("[INIT] Эмоциональный классификатор и AI Router импортированы через прямые пути")
                 else:
@@ -215,7 +222,9 @@ class CrewAIClient:
         if EMOTIONAL_CLASSIFIER_AVAILABLE and AIRouterLLM and EmotionalClassifier:
             try:
                 # Создаем AI Router для эмоционального классификатора
-                ai_router = AIRouterLLM()
+                from gopiai_integration.model_config_manager import get_model_config_manager
+                model_config_manager = get_model_config_manager()
+                ai_router = AIRouterLLM(model_config_manager=model_config_manager)
                 self.emotional_classifier = EmotionalClassifier(ai_router)
                 logger.info("[INIT] ✅ Эмоциональный классификатор инициализирован с AI Router")
             except Exception as e:

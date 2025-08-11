@@ -258,6 +258,24 @@ class CrewAIToolsIntegrator:
                     'error': '\n'.join(import_errors)
                 }
                 self.logger.debug(f"❌ Инструмент {tool_name} недоступен. Причины:\n- " + "\n- ".join(import_errors))
+
+        # Добавляем GopiAI инструменты
+        try:
+            from .filesystem_tools import GopiAIFileSystemTool
+            self.available_tools['filesystem_tools'] = {
+                'class': GopiAIFileSystemTool,
+                'module_path': 'tools.gopiai_integration.filesystem_tools',
+                'category': 'file_operations',
+                'description': 'Расширенные операции с файловой системой',
+                'available': True
+            }
+            self.tool_categories.setdefault('file_operations', []).append('filesystem_tools')
+            self.logger.info("✅ Инструмент filesystem_tools доступен")
+        except Exception as e:
+            self.logger.warning(f"❌ Ошибка загрузки filesystem_tools: {e}")
+
+        # Браузерные инструменты отключены
+        self.logger.info("ℹ️ Браузерные инструменты отключены по решению команды")
     
     def get_available_tools(self) -> Dict[str, Dict]:
         """Возвращает список доступных инструментов"""

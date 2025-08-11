@@ -85,12 +85,12 @@ class ToolAliasManager:
             alias_map[alias.lower()] = 'url_analyzer'
         
         # 🖱️ БРАУЗЕР АВТОМАТИЗАЦИЯ
-        browser_aliases = [
-            'browser_tools', 'browser', 'selenium', 'webdriver', 'browser_automation',
-            'web_automation', 'browser_control', 'selenium_tools', 'web_driver'
-        ]
-        for alias in browser_aliases:
-            alias_map[alias.lower()] = 'browser_tools'
+        # browser_aliases = [
+        #     'browser_tools', 'browser', 'selenium', 'webdriver', 'browser_automation',
+        #     'web_automation', 'browser_control', 'selenium_tools', 'web_driver'
+        # ]
+        # for alias in browser_aliases:
+        #     alias_map[alias.lower()] = 'browser_tools'
         
         # 📊 CSV ПОИСК
         csv_aliases = [
