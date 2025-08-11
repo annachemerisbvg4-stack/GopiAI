@@ -44,6 +44,11 @@ class AIRouterLLM(BaseLLM):
     def __init__(self, model_config_manager=None, **kwargs):
         super().__init__(**kwargs)
         self.model_configs = {m['id']: m for m in LLM_MODELS_CONFIG}
+        
+        # Гарантируем, что model_config_manager будет инициализирован в любом случае
+        # Сначала устанавливаем значение по умолчанию
+        self.model_config_manager = None
+        
         # Инициализируем менеджер конфигураций как single source of truth
         try:
             # Используем переданный model_config_manager, если он есть
@@ -69,7 +74,12 @@ class AIRouterLLM(BaseLLM):
             # Добавляем минимальные необходимые методы и атрибуты
             self.model_config_manager.get_model_config = lambda model_id: None
             self.model_config_manager.get_all_models = lambda: []
-            self.logger.warning("⚠️ Создана заглушка для ModelConfigurationManager")
+            # Добавляем другие необходимые методы, которые могут использоваться
+            self.model_config_manager.get_current_configuration = lambda: None
+            self.model_config_manager.get_provider_status = lambda: {"gemini": {"is_current": True}}
+            self.model_config_manager.set_current_configuration = lambda provider, model_id: False
+            self.model_config_manager.switch_to_provider = lambda provider: False
+            self.logger.warning("⚠️ Создана расширенная заглушка для ModelConfigurationManager")
             
         self.logger.info("✅ AIRouterLLM инициализирован с улучшенной системой ротации")
     def _is_quota_error(self, error):

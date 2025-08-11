@@ -261,18 +261,65 @@ class CrewAIToolsIntegrator:
 
         # Добавляем GopiAI инструменты
         try:
-            from .filesystem_tools import GopiAIFileSystemTool
-            self.available_tools['filesystem_tools'] = {
-                'class': GopiAIFileSystemTool,
-                'module_path': 'tools.gopiai_integration.filesystem_tools',
-                'category': 'file_operations',
-                'description': 'Расширенные операции с файловой системой',
-                'available': True
-            }
-            self.tool_categories.setdefault('file_operations', []).append('filesystem_tools')
-            self.logger.info("✅ Инструмент filesystem_tools доступен")
+            # Пробуем несколько способов импорта filesystem_tools
+            filesystem_tool_class = None
+            import_errors = []
+            
+            # Способ 1: Относительный импорт
+            try:
+                from .filesystem_tools import GopiAIFileSystemTool
+                filesystem_tool_class = GopiAIFileSystemTool
+                self.logger.info("✅ Инструмент filesystem_tools загружен через относительный импорт")
+            except ImportError as e:
+                import_errors.append(f"Относительный импорт: {e}")
+            
+            # Способ 2: Абсолютный импорт
+            if filesystem_tool_class is None:
+                try:
+                    from tools.gopiai_integration.filesystem_tools import GopiAIFileSystemTool
+                    filesystem_tool_class = GopiAIFileSystemTool
+                    self.logger.info("✅ Инструмент filesystem_tools загружен через абсолютный импорт")
+                except ImportError as e:
+                    import_errors.append(f"Абсолютный импорт: {e}")
+            
+            # Способ 3: Импорт через sys.path
+            if filesystem_tool_class is None:
+                try:
+                    import sys
+                    import os
+                    base_dir = os.path.dirname(os.path.abspath(__file__))
+                    if base_dir not in sys.path:
+                        sys.path.append(base_dir)
+                    from filesystem_tools import GopiAIFileSystemTool
+                    filesystem_tool_class = GopiAIFileSystemTool
+                    self.logger.info("✅ Инструмент filesystem_tools загружен через sys.path")
+                except ImportError as e:
+                    import_errors.append(f"Импорт через sys.path: {e}")
+            
+            # Если удалось загрузить инструмент
+            if filesystem_tool_class is not None:
+                self.available_tools['filesystem_tools'] = {
+                    'class': filesystem_tool_class,
+                    'module_path': 'tools.gopiai_integration.filesystem_tools',
+                    'category': 'file_operations',
+                    'description': 'Расширенные операции с файловой системой',
+                    'available': True
+                }
+                self.tool_categories.setdefault('file_operations', []).append('filesystem_tools')
+                self.logger.info("✅ Инструмент filesystem_tools успешно добавлен")
+            else:
+                self.logger.error(f"❌ Не удалось загрузить filesystem_tools. Ошибки:\n- " + "\n- ".join(import_errors))
+                # Добавляем заглушку для filesystem_tools
+                self.available_tools['filesystem_tools'] = {
+                    'class': None,
+                    'module_path': 'tools.gopiai_integration.filesystem_tools',
+                    'category': 'file_operations',
+                    'description': 'Расширенные операции с файловой системой (недоступно)',
+                    'available': False,
+                    'error': '\n'.join(import_errors)
+                }
         except Exception as e:
-            self.logger.warning(f"❌ Ошибка загрузки filesystem_tools: {e}")
+            self.logger.error(f"❌ Критическая ошибка при загрузке filesystem_tools: {e}")
 
         # Браузерные инструменты отключены
         self.logger.info("ℹ️ Браузерные инструменты отключены по решению команды")

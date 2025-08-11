@@ -277,12 +277,46 @@ class UnifiedModelsTab(QWidget):
         try:
             base_url = os.environ.get("CREWAI_API_BASE_URL", "http://127.0.0.1:5051")
             url = f"{base_url}/internal/state"
-            # Сервер ожидает оба поля, поэтому если model_id отсутствует — передаём пустую строку
-            payload = {"provider": provider, "model_id": model_id or ""}
+            
+            # Проверяем, что оба параметра имеют значения
+            if not provider:
+                logger.warning("Не указан провайдер для синхронизации с сервером")
+                return
+                
+            # Сервер ожидает оба поля, поэтому если model_id отсутствует — используем значение по умолчанию
+            if not model_id and provider == "openrouter":
+                # Для OpenRouter нужно указать конкретную модель
+                model_id = "google/gemini-2.5-pro-exp-03-25"  # Модель по умолчанию для OpenRouter
+                logger.info(f"Используем модель по умолчанию для OpenRouter: {model_id}")
+            elif not model_id and provider == "gemini":
+                # Для Gemini используем стандартную модель
+                model_id = "gemini-2.0-flash-exp"
+                logger.info(f"Используем модель по умолчанию для Gemini: {model_id}")
+                
+            payload = {"provider": provider, "model_id": model_id}
             headers = {"Content-Type": "application/json; charset=utf-8"}
+            
+            # Логируем отправляемые данные для отладки
+            logger.debug(f"Отправка данных на сервер: {payload}")
+            
             resp = requests.post(url, data=json.dumps(payload), headers=headers, timeout=5)
             if resp.status_code != 200:
                 logger.warning(f"Сервер вернул {resp.status_code}: {resp.text}")
+                
+                # Если ошибка 400, возможно, сервер ожидает другой формат данных
+                if resp.status_code == 400:
+                    # Пробуем альтернативный формат
+                    alt_payload = {
+                        "provider": provider,
+                        "model_id": model_id,
+                        "action": "set_model"
+                    }
+                    logger.debug(f"Пробуем альтернативный формат: {alt_payload}")
+                    alt_resp = requests.post(url, data=json.dumps(alt_payload), headers=headers, timeout=5)
+                    if alt_resp.status_code == 200:
+                        logger.info("Состояние синхронизировано с сервером (альтернативный формат)")
+                    else:
+                        logger.warning(f"Альтернативный формат также не сработал: {alt_resp.status_code}: {alt_resp.text}")
             else:
                 logger.info("Состояние провайдера/модели синхронизировано с сервером")
         except Exception as e:
