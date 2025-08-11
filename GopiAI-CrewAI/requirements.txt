@@ -47,7 +47,6 @@ docstring_parser
 duckdb
 durationpy
 embedchain
-en_core_web_sm
 et_xmlfile
 executing
 faiss-cpu
@@ -186,7 +185,6 @@ pypdf
 pypdfium2
 PyPika
 pyproject_hooks
-pyreadline3
 pyright
 pysbd
 PySide6_Addons
@@ -196,7 +194,6 @@ python-dotenv
 pytube
 pytz
 pyvis
-pywin32
 PyYAML
 pyyaml_env_tag
 qdrant-client

@@ -15,7 +15,7 @@ import mimetypes
 from typing import List, Dict, Any
 
 class GopiAIFileSystemTool(BaseTool):
-    name: str = Field(default="gopiai_filesystem", description="Расширенный инструмент файловой системы")
+    name: str = Field(default="filesystem_tools", description="Расширенный инструмент файловой системы")
     description: str = Field(default="""Мощный инструмент для работы с файловой системой. 
     Поддерживает: чтение/запись файлов, работу с JSON/CSV, архивы, поиск, 
     метаданные, хеширование, и многое другое.""", description="Описание инструмента")
