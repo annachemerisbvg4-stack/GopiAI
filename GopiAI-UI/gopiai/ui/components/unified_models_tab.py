@@ -13,6 +13,7 @@ from PySide6.QtCore import Qt, Signal
 import os
 import json
 import requests
+import time
 from PySide6.QtGui import QFont
 
 # Импорт системы иконок
@@ -286,8 +287,18 @@ class UnifiedModelsTab(QWidget):
             # Сервер ожидает оба поля, поэтому если model_id отсутствует — используем значение по умолчанию
             if not model_id and provider == "openrouter":
                 # Для OpenRouter нужно указать конкретную модель
-                model_id = "google/gemini-2.5-pro-exp-03-25"  # Модель по умолчанию для OpenRouter
-                logger.info(f"Используем модель по умолчанию для OpenRouter: {model_id}")
+                # Пробуем получить текущую модель из OpenRouter виджета
+                try:
+                    current_model_getter = getattr(getattr(self, "openrouter_page", None), "get_selected_model_id", None)
+                    if callable(current_model_getter):
+                        model_id = current_model_getter()
+                except Exception:
+                    pass
+                
+                # Если не удалось получить модель, используем значение по умолчанию
+                if not model_id:
+                    model_id = "google/gemini-2.5-pro-exp-03-25"  # Модель по умолчанию для OpenRouter
+                    logger.info(f"Используем модель по умолчанию для OpenRouter: {model_id}")
             elif not model_id and provider == "gemini":
                 # Для Gemini используем стандартную модель
                 model_id = "gemini-2.0-flash-exp"
@@ -299,26 +310,40 @@ class UnifiedModelsTab(QWidget):
             # Логируем отправляемые данные для отладки
             logger.debug(f"Отправка данных на сервер: {payload}")
             
-            resp = requests.post(url, data=json.dumps(payload), headers=headers, timeout=5)
-            if resp.status_code != 200:
-                logger.warning(f"Сервер вернул {resp.status_code}: {resp.text}")
-                
-                # Если ошибка 400, возможно, сервер ожидает другой формат данных
-                if resp.status_code == 400:
-                    # Пробуем альтернативный формат
-                    alt_payload = {
-                        "provider": provider,
-                        "model_id": model_id,
-                        "action": "set_model"
-                    }
-                    logger.debug(f"Пробуем альтернативный формат: {alt_payload}")
-                    alt_resp = requests.post(url, data=json.dumps(alt_payload), headers=headers, timeout=5)
-                    if alt_resp.status_code == 200:
-                        logger.info("Состояние синхронизировано с сервером (альтернативный формат)")
+            # Делаем несколько попыток отправки запроса
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    resp = requests.post(url, data=json.dumps(payload), headers=headers, timeout=5)
+                    if resp.status_code == 200:
+                        logger.info(f"Состояние провайдера/модели синхронизировано с сервером: {provider}/{model_id}")
+                        return
                     else:
-                        logger.warning(f"Альтернативный формат также не сработал: {alt_resp.status_code}: {alt_resp.text}")
-            else:
-                logger.info("Состояние провайдера/модели синхронизировано с сервером")
+                        logger.warning(f"Попытка {attempt+1}/{max_retries}: Сервер вернул {resp.status_code}: {resp.text}")
+                        
+                        # Если ошибка 400, возможно, сервер ожидает другой формат данных
+                        if resp.status_code == 400:
+                            # Пробуем альтернативный формат
+                            alt_payload = {
+                                "provider": provider,
+                                "model_id": model_id,
+                                "action": "set_model"
+                            }
+                            logger.debug(f"Пробуем альтернативный формат: {alt_payload}")
+                            alt_resp = requests.post(url, data=json.dumps(alt_payload), headers=headers, timeout=5)
+                            if alt_resp.status_code == 200:
+                                logger.info("Состояние синхронизировано с сервером (альтернативный формат)")
+                                return
+                            else:
+                                logger.warning(f"Альтернативный формат также не сработал: {alt_resp.status_code}: {alt_resp.text}")
+                except Exception as e:
+                    logger.warning(f"Попытка {attempt+1}/{max_retries}: Ошибка при отправке запроса: {e}")
+                
+                # Если это не последняя попытка, ждем перед следующей
+                if attempt < max_retries - 1:
+                    time.sleep(1)  # Ждем 1 секунду перед следующей попыткой
+            
+            logger.error(f"Не удалось синхронизировать состояние с сервером после {max_retries} попыток")
         except Exception as e:
             logger.warning(f"Ошибка синхронизации состояния с сервером: {e}")
 

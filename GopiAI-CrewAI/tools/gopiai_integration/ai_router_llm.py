@@ -112,15 +112,38 @@ class AIRouterLLM(BaseLLM):
             # ЖЕСТКО: берём провайдера и ключ из SSOT (model_configurations.json через менеджер)
             provider_name = model_config.get('provider')
             api_key_env = model_config.get('api_key_env')
-            if self.model_config_manager:
-                # Нормализация env: поддерживаем GOOGLE_API_KEY и GEMINI_API_KEY как эквивалентные для Gemini
-                if provider_name == 'gemini' and api_key_env == 'GOOGLE_API_KEY':
-                    api_key_env = 'GEMINI_API_KEY' if os.getenv('GEMINI_API_KEY') else 'GOOGLE_API_KEY'
-                api_key = os.getenv(api_key_env or '')
+            
+            # Проверяем наличие ключей в .env файле
+            if provider_name == 'gemini':
+                # Пробуем все возможные переменные для Gemini
+                api_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
+                api_key_env = 'GEMINI_API_KEY' if os.getenv('GEMINI_API_KEY') else 'GOOGLE_API_KEY'
+            elif provider_name == 'openrouter':
+                api_key = os.getenv('OPENROUTER_API_KEY')
             else:
+                # Для других провайдеров используем указанную переменную
                 api_key = os.getenv(api_key_env or '')
+                
+            # Если ключ все еще не найден, пробуем получить его из файла .env напрямую
             if not api_key:
-                raise ValueError(f"API ключ не найден: env={api_key_env} для провайдера {provider_name}")
+                try:
+                    from dotenv import load_dotenv
+                    # Пробуем загрузить .env файл из разных мест
+                    load_dotenv()  # Стандартный .env
+                    load_dotenv(os.path.join(os.path.expanduser("~"), ".env"))  # ~/.env
+                    
+                    # Пробуем снова получить ключ
+                    if provider_name == 'gemini':
+                        api_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
+                    elif provider_name == 'openrouter':
+                        api_key = os.getenv('OPENROUTER_API_KEY')
+                    else:
+                        api_key = os.getenv(api_key_env or '')
+                except ImportError:
+                    self.logger.warning("python-dotenv не установлен, не могу загрузить .env файл")
+                
+            if not api_key:
+                raise ValueError(f"API ключ не найден: env={api_key_env} для провайдера {provider_name}. Проверьте наличие ключа в .env файле.")
             
             # 🚀 КРИТИЧЕСКОЕ УЛУЧШЕНИЕ: Используем кастомный клиент для Google/Gemini
             # для обхода ограничений безопасности (без safetySettings)
@@ -381,12 +404,38 @@ class AIRouterLLM(BaseLLM):
             
             provider_name = model_config.get('provider')
             api_key_env = model_config.get('api_key_env')
-            # Единый источник правды: ключ берём из api_key_env
-            if provider_name == 'gemini' and api_key_env == 'GOOGLE_API_KEY':
+            
+            # Проверяем наличие ключей в .env файле
+            if provider_name == 'gemini':
+                # Пробуем все возможные переменные для Gemini
+                api_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
                 api_key_env = 'GEMINI_API_KEY' if os.getenv('GEMINI_API_KEY') else 'GOOGLE_API_KEY'
-            api_key = os.getenv(api_key_env or '')
+            elif provider_name == 'openrouter':
+                api_key = os.getenv('OPENROUTER_API_KEY')
+            else:
+                # Для других провайдеров используем указанную переменную
+                api_key = os.getenv(api_key_env or '')
+                
+            # Если ключ все еще не найден, пробуем получить его из файла .env напрямую
             if not api_key:
-                raise ValueError(f"API ключ не найден: env={api_key_env} для провайдера {provider_name}")
+                try:
+                    from dotenv import load_dotenv
+                    # Пробуем загрузить .env файл из разных мест
+                    load_dotenv()  # Стандартный .env
+                    load_dotenv(os.path.join(os.path.expanduser("~"), ".env"))  # ~/.env
+                    
+                    # Пробуем снова получить ключ
+                    if provider_name == 'gemini':
+                        api_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
+                    elif provider_name == 'openrouter':
+                        api_key = os.getenv('OPENROUTER_API_KEY')
+                    else:
+                        api_key = os.getenv(api_key_env or '')
+                except ImportError:
+                    self.logger.warning("python-dotenv не установлен, не могу загрузить .env файл")
+                
+            if not api_key:
+                raise ValueError(f"API ключ не найден: env={api_key_env} для провайдера {provider_name}. Проверьте наличие ключа в .env файле.")
             
             # Для Gemini используем наш безопасный клиент; иначе стандартный LLM
             if provider_name and provider_name.lower() in ('google', 'gemini'):
