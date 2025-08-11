@@ -224,9 +224,16 @@ class CrewAIClient:
                 # Создаем AI Router для эмоционального классификатора
                 from gopiai_integration.model_config_manager import get_model_config_manager
                 model_config_manager = get_model_config_manager()
-                ai_router = AIRouterLLM(model_config_manager=model_config_manager)
-                self.emotional_classifier = EmotionalClassifier(ai_router)
-                logger.info("[INIT] ✅ Эмоциональный классификатор инициализирован с AI Router")
+                
+                # Проверяем, что model_config_manager успешно инициализирован
+                if model_config_manager:
+                    # Создаем экземпляр AIRouterLLM с явной передачей model_config_manager
+                    ai_router = AIRouterLLM(model_config_manager=model_config_manager)
+                    self.emotional_classifier = EmotionalClassifier(ai_router)
+                    logger.info("[INIT] ✅ Эмоциональный классификатор инициализирован с AI Router")
+                else:
+                    logger.error("[INIT] ❌ ModelConfigManager не инициализирован")
+                    self.emotional_classifier = None
             except Exception as e:
                 logger.error(f"[INIT] ❌ Ошибка инициализации эмоционального классификатора: {e}")
                 self.emotional_classifier = None
