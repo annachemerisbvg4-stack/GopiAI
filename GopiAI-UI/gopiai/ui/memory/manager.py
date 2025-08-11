@@ -122,6 +122,10 @@ class MemoryManager:
             session_messages.sort(key=lambda x: x.get('timestamp') or '0')
             return session_messages
         return []
+    
+    def get_session_messages(self, session_id: str) -> List[Dict]:
+        """Alias for get_chat_history for backward compatibility."""
+        return self.get_chat_history(session_id)
 
     # Дополнительные методы для работы с общей памятью
     def list_sessions(self) -> List[Dict]:

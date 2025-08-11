@@ -356,15 +356,21 @@ def health_check():
     rag_status = "NOT INITIALIZED"
     try:
         if rag_system_instance is not None:
-            embeddings = getattr(rag_system_instance, "embeddings", None)
-            if embeddings is not None:
-                # count может быть методом либо свойством
-                count_attr = getattr(embeddings, "count", None)
-                if callable(count_attr):
-                    indexed_documents = count_attr()
-                elif isinstance(count_attr, (int, float)):
-                    indexed_documents = int(count_attr)
+            # Используем новый метод get_document_count
+            get_count_method = getattr(rag_system_instance, "get_document_count", None)
+            if callable(get_count_method):
+                indexed_documents = get_count_method()
                 rag_status = "OK"
+            else:
+                # Fallback к старому методу через embeddings
+                embeddings = getattr(rag_system_instance, "embeddings", None)
+                if embeddings is not None:
+                    count_attr = getattr(embeddings, "count", None)
+                    if callable(count_attr):
+                        indexed_documents = count_attr()
+                    elif isinstance(count_attr, (int, float)):
+                        indexed_documents = int(count_attr)
+                    rag_status = "OK"
     except Exception as _e:
         # В случае любой ошибки оставляем значения по умолчанию
         rag_status = "ERROR"
