@@ -542,8 +542,12 @@ def update_provider_model_state():
         provider = data.get("provider")
         model_id = data.get("model_id", "")
         
+        # Проверяем наличие обоих параметров
         if not provider:
             return jsonify({"error": "The 'provider' field is required"}), 400
+            
+        if not model_id and provider == "openrouter":
+            return jsonify({"error": "Both 'provider' and 'model_id' are required"}), 400
         
         # Обновляем состояние
         save_state(provider, model_id)
