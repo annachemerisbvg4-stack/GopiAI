@@ -30,7 +30,8 @@ try:
         GopiAIFileSystemTool = None
     
     try:
-        from tools.gopiai_integration.local_mcp_tools import LocalMCPTool
+        from tools.gopiai_integration.local_mcp_tools import LocalMCPTools
+        LocalMCPTool = LocalMCPTools  # Создаем алиас для совместимости
     except ImportError as e:
         logger.error(f"Ошибка импорта local_mcp_tools: {e}")
         LocalMCPTool = None

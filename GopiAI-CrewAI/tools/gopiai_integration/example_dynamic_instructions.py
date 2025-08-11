@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 # Импорт GopiAI инструментов
 from .filesystem_tools import GopiAIFileSystemTool
 from .browser_tools import GopiAIBrowserTool, GopiAIWebSearchTool, GopiAIPageAnalyzerTool
-from .local_mcp_tools import GopiAILocalMCPTool
+from .local_mcp_tools import LocalMCPTools
 
 # Импорт системы динамических инструкций
 from .crewai_tools_integration import (
@@ -45,7 +45,7 @@ def create_enhanced_agent_example():
         GopiAIFileSystemTool(),
         GopiAIBrowserTool(),
         GopiAIWebSearchTool(),
-        GopiAILocalMCPTool()
+        LocalMCPTools()
     ]
     
     # Создаем агента
@@ -100,7 +100,7 @@ def create_enhanced_crew_example():
         role='API Specialist',
         goal='Работать с API и веб-сервисами',
         backstory='Специалист по интеграции с внешними сервисами',
-        tools=[GopiAILocalMCPTool()],
+        tools=[LocalMCPTools()],
         llm=llm,
         verbose=True
     )
