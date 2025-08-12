@@ -192,7 +192,7 @@ def test_specific_operations():
     print("1. Создание JSON файла...")
     result = fs_tool._run(
         action="write_json", 
-        path="/workspace/project/test_config.json",
+        path="test_config.json",
         json_data=test_data
     )
     print(f"   {result}")
