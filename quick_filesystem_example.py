@@ -133,8 +133,8 @@ def direct_tool_example():
         try:
             os.remove(f"/workspace/project/{backup_file}")
             print(f"   Удален: {backup_file}")
-        except:
-            pass
+        except OSError as e:
+            print(f"   Ошибка при удалении файла {backup_file}: {e}")
 
 if __name__ == "__main__":
     print("🚀 GopiAI - Быстрый пример доступа к файловой системе")
