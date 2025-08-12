@@ -8,7 +8,7 @@ import sys
 import os
 
 # Добавляем путь к GopiAI модулям
-sys.path.append('/workspace/project/GopiAI/GopiAI-CrewAI')
+sys.path.append('GopiAI/GopiAI-CrewAI')
 
 from crewai import Agent, Task, Crew
 from tools.gopiai_integration import GopiAIFileSystemTool
