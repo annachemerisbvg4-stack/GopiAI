@@ -76,7 +76,7 @@ def direct_tool_example():
     print("1. Создание файла...")
     result = fs_tool._run(
         action="write", 
-        path="/workspace/project/example.txt", 
+        path="example.txt",
         data="Пример работы с файловой системой\nВторая строка\nТретья строка"
     )
     print(f"   {result}")
