@@ -248,8 +248,8 @@ def test_specific_operations():
     for file in ["test_config.json", "test_files.csv", "test_archive.zip"]:
         try:
             os.remove(f"/workspace/project/{file}")
-        except:
-            pass
+        except OSError as e:
+            print(f"   Не удалось удалить файл {file}: {e}")
     
     print("✅ Тест завершен!")
 
