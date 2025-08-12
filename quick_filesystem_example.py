@@ -124,8 +124,8 @@ def direct_tool_example():
         try:
             fs_tool._run(action="delete", path=f"/workspace/project/{file}")
             print(f"   Удален: {file}")
-        except:
-            pass
+        except OSError as e:
+            print(f"   Ошибка при удалении файла {file}: {e}")
     
     # Удаляем резервную копию
     backup_files = [f for f in os.listdir("/workspace/project") if f.startswith("example.txt.backup_")]
