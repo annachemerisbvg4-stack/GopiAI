@@ -71,16 +71,6 @@ class ToolsConfig:
                 "max_message_size": 1024,
                 "queue_size": 100
             },
-            "browser_automation": {
-                "enabled": False,  # ОТКЛЮЧЕНО
-                "reason": "Отключено по решению команды"
-            },
-            "api_keys": {
-                "serper_api_key": None,
-                "serpapi_api_key": None,
-                "openai_api_key": None,
-                "google_api_key": None
-            },
             "logging": {
                 "level": "INFO",
                 "file_enabled": True,
@@ -169,7 +159,7 @@ class ToolsConfig:
         # Остается строкой
         return value
     
-    def get(self, section: str, key: str = None, default: Any = None) -> Any:
+def get(self, section: str, key: Optional[str] = None, default: Any = None) -> Any:
         """Получает значение конфигурации"""
         if key is None:
             return self.config.get(section, default)
@@ -188,7 +178,7 @@ class ToolsConfig:
     
     def get_api_key(self, service: str) -> str:
         """Получает API ключ для сервиса"""
-        return self.get("api_keys", f"{service}_api_key")
+        return self.get("api_keys", f"{service}_api_key", None)
     
     def save_config(self, path: str = None):
         """Сохраняет текущую конфигурацию в файл"""
@@ -215,14 +205,11 @@ class ToolsConfig:
         print("🔧 Статус инструментов GopiAI:")
         print("-" * 40)
         
-        for tool_name in ["filesystem", "terminal", "web_search", "web_viewer", "memory", "communication", "browser_automation"]:
+        for tool_name in ["filesystem", "terminal", "web_search", "web_viewer", "memory", "communication"]:
             enabled = self.is_tool_enabled(tool_name)
             status = "✅ Включен" if enabled else "❌ Отключен"
             print(f"  {tool_name}: {status}")
-            
-            if tool_name == "browser_automation" and not enabled:
-                reason = self.get(tool_name, "reason", "Неизвестная причина")
-                print(f"    Причина: {reason}")
+
         
         print("-" * 40)
         print(f"📊 Активных инструментов: {len(self.get_active_tools())}")
@@ -252,4 +239,7 @@ if __name__ == "__main__":
     print(f"  Файловая система включена: {config.is_tool_enabled('filesystem')}")
     print(f"  Максимальный размер файла: {config.get('filesystem', 'max_file_size')}")
     print(f"  Поисковая система по умолчанию: {config.get('web_search', 'default_engine')}")
-    print(f"  API ключ Serper: {'Установлен' if config.get_api_key('serper') else 'Не установлен'}")
+    try:
+        print(f"  API ключ Serper: {'Установлен' if config.get_api_key('serper') else 'Не установлен'}")
+    except:
+        pass
