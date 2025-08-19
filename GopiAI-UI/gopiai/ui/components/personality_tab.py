@@ -37,29 +37,10 @@ class PersonalityTab(QWidget):
     
     def _find_system_prompts_file(self):
         """Находит файл system_prompts.py"""
-        try:
-            # Пробуем найти файл system_prompts.py
-            possible_paths = [
-                # Относительно текущего файла
-                os.path.join(
-                    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-                    "..", "GopiAI-CrewAI", "tools", "gopiai_integration", "system_prompts.py"
-                ),
-                # Абсолютный путь
-                "/home/amritagopi/GopiAI/GopiAI-CrewAI/tools/gopiai_integration/system_prompts.py"
-            ]
-            
-            for path in possible_paths:
-                if os.path.exists(path):
-                    self.system_prompts_file = path
-                    logger.info(f"Найден файл system_prompts.py: {path}")
-                    break
-            
-            if not self.system_prompts_file:
-                logger.error("Файл system_prompts.py не найден")
-                
-        except Exception as e:
-            logger.error(f"Ошибка поиска system_prompts.py: {e}")
+        # Заглушка: функциональность редактирования персонализации отключена,
+        # так как она зависела от старого бэкенда gopiai_integration.
+        self.system_prompts_file = None
+        logger.warning("Поиск system_prompts.py отключен, так как gopiai_integration устарел.")
     
     def _setup_ui(self):
         """Настраивает пользовательский интерфейс"""

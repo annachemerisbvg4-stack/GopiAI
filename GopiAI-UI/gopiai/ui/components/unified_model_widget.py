@@ -21,46 +21,10 @@ from PySide6.QtGui import QFont, QPixmap, QIcon
 from typing import cast, Iterable
 from gopiai.ui.utils.icon_helpers import create_icon_button
 
-# Добавляем путь к backend для импорта клиентов
-try:
-    # Пробуем разные варианты путей
-    possible_paths = [
-        # Вариант 1: относительно текущего файла
-        os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-            "GopiAI-CrewAI",
-            "tools"
-        ),
-        # Вариант 2: абсолютный путь
-        r"c:\Users\crazy\GOPI_AI_MODULES\GopiAI-CrewAI\tools",
-        # Вариант 3: через переменную окружения
-        os.path.join(os.environ.get('GOPI_AI_MODULES', ''), "GopiAI-CrewAI", "tools")
-    ]
-    
-    tools_path = None
-    for path in possible_paths:
-        if path and os.path.exists(path):
-            tools_path = path
-            break
-    
-    if tools_path and tools_path not in sys.path:
-        sys.path.append(tools_path)
-        print(f"[INFO] Successfully loaded tools from: {tools_path}")
-    
-    # Импортируем ModelProvider
-    # Импортируем ModelProvider, но не привязываем локальный тип напрямую, чтобы не конфликтовать с фолбэком
-    from gopiai_integration.model_config_manager import ModelProvider as ExternalModelProvider
-    ModelProvider = ExternalModelProvider  # type: ignore[assignment]
-    MODEL_PROVIDER_AVAILABLE = True
-    print(f"[INFO] ModelProvider imported successfully: {list(ModelProvider)}")
-except Exception as e:
-    print(f"[WARNING] Could not import ModelProvider from backend, using fallback. Error: {e}")
-    # Создаем fallback enum, совпадающий по имени с ожидаемым
-    from enum import Enum
-    class ModelProvider(Enum):  # type: ignore[no-redef]
-        GEMINI = "gemini"
-        OPENROUTER = "openrouter"
-    MODEL_PROVIDER_AVAILABLE = False
+# Импортируем заглушки, так как gopiai_integration больше не используется
+from gopiai.gopiai_integration_stub import ModelProvider, get_model_config_manager, OpenRouterClient
+
+MODEL_PROVIDER_AVAILABLE = True
 
 logger = logging.getLogger(__name__)
 
@@ -185,15 +149,10 @@ class UnifiedModelWidget(QWidget):
     def _initialize_backend_clients(self):
         """Инициализирует клиенты backend"""
         try:
-            # ModelConfigurationManager
-            from gopiai_integration.model_config_manager import get_model_config_manager
+            # Используем импортированные заглушки
             self.model_config_manager = get_model_config_manager()
-            logger.info("✅ ModelConfigurationManager инициализирован")
-            
-            # OpenRouter клиент
-            from gopiai_integration.openrouter_client import OpenRouterClient
             self.openrouter_client = OpenRouterClient()
-            logger.info("✅ OpenRouterClient инициализирован")
+            logger.info("✅ Backend клиенты инициализированы (с использованием заглушек)")
             
         except Exception as e:
             logger.error(f"❌ Ошибка инициализации backend клиентов: {e}")

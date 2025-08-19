@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+import sys
+import os
+# Добавляем корень проекта (GopiAI-UI) в sys.path, чтобы работали импорты вида gopiai.*
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 """
 GopiAI Standalone Interface - Модульная версия с централизованной системой тем
 =====================================================================
@@ -104,18 +110,8 @@ except ImportError as e:
     print(f"⚠️ Не удалось импортировать GopiAISettingsDialog: {e}")
     GopiAISettingsDialog = None
 
-# Добавляем правильные пути к tools для импорта gopiai_integration
-# Правильное формирование project_root
-project_root = r"c:\Users\crazy\GOPI_AI_MODULES"  # Прямое указание пути
-# Путь к tools (а не к GopiAI-CrewAI!) для импорта gopiai_integration
-tools_path = os.path.join(project_root, 'GopiAI-CrewAI', 'tools')
-if os.path.exists(tools_path) and tools_path not in sys.path:
-    sys.path.insert(0, tools_path)
-    print(f"✅ Добавлен путь к tools: {tools_path}")
-else:
-    print(f"⚠️ Путь к tools не найден: {tools_path}")
-
-from gopiai_integration.terminal_tool import set_terminal_widget
+# Импортируем заглушку из центрального файла, чтобы избежать ошибок
+from gopiai.gopiai_integration_stub import set_terminal_widget
 
 # Настройка путей для импорта модулей GopiAI
 script_dir = os.path.dirname(os.path.abspath(__file__))

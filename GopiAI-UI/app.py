@@ -16,7 +16,6 @@ project_root = str(Path(__file__).parent.absolute())
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from gopiai.api.gemini_routes import bp as gemini_bp
 from gopiai.enhanced_logging import setup_logging
 
 # Настраиваем логирование
@@ -31,7 +30,7 @@ def create_app():
     CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"])
     
     # Регистрируем blueprints
-    app.register_blueprint(gemini_bp)
+    # app.register_blueprint(gemini_bp) # Blueprint удален, так как API устарело
     
     @app.route('/')
     def index():

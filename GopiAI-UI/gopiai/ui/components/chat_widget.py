@@ -34,7 +34,6 @@ except ImportError as e:
 logger = logging.getLogger(__name__)
 
 # --- Импорты наших новых модулей-обработчиков ---
-from .crewai_client import CrewAIClient
 from ..memory import get_memory_manager
 from .chat_async_handler import ChatAsyncHandler
 # from .optimized_chat_widget import OptimizedChatWidget  # Модуль не найден, закомментировано
@@ -85,19 +84,31 @@ class ChatWidget(QWidget):
         
         self._initialize_session_and_history()
         
-        logger.info("[CHAT] Инициализация CrewAI клиента")
-        self.crew_ai_client = CrewAIClient()
+        logger.info("[CHAT] Инициализация обработчика сообщений для Gemini CLI")
+        self.async_handler = ChatAsyncHandler(self)
         
-        logger.info("[CHAT] Инициализация объединенного обработчика сообщений")
-        self.async_handler = ChatAsyncHandler(self.crew_ai_client, self)
-        
-        logger.info("[CHAT] Подключение сигналов объединенного обработчика")
+        logger.info("[CHAT] Подключение сигналов обработчика")
         self.async_handler.response_ready.connect(self._handle_response)
         self.async_handler.status_update.connect(self._update_status_message)
-        self.async_handler.partial_response.connect(self._handle_partial_response)
         self.async_handler.message_error.connect(self._handle_error)
+        self.async_handler.oauth_url_received.connect(self._handle_oauth_url)
+        # self.async_handler.partial_response.connect(self._handle_partial_response) # Not used with new service
         
         logger.info("[CHAT] Инициализация ChatWidget завершена")
+
+    def _handle_oauth_url(self, url: str):
+        """Открывает URL для OAuth в новой вкладке браузера."""
+        logger.info(f"Получен URL для OAuth, открываем в браузере: {url}")
+        try:
+            main_window = self._get_main_window()
+            if main_window and hasattr(main_window, 'tab_document'):
+                main_window.tab_document.add_browser_tab(url=url, title="Вход Google")
+                self._append_message_with_style('system', 'Для продолжения, пожалуйста, войдите в свой аккаунт Google в открывшейся вкладке.')
+            else:
+                self._append_message_with_style('error', 'Не удалось открыть вкладку браузера. Главное окно не найдено.')
+        except Exception as e:
+            logger.error(f"Ошибка при открытии URL для OAuth: {e}", exc_info=True)
+            self._append_message_with_style('error', f'Не удалось открыть браузер: {e}')
 
     def _handle_error(self, error_message):
         """Обрабатывает ошибки от асинхронного обработчика"""
