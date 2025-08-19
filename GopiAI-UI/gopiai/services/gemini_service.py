@@ -1,89 +1,53 @@
 """
-Сервис для работы с Gemini CLI.
-Обеспечивает взаимодействие с Gemini CLI через subprocess.
+Сервис для работы с Gemini API.
+Обеспечивает взаимодействие с Google Gemini API напрямую.
 """
 
-import subprocess
-import json
 import os
+import json
 from typing import Dict, List, Optional, Union
-from pathlib import Path
-import shlex
 import logging
+
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError:
+    GENAI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
 class GeminiService:
-    def __init__(self, gemini_path: str = None):
+    def __init__(self, api_key: str = None):
         """
         Инициализация сервиса Gemini.
         
         Args:
-            gemini_path: Путь к исполняемому файлу gemini-cli. Если None, будет использован gemini из PATH.
+            api_key: API ключ для Google Gemini. Если None, будет использован из переменной окружения GEMINI_API_KEY.
         """
-        self.gemini_path = gemini_path or "gemini"
-        self._check_gemini_installed()
-    
-    def _run_command(self, command: str, input_data: str = None, cwd: str = None) -> Dict:
-        """
-        Выполняет команду Gemini CLI и возвращает результат.
+        if not GENAI_AVAILABLE:
+            raise ImportError("google-generativeai не установлен. Установите его: pip install google-generativeai")
         
-        Args:
-            command: Команда для выполнения
-            input_data: Входные данные для команды
-            cwd: Рабочая директория
-            
-        Returns:
-            Словарь с результатом выполнения команды
-        """
-        try:
-            if not command.startswith(self.gemini_path):
-                command = f"{self.gemini_path} {command}"
-                
-            logger.debug(f"Выполнение команды: {command}")
-            
-            process = subprocess.Popen(
-                shlex.split(command),
-                stdin=subprocess.PIPE if input_data else None,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                cwd=cwd or os.getcwd()
-            )
-            
-            stdout, stderr = process.communicate(input=input_data)
-            
-            if process.returncode != 0:
-                error_msg = f"Ошибка выполнения команды: {stderr}"
-                logger.error(error_msg)
-                return {"status": "error", "message": error_msg}
-                
-            try:
-                # Пытаемся распарсить JSON ответ
-                return {"status": "success", "data": json.loads(stdout)}
-            except json.JSONDecodeError:
-                # Если ответ не JSON, возвращаем как есть
-                return {"status": "success", "data": stdout.strip()}
-                
-        except Exception as e:
-            error_msg = f"Неожиданная ошибка: {str(e)}"
-            logger.exception(error_msg)
-            return {"status": "error", "message": error_msg}
+        self.api_key = api_key or os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
+        if not self.api_key:
+            logger.warning("API ключ не найден. Установите переменную окружения GEMINI_API_KEY или GOOGLE_API_KEY")
+        else:
+            genai.configure(api_key=self.api_key)
+            logger.info("Gemini API настроен успешно")
+        
+        self._check_api_connection()
     
-    def _check_gemini_installed(self) -> bool:
-        """Проверяет, установлен ли Gemini CLI."""
-        try:
-            result = subprocess.run(
-                [self.gemini_path, "--version"],
-                capture_output=True,
-                text=True
-            )
-            if result.returncode == 0:
-                logger.info(f"Gemini CLI найден: {result.stdout.strip()}")
-                return True
+    def _check_api_connection(self) -> bool:
+        """Проверяет подключение к Gemini API."""
+        if not self.api_key:
             return False
+            
+        try:
+            # Пытаемся получить список моделей для проверки подключения
+            models = list(genai.list_models())
+            logger.info(f"Подключение к Gemini API успешно. Доступно моделей: {len(models)}")
+            return True
         except Exception as e:
-            logger.error(f"Ошибка при проверке установки Gemini CLI: {e}")
+            logger.error(f"Ошибка при подключении к Gemini API: {e}")
             return False
     
     def generate_text(self, prompt: str, model: str = "gemini-pro", **kwargs) -> Dict:
@@ -93,20 +57,49 @@ class GeminiService:
         Args:
             prompt: Текст запроса
             model: Модель для генерации (по умолчанию: gemini-pro)
-            **kwargs: Дополнительные параметры (temperature, max_tokens и т.д.)
+            **kwargs: Дополнительные параметры (temperature, max_output_tokens и т.д.)
             
         Returns:
             Словарь с результатом генерации
         """
-        # Собираем аргументы команды
-        args = [f"--model={model}"]
+        if not self.api_key:
+            return {"status": "error", "message": "API ключ не настроен"}
         
-        for key, value in kwargs.items():
-            if value is not None:
-                args.append(f"--{key.replace('_', '-')}={value}")
-        
-        command = f"generate {' '.join(args)}"
-        return self._run_command(command, input_data=prompt)
+        try:
+            # Создаем модель
+            model_instance = genai.GenerativeModel(model)
+            
+            # Настраиваем параметры генерации
+            generation_config = {}
+            if 'temperature' in kwargs:
+                generation_config['temperature'] = kwargs['temperature']
+            if 'max_output_tokens' in kwargs or 'max_tokens' in kwargs:
+                generation_config['max_output_tokens'] = kwargs.get('max_output_tokens', kwargs.get('max_tokens'))
+            if 'top_p' in kwargs:
+                generation_config['top_p'] = kwargs['top_p']
+            if 'top_k' in kwargs:
+                generation_config['top_k'] = kwargs['top_k']
+            
+            # Генерируем ответ
+            response = model_instance.generate_content(
+                prompt,
+                generation_config=generation_config if generation_config else None
+            )
+            
+            return {
+                "status": "success",
+                "data": response.text,
+                "usage": {
+                    "prompt_tokens": response.usage_metadata.prompt_token_count if hasattr(response, 'usage_metadata') else 0,
+                    "completion_tokens": response.usage_metadata.candidates_token_count if hasattr(response, 'usage_metadata') else 0,
+                    "total_tokens": response.usage_metadata.total_token_count if hasattr(response, 'usage_metadata') else 0
+                }
+            }
+            
+        except Exception as e:
+            error_msg = f"Ошибка при генерации текста: {str(e)}"
+            logger.exception(error_msg)
+            return {"status": "error", "message": error_msg}
     
     def chat(self, messages: List[Dict[str, str]], model: str = "gemini-pro", **kwargs) -> Dict:
         """
@@ -120,22 +113,105 @@ class GeminiService:
         Returns:
             Словарь с ответом модели
         """
-        # Преобразуем историю сообщений в формат, понятный Gemini CLI
-        chat_history = []
-        for msg in messages:
-            role = "user" if msg["role"] in ["user", "human"] else "model"
-            chat_history.append(f"{role}: {msg['content']}")
+        if not self.api_key:
+            return {"status": "error", "message": "API ключ не настроен"}
         
-        prompt = "\n".join(chat_history)
-        return self.generate_text(prompt, model=model, **kwargs)
+        try:
+            # Создаем модель
+            model_instance = genai.GenerativeModel(model)
+            
+            # Преобразуем историю сообщений в формат Gemini
+            history = []
+            current_prompt = ""
+            
+            for msg in messages:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                
+                if role in ["user", "human"]:
+                    current_prompt = content
+                elif role in ["assistant", "model", "ai"]:
+                    if current_prompt:
+                        history.append({"role": "user", "parts": [current_prompt]})
+                        history.append({"role": "model", "parts": [content]})
+                        current_prompt = ""
+            
+            # Если есть последнее сообщение пользователя без ответа
+            if current_prompt:
+                # Начинаем чат с историей
+                chat = model_instance.start_chat(history=history)
+                response = chat.send_message(current_prompt)
+            else:
+                # Если нет текущего промпта, используем последнее сообщение
+                if messages:
+                    last_message = messages[-1]["content"]
+                    chat = model_instance.start_chat(history=history[:-1] if history else [])
+                    response = chat.send_message(last_message)
+                else:
+                    return {"status": "error", "message": "Нет сообщений для обработки"}
+            
+            return {
+                "status": "success",
+                "data": response.text,
+                "usage": {
+                    "prompt_tokens": response.usage_metadata.prompt_token_count if hasattr(response, 'usage_metadata') else 0,
+                    "completion_tokens": response.usage_metadata.candidates_token_count if hasattr(response, 'usage_metadata') else 0,
+                    "total_tokens": response.usage_metadata.total_token_count if hasattr(response, 'usage_metadata') else 0
+                }
+            }
+            
+        except Exception as e:
+            error_msg = f"Ошибка в чате: {str(e)}"
+            logger.exception(error_msg)
+            return {"status": "error", "message": error_msg}
     
     def get_models(self) -> Dict:
         """Получает список доступных моделей."""
-        return self._run_command("models list")
+        if not self.api_key:
+            return {"status": "error", "message": "API ключ не настроен"}
+        
+        try:
+            models = []
+            for model in genai.list_models():
+                if 'generateContent' in model.supported_generation_methods:
+                    models.append({
+                        "name": model.name,
+                        "display_name": model.display_name,
+                        "description": model.description,
+                        "input_token_limit": model.input_token_limit,
+                        "output_token_limit": model.output_token_limit
+                    })
+            
+            return {"status": "success", "data": models}
+            
+        except Exception as e:
+            error_msg = f"Ошибка при получении списка моделей: {str(e)}"
+            logger.exception(error_msg)
+            return {"status": "error", "message": error_msg}
     
     def get_model_info(self, model_id: str) -> Dict:
         """Получает информацию о конкретной модели."""
-        return self._run_command(f"models describe {model_id}")
+        if not self.api_key:
+            return {"status": "error", "message": "API ключ не настроен"}
+        
+        try:
+            model = genai.get_model(model_id)
+            return {
+                "status": "success",
+                "data": {
+                    "name": model.name,
+                    "display_name": model.display_name,
+                    "description": model.description,
+                    "input_token_limit": model.input_token_limit,
+                    "output_token_limit": model.output_token_limit,
+                    "supported_generation_methods": model.supported_generation_methods
+                }
+            }
+            
+        except Exception as e:
+            error_msg = f"Ошибка при получении информации о модели: {str(e)}"
+            logger.exception(error_msg)
+            return {"status": "error", "message": error_msg}
 
 # Сиглтон экземпляр сервиса
 gemini_service = GeminiService()

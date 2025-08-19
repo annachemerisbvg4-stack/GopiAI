@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GopiAI - Gemini Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .chat-container {
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .message.user {
+            background: #4f46e5;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .message.assistant {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-container input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .input-container input:focus {
+            border-color: #4f46e5;
+        }
+        
+        .input-container button {
+            padding: 15px 25px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .input-container button:hover {
+            background: #3730a3;
+        }
+        
+        .input-container button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 10px 20px;
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            margin: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #dc2626;
+        }
+        
+        .status.success {
+            background: #dcfce7;
+            border-color: #22c55e;
+            color: #16a34a;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .model-selector {
+            padding: 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .model-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 GopiAI</h1>
+            <p>Интерфейс для Google Gemini</p>
+        </div>
+        
+        <div class="model-selector">
+            <select id="modelSelect">
+                <option value="gemini-pro">Gemini Pro</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+            </select>
+        </div>
+        
+        <div id="status" class="status" style="display: none;"></div>
+        
+        <div class="chat-container">
+            <div id="messages" class="messages">
+                <div class="message assistant">
+                    Привет! Я GopiAI, интерфейс для работы с Google Gemini. Задайте мне любой вопрос!
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <input type="text" id="messageInput" placeholder="Введите ваше сообщение..." />
+                <button id="sendButton" onclick="sendMessage()">Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let messages = [];
+        const messagesContainer = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const statusDiv = document.getElementById('status');
+        const modelSelect = document.getElementById('modelSelect');
+
+        // API базовый URL
+        const API_BASE = window.location.origin;
+
+        function showStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+            
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function addMessage(content, role) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            messageDiv.textContent = content;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            messages.push({ role: role === 'user' ? 'user' : 'assistant', content: content });
+        }
+
+        function setLoading(loading) {
+            sendButton.disabled = loading;
+            if (loading) {
+                sendButton.innerHTML = '<div class="loading"></div>';
+            } else {
+                sendButton.textContent = 'Отправить';
+            }
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Добавляем сообщение пользователя
+            addMessage(message, 'user');
+            messageInput.value = '';
+            setLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/gemini/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: messages,
+                        model: modelSelect.value,
+                        temperature: 0.7
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    addMessage(data.data, 'assistant');
+                    showStatus('Ответ получен', 'success');
+                } else {
+                    showStatus(`Ошибка: ${data.message}`, 'error');
+                    // Удаляем последнее сообщение пользователя из истории при ошибке
+                    messages.pop();
+                }
+            } catch (error) {
+                showStatus(`Ошибка соединения: ${error.message}`, 'error');
+                // Удаляем последнее сообщение пользователя из истории при ошибке
+                messages.pop();
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Отправка по Enter
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Проверяем статус API при загрузке
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    showStatus('API сервер подключен', 'success');
+                } else {
+                    showStatus('API сервер недоступен', 'error');
+                }
+            } catch (error) {
+                showStatus('Не удается подключиться к API серверу', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
